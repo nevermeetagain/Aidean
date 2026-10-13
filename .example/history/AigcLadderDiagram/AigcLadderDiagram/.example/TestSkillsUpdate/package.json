@@ -1,0 +1,35 @@
+{
+  "name": "trae-skill-sync",
+  "version": "1.0.0",
+  "description": "Trae Skill 同步脚本 - ETL Pipeline 实现",
+  "type": "module",
+  "main": "dist/sync.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/sync.js",
+    "dev": "tsx src/sync.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:init": "tsx src/database/init.ts",
+    "sync": "npm run build && npm start"
+  },
+  "keywords": [
+    "skill",
+    "sync",
+    "trae",
+    "etl"
+  ],
+  "author": "Trae Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "pg": "^8.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  }
+}

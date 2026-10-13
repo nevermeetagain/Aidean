@@ -1,0 +1,17 @@
+node_modules
+.next
+out
+*.log
+/logs
+.tmp
+.DS_Store
+.env
+.env.*
+docker/.env
+
+# Editors
+.vscode
+.idea
+
+# Tool artifacts
+.workbuddy

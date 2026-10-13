@@ -1,0 +1,973 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "AideanSynapse - High-Performance AI Model API Relay Platform",
+    "output": "architecture-aideansynapse.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "request-path",
+        "label": "Primary API Request Path",
+        "focus": [
+          "client",
+          "caddy",
+          "backend",
+          "redis",
+          "postgres"
+        ],
+        "note": "Follow the primary API request from client through gateway to data layer."
+      },
+      {
+        "id": "provider-routing",
+        "label": "Provider Routing & Adaptors",
+        "focus": [
+          "module_gateway",
+          "adaptor_openai",
+          "adaptor_anthropic",
+          "adaptor_gemini",
+          "adaptor_others"
+        ],
+        "note": "Smart routing to 50+ providers via unified adaptor interface."
+      },
+      {
+        "id": "frontend-apps",
+        "label": "Frontend Monorepo (3 Apps)",
+        "focus": [
+          "frontend_admin",
+          "frontend_console",
+          "frontend_public",
+          "shared_ui"
+        ],
+        "note": "Admin, Console, Public apps sharing UI design system."
+      },
+      {
+        "id": "billing-enterprise",
+        "label": "Billing & Enterprise Core",
+        "focus": [
+          "module_billing",
+          "module_enterprise",
+          "module_payment",
+          "module_apikey"
+        ],
+        "note": "Three-track billing, enterprise quota sharing, payment processing."
+      },
+      {
+        "id": "observability-ops",
+        "label": "Observability & Operations",
+        "focus": [
+          "telemetry",
+          "monitoring",
+          "backup",
+          "pgbouncer"
+        ],
+        "note": "OpenTelemetry tracing, Prometheus/Grafana SLA, backup & DR."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "client",
+      "type": "external",
+      "label": "API Clients",
+      "sublabel": "Developers / Apps / Rag Platforms",
+      "pos": [
+        50,
+        300
+      ],
+      "size": [
+        160,
+        70
+      ]
+    },
+    {
+      "id": "caddy",
+      "type": "security",
+      "label": "Caddy Reverse Proxy",
+      "sublabel": "HTTPS / HTTP/2 / Let's Encrypt",
+      "pos": [
+        280,
+        300
+      ],
+      "size": [
+        160,
+        70
+      ],
+      "tag": "TLS + Canary"
+    },
+    {
+      "id": "backend",
+      "type": "backend",
+      "label": "Go Backend (DDD)",
+      "sublabel": "Port 10010 / Ent ORM / Gin / Wire",
+      "pos": [
+        520,
+        300
+      ],
+      "size": [
+        160,
+        70
+      ],
+      "tag": "13 Modules <30KB each"
+    },
+    {
+      "id": "pgbouncer",
+      "type": "database",
+      "label": "PgBouncer",
+      "sublabel": "Transaction Pooling / 25 conns",
+      "pos": [
+        780,
+        100
+      ],
+      "size": [
+        160,
+        70
+      ]
+    },
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "PostgreSQL 16",
+      "sublabel": "29 Tables / Manual SQL / SHA256",
+      "pos": [
+        1000,
+        100
+      ],
+      "size": [
+        160,
+        70
+      ],
+      "tag": "BRIN Indexes"
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis Cluster",
+      "sublabel": "Cache / Rate Limit / Sessions",
+      "pos": [
+        780,
+        300
+      ],
+      "size": [
+        160,
+        70
+      ],
+      "tag": "Sticky Session / Quota"
+    },
+    {
+      "id": "module_auth",
+      "type": "backend",
+      "label": "Auth Module",
+      "sublabel": "JWT + OAuth + RBAC",
+      "pos": [
+        520,
+        30
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "5 Middlewares"
+    },
+    {
+      "id": "module_user",
+      "type": "backend",
+      "label": "User Module",
+      "sublabel": "Profile / 2FA / OAuth Bind",
+      "pos": [
+        520,
+        100
+      ],
+      "size": [
+        160,
+        60
+      ]
+    },
+    {
+      "id": "module_channel",
+      "type": "backend",
+      "label": "Channel Module",
+      "sublabel": "50+ Providers / Dual-Track",
+      "pos": [
+        520,
+        170
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "AES-256-GCM"
+    },
+    {
+      "id": "module_gateway",
+      "type": "backend",
+      "label": "Gateway Module",
+      "sublabel": "3 Protocols / Smart Routing",
+      "pos": [
+        520,
+        240
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "Sticky + Circuit Breaker"
+    },
+    {
+      "id": "module_apikey",
+      "type": "backend",
+      "label": "APIKey Module",
+      "sublabel": "CRUD / Quota / Scopes",
+      "pos": [
+        520,
+        370
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "sk-as- + SHA256"
+    },
+    {
+      "id": "module_billing",
+      "type": "backend",
+      "label": "Billing Module",
+      "sublabel": "Three-Track / Redis Lua",
+      "pos": [
+        520,
+        440
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "Ratio / Per-use / Sub"
+    },
+    {
+      "id": "module_payment",
+      "type": "backend",
+      "label": "Payment Module",
+      "sublabel": "Epay/Stripe / Webhooks",
+      "pos": [
+        520,
+        510
+      ],
+      "size": [
+        160,
+        60
+      ]
+    },
+    {
+      "id": "module_enterprise",
+      "type": "backend",
+      "label": "Enterprise Module",
+      "sublabel": "B2B / Quota Sharing",
+      "pos": [
+        520,
+        580
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "Invite Codes + CSV"
+    },
+    {
+      "id": "module_system",
+      "type": "backend",
+      "label": "System Module",
+      "sublabel": "Config / Models / Rate Limits",
+      "pos": [
+        520,
+        650
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "12 KV Modules"
+    },
+    {
+      "id": "module_sync",
+      "type": "backend",
+      "label": "Sync Module",
+      "sublabel": "Model Data / Rag Federation",
+      "pos": [
+        520,
+        720
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "Hourly / Diff"
+    },
+    {
+      "id": "module_stats",
+      "type": "backend",
+      "label": "Statistics Module",
+      "sublabel": "5-Dim Analytics / CSV",
+      "pos": [
+        520,
+        790
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "BRIN / <30s"
+    },
+    {
+      "id": "module_risk",
+      "type": "security",
+      "label": "Risk Module",
+      "sublabel": "Content / IP Control",
+      "pos": [
+        520,
+        860
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "451 + Blacklist"
+    },
+    {
+      "id": "module_notify",
+      "type": "backend",
+      "label": "Notify Module",
+      "sublabel": "Email / Announcements",
+      "pos": [
+        520,
+        930
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "SMTP + Markdown"
+    },
+    {
+      "id": "adaptor_openai",
+      "type": "external",
+      "label": "OpenAI Adaptor",
+      "sublabel": "Chat / Embeddings / Models",
+      "pos": [
+        780,
+        30
+      ],
+      "size": [
+        160,
+        60
+      ]
+    },
+    {
+      "id": "adaptor_anthropic",
+      "type": "external",
+      "label": "Anthropic Adaptor",
+      "sublabel": "Messages API / SSE",
+      "pos": [
+        780,
+        100
+      ],
+      "size": [
+        160,
+        60
+      ]
+    },
+    {
+      "id": "adaptor_gemini",
+      "type": "external",
+      "label": "Gemini Adaptor",
+      "sublabel": "Contents API / Streaming",
+      "pos": [
+        780,
+        170
+      ],
+      "size": [
+        160,
+        60
+      ]
+    },
+    {
+      "id": "adaptor_others",
+      "type": "external",
+      "label": "20+ Provider Adaptors",
+      "sublabel": "Azure / Bedrock / DeepSeek / ...",
+      "pos": [
+        780,
+        240
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "4 Methods Each"
+    },
+    {
+      "id": "frontend_admin",
+      "type": "frontend",
+      "label": "Admin App",
+      "sublabel": "Port 5173 / React 19 + Vite 6",
+      "pos": [
+        280,
+        450
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "DataTable + CommandPalette"
+    },
+    {
+      "id": "frontend_console",
+      "type": "frontend",
+      "label": "Console App",
+      "sublabel": "Port 5174 / Playground SSE",
+      "pos": [
+        280,
+        530
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "Real-time Quota"
+    },
+    {
+      "id": "frontend_public",
+      "type": "frontend",
+      "label": "Public App",
+      "sublabel": "Port 5175 / <100KB / SEO",
+      "pos": [
+        280,
+        610
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "Model Rankings"
+    },
+    {
+      "id": "shared_ui",
+      "type": "frontend",
+      "label": "Shared UI Package",
+      "sublabel": "Design System / 8 Components",
+      "pos": [
+        280,
+        690
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "DataTable / EChart / ..."
+    },
+    {
+      "id": "shared_hooks",
+      "type": "frontend",
+      "label": "Shared Hooks",
+      "sublabel": "useAuth / useApi / Zustand",
+      "pos": [
+        280,
+        770
+      ],
+      "size": [
+        160,
+        60
+      ]
+    },
+    {
+      "id": "shared_utils",
+      "type": "frontend",
+      "label": "Shared Utils",
+      "sublabel": "API Client / Validators",
+      "pos": [
+        280,
+        850
+      ],
+      "size": [
+        160,
+        60
+      ]
+    },
+    {
+      "id": "telemetry",
+      "type": "backend",
+      "label": "OpenTelemetry",
+      "sublabel": "Tracing + Metrics",
+      "pos": [
+        1020,
+        450
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "trace_id = request_id"
+    },
+    {
+      "id": "monitoring",
+      "type": "backend",
+      "label": "Prometheus + Grafana",
+      "sublabel": "SLA Dashboards",
+      "pos": [
+        1020,
+        530
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "P99<100ms / k6 1000 RPS"
+    },
+    {
+      "id": "backup",
+      "type": "backend",
+      "label": "Backup & DR",
+      "sublabel": "PG / Redis / Logs",
+      "pos": [
+        1020,
+        610
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "RTO<1h / RPO<24h"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Infrastructure Layer",
+      "wraps": [
+        "caddy",
+        "pgbouncer",
+        "postgres",
+        "redis"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Backend Core (Go) - 13 Domain Modules",
+      "wraps": [
+        "backend",
+        "module_auth",
+        "module_user",
+        "module_channel",
+        "module_gateway",
+        "module_apikey",
+        "module_billing",
+        "module_payment",
+        "module_enterprise",
+        "module_system",
+        "module_sync",
+        "module_stats",
+        "module_risk",
+        "module_notify"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Provider Adaptors (50+)",
+      "wraps": [
+        "adaptor_openai",
+        "adaptor_anthropic",
+        "adaptor_gemini",
+        "adaptor_others"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Frontend Monorepo (Vite + Turborepo)",
+      "wraps": [
+        "frontend_admin",
+        "frontend_console",
+        "frontend_public",
+        "shared_ui",
+        "shared_hooks",
+        "shared_utils"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Observability & Operations",
+      "wraps": [
+        "telemetry",
+        "monitoring",
+        "backup"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "client-to-caddy",
+      "from": "client",
+      "to": "caddy",
+      "label": "HTTPS API Requests\n(Bearer sk-as-xxx / X-Rag-Token)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "caddy-to-backend",
+      "from": "caddy",
+      "to": "backend",
+      "label": "HTTP/2 to Go :10010"
+    },
+    {
+      "id": "caddy-to-admin",
+      "from": "caddy",
+      "to": "frontend_admin",
+      "label": "Static Assets (Admin SPA)",
+      "variant": "dashed"
+    },
+    {
+      "id": "caddy-to-console",
+      "from": "caddy",
+      "to": "frontend_console",
+      "label": "Static Assets (Console SPA)",
+      "variant": "dashed"
+    },
+    {
+      "id": "caddy-to-public",
+      "from": "caddy",
+      "to": "frontend_public",
+      "label": "Static Assets (Public SPA)",
+      "variant": "dashed"
+    },
+    {
+      "id": "backend-to-pgbouncer",
+      "from": "backend",
+      "to": "pgbouncer",
+      "label": "SQL Queries (Ent ORM)"
+    },
+    {
+      "id": "pgbouncer-to-postgres",
+      "from": "pgbouncer",
+      "to": "postgres",
+      "label": "Pooled Connections (25)"
+    },
+    {
+      "id": "backend-to-redis",
+      "from": "backend",
+      "to": "redis",
+      "label": "Cache / Rate Limit / Sessions"
+    },
+    {
+      "id": "backend-to-auth",
+      "from": "backend",
+      "to": "module_auth",
+      "label": "Middleware Chain"
+    },
+    {
+      "id": "backend-to-user",
+      "from": "backend",
+      "to": "module_user",
+      "label": "User Management API"
+    },
+    {
+      "id": "backend-to-channel",
+      "from": "backend",
+      "to": "module_channel",
+      "label": "Channel CRUD + Health"
+    },
+    {
+      "id": "backend-to-gateway",
+      "from": "backend",
+      "to": "module_gateway",
+      "label": "Relay Routes (/v1/*)"
+    },
+    {
+      "id": "backend-to-apikey",
+      "from": "backend",
+      "to": "module_apikey",
+      "label": "APIKey Management"
+    },
+    {
+      "id": "backend-to-billing",
+      "from": "backend",
+      "to": "module_billing",
+      "label": "Billing Engine (Lua)"
+    },
+    {
+      "id": "backend-to-payment",
+      "from": "backend",
+      "to": "module_payment",
+      "label": "Payment Processing"
+    },
+    {
+      "id": "backend-to-enterprise",
+      "from": "backend",
+      "to": "module_enterprise",
+      "label": "Enterprise Management"
+    },
+    {
+      "id": "backend-to-system",
+      "from": "backend",
+      "to": "module_system",
+      "label": "System Config + Models"
+    },
+    {
+      "id": "backend-to-sync",
+      "from": "backend",
+      "to": "module_sync",
+      "label": "Model Sync + Rag"
+    },
+    {
+      "id": "backend-to-stats",
+      "from": "backend",
+      "to": "module_stats",
+      "label": "Analytics API"
+    },
+    {
+      "id": "backend-to-risk",
+      "from": "backend",
+      "to": "module_risk",
+      "label": "Content Moderation",
+      "variant": "security"
+    },
+    {
+      "id": "backend-to-notify",
+      "from": "backend",
+      "to": "module_notify",
+      "label": "Email + Announcements"
+    },
+    {
+      "id": "gateway-to-openai",
+      "from": "module_gateway",
+      "to": "adaptor_openai",
+      "label": "OpenAI Protocol"
+    },
+    {
+      "id": "gateway-to-anthropic",
+      "from": "module_gateway",
+      "to": "adaptor_anthropic",
+      "label": "Claude Protocol"
+    },
+    {
+      "id": "gateway-to-gemini",
+      "from": "module_gateway",
+      "to": "adaptor_gemini",
+      "label": "Gemini Protocol"
+    },
+    {
+      "id": "gateway-to-others",
+      "from": "module_gateway",
+      "to": "adaptor_others",
+      "label": "20+ Providers"
+    },
+    {
+      "id": "channel-to-openai",
+      "from": "module_channel",
+      "to": "adaptor_openai",
+      "label": "Health Checks",
+      "variant": "dashed"
+    },
+    {
+      "id": "channel-to-anthropic",
+      "from": "module_channel",
+      "to": "adaptor_anthropic",
+      "label": "Health Checks",
+      "variant": "dashed"
+    },
+    {
+      "id": "channel-to-gemini",
+      "from": "module_channel",
+      "to": "adaptor_gemini",
+      "label": "Health Checks",
+      "variant": "dashed"
+    },
+    {
+      "id": "channel-to-others",
+      "from": "module_channel",
+      "to": "adaptor_others",
+      "label": "Health Checks",
+      "variant": "dashed"
+    },
+    {
+      "id": "billing-to-redis",
+      "from": "module_billing",
+      "to": "redis",
+      "label": "Quota Cache (Lua Atomic)"
+    },
+    {
+      "id": "billing-to-postgres",
+      "from": "module_billing",
+      "to": "postgres",
+      "label": "Billing Records (5min Flush)"
+    },
+    {
+      "id": "payment-to-billing",
+      "from": "module_payment",
+      "to": "module_billing",
+      "label": "Quota Top-up"
+    },
+    {
+      "id": "enterprise-to-billing",
+      "from": "module_enterprise",
+      "to": "module_billing",
+      "label": "Enterprise Quota Logs"
+    },
+    {
+      "id": "sync-to-postgres",
+      "from": "module_sync",
+      "to": "postgres",
+      "label": "Model Data + Change Logs"
+    },
+    {
+      "id": "stats-to-postgres",
+      "from": "module_stats",
+      "to": "postgres",
+      "label": "Aggregation (BRIN)"
+    },
+    {
+      "id": "backend-to-telemetry",
+      "from": "backend",
+      "to": "telemetry",
+      "label": "OTEL Traces + Metrics"
+    },
+    {
+      "id": "telemetry-to-monitoring",
+      "from": "telemetry",
+      "to": "monitoring",
+      "label": "Prometheus /metrics"
+    },
+    {
+      "id": "postgres-to-backup",
+      "from": "postgres",
+      "to": "backup",
+      "label": "Daily pg_dump to S3",
+      "variant": "dashed"
+    },
+    {
+      "id": "redis-to-backup",
+      "from": "redis",
+      "to": "backup",
+      "label": "RDB Hourly + AOF",
+      "variant": "dashed"
+    },
+    {
+      "id": "admin-to-shared-ui",
+      "from": "frontend_admin",
+      "to": "shared_ui",
+      "label": "Import Components"
+    },
+    {
+      "id": "console-to-shared-ui",
+      "from": "frontend_console",
+      "to": "shared_ui",
+      "label": "Import Components"
+    },
+    {
+      "id": "public-to-shared-ui",
+      "from": "frontend_public",
+      "to": "shared_ui",
+      "label": "Import Components"
+    },
+    {
+      "id": "admin-to-shared-hooks",
+      "from": "frontend_admin",
+      "to": "shared_hooks",
+      "label": "useAuth, useApi"
+    },
+    {
+      "id": "console-to-shared-hooks",
+      "from": "frontend_console",
+      "to": "shared_hooks",
+      "label": "useAuth, useApi"
+    },
+    {
+      "id": "public-to-shared-hooks",
+      "from": "frontend_public",
+      "to": "shared_hooks",
+      "label": "useApi"
+    },
+    {
+      "id": "shared-ui-to-utils",
+      "from": "shared_ui",
+      "to": "shared_utils",
+      "label": "API Client Types"
+    },
+    {
+      "id": "admin-to-backend",
+      "from": "frontend_admin",
+      "to": "backend",
+      "label": "Admin API (/api/v1/admin/*)"
+    },
+    {
+      "id": "console-to-backend",
+      "from": "frontend_console",
+      "to": "backend",
+      "label": "User/Console API (/v1/*)"
+    },
+    {
+      "id": "public-to-backend",
+      "from": "frontend_public",
+      "to": "backend",
+      "label": "Public API (/api/v1/public/*)"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Infrastructure",
+      "items": [
+        "Caddy: TLS + HTTP/2 + Canary",
+        "PgBouncer: 25 pooled connections",
+        "Redis: Sticky sessions + quota cache",
+        "PostgreSQL: 29 tables + BRIN indexes"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Backend Core (DDD)",
+      "items": [
+        "13 domain modules <30KB each",
+        "main.go <100 lines (Wire DI)",
+        "Ent ORM + Gin + Wire",
+        "5 auth middlewares (RBAC)"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Provider Ecosystem",
+      "items": [
+        "Unified Adaptor interface (4 methods)",
+        "3 core protocols (OpenAI/Claude/Gemini)",
+        "20+ additional providers",
+        "Health checks per channel"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Billing & Enterprise",
+      "items": [
+        "Three-track: Ratio / Per-use / Subscription",
+        "Enterprise priority > Sub > Pay-go",
+        "Redis Lua atomic DECRBY",
+        "Shared API keys + CSV export"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Frontend Monorepo",
+      "items": [
+        "3 apps: Admin / Console / Public",
+        "Shared UI: 8 components + tokens",
+        "Shared hooks: Auth + API + State",
+        "Vite 6 + React 19 + Tailwind 4"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Observability",
+      "items": [
+        "OpenTelemetry trace_id = request_id",
+        "Prometheus + Grafana SLA",
+        "P99<100ms gateway / <500ms e2e",
+        "k6 1000 RPS benchmark"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+# pnpm 工作区配置（Task 0.2.1）
+# 所有 apps/* 与 packages/* 均为 workspace 成员；新增应用包建目录后自动激活
+packages:
+  - "apps/*"
+  - "packages/*"

@@ -1,0 +1,164 @@
+# Aidean PostgreSQL + Redis Docker 配置
+# Ubuntu/Linux 生产环境版本
+# 使用方法: docker-compose -f docker-compose.ubuntu.yml up -d
+
+version: '3.8'
+
+services:
+  # ============================================
+  # PostgreSQL 16 主数据库
+  # ============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: aidean-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: NewPassword123!
+      POSTGRES_DB: aidean
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: Asia/Shanghai
+      # 性能优化参数
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      # 数据持久化
+      - postgres_data:/var/lib/postgresql/data
+      # 初始化脚本
+      - ./sql/init:/docker-entrypoint-initdb.d:ro
+      # 配置文件
+      - ./postgres/pg.prod.conf:/etc/postgresql/postgresql.conf:ro
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+      - -c
+      - logging_collector=on
+      - -c
+      - log_directory=/var/log/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d aidean"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - aidean-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # ============================================
+  # Redis 7 缓存服务
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: aidean-redis
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - "6379:6379"
+    volumes:
+      # 数据持久化
+      - redis_data:/data
+      # 配置文件
+      - ./redis/redis.prod.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - aidean-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ============================================
+  # pgAdmin4 数据库管理（可选）
+  # ============================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: aidean-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@aidean.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+      TZ: Asia/Shanghai
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - aidean-network
+
+  # ============================================
+  # Redis Insight（Redis可视化工具，可选）
+  # ============================================
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: aidean-redisinsight
+    restart: unless-stopped
+    ports:
+      - "5540:5540"
+    volumes:
+      - redisinsight_data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - aidean-network
+
+# ============================================
+# 数据卷定义
+# ============================================
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/aidean/postgres
+  
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/aidean/redis
+  
+  pgadmin_data:
+    driver: local
+  
+  redisinsight_data:
+    driver: local
+
+# ============================================
+# 网络定义
+# ============================================
+networks:
+  aidean-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+          gateway: 172.28.0.1

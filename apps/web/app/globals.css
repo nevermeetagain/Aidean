@@ -1,0 +1,329 @@
+@import "tailwindcss";
+
+/* N5（2026-10-01 运行态实测发现）：Tailwind 4 自动内容检测不覆盖 workspace 包，
+ * packages/ui 的类（Button primary/danger 的 bg-[var(--primary)]/bg-[var(--danger)]、
+ * ghost/outline 的 hover:bg-[var(--muted)] 等）曾整体缺失 → primary 按钮背景透明、
+ * 白字落白底（P3 症状在产物层复现）。显式注册组件包源码目录修复。 */
+@source "../../../packages/ui/src";
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-danger: var(--danger);
+}
+
+/*
+ * 浅色冷色令牌体系（默认亮色，多品牌色相变体）
+ * 变体通过 html[data-theme] 覆盖 --primary / --primary-foreground / --accent，
+ * 其余中性令牌共享 :root 默认值。管理端与前台同源，同属浅色冷色系。
+ */
+:root {
+  --background: #f8fafc; /* slate-50 冷底 */
+  --foreground: #0f172a; /* slate-900 */
+  --primary: #0f766e; /* teal-700 默认品牌主色（青碧深，切换器第一位；AA 小字≥4.5:1） */
+  --primary-foreground: #ffffff;
+  --muted: #f1f5f9; /* slate-100 */
+  --muted-foreground: #64748b; /* slate-500 */
+  --card: #ffffff;
+  --border: #e2e8f0; /* slate-200 */
+  --accent: #14b8a6; /* teal-400 */
+  --ring: #14b8a6;
+  --danger: #dc2626; /* red-600 危险语义（Button danger / Input invalid，AT-18.1.2） */
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.06), 0 1px 3px 0 rgb(15 23 42 / 0.04);
+  --shadow-md: 0 4px 12px -2px rgb(15 23 42 / 0.08), 0 2px 6px -1px rgb(15 23 42 / 0.06);
+  --shadow-lg: 0 10px 24px -4px rgb(15 23 42 / 0.10), 0 4px 12px -2px rgb(15 23 42 / 0.06);
+  --shadow-xl: 0 20px 40px -12px rgb(15 23 42 / 0.12), 0 8px 16px -4px rgb(15 23 42 / 0.08);
+  --page-gradient: radial-gradient(ellipse 90% 60% at 50% -10%, rgba(15,118,110,0.08), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 90% 10%, rgba(20,184,166,0.06), transparent 50%);
+}
+
+[data-theme="indigo"] {
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --accent: #6366f1;
+  --ring: #6366f1;
+}
+
+[data-theme="teal"] {
+  --primary: #0f766e;
+  --primary-foreground: #ffffff;
+  --accent: #14b8a6;
+  --ring: #14b8a6;
+}
+
+[data-theme="orange"] {
+  --primary: #c2410c;
+  --primary-foreground: #ffffff;
+  --accent: #f97316;
+  --ring: #f97316;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scrollbar-gutter: stable;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--background);
+  background-image: var(--page-gradient);
+  background-attachment: fixed;
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* 统一焦点环（冷色） */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* 选中态 */
+::selection {
+  background: color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+/* 卡片与容器通用阴影辅助类 */
+.card-elevated {
+  box-shadow: var(--shadow-sm);
+}
+.card-elevated:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/*
+ * 合作伙伴无缝循环滚动（components/home/PartnerMarquee）
+ * 两行分别使用 marquee-left / marquee-right 反向动画；
+ * 行容器 hover 时暂停；用户偏好减少动效时直接静止。
+ */
+@keyframes marquee-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-right {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.marquee-track {
+  animation: marquee-left var(--marquee-duration, 36s) linear infinite;
+}
+
+.marquee-track--reverse {
+  animation-name: marquee-right;
+}
+
+.marquee-row:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+}
+
+/*
+ * 控制台流动渐变特效层（components/console/FlowGradient）
+ * 三个关键帧分别驱动独立的 rotate、translate、opacity 属性，
+ * 同一元素上的三条动画互不覆盖；漂移向量由组件内联变量 --flow-dx / --flow-dy 下发。
+ */
+@keyframes flow-spin {
+  from {
+    rotate: 0deg;
+  }
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes flow-drift {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: var(--flow-dx, 10%) var(--flow-dy, -8%);
+  }
+}
+
+@keyframes flow-opacity {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-layer {
+    animation: none !important;
+  }
+}
+
+/* ============ RevealOnScroll 纯 CSS 化（M-PERF A3） ============ */
+/* 挂载即播的进场渐显：SSR 输出无 opacity-0 初始类，内容不依赖 hydration 点亮；
+   both 填充保证动画前瞬间不闪现；prefers-reduced-motion 用户直接静态呈现。 */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal-in {
+    animation: reveal-fade-up 200ms ease-out both;
+  }
+
+  @keyframes reveal-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* ============ 资讯详情正文（markdown → sanitize 后 HTML 容器） ============ */
+/* 排版走容器作用域，避免污染全局；图片一律受容器宽度约束：超宽等比缩小、
+   超高裁入 480px 框内 contain 显示（后台/用户传多大都不撑版式）。 */
+.news-content {
+  color: var(--foreground);
+  font-size: 15px;
+  line-height: 1.9;
+}
+.news-content > :first-child {
+  margin-top: 0;
+}
+.news-content h2,
+.news-content h3,
+.news-content h4,
+.news-content h5 {
+  margin: 2em 0 0.8em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+}
+.news-content h2 {
+  font-size: 1.5em;
+}
+.news-content h3 {
+  font-size: 1.25em;
+}
+.news-content h4,
+.news-content h5 {
+  font-size: 1.1em;
+}
+.news-content p {
+  margin: 1.1em 0;
+}
+.news-content a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-all;
+}
+.news-content ul,
+.news-content ol {
+  margin: 1.1em 0;
+  padding-left: 1.5em;
+}
+.news-content ul {
+  list-style: disc;
+}
+.news-content ol {
+  list-style: decimal;
+}
+.news-content li {
+  margin: 0.4em 0;
+}
+.news-content li > ul,
+.news-content li > ol {
+  margin: 0.3em 0;
+}
+.news-content blockquote {
+  margin: 1.4em 0;
+  border-left: 3px solid var(--primary);
+  background: color-mix(in srgb, var(--primary) 5%, transparent);
+  padding: 0.6em 1.1em;
+  color: var(--muted-foreground);
+}
+.news-content code {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-size: 0.88em;
+}
+.news-content pre {
+  background: #0f172a;
+  border-radius: 10px;
+  margin: 1.4em 0;
+  overflow-x: auto;
+  padding: 1em 1.2em;
+}
+.news-content pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: #e2e8f0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.news-content hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 2em 0;
+}
+.news-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  max-height: 480px;
+  width: auto;
+  object-fit: contain;
+  margin: 1.4em auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--muted);
+}
+.news-content table {
+  border-collapse: collapse;
+  margin: 1.4em 0;
+  width: 100%;
+  display: block;
+  overflow-x: auto;
+}
+.news-content th,
+.news-content td {
+  border: 1px solid var(--border);
+  padding: 0.5em 0.8em;
+  font-size: 0.92em;
+}
+.news-content th {
+  background: var(--muted);
+  font-weight: 600;
+}

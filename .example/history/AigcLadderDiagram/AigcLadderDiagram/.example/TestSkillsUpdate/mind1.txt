@@ -1,0 +1,1267 @@
+用户希望我为docker/sql/目录下的数据库创建脚本，用于从外部源每日更新模型数据、skill数据、mcp数据、agent数据等。
+
+
+用户明确要求我：
+1. 使用Skills深度思考
+2. 使用发散性思维
+3. 从使用场景、技术架构、字段要求、实现方案、异常处理等方面思考
+4. 输出完整方案
+
+
+让我思考这个方案的核心要素：
+
+1. **使用场景分析**
+   - 模型数据：需要从官方API、评测平台、社区评分等同步
+   - Skill数据：需要从npm、GitHub、官方仓库同步
+   - MCP数据：需要从smithery.ai、glama.ai、npm registry同步
+   - Agent数据：需要从社区平台、开发者提交同步
+
+2. **技术架构设计**
+   - ETL管道（Extract-Transform-Load）
+   - 增量更新机制
+   - 数据源适配器模式
+   - 任务调度系统
+   - 数据校验和冲突解决
+
+3. **字段要求**
+   - 标准化字段映射
+   - 版本控制
+   - 数据源追踪
+   - 变更检测
+
+4. **实现方案**
+   - 目录结构
+   - 核心模块设计
+   - 数据库脚本
+   - API接口
+   - 配置管理
+
+5. **异常处理**
+   - 重试机制
+   - 断路器模式
+   - 日志和监控
+   - 手动干预
+
+让我按照用户要求的/PUA深度思考方式，发散性地思考这个问题。
+现在让我基于已获取的信息，用**发散性思维**深度思考这个数据同步脚本的完整方案。
+
+---
+
+# Aidean 外部数据源每日同步脚本方案
+
+## 一、使用场景深度分析
+
+### 1.1 数据同步场景矩阵
+
+| 数据类型 | 主要来源 | 更新频率 | 关键字段 | 冲突处理策略 |
+|---------|---------|---------|---------|-------------|
+| **AI模型** | 官方API(OpenAI/Anthropic)、评测平台(LMSYS/人工评测)、价格监测 | 每日+实时 | 参数、价格、评分、上下文长度 | 官方数据优先，价格取最新 |
+| **Skills** | npm registry、GitHub API、官方仓库 | 每日 | 下载量、版本、依赖、评分 | GitHub数据覆盖npm数据 |
+| **MCP Servers** | smithery.ai、glama.ai、npm registry | 每日 | 工具数量、使用量、稳定性 | 多源合并，最新时间戳优先 |
+| **Agents** | 社区平台、开发者提交、活跃监测 | 每周 | 活跃度、任务完成率、评分 | 人工审核+自动合并 |
+| **API中转站** | 第三方监测、用户反馈、自动探活 | 每小时 | 延迟、可用率、价格 | 监测数据加权平均 |
+
+### 1.2 数据新鲜度要求
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    数据新鲜度金字塔                          │
+├─────────────────────────────────────────────────────────────┤
+│  🟥 实时级 (秒级)    → API中转站状态、价格变动                │
+│  🟧 准实时 (分钟级)  → 模型在线状态、评测结果                 │
+│  🟨 每日级           → Skills/MCP/Agent 版本、下载量          │
+│  🟩 每周级           → 综合评分重算、排名更新                 │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 1.3 多源冲突场景
+
+当同一模型/工具在多个数据源有不同数据时：
+- **价格冲突**：取最新更新时间的数据
+- **评分冲突**：多源加权平均（官方:第三方:社区 = 4:3:3）
+- **版本冲突**：SemVer比较，取最新版本
+- **状态冲突**：人工审核标记 > 官方API > 第三方数据
+
+---
+
+## 二、技术架构设计
+
+### 2.1 整体架构图
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         Aidean Data Sync Platform                  │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐            │
+│   │   Source    │    │   Source    │    │   Source    │            │
+│   │  Adapters   │    │  Adapters   │    │  Adapters   │            │
+│   │             │    │             │    │             │            │
+│   │ • OpenAI    │    │ • Smithery  │    │ • npm       │            │
+│   │ • Anthropic │    │ • Glama     │    │ • GitHub    │            │
+│   │ • DeepSeek  │    │ • Hub       │    │ • Crawler   │            │
+│   └──────┬──────┘    └──────┬──────┘    └──────┬──────┘            │
+│          │                   │                   │                   │
+│          └───────────────────┼───────────────────┘                   │
+│                              ▼                                       │
+│   ┌─────────────────────────────────────────────────────────┐      │
+│   │              Data Validation & Normalization             │      │
+│   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │      │
+│   │  │   Schema    │  │   Field     │  │   Conflict  │     │      │
+│   │  │   Check     │  │   Mapping   │  │  Resolution │     │      │
+│   │  └─────────────┘  └─────────────┘  └─────────────┘     │      │
+│   └──────────────────────────┬──────────────────────────────┘      │
+│                              ▼                                       │
+│   ┌─────────────────────────────────────────────────────────┐      │
+│   │              Incremental Sync Engine                     │      │
+│   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │      │
+│   │  │   Hash      │  │   Version   │  │   Change    │     │      │
+│   │  │   Compare   │  │   Control   │  │   Detection │     │      │
+│   │  └─────────────┘  └─────────────┘  └─────────────┘     │      │
+│   └──────────────────────────┬──────────────────────────────┘      │
+│                              ▼                                       │
+│   ┌─────────────────────────────────────────────────────────┐      │
+│   │              PostgreSQL + Redis Layer                    │      │
+│   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │      │
+│   │  │   Master    │  │   Staging   │  │   Cache     │     │      │
+│   │  │   Tables    │  │   Tables    │  │   Layer     │     │      │
+│   │  └─────────────┘  └─────────────┘  └─────────────┘     │      │
+│   └─────────────────────────────────────────────────────────┘      │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         Scheduler & Monitor                        │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐ │
+│  │   Cron      │  │   Circuit   │  │   Alert     │  │   Manual   │ │
+│  │   Jobs      │  │   Breaker   │  │   System    │  │   Trigger  │ │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 2.2 核心模块职责
+
+| 模块 | 职责 | 技术选型 |
+|-----|------|---------|
+| **Source Adapters** | 对接各数据源的API/爬虫 | TypeScript + axios/cheerio |
+| **Data Validator** | JSON Schema校验、字段类型检查 | Zod / Joi |
+| **Normalizer** | 字段映射、单位换算、格式统一 | 自定义transform函数 |
+| **Sync Engine** | 增量检测、版本控制、事务管理 | PostgreSQL + Prisma |
+| **Scheduler** | 定时任务、依赖管理、失败重试 | node-cron / bull |
+| **Monitor** | 日志、指标、告警 | Winston + Prometheus |
+
+### 2.3 数据流时序图
+
+```
+┌─────────┐    ┌──────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
+│ Scheduler│    │ Adapter  │    │ Validator│   │ Normalizer│   │  DB     │
+└────┬────┘    └────┬─────┘    └────┬────┘    └────┬────┘    └────┬────┘
+     │              │               │               │               │
+     │ 1. Trigger   │               │               │               │
+     │─────────────>│               │               │               │
+     │              │               │               │               │
+     │              │ 2. Fetch API  │               │               │
+     │              │───────────────┘               │               │
+     │              │               │               │               │
+     │              │ 3. Raw Data   │               │               │
+     │              │<──────────────│               │               │
+     │              │               │               │               │
+     │              │ 4. Validate   │               │               │
+     │              │──────────────>│               │               │
+     │              │               │               │               │
+     │              │ 5. Validation │               │               │
+     │              │<──────────────│               │               │
+     │              │               │               │               │
+     │              │ 6. Normalize  │               │               │
+     │              │──────────────────────────────>│               │
+     │              │               │               │               │
+     │              │ 7. Normalized │               │               │
+     │              │<──────────────────────────────│               │
+     │              │               │               │               │
+     │              │ 8. Upsert     │               │               │
+     │              │──────────────────────────────────────────────>│
+     │              │               │               │               │
+     │ 9. Result    │               │               │               │
+     │<─────────────│               │               │               │
+     │              │               │               │               │
+```
+
+---
+
+## 三、字段要求与标准化
+
+### 3.1 统一数据模型
+
+所有外部数据源同步的数据都需要映射到以下标准化结构：
+
+```typescript
+// 通用同步记录接口
+interface SyncRecord {
+  // 数据源标识
+  sourceType: 'official' | 'npm' | 'github' | 'smithery' | 'glama' | 'manual';
+  sourceId: string;           // 源系统唯一ID
+  sourceUrl: string;          // 源系统URL
+  
+  // 数据内容（各类型不同）
+  payload: ModelPayload | SkillPayload | McpPayload | AgentPayload;
+  
+  // 元数据
+  rawHash: string;            // 原始数据SHA256（用于变更检测）
+  fetchedAt: Date;            // 获取时间
+  syncedAt: Date;             // 同步时间
+  
+  // 状态
+  status: 'pending' | 'validated' | 'normalized' | 'merged' | 'failed';
+  errorMessage?: string;
+}
+
+// 模型数据载荷
+interface ModelPayload {
+  modelCode: string;          // 唯一标识：gpt-4o, claude-3-opus
+  provider: string;           // 厂商代码
+  name: string;
+  version?: string;
+  
+  // 技术参数
+  params?: string;            // 591B, 70B
+  contextLength?: number;     // 128000
+  maxOutputTokens?: number;
+  
+  // 特性标志
+  isOpenSource: boolean;
+  isMultiModal: boolean;
+  isReasoning: boolean;
+  
+  // 评分数据
+  scores?: {
+    official?: number;
+    practical?: number;
+    reputation?: number;
+    selfTest?: number;
+  };
+  
+  // 价格（统一为 ¥/M Tokens）
+  pricing?: {
+    input: number;
+    output: number;
+    currency: 'CNY' | 'USD';
+    updatedAt: Date;
+  };
+  
+  // 链接
+  links?: {
+    official?: string;
+    docs?: string;
+    api?: string;
+    github?: string;
+  };
+}
+
+// Skill数据载荷
+interface SkillPayload {
+  name: string;
+  displayName: string;
+  description: string;
+  author?: string;
+  
+  // 协议与兼容
+  protocol: 'anthropic' | 'openai' | 'universal';
+  supportedIDEs: string[];
+  
+  // 统计数据
+  downloads: number;
+  stars: number;
+  rating?: number;
+  reviewCount: number;
+  
+  // 版本信息
+  version: string;
+  lastUpdated: Date;
+  
+  // 安装
+  installCommand?: string;
+  npmPackage?: string;
+}
+
+// MCP数据载荷
+interface McpPayload {
+  name: string;
+  displayName: string;
+  description: string;
+  
+  // 协议配置
+  protocolType: 'stdio' | 'sse' | 'http';
+  command?: string;
+  args?: string[];
+  env?: Record<string, { description: string; required: boolean }>;
+  
+  // 工具列表
+  tools: Array<{
+    name: string;
+    description: string;
+  }>;
+  
+  // 统计
+  downloads: number;
+  stars: number;
+  usageCount: number;
+  
+  // 版本
+  version: string;
+  lastUpdated: Date;
+}
+```
+
+### 3.2 字段映射配置
+
+```typescript
+// 字段映射配置示例
+const fieldMappings = {
+  // OpenAI API 映射
+  openai: {
+    modelCode: 'id',
+    name: (data: any) => data.id.split('-').join(' ').toUpperCase(),
+    contextLength: 'context_window',
+    isOpenSource: () => false,
+    'pricing.input': (data: any) => data.pricing?.input ? data.pricing.input * 5 : null, // $转¥
+  },
+  
+  // npm registry 映射
+  npm: {
+    name: 'name',
+    version: 'dist-tags.latest',
+    downloads: 'downloads.weekly',
+    lastUpdated: 'time.modified',
+  },
+  
+  // Smithery API 映射
+  smithery: {
+    name: 'name',
+    displayName: 'displayName',
+    protocolType: 'transport.type',
+    'tools': (data: any) => data.tools?.map((t: any) => ({
+      name: t.name,
+      description: t.description
+    })) || [],
+  }
+};
+```
+
+---
+
+## 四、实现方案
+
+### 4.1 目录结构设计
+
+```
+docker/
+└── sql/
+    └── sync/                           # 数据同步脚本目录
+        ├── README.md                   # 使用说明
+        │
+        ├── config/                     # 配置文件
+        │   ├── sources.yml             # 数据源配置
+        │   ├── mappings.yml            # 字段映射配置
+        │   └── schedule.yml            # 调度配置
+        │
+        ├── schemas/                    # 校验Schema
+        │   ├── model.schema.json
+        │   ├── skill.schema.json
+        │   ├── mcp.schema.json
+        │   └── agent.schema.json
+        │
+        ├── adapters/                   # 数据源适配器
+        │   ├── base.adapter.ts
+        │   ├── openai.adapter.ts
+        │   ├── anthropic.adapter.ts
+        │   ├── npm.adapter.ts
+        │   ├── github.adapter.ts
+        │   ├── smithery.adapter.ts
+        │   └── glama.adapter.ts
+        │
+        ├── core/                       # 核心引擎
+        │   ├── validator.ts            # 数据校验
+        │   ├── normalizer.ts           # 数据标准化
+        │   ├── merger.ts               # 多源合并
+        │   └── sync-engine.ts          # 同步引擎
+        │
+        ├── sql/                        # SQL脚本
+        │   ├── 01_create_sync_tables.sql      # 同步相关表
+        │   ├── 02_create_sync_functions.sql   # 存储函数
+        │   ├── 03_create_sync_procedures.sql  # 存储过程
+        │   └── 04_create_sync_triggers.sql    # 触发器
+        │
+        ├── jobs/                       # 定时任务
+        │   ├── sync-models.job.ts
+        │   ├── sync-skills.job.ts
+        │   ├── sync-mcp.job.ts
+        │   └── sync-agents.job.ts
+        │
+        └── utils/                      # 工具函数
+            ├── hash.ts
+            ├── retry.ts
+            ├── logger.ts
+            └── circuit-breaker.ts
+```
+
+### 4.2 数据库表设计
+
+```sql
+-- ============================================================
+-- 数据同步系统表结构
+-- docker/sql/sync/sql/01_create_sync_tables.sql
+-- ============================================================
+
+-- 1. 数据源配置表
+CREATE TABLE sync_sources (
+    id BIGSERIAL PRIMARY KEY,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    
+    source_code VARCHAR(50) NOT NULL UNIQUE,     -- 数据源代码：openai/npm/smithery
+    source_name VARCHAR(100) NOT NULL,           -- 数据源名称
+    source_type VARCHAR(20) NOT NULL,            -- api/registry/github/manual
+    base_url VARCHAR(500),                       -- API基础URL
+    config JSONB NOT NULL DEFAULT '{}',          -- 配置参数
+    
+    -- 认证信息（加密存储）
+    auth_type VARCHAR(20),                       -- none/apikey/oauth
+    auth_config JSONB,                           -- {key_header, key_value}
+    
+    -- 状态控制
+    is_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    priority INT NOT NULL DEFAULT 100,           -- 优先级，越小越高
+    weight DECIMAL(3,2) NOT NULL DEFAULT 1.0,    -- 数据权重（用于冲突解决）
+    
+    -- 频率限制
+    rate_limit_requests INT DEFAULT 100,         -- 每分钟请求数
+    rate_limit_window INT DEFAULT 60,            -- 窗口大小（秒）
+    
+    -- 统计
+    last_sync_at TIMESTAMPTZ,
+    last_sync_status VARCHAR(20),
+    total_sync_count INT DEFAULT 0,
+    success_count INT DEFAULT 0,
+    fail_count INT DEFAULT 0,
+    
+    -- 元数据
+    description TEXT,
+    tags TEXT[]
+);
+
+COMMENT ON TABLE sync_sources IS '数据源配置表：管理所有外部数据源';
+COMMENT ON COLUMN sync_sources.weight IS '数据权重：多源冲突时用于加权计算';
+
+-- 2. 同步任务表
+CREATE TABLE sync_jobs (
+    id BIGSERIAL PRIMARY KEY,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    started_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ,
+    
+    job_name VARCHAR(100) NOT NULL,              -- 任务名称
+    job_type VARCHAR(20) NOT NULL,               -- model/skill/mcp/agent
+    source_id BIGINT REFERENCES sync_sources(id),
+    
+    -- 执行参数
+    params JSONB NOT NULL DEFAULT '{}',          -- {limit, since, filters}
+    
+    -- 执行状态
+    status VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending/running/completed/failed
+    progress INT DEFAULT 0,                      -- 进度百分比
+    
+    -- 统计
+    total_records INT DEFAULT 0,
+    new_records INT DEFAULT 0,
+    updated_records INT DEFAULT 0,
+    failed_records INT DEFAULT 0,
+    skipped_records INT DEFAULT 0,
+    
+    -- 错误信息
+    error_message TEXT,
+    error_stack TEXT,
+    
+    -- 执行元数据
+    execution_time_ms INT,                       -- 执行耗时
+    triggered_by VARCHAR(50) DEFAULT 'scheduler' -- scheduler/manual/webhook
+);
+
+-- 3. 原始数据缓存表（用于增量同步）
+CREATE TABLE sync_raw_data (
+    id BIGSERIAL PRIMARY KEY,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    
+    source_id BIGINT NOT NULL REFERENCES sync_sources(id),
+    source_record_id VARCHAR(255) NOT NULL,      -- 源系统记录ID
+    
+    entity_type VARCHAR(20) NOT NULL,            -- model/skill/mcp/agent
+    entity_code VARCHAR(100),                    -- 映射后的实体代码
+    
+    -- 原始数据
+    raw_data JSONB NOT NULL,
+    raw_hash VARCHAR(64) NOT NULL,               -- SHA256(raw_data)
+    
+    -- 处理状态
+    status VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending/validated/normalized/merged/failed
+    processed_at TIMESTAMPTZ,
+    error_message TEXT,
+    
+    -- 唯一约束
+    UNIQUE(source_id, source_record_id)
+);
+
+CREATE INDEX idx_sync_raw_status ON sync_raw_data(status);
+CREATE INDEX idx_sync_raw_entity ON sync_raw_data(entity_type, entity_code);
+
+-- 4. 字段映射配置表
+CREATE TABLE sync_mappings (
+    id BIGSERIAL PRIMARY KEY,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    
+    source_id BIGINT NOT NULL REFERENCES sync_sources(id),
+    entity_type VARCHAR(20) NOT NULL,            -- model/skill/mcp/agent
+    
+    -- 字段映射
+    source_field VARCHAR(100) NOT NULL,          -- 源字段路径（支持JSON Path）
+    target_field VARCHAR(100) NOT NULL,          -- 目标字段名
+    transform_type VARCHAR(20) DEFAULT 'direct', -- direct/cast/formula/lookup
+    transform_config JSONB,                      -- 转换配置
+    
+    -- 默认值
+    default_value JSONB,
+    is_required BOOLEAN DEFAULT FALSE,
+    
+    -- 优先级（多个源映射同一字段时）
+    priority INT DEFAULT 100,
+    
+    UNIQUE(source_id, entity_type, target_field)
+);
+
+-- 5. 数据变更日志表（审计追踪）
+CREATE TABLE sync_change_logs (
+    id BIGSERIAL PRIMARY KEY,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    
+    job_id BIGINT REFERENCES sync_jobs(id),
+    source_id BIGINT REFERENCES sync_sources(id),
+    entity_type VARCHAR(20) NOT NULL,
+    entity_id BIGINT,                            -- 关联的业务表ID
+    
+    -- 变更类型
+    change_type VARCHAR(20) NOT NULL,            -- create/update/delete
+    
+    -- 变更内容
+    field_name VARCHAR(100),
+    old_value JSONB,
+    new_value JSONB,
+    
+    -- 变更来源
+    source_record_hash VARCHAR(64),              -- 触发变更的原始数据hash
+    confidence DECIMAL(3,2) DEFAULT 1.0          -- 数据可信度
+);
+
+-- 6. 冲突解决记录表
+CREATE TABLE sync_conflicts (
+    id BIGSERIAL PRIMARY KEY,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    resolved_at TIMESTAMPTZ,
+    
+    entity_type VARCHAR(20) NOT NULL,
+    entity_code VARCHAR(100) NOT NULL,
+    field_name VARCHAR(100) NOT NULL,
+    
+    -- 冲突的源
+    source_a_id BIGINT REFERENCES sync_sources(id),
+    value_a JSONB,
+    weight_a DECIMAL(3,2),
+    
+    source_b_id BIGINT REFERENCES sync_sources(id),
+    value_b JSONB,
+    weight_b DECIMAL(3,2),
+    
+    -- 解决结果
+    resolution VARCHAR(20),                      -- auto_manual/ignored
+    resolved_value JSONB,
+    resolved_by VARCHAR(50),                     -- system/admin_{id}
+    
+    -- 状态
+    status VARCHAR(20) DEFAULT 'pending'         -- pending/resolved/ignored
+);
+
+CREATE INDEX idx_sync_conflicts_status ON sync_conflicts(status);
+```
+
+### 4.3 核心同步存储过程
+
+```sql
+-- ============================================================
+-- 同步存储过程
+-- docker/sql/sync/sql/03_create_sync_procedures.sql
+-- ============================================================
+
+-- 1. 执行模型同步的存储过程
+CREATE OR REPLACE PROCEDURE sync_models(
+    p_source_code VARCHAR,
+    p_job_id BIGINT DEFAULT NULL
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_source_id BIGINT;
+    v_source_weight DECIMAL(3,2);
+    v_record RECORD;
+    v_model_id BIGINT;
+    v_existing_hash VARCHAR(64);
+    v_change_type VARCHAR(20);
+BEGIN
+    -- 获取数据源配置
+    SELECT id, weight INTO v_source_id, v_source_weight
+    FROM sync_sources 
+    WHERE source_code = p_source_code AND is_enabled = TRUE;
+    
+    IF v_source_id IS NULL THEN
+        RAISE EXCEPTION '数据源 % 不存在或未启用', p_source_code;
+    END IF;
+    
+    -- 遍历待处理的原始数据
+    FOR v_record IN 
+        SELECT * FROM sync_raw_data 
+        WHERE source_id = v_source_id 
+        AND entity_type = 'model'
+        AND status = 'normalized'
+        ORDER BY created_at
+    LOOP
+        BEGIN
+            -- 检查模型是否存在
+            SELECT id INTO v_model_id
+            FROM models
+            WHERE slug = v_record.entity_code;
+            
+            -- 计算变更类型
+            IF v_model_id IS NULL THEN
+                v_change_type := 'create';
+            ELSE
+                -- 检查是否有实质性变更
+                SELECT raw_hash INTO v_existing_hash
+                FROM sync_raw_data
+                WHERE entity_type = 'model'
+                AND entity_code = v_record.entity_code
+                AND source_id != v_source_id
+                ORDER BY created_at DESC
+                LIMIT 1;
+                
+                IF v_existing_hash IS NULL OR v_existing_hash != v_record.raw_hash THEN
+                    v_change_type := 'update';
+                ELSE
+                    -- 无变更，跳过
+                    UPDATE sync_raw_data SET status = 'merged', processed_at = NOW()
+                    WHERE id = v_record.id;
+                    CONTINUE;
+                END IF;
+            END IF;
+            
+            -- 根据权重决定如何处理冲突
+            IF v_change_type = 'update' THEN
+                -- 如果当前源权重较低，只更新空字段
+                IF v_source_weight < (
+                    SELECT weight FROM sync_sources 
+                    WHERE id = (
+                        SELECT source_id FROM sync_raw_data 
+                        WHERE entity_code = v_record.entity_code 
+                        AND status = 'merged' 
+                        ORDER BY processed_at DESC 
+                        LIMIT 1
+                    )
+                ) THEN
+                    PERFORM merge_model_partial(v_model_id, v_record.raw_data);
+                ELSE
+                    PERFORM merge_model_full(v_model_id, v_record.raw_data);
+                END IF;
+            ELSE
+                -- 创建新模型
+                PERFORM create_model_from_sync(v_record.raw_data);
+            END IF;
+            
+            -- 记录变更日志
+            INSERT INTO sync_change_logs (
+                job_id, source_id, entity_type, entity_id,
+                change_type, source_record_hash
+            ) VALUES (
+                p_job_id, v_source_id, 'model', v_model_id,
+                v_change_type, v_record.raw_hash
+            );
+            
+            -- 更新处理状态
+            UPDATE sync_raw_data SET status = 'merged', processed_at = NOW()
+            WHERE id = v_record.id;
+            
+        EXCEPTION WHEN OTHERS THEN
+            -- 记录错误
+            UPDATE sync_raw_data 
+            SET status = 'failed', 
+                error_message = SQLERRM,
+                processed_at = NOW()
+            WHERE id = v_record.id;
+            
+            -- 记录到任务错误日志
+            IF p_job_id IS NOT NULL THEN
+                UPDATE sync_jobs 
+                SET failed_records = failed_records + 1,
+                    error_message = COALESCE(error_message, '') || E'\n' || SQLERRM
+                WHERE id = p_job_id;
+            END IF;
+        END;
+    END LOOP;
+    
+    -- 更新数据源统计
+    UPDATE sync_sources 
+    SET last_sync_at = NOW(),
+        last_sync_status = 'success',
+        total_sync_count = total_sync_count + 1,
+        success_count = success_count + 1
+    WHERE id = v_source_id;
+    
+END;
+$$;
+
+-- 2. 检测冲突的函数
+CREATE OR REPLACE FUNCTION detect_sync_conflicts(
+    p_entity_type VARCHAR,
+    p_entity_code VARCHAR,
+    p_field_name VARCHAR
+)
+RETURNS TABLE(
+    source_a_id BIGINT,
+    value_a JSONB,
+    source_b_id BIGINT,
+    value_b JSONB,
+    conflict_score DECIMAL(3,2)
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    WITH latest_values AS (
+        SELECT DISTINCT ON (source_id)
+            source_id,
+            raw_data->p_field_name AS field_value,
+            created_at
+        FROM sync_raw_data
+        WHERE entity_type = p_entity_type
+        AND entity_code = p_entity_code
+        AND status IN ('normalized', 'merged')
+        ORDER BY source_id, created_at DESC
+    )
+    SELECT 
+        a.source_id,
+        a.field_value,
+        b.source_id,
+        b.field_value,
+        -- 冲突分数：值差异越大分数越高
+        CASE 
+            WHEN a.field_value IS NULL OR b.field_value IS NULL THEN 0.0
+            WHEN a.field_value = b.field_value THEN 0.0
+            WHEN jsonb_typeof(a.field_value) != jsonb_typeof(b.field_value) THEN 1.0
+            ELSE 0.5
+        END::DECIMAL(3,2)
+    FROM latest_values a
+    CROSS JOIN latest_values b
+    WHERE a.source_id < b.source_id
+    AND a.field_value IS DISTINCT FROM b.field_value;
+END;
+$$;
+```
+
+### 4.4 增量同步触发器
+
+```sql
+-- ============================================================
+-- 同步触发器
+-- docker/sql/sync/sql/04_create_sync_triggers.sql
+-- ============================================================
+
+-- 1. 自动更新 updated_at
+CREATE OR REPLACE FUNCTION update_sync_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_sync_sources_updated_at
+    BEFORE UPDATE ON sync_sources
+    FOR EACH ROW EXECUTE FUNCTION update_sync_updated_at();
+
+CREATE TRIGGER tr_sync_jobs_updated_at
+    BEFORE UPDATE ON sync_jobs
+    FOR EACH ROW EXECUTE FUNCTION update_sync_updated_at();
+
+-- 2. 模型表同步触发器（监听业务表变更，反向记录到日志）
+CREATE OR REPLACE FUNCTION log_model_changes()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO sync_change_logs (
+            entity_type, entity_id, change_type,
+            field_name, new_value
+        ) VALUES (
+            'model', NEW.id, 'create',
+            'all', to_jsonb(NEW)
+        );
+        RETURN NEW;
+        
+    ELSIF TG_OP = 'UPDATE' THEN
+        -- 记录每个变更的字段
+        IF OLD.name != NEW.name THEN
+            INSERT INTO sync_change_logs (
+                entity_type, entity_id, change_type,
+                field_name, old_value, new_value
+            ) VALUES (
+                'model', NEW.id, 'update',
+                'name', to_jsonb(OLD.name), to_jsonb(NEW.name)
+            );
+        END IF;
+        
+        IF OLD.pricing != NEW.pricing THEN
+            INSERT INTO sync_change_logs (
+                entity_type, entity_id, change_type,
+                field_name, old_value, new_value
+            ) VALUES (
+                'model', NEW.id, 'update',
+                'pricing', OLD.pricing, NEW.pricing
+            );
+        END IF;
+        
+        -- 其他字段...
+        
+        RETURN NEW;
+    END IF;
+    
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 3. 价格变更特殊处理（发送通知）
+CREATE OR REPLACE FUNCTION notify_price_change()
+RETURNS TRIGGER AS $$
+DECLARE
+    old_price DECIMAL;
+    new_price DECIMAL;
+    change_percent DECIMAL;
+BEGIN
+    IF OLD.pricing IS NULL OR NEW.pricing IS NULL THEN
+        RETURN NEW;
+    END IF;
+    
+    old_price := (OLD.pricing->>'input')::DECIMAL;
+    new_price := (NEW.pricing->>'input')::DECIMAL;
+    
+    IF old_price IS NULL OR new_price IS NULL OR old_price = 0 THEN
+        RETURN NEW;
+    END IF;
+    
+    change_percent := ((new_price - old_price) / old_price) * 100;
+    
+    -- 价格变化超过10%时记录特殊日志
+    IF ABS(change_percent) > 10 THEN
+        INSERT INTO sync_change_logs (
+            entity_type, entity_id, change_type,
+            field_name, old_value, new_value, confidence
+        ) VALUES (
+            'model', NEW.id, 'price_alert',
+            'pricing', OLD.pricing, NEW.pricing, 1.0
+        );
+        
+        -- 可以在这里添加通知逻辑
+        RAISE NOTICE '价格大幅变动: % 从 % 变为 % (变化 %)', 
+            NEW.name, old_price, new_price, change_percent;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_models_price_change
+    AFTER UPDATE OF pricing ON models
+    FOR EACH ROW EXECUTE FUNCTION notify_price_change();
+```
+
+---
+
+## 五、异常处理机制
+
+### 5.1 错误分类与处理策略
+
+| 错误类型 | 示例 | 处理策略 | 重试次数 |
+|---------|------|---------|---------|
+| **网络错误** | 超时、DNS失败、连接重置 | 指数退避重试 | 5次 |
+| **API限制** | 429 Rate Limit | 等待限流窗口后重试 | 无限（直到成功） |
+| **数据错误** | Schema校验失败 | 跳过并记录，发送告警 | 不重试 |
+| **冲突错误** | 多源数据冲突 | 按权重自动解决或标记人工处理 | 不重试 |
+| **数据库错误** | 连接失败、死锁 | 立即重试3次，然后告警 | 3次 |
+
+### 5.2 断路器模式实现
+
+```typescript
+// utils/circuit-breaker.ts
+interface CircuitBreakerOptions {
+  failureThreshold: number;    // 连续失败次数阈值
+  resetTimeout: number;        // 重置等待时间（ms）
+  halfOpenMaxCalls: number;    // 半开状态下最大测试调用数
+}
+
+enum CircuitState {
+  CLOSED = 'CLOSED',       // 正常状态
+  OPEN = 'OPEN',          // 熔断状态
+  HALF_OPEN = 'HALF_OPEN'  // 半开状态（测试恢复）
+}
+
+class CircuitBreaker {
+  private state: CircuitState = CircuitState.CLOSED;
+  private failureCount = 0;
+  private lastFailureTime?: number;
+  private halfOpenCalls = 0;
+
+  constructor(
+    private readonly options: CircuitBreakerOptions,
+    private readonly name: string
+  ) {}
+
+  async execute<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.state === CircuitState.OPEN) {
+      if (Date.now() - (this.lastFailureTime || 0) > this.options.resetTimeout) {
+        this.state = CircuitState.HALF_OPEN;
+        this.halfOpenCalls = 0;
+        console.log([${this.name}] 断路器进入半开状态，测试恢复);
+      } else {
+        throw new Error([${this.name}] 断路器处于熔断状态);
+      }
+    }
+
+    if (this.state === CircuitState.HALF_OPEN) {
+      if (this.halfOpenCalls >= this.options.halfOpenMaxCalls) {
+        throw new Error([${this.name}] 半开状态测试配额已满);
+      }
+      this.halfOpenCalls++;
+    }
+
+    try {
+      const result = await fn();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+
+  private onSuccess() {
+    this.failureCount = 0;
+    if (this.state === CircuitState.HALF_OPEN) {
+      this.state = CircuitState.CLOSED;
+      console.log([${this.name}] 断路器恢复关闭状态);
+    }
+  }
+
+  private onFailure() {
+    this.failureCount++;
+    this.lastFailureTime = Date.now();
+
+    if (this.failureCount >= this.options.failureThreshold) {
+      this.state = CircuitState.OPEN;
+      console.error([${this.name}] 断路器熔断！连续失败 ${this.failureCount} 次);
+      // 发送告警通知
+      this.sendAlert();
+    }
+  }
+
+  private sendAlert() {
+    // 集成告警系统（钉钉/企业微信/邮件）
+  }
+}
+```
+
+### 5.3 重试机制
+
+```typescript
+// utils/retry.ts
+interface RetryOptions {
+  maxAttempts: number;
+  backoffType: 'fixed' | 'linear' | 'exponential';
+  baseDelay: number;
+  maxDelay: number;
+  retryableErrors?: string[];  // 可重试的错误类型
+}
+
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: RetryOptions,
+  context: string
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= options.maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      
+      // 判断是否应该重试
+      if (attempt === options.maxAttempts) break;
+      if (options.retryableErrors && !options.retryableErrors.includes(error.name)) {
+        throw error;
+      }
+      
+      // 计算延迟时间
+      let delay: number;
+      switch (options.backoffType) {
+        case 'fixed':
+          delay = options.baseDelay;
+          break;
+        case 'linear':
+          delay = options.baseDelay * attempt;
+          break;
+        case 'exponential':
+          delay = Math.min(
+            options.baseDelay * Math.pow(2, attempt - 1),
+            options.maxDelay
+          );
+          break;
+        default:
+          delay = options.baseDelay;
+      }
+      
+      // 添加抖动避免惊群
+      delay += Math.random() * 1000;
+      
+      console.warn([${context}] 第 ${attempt} 次尝试失败: ${error.message}，${delay}ms 后重试);
+      await sleep(delay);
+    }
+  }
+  
+  throw lastError!;
+}
+```
+
+### 5.4 监控告警SQL
+
+```sql
+-- 创建监控视图
+CREATE VIEW sync_monitoring AS
+SELECT 
+    s.source_code,
+    s.source_name,
+    s.last_sync_at,
+    s.last_sync_status,
+    s.total_sync_count,
+    s.success_count,
+    s.fail_count,
+    CASE 
+        WHEN s.last_sync_at < NOW() - INTERVAL '25 hours' THEN 'OVERDUE'
+        WHEN s.fail_count > 10 THEN 'UNSTABLE'
+        ELSE 'HEALTHY'
+    END as health_status,
+    -- 计算成功率
+    ROUND(
+        CASE 
+            WHEN s.total_sync_count > 0 
+            THEN (s.success_count::NUMERIC / s.total_sync_count) * 100 
+            ELSE 0 
+        END, 2
+    ) as success_rate
+FROM sync_sources s
+WHERE s.is_enabled = TRUE;
+
+-- 创建告警触发器函数
+CREATE OR REPLACE FUNCTION check_sync_health()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- 连续失败超过阈值时发送告警
+    IF NEW.fail_count - OLD.fail_count >= 3 THEN
+        -- 插入告警表（由外部系统轮询发送）
+        INSERT INTO system_alerts (
+            alert_type,
+            severity,
+            title,
+            message,
+            source_ref
+        ) VALUES (
+            'SYNC_FAILURE',
+            'HIGH',
+            '数据同步异常: ' || NEW.source_name,
+            '数据源 ' || NEW.source_code || ' 连续失败 ' || NEW.fail_count || ' 次',
+            'sync_source:' || NEW.id
+        );
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_sync_sources_health_check
+    AFTER UPDATE OF fail_count ON sync_sources
+    FOR EACH ROW EXECUTE FUNCTION check_sync_health();
+```
+
+---
+
+## 六、调度配置示例
+
+```yaml
+# docker/sql/sync/config/schedule.yml
+version: '1.0'
+
+jobs:
+  # 模型数据同步
+  sync-models-openai:
+    adapter: openai
+    cron: '0 2 * * *'  # 每天凌晨2点
+    params:
+      endpoint: /v1/models
+      include_pricing: true
+    priority: 1
+    
+  sync-models-anthropic:
+    adapter: anthropic
+    cron: '0 2 * * *'
+    params:
+      endpoint: /v1/models
+    priority: 1
+    
+  # Skills数据同步
+  sync-skills-npm:
+    adapter: npm
+    cron: '0 3 * * *'  # 每天凌晨3点
+    params:
+      keywords:
+        - 'skill'
+        - 'claude-skill'
+        - 'ai-skill'
+      sort: 'downloads'
+    priority: 2
+    
+  sync-skills-github:
+    adapter: github
+    cron: '0 3 * * *'
+    params:
+      topics:
+        - 'claude-skill'
+        - 'anthropic-skill'
+    priority: 2
+    
+  # MCP数据同步
+  sync-mcp-smithery:
+    adapter: smithery
+    cron: '0 4 * * *'  # 每天凌晨4点
+    params:
+      limit: 1000
+    priority: 2
+    
+  sync-mcp-glama:
+    adapter: glama
+    cron: '0 4 * * *'
+    params:
+      limit: 1000
+    priority: 2
+    
+  # Agent数据同步
+  sync-agents-weekly:
+    adapter: community
+    cron: '0 5 * * 0'  # 每周日凌晨5点
+    params:
+      platforms:
+        - 'github'
+        - 'huggingface'
+    priority: 3
+    
+  # 综合评分重算（所有数据同步后）
+  recalculate-scores:
+    type: internal
+    cron: '0 6 * * *'  # 每天凌晨6点
+    depends_on:
+      - sync-models-*
+      - sync-skills-*
+      - sync-mcp-*
+    priority: 4
+
+# 全局配置
+global:
+  retry:
+    max_attempts: 5
+    backoff: exponential
+    base_delay: 1000
+    max_delay: 30000
+    
+  circuit_breaker:
+    failure_threshold: 5
+    reset_timeout: 60000
+    
+  notifications:
+    channels:
+      - webhook
+      - email
+    on_failure: true
+    on_success: false
+```
+
+---
+
+## 七、手动触发与管理
+
+```sql
+-- ============================================================
+-- 手动管理函数
+-- ============================================================
+
+-- 手动触发数据源同步
+SELECT trigger_sync('openai', '{"force": true}');
+
+-- 查看同步状态
+SELECT * FROM sync_monitoring;
+
+-- 查看最近失败的同步
+SELECT * FROM sync_jobs 
+WHERE status = 'failed' 
+ORDER BY created_at DESC 
+LIMIT 10;
+
+-- 查看数据冲突
+SELECT * FROM sync_conflicts 
+WHERE status = 'pending' 
+ORDER BY created_at DESC;
+
+-- 人工解决冲突
+SELECT resolve_conflict(
+    conflict_id := 123,
+    resolved_value := '{"price": 5.0}'::jsonb,
+    resolution_type := 'manual'
+);
+
+-- 查看数据变更历史
+SELECT * FROM sync_change_logs 
+WHERE entity_type = 'model' 
+AND entity_id = 20001
+ORDER BY created_at DESC;
+```
+
+---
+
+## 八、总结
+
+这个方案提供了一个**企业级的数据同步解决方案**，具备以下特点：
+
+1. **多源适配**：支持API、Registry、GitHub等多种数据源
+2. **增量同步**：基于哈希的变更检测，避免全量更新
+3. **冲突解决**：权重机制+人工审核的双层保障
+4. **高可用**：断路器+重试机制保证稳定性
+5. **可观测**：完整的日志、监控、告警体系
+6. **可扩展**：插件化的Adapter架构，新增数据源只需实现接口
+
+**关键优势**：
+- 数据质量通过raw_hash变更检测和多源交叉验证保证
+- 系统稳定性通过断路器模式和指数退避重试保证
+- 运维友好通过完整的监控面板和手动干预接口实现

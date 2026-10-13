@@ -1,0 +1,29 @@
+{
+  "topic": "aidean-closure",
+  "generated_at": "2026-09-18",
+  "route": "D",
+  "baseline": { "head": "806eba6", "branch": "fix/acceptance-closure-20260917" },
+  "verified_facts": [
+    { "id": "V1", "entity": "middleware", "claim": "RS256+JWKS fail-closed 验签已落地", "source": "apps/web/middleware.ts:26-33", "source_type": "code", "confidence": "high", "verified": true },
+    { "id": "V2", "entity": "wechat-qrcode", "claim": "扫码状态机为注释桩，仅 STATE_INIT", "source": "apps/web/app/api/v1/wechat/qrcode/route.ts:13-30", "source_type": "code", "confidence": "high", "verified": true },
+    { "id": "V3", "entity": "billing-channel", "claim": "production 分支显式抛『支付渠道尚未接入』", "source": "apps/web/lib/features/billing/service.ts:200-204", "source_type": "code", "confidence": "high", "verified": true },
+    { "id": "V4", "entity": "auth-session", "claim": "getSession 仅验签，不回库校验 status/ver/deletedAt；repository 投影无 deletedAt", "source": "apps/web/lib/features/auth/session.ts:23-40; repository.ts:24-36", "source_type": "code", "confidence": "high", "verified": true },
+    { "id": "V5", "entity": "ladder-pagination", "claim": "工作树 LadderBoard 已含 loadMoreSeqRef 序号守卫+AbortController+穷尽判定", "source": "apps/web/components/ladder/LadderBoard.tsx:100-178", "source_type": "code", "confidence": "high", "verified": true },
+    { "id": "V6", "entity": "migrations", "claim": "共 5 个迁移，空库重放证据仅覆盖 0000+0001", "source": "apps/web/prisma/migrations/; 未完成事项目录.md#17", "source_type": "mixed", "confidence": "high", "verified": true },
+    { "id": "V7", "entity": "tech-stack", "claim": "实际 next 14.2.5 与 ADR-0001 锁定 Next 15 冲突", "source": "apps/web/package.json:34; AGENTS.md 铁律5", "source_type": "mixed", "confidence": "high", "verified": true },
+    { "id": "V8", "entity": "git-state", "claim": "84 项未提交（42 modified + 42 untracked），含三轮已收口规格全部代码", "source": "git status 2026-09-18", "source_type": "command", "confidence": "high", "verified": true }
+  ],
+  "conflicting": [
+    { "id": "C1", "claim": "#8 浏览器取证：台账 §五 行26 已关闭 vs §二 行8 未关闭", "source": "docs/未完成事项目录.md:8,26", "status": "conflicting" },
+    { "id": "C2", "claim": "L1.1 分页竞态：验收方案标待修复 vs 工作树已含守卫", "source": "验收方案-性能扩展.md L1.1; LadderBoard.tsx", "status": "conflicting" }
+  ],
+  "unverified": [
+    { "id": "U1", "claim": "F1.1 调账侵蚀冻结资金", "source": "验收方案-资金网关.md F1.1", "status": "unverified" },
+    { "id": "U2", "claim": "F2.1 评估并发创建重复", "source": "验收方案-资金网关.md F2.1", "status": "unverified" },
+    { "id": "U3", "claim": "W1.1 fallback 计价不一致 / W1.2 Anthropic 字段剥离", "source": "验收方案-资金网关.md W1", "status": "unverified" },
+    { "id": "U4", "claim": "W2.1 流式 settle-once / W2.2 统计重放幂等", "source": "验收方案-资金网关.md W2", "status": "unverified" },
+    { "id": "U5", "claim": "C1.1 发码并发 / C1.2 过期持久化", "source": "验收方案-资金网关.md C1", "status": "unverified" }
+  ],
+  "gaps": ["生产部署实弹", "真实支付凭据", "微信凭据与状态机", "迁移双路径验证", "备份恢复演练", "CI 构建基址", "撤销契约统一矩阵"],
+  "quality_summary": { "delivery_mode": "partial", "verified": 8, "conflicting": 2, "unverified": 5 }
+}

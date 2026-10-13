@@ -1,0 +1,95 @@
+# CI 门禁（G-2 硬门禁实装，2026-08-28）
+#
+# 门禁链：铁律1 文档检查 → prisma generate → 双包 typecheck（tsc --noEmit）→ 双包单测 → 生产构建
+# 取舍：
+#   - e2e（Playwright）需 PG/Redis/Mock 上游 service，暂不进 CI，本地 `pnpm test:e2e` 口径不变；
+#   - tsc 与 next build 分开跑：build 内置 typecheck，但独立 tsc 失败信息定位更直接；
+#   - DATABASE_URL 用占位串：prisma generate / next build 只解析不连接。
+name: CI
+
+on:
+  push:
+    branches: [main, huaweicloud]
+  pull_request:
+    branches: [main, huaweicloud]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      CHECKPOINT_DISABLE: "1"
+      DATABASE_URL: "postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder?schema=public"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4 # 版本取自根 package.json packageManager (pnpm@9.0.0)
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Docs rule (铁律 1)
+        run: node scripts/check-docs-rule.mjs
+
+      - name: Docs facts (基线不变量)
+        run: node scripts/check-docs-facts.mjs
+
+      - name: Prisma generate
+        run: pnpm --filter web exec prisma generate
+
+      - name: Typecheck (shared)
+        run: pnpm --filter @aidean/shared exec tsc --noEmit
+
+      - name: Typecheck (web)
+        run: pnpm --filter web exec tsc --noEmit
+
+      - name: Unit tests (shared)
+        run: pnpm --filter @aidean/shared test
+
+      - name: Unit tests (web)
+        run: pnpm --filter web test
+
+      - name: Production build
+        run: pnpm --filter web build
+
+  # 生产镜像可构建性持续验证（本机 Docker Desktop engine 不稳，实跑职责移交 CI）。
+  # 只构建不推送——推送/部署动作待生产 registry 凭据就绪后另行接线。
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: aidean-web:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Dockerfile builder 阶段 ARG NEXT_PUBLIC_SITE_URL 无默认值，镜像内 strict 契约校验
+          # （check-runtime-contract --mode build --strict）对缺失/localhost 一律 fail-closed：
+          # 漏传 build-arg = CI docker build 必失败。此处用 REL-ENG-02 §2.2 生产候选口径占位域名，
+          # 非真实基址；真实部署仍按 runbook 以正式域名构建（见 docs/archive/REL-ENG-02-发布收口与运行契约.md §2.2）。
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=https://aidean.example.com
+
+      # prod compose 语法/引用校验（占位 env 满足变量插值；镜像构建成功不等于编排可用）
+      - name: Compose config validation
+        env:
+          POSTGRES_PASSWORD: x
+          REPLICATOR_PASSWORD: x
+          REDIS_PASSWORD: x
+          JWT_SECRET: x
+          NEXT_PUBLIC_SITE_URL: http://localhost
+        run: docker compose -f docker/docker-compose.prod.yml config -q

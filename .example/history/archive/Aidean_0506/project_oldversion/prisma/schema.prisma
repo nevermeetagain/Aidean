@@ -1,0 +1,3513 @@
+// ============================================
+// Aidean 数据库 Schema - 52张表完整设计
+// 基于4份数据库设计文档(opencode/trae/windsurf/workbuddy)整合
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "fullTextSearch"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // extensions = [pgcrypto, uuid_ossp, pg_trgm, ltree]  // 手动在SQL中创建
+}
+
+// ============================================
+// 命名空间映射 (对应PGSQL Schema)
+// aidean_core - 核心业务
+// aidean_models - 模型与天梯图
+// aidean_tools - 工具生态
+// aidean_resources - 资源内容
+// aidean_user - 用户行为
+// aidean_system - 系统管理
+// aidean_analytics - 统计分析
+// ============================================
+
+enum SchemaNamespace {
+  CORE
+  MODELS
+  TOOLS
+  RESOURCES
+  USER
+  SYSTEM
+  ANALYTICS
+}
+
+// ==================== Core Schema: User & Auth ====================
+
+// 用户主表 - aidean_core.users
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  password     String
+  nickname     String?
+  avatar       String?
+  role         UserRole      @default(USER)
+  status       UserStatus    @default(ACTIVE)
+  balance      Decimal       @default(0) @db.Decimal(19, 4)
+  
+  // 安全相关
+  emailVerified Boolean     @default(false)
+  lastLoginAt   DateTime?
+  loginCount    Int         @default(0)
+  failedLoginAttempts Int   @default(0)
+  lockedUntil   DateTime?
+  
+  // 通用审计字段
+  isActive     Boolean       @default(true)
+  version      Int           @default(1)
+  tenantId     String?       @map("tenant_id")
+  orgId        String?       @map("org_id")
+  
+  // 扩展预留字段
+  extJson      Json?         @map("ext_json")
+  tags         String[]      @default([])
+  attr01       String?       @map("attr_01")
+  attr02       String?       @map("attr_02")
+  
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  deletedAt    DateTime?     @map("deleted_at")
+
+  // 分身系统配置
+  defaultPersonaId String?       @map("default_persona_id")
+  autoExecuteEnabled Boolean     @default(false) @map("auto_execute_enabled")
+  learningEnabled  Boolean       @default(true) @map("learning_enabled")
+  
+  // 关联
+  profile      UserProfile?
+  sessions     UserSession[]
+  subscription Subscription?
+  favorites    Favorite[]
+  transactions Transaction[]
+  rechargeOrders RechargeOrder[]
+  evaluations  Evaluation[]
+  apiKeys      ApiKey[]
+  notifications UserNotification[]
+  auditLogs    AuditLog[]
+  
+  // IDE/CLI分身系统关联
+  personas     Persona[]
+  conversations Conversation[]
+  documents    Document[]
+  tasks        Task[]
+  taskNotifications TaskNotification[]
+  toolRegistries ToolRegistry[]
+  remoteChannels RemoteChannel[]
+  learningSources LearningSource[]
+  agentTeams   AgentTeam[]
+  modelProviders ModelProvider[]
+  notificationSettings NotificationSetting[]
+  inboxNotifications InboxNotification[]
+  feedback     Feedback[]
+  feedbackComments FeedbackComment[]
+  
+  // 资源扩展关联
+  collections  UserCollection[]
+  priceAlerts  PriceAlert[]
+  apiUsage     ModelApiUsage[]
+  accessLogs   ResourceAccessLog[]
+  
+  // RBAC权限体系关联
+  userRoleMappings    UserRoleMapping[]
+  teamMembers  TeamMember[]
+  userQuota    UserQuota?
+
+  @@index([email])
+  @@index([status])
+  @@index([isActive])
+  @@index([defaultPersonaId])
+  @@map("users")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+}
+
+// 用户扩展资料 - aidean_core.user_profiles
+model UserProfile {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  realName    String?   @map("real_name")
+  phone       String?
+  company     String?
+  position    String?
+  bio         String?
+  website     String?
+  github      String?
+  wechat      String?
+  
+  preferences Json?     // 用户偏好设置
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("user_profiles")
+}
+
+// 用户会话 - aidean_core.user_sessions
+model UserSession {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  token       String    @unique
+  refreshToken String?
+  
+  deviceInfo  Json?     // 设备信息
+  ipAddress   String?   @map("ip_address")
+  
+  expiresAt   DateTime  @map("expires_at")
+  lastActiveAt DateTime  @default(now()) @map("last_active_at")
+  
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("user_sessions")
+}
+
+// API Key管理 - aidean_core.api_keys
+model ApiKey {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  keyId       String    @unique @map("key_id")
+  name        String
+  keyHash     String    @map("key_hash")
+  
+  permissions String[]  @default([])
+  rateLimit   Json?     @map("rate_limit")
+  
+  lastUsedAt  DateTime? @map("last_used_at")
+  expiresAt   DateTime? @map("expires_at")
+  
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([keyHash])
+  @@map("api_keys")
+}
+
+enum UserRole {
+  GUEST        @map("0")
+  USER         @map("1")
+  VIP          @map("2")
+  PREMIUM      @map("3")
+  MODERATOR    @map("10")
+  ADMIN        @map("99")
+  SUPER_ADMIN  @map("100")
+}
+
+model Subscription {
+  id        String           @id @default(cuid())
+  userId    String           @unique
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      SubscriptionType
+  expiresAt DateTime
+  createdAt DateTime         @default(now())
+}
+
+enum SubscriptionType {
+  FREE
+  MONTHLY
+  YEARLY
+}
+
+// ==================== Models Schema: Vendor & AI Models ====================
+
+// 厂商表 - aidean_models.vendors
+model Vendor {
+  id            String    @id @default(cuid())
+  
+  // 基础信息
+  code          String    @unique  // 厂商代码：openai, anthropic, deepseek
+  name          String             // 显示名称
+  nameCn        String?   @map("name_cn")
+  nameEn        String?   @map("name_en")
+  
+  // 品牌信息
+  logoUrl       String?   @map("logo_url")
+  brandColor    String?   @map("brand_color")
+  website       String?
+  
+  // 厂商层级
+  tierLevel     Int       @default(1) @map("tier_level")  // 1-5级
+  isFeatured    Boolean   @default(false) @map("is_featured")
+  
+  // 公司信息
+  companyName   String?   @map("company_name")
+  country       String?
+  foundedYear   Int?      @map("founded_year")
+  
+  // 描述
+  description   String?
+  descriptionCn String?   @map("description_cn")
+  
+  // 统计
+  modelCount    Int       @default(0) @map("model_count")
+  totalStars    Int       @default(0) @map("total_stars")
+  
+  // 通用字段
+  isActive      Boolean   @default(true) @map("is_active")
+  sortOrder     Int       @default(0) @map("sort_order")
+  
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  // 关联
+  models        AiModel[]
+  parentRelations VendorRelation[] @relation("ParentRelations")
+  childRelations  VendorRelation[] @relation("ChildRelations")
+
+  @@index([tierLevel])
+  @@index([isFeatured])
+  @@index([isActive])
+  @@map("vendors")
+}
+
+// AI模型主表 - aidean_models.ai_models
+model AiModel {
+  id            String        @id @default(cuid())
+  
+  // 唯一标识
+  modelCode     String        @unique @map("model_code")  // 如：gpt-4o, claude-3-opus
+  nameDisplay   String        @map("name_display")       // 显示名称
+  nameCn        String?       @map("name_cn")
+  nameEn        String?       @map("name_en")
+  slug          String        @unique                    // URL友好名称
+  
+  // 厂商关联
+  vendorId      String        @map("vendor_id")
+  vendor        Vendor        @relation(fields: [vendorId], references: [id])
+  
+  // 分类（支持多层级）
+  modelType     ModelType     @map("model_type")
+  categoryId    String?       @map("category_id")         // 专业/应用版
+  
+  // 技术参数
+  parameterCount String?      @map("parameter_count")     // 如：591B, 70B
+  contextLength  Int?         @map("context_length")     // 上下文长度
+  maxOutputTokens Int?        @map("max_output_tokens")
+  
+  // 特性
+  isOpenSource   Boolean      @default(false) @map("is_open_source")
+  isMultiModal   Boolean      @default(false) @map("is_multi_modal")
+  isReasoning    Boolean      @default(false) @map("is_reasoning")
+  isCodingOptimized Boolean   @default(false) @map("is_coding_optimized")
+  
+  // 协议
+  protocol      ModelProtocol  @default(OPENAI)
+  
+  // 链接
+  officialUrl   String?        @map("official_url")
+  docsUrl       String?        @map("docs_url")
+  apiUrl        String?        @map("api_url")
+  githubUrl     String?        @map("github_url")
+  paperUrl      String?        @map("paper_url")
+  
+  // 发布信息
+  publishedAt   DateTime?    @map("published_at")
+  deprecatedAt  DateTime?    @map("deprecated_at")
+  
+  // 状态
+  status        ModelStatus  @default(ACTIVE)
+  visibility    Visibility   @default(PUBLIC)
+  
+  // 评分（冗余存储，方便查询）
+  benchmarkScore Float?      @map("benchmark_score")
+  popularityScore Float?     @map("popularity_score")
+  
+  // 通用字段
+  isActive      Boolean      @default(true) @map("is_active")
+  isFeatured    Boolean      @default(false) @map("is_featured")
+  featuredWeight Int         @default(0) @map("featured_weight")
+  sortOrder     Int          @default(0) @map("sort_order")
+  version       Int          @default(1)
+  tags          String[]     @default([])
+  
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  deletedAt     DateTime?    @map("deleted_at")
+
+  // 关联
+  prices        ModelPrice[]
+  benchmarks    Benchmark[]
+  scores        ModelScore[]
+  rankings      LadderRanking[]
+  evaluations   EvaluationModel[]
+  
+  // 变更历史与自定义指标
+  changeLogs    ModelChangeLog[]
+  metricValues  CustomMetricValue[]
+  
+  // 资源扩展
+  versions      ModelVersion[]
+  versionParent ModelVersion? @relation("VersionChain")
+  priceAlerts   PriceAlert[]
+  apiUsage      ModelApiUsage[]
+
+  @@index([vendorId])
+  @@index([modelType])
+  @@index([modelCode])
+  @@index([status])
+  @@index([isActive])
+  @@index([benchmarkScore])
+  @@index([popularityScore])
+  @@map("ai_models")
+}
+
+enum ModelType {
+  CHAT          @map("1")    // 对话
+  REASONING     @map("2")    // 推理
+  MULTIMODAL    @map("3")    // 多模态
+  CODE          @map("4")    // 代码
+  VISION        @map("5")    // 视觉
+  AUDIO         @map("6")    // 语音
+  EMBEDDING     @map("7")    // 嵌入
+  RERANK        @map("8")    // 排序
+  ASR           @map("9")    // 语音识别
+  TTS           @map("10")   // 语音合成
+  IMAGE_GEN     @map("11")   // 图像生成
+  VIDEO         @map("12")   // 视频
+  SYSTEM        @map("13")   // 系统级
+}
+
+enum ModelProtocol {
+  OPENAI        @map("1")
+  ANTHROPIC     @map("2")
+  GOOGLE        @map("3")
+  CUSTOM        @map("4")
+}
+
+enum ModelStatus {
+  ACTIVE
+  INACTIVE
+  DEPRECATED
+  BETA
+}
+
+enum Visibility {
+  PUBLIC        @map("1")
+  LOGIN_ONLY    @map("2")
+  PAID_ONLY     @map("3")
+  HIDDEN        @map("4")
+}
+
+// 模型价格历史 - aidean_models.model_prices
+model ModelPrice {
+  id              String    @id @default(cuid())
+  modelId         String    @map("model_id")
+  model           AiModel   @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  
+  // 价格（统一为 ¥/M Tokens）
+  priceCache      Decimal?  @db.Decimal(19, 6) @map("price_cache")
+  priceInput      Decimal   @db.Decimal(19, 6) @map("price_input")
+  priceOutput     Decimal   @db.Decimal(19, 6) @map("price_output")
+  pricePerRequest Decimal?  @db.Decimal(19, 6) @map("price_per_request")
+  
+  // 计费模式
+  billingMode     BillingMode @default(PER_TOKEN) @map("billing_mode")
+  billingCurrency String      @default("CNY") @map("billing_currency")
+  
+  // 原始价格记录
+  originalCurrency String?  @map("original_currency")
+  originalPriceInput Decimal? @db.Decimal(19, 6) @map("original_price_input")
+  originalPriceOutput Decimal? @db.Decimal(19, 6) @map("original_price_output")
+  exchangeRate    Decimal?    @db.Decimal(10, 6) @map("exchange_rate")
+  
+  // 生效时间（支持历史版本）
+  effectiveFrom   DateTime    @map("effective_from")
+  effectiveUntil  DateTime?   @map("effective_until")
+  isCurrent       Boolean     @default(true) @map("is_current")
+  
+  // 来源
+  sourceType    PriceSource @default(OFFICIAL) @map("source_type")
+  sourceName    String?     @map("source_name")
+  sourceUrl     String?     @map("source_url")
+  
+  notes         String?
+  
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  @@index([modelId])
+  @@index([isCurrent])
+  @@index([effectiveFrom])
+  @@map("model_prices")
+}
+
+enum BillingMode {
+  PER_TOKEN     @map("1")
+  PER_REQUEST   @map("2")
+  PER_MINUTE    @map("3")
+  FREE          @map("4")
+}
+
+enum PriceSource {
+  OFFICIAL      @map("1")
+  API_STATION   @map("2")
+  USER_SUBMIT   @map("3")
+  CRAWLER       @map("4")
+}
+
+// 模型综合评分 - aidean_models.model_scores
+model ModelScore {
+  id              String    @id @default(cuid())
+  modelId         String    @map("model_id")
+  model           AiModel   @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  
+  // 四维评分
+  officialScore   Decimal?  @db.Decimal(5, 2) @map("official_score")
+  actualScore     Decimal?  @db.Decimal(5, 2) @map("actual_score")
+  reviewScore     Decimal?  @db.Decimal(5, 2) @map("review_score")
+  selfTestScore   Decimal?  @db.Decimal(5, 2) @map("self_test_score")
+  
+  // 扩展维度
+  reasoningScore  Decimal?  @db.Decimal(5, 2) @map("reasoning_score")
+  codingScore     Decimal?  @db.Decimal(5, 2) @map("coding_score")
+  mathScore       Decimal?  @db.Decimal(5, 2) @map("math_score")
+  multilingualScore Decimal? @db.Decimal(5, 2) @map("multilingual_score")
+  creativityScore Decimal?  @db.Decimal(5, 2) @map("creativity_score")
+  instructionScore Decimal? @db.Decimal(5, 2) @map("instruction_score")
+  safetyScore     Decimal?  @db.Decimal(5, 2) @map("safety_score")
+  efficiencyScore Decimal?  @db.Decimal(5, 2) @map("efficiency_score")
+  
+  // 性价比
+  valueScore      Decimal?  @db.Decimal(5, 2) @map("value_score")
+  
+  // 权重配置（记录计算时的权重）
+  officialWeight  Decimal   @db.Decimal(4, 3) @default(0.25) @map("official_weight")
+  actualWeight    Decimal   @db.Decimal(4, 3) @default(0.25) @map("actual_weight")
+  reviewWeight    Decimal   @db.Decimal(4, 3) @default(0.25) @map("review_weight")
+  selfTestWeight  Decimal   @db.Decimal(4, 3) @default(0.25) @map("self_test_weight")
+  
+  // 综合得分
+  compositeScore  Decimal   @db.Decimal(5, 2) @map("composite_score")
+  
+  // 排名
+  overallRank     Int?      @map("overall_rank")
+  categoryRank    Int?      @map("category_rank")
+  vendorRank      Int?      @map("vendor_rank")
+  
+  // 版本控制
+  calcVersion     Int       @default(1) @map("calc_version")
+  calcAt          DateTime  @default(now()) @map("calc_at")
+  isCurrent       Boolean   @default(true) @map("is_current")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@unique([modelId, calcVersion])
+  @@index([modelId])
+  @@index([isCurrent])
+  @@index([compositeScore])
+  @@index([overallRank])
+  @@map("model_scores")
+}
+
+// 基准测试 - aidean_models.model_benchmarks
+model Benchmark {
+  id              String    @id @default(cuid())
+  modelId         String    @map("model_id")
+  model           AiModel   @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  
+  // 测试来源
+  sourceType      BenchmarkSource
+  sourceName      String?   @map("source_name")
+  sourceUrl       String?   @map("source_url")
+  sourceVersion   String?   @map("source_version")
+  
+  // 测试类型
+  benchmarkType   String    @map("benchmark_type")
+  benchmarkSubType String?  @map("benchmark_sub_type")
+  
+  // 分数（JSON存储多维度）
+  scores          Json
+  totalScore      Decimal   @db.Decimal(5, 2) @map("total_score")
+  scorePercentile Decimal?  @db.Decimal(5, 2) @map("score_percentile")
+  
+  // 测试详情
+  testDate        DateTime? @map("test_date")
+  testParams      Json?     @map("test_params")
+  rawData         Json?     @map("raw_data")
+  
+  // 置信度
+  confidenceLevel Decimal?  @db.Decimal(4, 3) @map("confidence_level")
+  sampleCount     Int?      @map("sample_count")
+  
+  // 权重
+  weight          Decimal   @db.Decimal(4, 3) @default(0.25)
+  isWeighted      Boolean   @default(false) @map("is_weighted")
+  
+  // 验证状态
+  verifiedStatus  Int       @default(0) @map("verified_status")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@index([modelId])
+  @@index([sourceType])
+  @@index([benchmarkType])
+  @@index([testDate])
+  @@map("model_benchmarks")
+}
+
+enum BenchmarkSource {
+  OFFICIAL      @map("1")
+  ACTUAL        @map("2")
+  REVIEW        @map("3")
+  SELF          @map("4")
+  THIRD_PARTY   @map("5")
+}
+
+enum ModelCategory {
+  PROFESSIONAL
+  APPLICATION
+}
+
+// ==================== Evaluation ====================
+// 注意：Evaluation 和 EvaluationModel 定义在文件末尾 Admin System Core Models 区
+// EvalStatus enum 同样在那里定义
+// 此处仅保留占位注释，避免重复定义
+
+// ==================== Skills ====================
+
+model Skill {
+  id           String    @id @default(cuid())
+  name         String
+  nameCn       String?
+  displayName  String
+  description  String
+  author       String?
+  authorUrl    String?
+  version      String?
+  category     String?
+  tags         String[]
+  protocol     String     @default("anthropic") // anthropic | openai | universal
+  mcpServers   String[]   // 关联的 MCP 服务器
+  downloads    Int        @default(0)
+  stars        Int        @default(0)
+  rating       Float?     // 平均评分
+  reviewCount  Int        @default(0)
+  lastUpdated  DateTime?
+  icon         String?
+  readmeUrl    String?
+  installCmd   String?
+  isVerified   Boolean    @default(false)
+  isFeatured   Boolean    @default(false)
+
+  // 同步追踪字段
+  source       String?    // 数据来源: skillsmp | smithery | skills_sh | manual
+  sourceId     String?    @map("source_id")  // 来源平台唯一ID
+  sourceUrl    String?    @map("source_url") // 来源平台URL
+  lastSyncedAt DateTime?  @map("last_synced_at") // 最后同步时间
+  isActive     Boolean    @default(true) @map("is_active")
+
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  deletedAt    DateTime?  @map("deleted_at")
+
+  @@unique([source, sourceId])
+  @@index([downloads])
+  @@index([stars])
+  @@index([rating])
+  @@index([source])
+  @@index([isActive])
+  @@map("ai_skills")
+}
+
+// ==================== MCP Servers ====================
+
+model MCPServer {
+  id           String    @id @default(cuid())
+  name         String
+  nameCn       String?
+  displayName  String
+  description  String
+  author       String?
+  authorUrl    String?
+  version      String?
+  category     String?
+  tags         String[]
+  protocolType String    @default("stdio") // stdio | sse | http | websocket
+  command      String?
+  args         String?
+  env          Json?
+  npmPackage   String?
+  homepage     String?
+  repository   String?
+  downloads    Int       @default(0)
+  stars        Int       @default(0)
+  rating       Float?
+  reviewCount  Int       @default(0)
+  lastUpdated  DateTime?
+  icon         String?
+  isVerified   Boolean   @default(false)
+  isFeatured   Boolean   @default(false)
+
+  // 同步追踪字段
+  source       String?    // 数据来源: smithery | glama | manual
+  sourceId     String?    @map("source_id")
+  sourceUrl    String?    @map("source_url")
+  lastSyncedAt DateTime?  @map("last_synced_at")
+  isActive     Boolean    @default(true) @map("is_active")
+
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  deletedAt    DateTime?  @map("deleted_at")
+
+  @@unique([source, sourceId])
+  @@index([downloads])
+  @@index([stars])
+  @@index([rating])
+  @@index([source])
+  @@index([isActive])
+  @@map("mcp_servers")
+}
+
+// ==================== Agents ====================
+
+model Agent {
+  id           String    @id @default(cuid())
+  name         String
+  nameCn       String?
+  displayName  String
+  description  String
+  author       String?
+  authorUrl    String?
+  version      String?
+  category     String?
+  tags         String[]
+  capabilities String[]  // agent 能力
+  modelSupport String[]  // 支持的模型
+  pricing      Json?     // 价格信息
+  activeUsers  Int       @default(0)
+  taskCompleteRate Float? @default(0) // 任务完成率
+  avgRating    Float?
+  reviewCount  Int       @default(0)
+  lastUpdated  DateTime?
+  icon         String?
+  website      String?
+  isVerified   Boolean   @default(false)
+  isFeatured   Boolean   @default(false)
+
+  // 同步追踪字段
+  source       String?    // 数据来源: agentindex | agents_sh | openai | manual
+  sourceId     String?    @map("source_id")
+  sourceUrl    String?    @map("source_url")
+  lastSyncedAt DateTime?  @map("last_synced_at")
+  isActive     Boolean    @default(true) @map("is_active")
+
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  deletedAt    DateTime?  @map("deleted_at")
+
+  @@unique([source, sourceId])
+  @@index([activeUsers])
+  @@index([taskCompleteRate])
+  @@index([avgRating])
+  @@index([source])
+  @@index([isActive])
+  @@map("agents")
+}
+
+// ==================== API Stations ====================
+
+model APIStation {
+  id           String    @id @default(cuid())
+  name         String
+  nameCn       String?
+  displayName  String
+  description  String
+  provider     String?
+  website      String?
+  apiDocs      String?
+  baseUrl      String?
+  models       String[]  // 支持的模型列表
+  protocols    String[]  // 支持的协议
+  rateLimit    Json?     // 速率限制配置
+  pricing      Json?     // 价格信息
+  features     String[]  // 特性
+  useCase      String?
+  avgLatency   Float?    // 平均延迟 ms
+  uptime       Float?    // 可用率 %
+  activeUsers  Int       @default(0)
+  stars        Int       @default(0)
+  rating       Float?
+  reviewCount  Int       @default(0)
+  lastVerified DateTime?
+  icon         String?
+  isVerified   Boolean   @default(false)
+  isFeatured   Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([avgLatency])
+  @@index([uptime])
+  @@index([activeUsers])
+}
+
+// ==================== Favorites ====================
+
+model Favorite {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refType   FavoriteType   // model | skill | mcp | agent | api_station
+  refId     String
+  note      String?        // 用户备注
+  createdAt DateTime      @default(now())
+
+  @@unique([userId, refType, refId])
+  @@index([userId])
+  @@index([refType, refId])
+}
+
+enum FavoriteType {
+  MODEL
+  SKILL
+  MCP
+  AGENT
+  API_STATION
+}
+
+// ==================== Transactions & Payments ====================
+
+model Transaction {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        TransactionType
+  amount      Float            // 正数收入，负数支出
+  balance     Float            // 操作后余额
+  description String
+  refType     String?          // 关联资源类型
+  refId       String?          // 关联资源ID
+  createdAt   DateTime         @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, type])
+}
+
+enum TransactionType {
+  RECHARGE   // 充值
+  CHARGE     // 扣费
+  REFUND     // 退款
+}
+
+model RechargeOrder {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount        Float       // 充值金额
+  bonusAmount   Float       @default(0) // 赠送金额
+  totalAmount   Float       // 到账金额
+  payMethod     PayMethod
+  status        OrderStatus @default(PENDING)
+  transactionId String?    // 第三方交易号
+  paidAt        DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+enum PayMethod {
+  WECHAT
+  ALIPAY
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  REFUNDED
+}
+
+// ==================== Content ====================
+
+model Newsync {
+  id          String    @id @default(cuid())
+  source      String
+  title       String
+  content     Json
+  url         String?
+  publishedAt DateTime? @map("published_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([source])
+  @@index([publishedAt])
+  @@map("news")
+}
+
+// ==================== Scheduled Scripts ====================
+// 注意：ScheduledScript 定义在文件末尾 Admin System Core Models 区
+// 此处仅保留占位注释，避免重复定义
+
+// ==================== Ranking Weights ====================
+
+model RankingWeight {
+  id            String   @id @default(cuid())
+  dimension     String   @unique // official | actual | review | self
+  weight        Float    @default(25) // 0-100
+  isActive      Boolean  @default(true) @map("is_active")
+  sortOrder     Int      @default(0) @map("sort_order")
+  description   String?
+  status        String   @default("active") @map("status") // active | disabled | archived
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  @@index([isActive])
+  @@index([status])
+  @@map("ranking_weights")
+}
+
+// ==================== Ladder Charts ====================
+
+// 天梯图定义 - aidean_models.ladder_charts
+model LadderChart {
+  id              String      @id @default(cuid())
+  
+  // 基础信息
+  chartCode       String      @unique @map("chart_code")
+  name            String
+  nameCn          String?     @map("name_cn")
+  nameEn          String?     @map("name_en")
+  description     String?
+  descriptionShort String?    @map("description_short")
+  
+  // 类型
+  chartType       ChartType   @map("chart_type")
+  
+  // 适用模型类型
+  applicableTypes ModelType[] @map("applicable_types")
+  
+  // 排序配置
+  defaultSortKey  String      @default("composite_score") @map("default_sort_key")
+  sortDirection   String      @default("DESC") @map("sort_direction")
+  secondarySortKey String?    @map("secondary_sort_key")
+  
+  // 筛选配置
+  defaultFilters  Json?       @map("default_filters")
+  displayColumns  Json?       @map("display_columns")
+  
+  // 显示控制
+  pageSize        Int         @default(50) @map("page_size")
+  
+  // 评分权重配置
+  scoreWeights    Json?       @map("score_weights")
+  
+  // 可见性
+  isPublic        Boolean     @default(true) @map("is_public")
+  requiredRole    Int         @default(0) @map("required_role")
+  
+  // 状态
+  isActive        Boolean     @default(true) @map("is_active")
+  isFeatured      Boolean     @default(true) @map("is_featured")
+  sortOrder       Int         @default(0) @map("sort_order")
+  
+  // 统计
+  modelCount      Int         @default(0) @map("model_count")
+  viewCount       Int         @default(0) @map("view_count")
+  
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // 关联
+  rankings        LadderRanking[]
+
+  @@index([chartType])
+  @@index([isActive])
+  @@map("ladder_charts")
+}
+
+enum ChartType {
+  PERFORMANCE   @map("1")   // 性能
+  PRICE_VALUE   @map("2")   // 性价比
+  OPEN_SOURCE   @map("3")   // 开源
+  MOBILE        @map("4")   // 手机端
+  CUSTOM        @map("5")   // 自定义
+}
+
+// 天梯图排名 - aidean_models.ladder_rankings
+model LadderRanking {
+  id              String      @id @default(cuid())
+  
+  chartId         String      @map("chart_id")
+  chart           LadderChart @relation(fields: [chartId], references: [id], onDelete: Cascade)
+  
+  modelId         String      @map("model_id")
+  model           AiModel     @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  
+  // 排名信息
+  rankPosition    Int         @map("rank_position")
+  previousRank    Int?        @map("previous_rank")
+  rankChange      Int?        @map("rank_change")
+  
+  // 排序值
+  sortValue       Decimal?    @db.Decimal(19, 4) @map("sort_value")
+  secondaryValue  Decimal?    @db.Decimal(19, 4) @map("secondary_value")
+  
+  // 显示数据冗余
+  modelCode       String      @map("model_code")
+  modelName       String      @map("model_name")
+  vendorName      String      @map("vendor_name")
+  vendorColor     String?     @map("vendor_color")
+  
+  // 核心指标冗余
+  compositeScore  Decimal?    @db.Decimal(5, 2) @map("composite_score")
+  benchmarkScore  Decimal?    @db.Decimal(5, 2) @map("benchmark_score")
+  contextLength   Int?        @map("context_length")
+  priceInput      Decimal?    @db.Decimal(19, 6) @map("price_input")
+  priceOutput     Decimal?    @db.Decimal(19, 6) @map("price_output")
+  isOpenSource    Boolean     @default(false) @map("is_open_source")
+  
+  // 版本控制
+  versionDate     DateTime    @default(now()) @map("version_date")
+  versionSequence Int         @default(1) @map("version_sequence")
+  
+  // 状态控制
+  status          String      @default("active") @map("status") // active | hidden | deprecated
+  
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  @@unique([chartId, modelId, versionDate, versionSequence])
+  @@index([chartId, versionDate])
+  @@index([modelId])
+  @@index([rankPosition])
+  @@map("ladder_rankings")
+}
+
+// ==================== System Schema: Config & Admin ====================
+
+// 功能开关 - aidean_system.feature_flags
+model FeatureFlag {
+  id              String    @id @default(cuid())
+  
+  flagCode        String    @unique @map("flag_code")
+  name            String
+  nameCn          String?   @map("name_cn")
+  description     String?
+  
+  // 开关状态
+  isEnabled       Boolean   @default(false) @map("is_enabled")
+  enabledRoles    Int[]     @map("enabled_roles")    // 对哪些角色启用
+  
+  // 灰度配置
+  rolloutPercentage Int     @default(100) @map("rollout_percentage")
+  rolloutStrategy String    @default("all") @map("rollout_strategy")
+  
+  // 配置数据
+  config          Json?
+  
+  // 时间控制
+  enableFrom      DateTime? @map("enable_from")
+  enableUntil     DateTime? @map("enable_until")
+  
+  // 分类
+  category        String?
+  priority        Int       @default(0)
+  
+  // 统计
+  toggleCount     Int       @default(0) @map("toggle_count")
+  lastToggleAt    DateTime? @map("last_toggle_at")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([isEnabled])
+  @@index([category])
+  @@map("feature_flags")
+}
+
+// 系统配置 - aidean_system.system_configs
+model SystemConfig {
+  id              String    @id @default(cuid())
+  
+  configKey       String    @unique @map("config_key")
+  configGroup     String    @map("config_group")
+  
+  configType      ConfigType @default(STRING) @map("config_type")
+  configValue     String    @map("config_value")
+  configValueEn   String?   @map("config_value_en")
+  
+  description     String?
+  validationRule  String?   @map("validation_rule")
+  defaultValue    String?   @map("default_value")
+  
+  // 显示控制
+  isPublic        Boolean   @default(false) @map("is_public")
+  isEditable      Boolean   @default(true) @map("is_editable")
+  isRequired      Boolean   @default(false) @map("is_required")
+  
+  // UI配置
+  inputType       String?   @map("input_type")
+  inputOptions    Json?     @map("input_options")
+  sortOrder       Int       @default(0) @map("sort_order")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([configGroup])
+  @@index([isPublic])
+  @@map("system_configs")
+}
+
+enum ConfigType {
+  STRING    @map("1")
+  NUMBER    @map("2")
+  BOOLEAN   @map("3")
+  JSON      @map("4")
+  RICH_TEXT @map("5")
+}
+
+// 导航菜单 - aidean_system.navigation_menus
+model NavigationMenu {
+  id              String    @id @default(cuid())
+  
+  menuCode        String    @unique @map("menu_code")
+  name            String
+  nameEn          String?   @map("name_en")
+  
+  // 层级关系
+  parentId        String?   @map("parent_id")
+  parentCode      String?   @map("parent_code")
+  level           Int       @default(1)
+  path            String?   // LTREE路径，如"1.3.5"
+  
+  // 链接配置
+  linkType        LinkType  @default(INTERNAL) @map("link_type")
+  linkUrl         String?   @map("link_url")
+  linkTarget      String    @default("_self") @map("link_target")
+  
+  // 显示控制
+  isDropdown      Boolean   @default(false) @map("is_dropdown")
+  isVisible       Boolean   @default(true) @map("is_visible")
+  showInHeader    Boolean   @default(true) @map("show_in_header")
+  showInFooter    Boolean   @default(false) @map("show_in_footer")
+  
+  // 权限控制
+  requireLogin    Boolean   @default(false) @map("require_login")
+  requiredRoles   Int[]     @map("required_roles")
+  
+  // 多语言
+  i18nKey         String?   @map("i18n_key")
+  
+  // 样式
+  badgeText       String?   @map("badge_text")
+  badgeColor      String?   @map("badge_color")
+  highlight       Boolean   @default(false)
+  
+  // 通用字段
+  icon            String?
+  sortOrder       Int       @default(0) @map("sort_order")
+  isActive        Boolean   @default(true) @map("is_active")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([parentId])
+  @@index([level])
+  @@index([isVisible])
+  @@index([showInHeader])
+  @@map("navigation_menus")
+}
+
+enum LinkType {
+  INTERNAL  @map("1")
+  EXTERNAL  @map("2")
+  DROPDOWN  @map("3")
+}
+
+// 字典类型 - aidean_system.dict_types
+model DictType {
+  id            String    @id @default(cuid())
+  
+  dictCode      String    @unique @map("dict_code")
+  dictName      String    @map("dict_name")
+  description   String?
+  
+  // 层级支持
+  hierarchy     Boolean   @default(false)
+  maxLevel      Int       @default(1) @map("max_level")
+  
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  // 关联
+  items         DictItem[]
+
+  @@map("dict_types")
+}
+
+// 字典项 - aidean_system.dict_items
+model DictItem {
+  id            String    @id @default(cuid())
+  
+  dictTypeId    String    @map("dict_type_id")
+  dictType      DictType  @relation(fields: [dictTypeId], references: [id], onDelete: Cascade)
+  
+  itemCode      String    @map("item_code")
+  itemLabel     String    @map("item_label")
+  itemLabelEn   String?   @map("item_label_en")
+  
+  // 层级
+  parentCode    String?   @map("parent_code")
+  level         Int       @default(1)
+  
+  // 控制
+  sortOrder     Int       @default(0) @map("sort_order")
+  isDefault     Boolean   @default(false) @map("is_default")
+  isVisible     Boolean   @default(true) @map("is_visible")
+  
+  // 扩展
+  extData       Json?     @map("ext_data")
+  
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@unique([dictTypeId, itemCode])
+  @@index([dictTypeId])
+  @@index([parentCode])
+  @@map("dict_items")
+}
+
+// ==================== Analytics Schema: Logs ====================
+// 注意：AuditLog 定义在文件末尾 Admin System Core Models 区
+// 此处仅保留 UserNotification 和 NotificationType
+
+// 用户消息通知 - aidean_system.user_notifications
+model UserNotification {
+  id              String    @id @default(cuid())
+  
+  userId          String    @map("user_id")
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 消息内容
+  title           String
+  content         String
+  type            NotificationType @default(SYSTEM)
+  
+  // 链接
+  actionUrl       String?   @map("action_url")
+  actionText      String?   @map("action_text")
+  
+  // 优先级
+  priority        Int       @default(0)
+  
+  // 状态
+  isRead          Boolean   @default(false) @map("is_read")
+  readAt          DateTime? @map("read_at")
+  
+  // 过期时间
+  expiresAt       DateTime? @map("expires_at")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([type])
+  @@map("user_notifications")
+}
+
+enum NotificationType {
+  SYSTEM    @map("1")
+  EVALUATION @map("2")
+  PAYMENT   @map("3")
+  SECURITY  @map("4")
+  PROMOTION @map("5")
+}
+
+// ==================== IDE/CLI Agent System: Persona & Learning ====================
+
+// 用户分身主表 - aidean_agent.personas
+model Persona {
+  id          String    @id @default(cuid())
+  
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 基础信息
+  name        String
+  description String?
+  avatar      String?
+  
+  // 分身配置（核心：思维习惯、责任感、审美、接受程度）
+  config      Json      @map("config")
+  // {
+  //   "thinkingStyle": "logical" | "creative" | "pragmatic",
+  //   "detailLevel": "high" | "medium" | "low",
+  //   "codeStyle": "functional" | "oop" | "procedural",
+  //   "namingConvention": "camelCase" | "snake_case" | "PascalCase",
+  //   "riskPreference": "conservative" | "moderate" | "aggressive",
+  //   "communicationStyle": "direct" | "diplomatic" | "technical",
+  //   "responsibilityLevel": "owner" | "contributor" | "advisor",
+  //   "aesthetics": { "ui": "minimal" | "rich", "code": "clean" | "verbose" }
+  // }
+  
+  // 学习提取的偏好（用于快速查询）
+  preferences Json      @map("preferences")
+  
+  // 版本快照数组（支持回滚）
+  snapshots   Json[]    @default([]) @map("snapshots")
+  // [{version: 1, data: {...}, createdAt: "2024-01-01", trigger: "learning"}]
+  
+  // 纠正历史
+  corrections Json[]    @default([]) @map("corrections")
+  // [{field: "thinkingStyle", old: "X", new: "Y", reason: "user_correction", correctedAt: "..."}]
+  
+  // 学习统计
+  learnCount    Int     @default(0) @map("learn_count")
+  lastLearnedAt DateTime? @map("last_learned_at")
+  
+  // 自动执行配置
+  autoExecuteThreshold Float @default(0.99) @map("auto_execute_threshold")
+  
+  isActive    Boolean   @default(true) @map("is_active")
+  isDefault   Boolean   @default(false) @map("is_default")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  
+  // 关联
+  learningSources LearningSource[]
+  tasks         Task[]
+
+  @@index([userId])
+  @@index([isDefault])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("personas")
+}
+
+// 学习数据源表 - aidean_agent.learning_sources
+model LearningSource {
+  id          String    @id @default(cuid())
+  
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  personaId   String?   @map("persona_id")
+  persona     Persona?  @relation(fields: [personaId], references: [id], onDelete: SetNull)
+  
+  // 数据来源类型
+  sourceType  LearningSourceType @map("source_type")
+  // CONVERSATION: 对话记录
+  // FILE_UPLOAD: 文件上传
+  // USER_CORRECTION: 用户纠正
+  // MANUAL_INPUT: 手动输入
+  // BEHAVIOR_LOG: 行为日志
+  
+  // 源引用（根据sourceType不同）
+  sourceRef   String?   @map("source_ref")
+  // conversationId / documentId / filePath等
+  
+  // 原始数据摘要（不存全文，全文在向量库）
+  summary     String    @db.Text
+  
+  // 提取的模式（核心！自动学习的成果）
+  extractedPatterns Json @map("extracted_patterns")
+  // [
+  //   {
+  //     "type": "naming_preference",
+  //     "pattern": "camelCase_for_functions",
+  //     "confidence": 0.95,
+  //     "evidence": ["example1", "example2"]
+  //   }
+  // ]
+  
+  // 是否已应用到分身
+  applied     Boolean   @default(false) @map("applied")
+  appliedAt   DateTime? @map("applied_at")
+  appliedVersion Int?   @map("applied_version")
+  
+  // 置信度
+  confidence  Float     @default(0.5) @map("confidence")
+  
+  // 处理状态
+  status      LearningStatus @default(PENDING) @map("status")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  processedAt DateTime? @map("processed_at")
+
+  @@index([userId])
+  @@index([personaId])
+  @@index([sourceType])
+  @@index([status])
+  @@index([applied])
+  @@index([createdAt])
+  @@map("learning_sources")
+}
+
+enum LearningSourceType {
+  CONVERSATION   @map("conversation")
+  FILE_UPLOAD    @map("file_upload")
+  USER_CORRECTION @map("user_correction")
+  MANUAL_INPUT   @map("manual_input")
+  BEHAVIOR_LOG   @map("behavior_log")
+}
+
+enum LearningStatus {
+  PENDING     @map("pending")
+  PROCESSING  @map("processing")
+  PROCESSED   @map("processed")
+  FAILED      @map("failed")
+  REJECTED    @map("rejected")
+}
+
+// 对话记录表 - aidean_agent.conversations
+model Conversation {
+  id          String    @id @default(cuid())
+  
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 会话元数据
+  title       String?
+  messageCount Int      @default(0) @map("message_count")
+  
+  // 关联的分身（如果是用分身执行的）
+  personaId   String?   @map("persona_id")
+  
+  // 向量引用（实际内容在Qdrant）
+  vectorIds   String[]  @default([]) @map("vector_ids")
+  
+  // 提取的洞察（自动总结）
+  insights    Json?     @map("insights")
+  // {
+  //   "topics": ["react", "api_design", "database"],
+  //   "complexity": "high",
+  //   "patterns": ["functional_style", "type_safe"],
+  //   "satisfaction": 0.9
+  // }
+  
+  // 会话类型
+  type        ConversationType @default(NORMAL) @map("type")
+  // NORMAL / AUTO_EXECUTE / MULTI_AGENT / DEBUG
+  
+  // 是否已学习提取
+  isLearned   Boolean   @default(false) @map("is_learned")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@index([userId])
+  @@index([personaId])
+  @@index([type])
+  @@index([isLearned])
+  @@index([createdAt])
+  @@map("conversations")
+}
+
+enum ConversationType {
+  NORMAL       @map("normal")
+  AUTO_EXECUTE @map("auto_execute")
+  MULTI_AGENT  @map("multi_agent")
+  DEBUG        @map("debug")
+  WORKFLOW     @map("workflow")
+}
+
+// ==================== Document & Knowledge System ====================
+
+// 文档管理表 - aidean_agent.documents
+model Document {
+  id          String    @id @default(cuid())
+  
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 文件信息
+  filename    String
+  fileType    DocumentType @map("file_type")
+  // TXT / MARKDOWN / WORD / EXCEL / PDF / IMAGE / CODE
+  
+  fileSize    Int       @map("file_size")
+  mimeType    String    @map("mime_type")
+  
+  // 存储路径（本地/云）
+  storagePath String    @map("storage_path")
+  
+  // 解析内容摘要
+  summary     String?   @db.Text
+  
+  // 向量引用（Qdrant/Milvus等向量库）
+  vectorId    String?   @map("vector_id")
+  
+  // OCR结果（图片/PDF时）
+  ocrResult   Json?     @map("ocr_result")
+  // {
+  //   "text": "extracted text",
+  //   "blocks": [{"text": "...", "bbox": [x,y,w,h], "type": "text/table"}],
+  //   "confidence": 0.95
+  // }
+  
+  // 提取的实体/标签
+  entities    String[]  @default([])
+  tags        String[]  @default([])
+  
+  // 文档状态
+  status      DocumentStatus @default(PENDING) @map("status")
+  // PENDING / PROCESSING / PROCESSED / FAILED
+  
+  // 是否已用于学习
+  isLearned   Boolean   @default(false) @map("is_learned")
+  learnedAt   DateTime? @map("learned_at")
+  
+  // 文档版本（用于论文等多次修改的场景）
+  version     Int       @default(1)
+  parentId    String?   @map("parent_id")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@index([userId])
+  @@index([fileType])
+  @@index([status])
+  @@index([isLearned])
+  @@index([vectorId])
+  @@index([createdAt])
+  @@map("documents")
+}
+
+enum DocumentType {
+  TXT       @map("txt")
+  MARKDOWN  @map("markdown")
+  WORD      @map("word")
+  EXCEL     @map("excel")
+  PDF       @map("pdf")
+  IMAGE     @map("image")
+  CODE      @map("code")
+  OTHER     @map("other")
+}
+
+enum DocumentStatus {
+  PENDING     @map("pending")
+  PROCESSING  @map("processing")
+  PROCESSED   @map("processed")
+  FAILED      @map("failed")
+}
+
+// ==================== Task Execution System ====================
+
+// 任务表 - aidean_agent.tasks
+model Task {
+  id          String    @id @default(cuid())
+  
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 关联的分身
+  personaId   String?   @map("persona_id")
+  persona     Persona?  @relation(fields: [personaId], references: [id], onDelete: SetNull)
+  
+  // 任务定义
+  title       String
+  description String?   @db.Text
+  
+  // 执行计划（JSON格式的工作流定义）
+  plan        Json      @map("plan")
+  // {
+  //   "steps": [
+  //     {
+  //       "id": "step-1",
+  //       "type": "skill" | "mcp" | "agent" | "code" | "doc",
+  //       "tool": "readFile" | "writeFile" | "executeCommand" | "httpRequest",
+  //       "input": {...},
+  //       "dependsOn": ["step-0"],
+  //       "condition": "optional_condition"
+  //     }
+  //   ],
+  //   "parallelGroups": [["step-1", "step-2"]],
+  //   "onError": "rollback" | "skip" | "pause"
+  // }
+  
+  // 任务状态
+  status      TaskStatus @default(PENDING) @map("status")
+  // PENDING / RUNNING / COMPLETED / FAILED / ROLLBACKING / ROLLBACKED / PAUSED
+  
+  // 自动执行配置
+  autoExecute Boolean   @default(false) @map("auto_execute")
+  confidence  Float?    @map("confidence")
+  // 理解置信度（99%理解度检测）
+  
+  // 执行统计
+  progress    Float     @default(0) @map("progress")
+  // 0-100
+  currentStep String?   @map("current_step")
+  
+  // 时间戳
+  createdAt   DateTime  @default(now()) @map("created_at")
+  startedAt   DateTime? @map("started_at")
+  completedAt DateTime? @map("completed_at")
+  estimatedDuration Int? @map("estimated_duration")
+  // 预估完成时间（秒）
+  
+  // 来源
+  source      TaskSource @default(MANUAL) @map("source")
+  // MANUAL / REMOTE / SCHEDULED / WEBHOOK
+  sourceRef   String?   @map("source_ref")
+
+  // 关联表
+  steps       TaskStep[]
+  artifacts   TaskArtifact[]
+  notifications TaskNotification[]
+  rollbacks   TaskRollback[]
+
+  @@index([userId])
+  @@index([personaId])
+  @@index([status])
+  @@index([autoExecute])
+  @@index([createdAt])
+  @@map("tasks")
+}
+
+enum TaskStatus {
+  PENDING       @map("pending")
+  RUNNING       @map("running")
+  COMPLETED     @map("completed")
+  FAILED        @map("failed")
+  ROLLBACKING   @map("rollbacking")
+  ROLLBACKED    @map("rollbacked")
+  PAUSED        @map("paused")
+  CANCELLED     @map("cancelled")
+}
+
+enum TaskSource {
+  MANUAL    @map("manual")
+  REMOTE    @map("remote")
+  SCHEDULED @map("scheduled")
+  WEBHOOK   @map("webhook")
+}
+
+// 任务步骤表 - aidean_agent.task_steps
+model TaskStep {
+  id          String    @id @default(cuid())
+  
+  taskId      String    @map("task_id")
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
+  // 步骤信息
+  stepOrder   Int       @map("step_order")
+  stepId      String    @map("step_id")
+  // 工作流定义中的步骤ID
+  
+  type        StepType  @map("type")
+  // SKILL / MCP / AGENT / CODE / DOC / SHELL / HTTP
+  
+  tool        String    @map("tool")
+  // 具体工具名：readFile / writeFile / executeCommand / httpRequest等
+  
+  // 输入输出
+  input       Json      @map("input")
+  output      Json?     @map("output")
+  error       String?   @db.Text
+  
+  // 状态
+  status      StepStatus @default(PENDING) @map("status")
+  
+  // 执行时间
+  duration    Int?      @map("duration")
+  // 毫秒
+  
+  // 检查点（用于回滚）
+  checkpoint  Json?     @map("checkpoint")
+  // {
+  //   "fileStates": [
+  //     {"path": "src/index.ts", "content": "...", "hash": "sha256", "operation": "modified"}
+  //   ],
+  //   "dbStates": [...],
+  //   "envVars": {...}
+  // }
+  
+  // 重试配置
+  retryCount  Int       @default(0) @map("retry_count")
+  maxRetries  Int       @default(3) @map("max_retries")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  startedAt   DateTime? @map("started_at")
+  completedAt DateTime? @map("completed_at")
+
+  // 关联产出物
+  artifacts   TaskArtifact[]
+
+  @@index([taskId])
+  @@index([status])
+  @@index([stepOrder])
+  @@index([createdAt])
+  @@map("task_steps")
+}
+
+enum StepType {
+  SKILL   @map("skill")
+  MCP     @map("mcp")
+  AGENT   @map("agent")
+  CODE    @map("code")
+  DOC     @map("doc")
+  SHELL   @map("shell")
+  HTTP    @map("http")
+  LLM     @map("llm")
+}
+
+enum StepStatus {
+  PENDING     @map("pending")
+  RUNNING     @map("running")
+  COMPLETED   @map("completed")
+  FAILED      @map("failed")
+  SKIPPED     @map("skipped")
+  ROLLED_BACK @map("rolled_back")
+}
+
+// 任务回滚记录表 - aidean_agent.task_rollbacks
+model TaskRollback {
+  id          String    @id @default(cuid())
+  
+  taskId      String    @map("task_id")
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  stepId      String    @map("step_id")
+  
+  // 回滚快照
+  snapshot    Json      @map("snapshot")
+  // 完整的文件/数据库状态快照
+  
+  // 回滚原因
+  reason      RollbackReason @map("rollback_reason")
+  // USER_REQUEST / ERROR / TIMEOUT / SAFETY_CHECK / MANUAL
+  
+  reasonDetail String?  @map("reason_detail")
+  
+  // 回滚范围
+  scope       RollbackScope @default(FULL) @map("rollback_scope")
+  // FULL / PARTIAL
+  
+  // 影响统计
+  filesRestored Int     @default(0) @map("files_restored")
+  stepsRolledBack Int   @default(0) @map("steps_rolled_back")
+  
+  rolledBackAt DateTime @default(now()) @map("rolled_back_at")
+  rolledBackBy String   @map("rolled_back_by")
+  // user_id / system / persona_id
+
+  @@index([taskId])
+  @@index([stepId])
+  @@index([rolledBackAt])
+  @@map("task_rollbacks")
+}
+
+enum RollbackReason {
+  USER_REQUEST    @map("user_request")
+  ERROR           @map("error")
+  TIMEOUT         @map("timeout")
+  SAFETY_CHECK    @map("safety_check")
+  MANUAL          @map("manual")
+}
+
+enum RollbackScope {
+  FULL    @map("full")
+  PARTIAL @map("partial")
+}
+
+// ==================== Tool Registry System ====================
+
+// 工具注册表 - aidean_agent.tool_registries
+model ToolRegistry {
+  id          String    @id @default(cuid())
+  
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 工具类型
+  type        ToolType  @map("type")
+  // SKILL / MCP / AGENT / KERNEL
+  
+  // 工具标识
+  name        String
+  displayName String?   @map("display_name")
+  version     String    @default("1.0.0")
+  description String?   @db.Text
+  
+  // 工具配置（核心）
+  config      Json      @map("config")
+  // SKILL: {entryPoint, dependencies, permissions}
+  // MCP: {serverUrl, transport: "stdio"|"http", tools: [...]}
+  // AGENT: {model, systemPrompt, capabilities, parentId, childIds}
+  // KERNEL: {type: "opencode"|"claudecode", installPath, configPath}
+  
+  // 权限配置
+  permissions Json?     @map("permissions")
+  // {read: ["**/*.ts"], write: ["src/**"], delete: [], execute: ["npm", "git"]}
+  
+  // 操作范围
+  scope       ToolScope @default(SELECTED) @map("scope")
+  // GLOBAL / SELECTED / NONE
+  
+  selectedPaths String[] @default([]) @map("selected_paths")
+  // 当scope=SELECTED时，允许操作的目录列表
+  
+  // 输出规则
+  outputRule  OutputRule @default(STREAM) @map("output_rule")
+  // STREAM / BUFFER / NONE
+  
+  // 调用规则（Agent类型时）
+  callRule    CallRule?  @map("call_rule")
+  // SEQUENTIAL / PARALLEL / NONE
+  
+  callScenario String?   @map("call_scenario")
+  // 调用场景描述
+  
+  // 使用统计
+  useCount    Int       @default(0) @map("use_count")
+  avgLatency  Float?    @map("avg_latency")
+  // 平均响应时间（ms）
+  lastUsedAt  DateTime? @map("last_used_at")
+  
+  // 状态
+  isEnabled   Boolean   @default(true) @map("is_enabled")
+  isPublic    Boolean   @default(false) @map("is_public")
+  // 是否对外暴露
+  
+  // 外部暴露配置（当isPublic=true时）
+  publicConfig Json?    @map("public_config")
+  // {endpoint, authType, rateLimit, accessToken}
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  
+  // 关联
+  executions  ToolExecution[]
+
+  @@index([userId])
+  @@index([type])
+  @@index([name])
+  @@index([isEnabled])
+  @@index([isPublic])
+  @@index([createdAt])
+  @@map("tool_registries")
+}
+
+enum ToolType {
+  SKILL   @map("skill")
+  MCP     @map("mcp")
+  AGENT   @map("agent")
+  KERNEL  @map("kernel")
+}
+
+enum ToolScope {
+  GLOBAL   @map("global")
+  SELECTED @map("selected")
+  NONE     @map("none")
+}
+
+enum OutputRule {
+  STREAM  @map("stream")
+  BUFFER  @map("buffer")
+  NONE    @map("none")
+}
+
+enum CallRule {
+  SEQUENTIAL @map("sequential")
+  PARALLEL   @map("parallel")
+  NONE       @map("none")
+}
+
+// 工具执行日志表 - aidean_agent.tool_executions
+model ToolExecution {
+  id          String    @id @default(cuid())
+  
+  toolId      String    @map("tool_id")
+  tool        ToolRegistry @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  
+  // 关联的任务（可选）
+  taskId      String?   @map("task_id")
+  
+  // 调用上下文
+  context     Json?     @map("context")
+  // {conversationId, stepId, trigger: "manual"|"auto"|"workflow"}
+  
+  // 输入输出
+  input       Json      @map("input")
+  output      Json?     @map("output")
+  error       String?   @db.Text
+  
+  // 性能指标
+  latency     Int       @map("latency")
+  // 毫秒
+  tokensUsed  Int?      @map("tokens_used")
+  // LLM调用时的token消耗
+  
+  // 状态
+  status      ExecutionStatus @map("status")
+  // SUCCESS / FAILED / TIMEOUT / CANCELLED
+  
+  // 安全审计
+  filesAccessed String[] @default([]) @map("files_accessed")
+  commandsExecuted String[] @default([]) @map("commands_executed")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+
+  @@index([toolId])
+  @@index([taskId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("tool_executions")
+}
+
+enum ExecutionStatus {
+  SUCCESS    @map("success")
+  FAILED     @map("failed")
+  TIMEOUT    @map("timeout")
+  CANCELLED  @map("cancelled")
+}
+
+// ==================== Remote Control System (ACP) ====================
+
+// 远程控制通道表 - aidean_agent.remote_channels
+model RemoteChannel {
+  id          String    @id @default(cuid())
+  
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 通道类型
+  type        ChannelType @map("type")
+  // WEBHOOK / WECHAT / WECHAT_WORK / DINGTALK / FEISHU / QQ / APP
+  
+  // 通道名称（用户自定义）
+  name        String
+  
+  // 配置（加密存储敏感信息）
+  config      Json      @map("config")
+  // WEBHOOK: {url, secret, headers}
+  // WECHAT: {appId, appSecret, token, encodingAESKey}
+  // DINGTALK: {appKey, appSecret, robotCode}
+  // FEISHU: {appId, appSecret, encryptKey}
+  
+  // 功能开关
+  features    Json      @map("features")
+  // {
+  //   "textCommand": true,
+  //   "voiceCommand": false,
+  //   "imageCommand": true,
+  //   "progressNotification": true,
+  //   "completionNotification": true
+  // }
+  
+  // 语音配置
+  voiceConfig Json?     @map("voice_config")
+  // {
+  //   "inputEnabled": true,
+  //   "outputEnabled": false,
+  //   "inputLanguage": "zh-CN",
+  //   "outputLanguage": "zh-CN",
+  //   "voiceId": "xiaoyan"
+  // }
+  
+  // 通知模板
+  templates   Json?     @map("templates")
+  // {
+  //   "taskStarted": "任务【{title}】已开始执行",
+  //   "taskCompleted": "任务【{title}】已完成，耗时{duration}秒",
+  //   "taskFailed": "任务【{title}】执行失败: {error}"
+  // }
+  
+  // 状态
+  isEnabled   Boolean   @default(false) @map("is_enabled")
+  lastPingAt  DateTime? @map("last_ping_at")
+  
+  // 验证状态
+  isVerified  Boolean   @default(false) @map("is_verified")
+  verifiedAt  DateTime? @map("verified_at")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  
+  // 关联
+  commands    RemoteCommand[]
+
+  @@index([userId])
+  @@index([type])
+  @@index([isEnabled])
+  @@index([createdAt])
+  @@map("remote_channels")
+}
+
+enum ChannelType {
+  WEBHOOK      @map("webhook")
+  WECHAT       @map("wechat")
+  WECHAT_WORK  @map("wechat_work")
+  DINGTALK     @map("dingtalk")
+  FEISHU       @map("feishu")
+  QQ           @map("qq")
+  APP          @map("app")
+}
+
+// 远程命令表 - aidean_agent.remote_commands
+model RemoteCommand {
+  id          String    @id @default(cuid())
+  
+  channelId   String    @map("channel_id")
+  channel     RemoteChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  
+  // 原始指令
+  rawCommand  String    @map("raw_command") @db.Text
+  // 用户发送的原始文本/语音转文字
+  
+  // 指令类型
+  commandType CommandType @map("command_type")
+  // TEXT / VOICE / IMAGE / FILE
+  
+  // 媒体资源（语音/图片时）
+  mediaUrl    String?   @map("media_url")
+  mediaData   Json?     @map("media_data")
+  // {duration, format, size}等
+  
+  // 解析后的意图
+  intent      String    @map("intent")
+  // EXECUTE_TASK / QUERY_PROGRESS / CANCEL_TASK / CONFIG / CHAT
+  
+  // 解析参数
+  parameters  Json      @map("parameters")
+  // {taskDescription, priority, autoExecute, etc.}
+  
+  // 置信度
+  confidence  Float     @default(0) @map("confidence")
+  
+  // 关联的任务
+  taskId      String?   @map("task_id")
+  
+  // 执行结果
+  result      Json?     @map("result")
+  // {success, message, data}
+  
+  // 状态
+  status      CommandStatus @default(RECEIVED) @map("status")
+  // RECEIVED / PARSING / CONFIRMING / EXECUTING / COMPLETED / FAILED / CANCELLED
+  
+  // 是否需要确认（置信度不够时）
+  needConfirm Boolean   @default(false) @map("need_confirm")
+  confirmedAt DateTime? @map("confirmed_at")
+  
+  // 时间戳
+  createdAt   DateTime  @default(now()) @map("created_at")
+  parsedAt    DateTime? @map("parsed_at")
+  executedAt  DateTime? @map("executed_at")
+  completedAt DateTime? @map("completed_at")
+
+  @@index([channelId])
+  @@index([status])
+  @@index([intent])
+  @@index([taskId])
+  @@index([createdAt])
+  @@map("remote_commands")
+}
+
+enum CommandType {
+  TEXT  @map("text")
+  VOICE @map("voice")
+  IMAGE @map("image")
+  FILE  @map("file")
+}
+
+enum CommandStatus {
+  RECEIVED   @map("received")
+  PARSING    @map("parsing")
+  CONFIRMING @map("confirming")
+  EXECUTING  @map("executing")
+  COMPLETED  @map("completed")
+  FAILED     @map("failed")
+  CANCELLED  @map("cancelled")
+}
+
+// ==================== Document Template System ====================
+
+// 文档模板表 - aidean_agent.doc_templates
+model DocTemplate {
+  id          String    @id @default(cuid())
+  
+  // 模板标识
+  code        String    @unique
+  name        String
+  description String?   @db.Text
+  
+  // 模板类型
+  type        TemplateType @map("type")
+  // PAPER / REPORT / ARTICLE / RESUME / CONTRACT
+  
+  // 学校/机构（论文模板时）
+  institution String?   @map("institution")
+  // "清华大学" / "北京大学"等
+  
+  // 格式规则
+  formatRules Json      @map("format_rules")
+  // {
+  //   "pageSize": "A4",
+  //   "margins": {"top": 2.54, "bottom": 2.54, "left": 3.17, "right": 3.17},
+  //   "font": {"body": "Times New Roman 12pt", "heading": "黑体 14pt"},
+  //   "lineSpacing": 1.5,
+  //   "headingNumbering": "1.1.1",
+  //   "citationStyle": "GB/T 7714-2015",
+  //   "coverPage": {...},
+  //   "toc": {"levels": 3, "style": "..."}
+  // }
+  
+  // 结构模板
+  structure   Json      @map("structure")
+  // [
+  //   {"section": "abstract", "title": "摘要", "required": true, "wordCount": [300, 500]},
+  //   {"section": "introduction", "title": "引言", "required": true},
+  //   {"section": "methodology", "title": "研究方法", "required": true},
+  //   ...
+  // ]
+  
+  // 样式配置
+  styleConfig Json?     @map("style_config")
+  // CSS/LaTeX/Word样式定义
+  
+  // 模板文件
+  templateFile String?  @map("template_file")
+  // 模板文件路径
+  
+  // 预览图
+  previewImage String?  @map("preview_image")
+  
+  // 使用统计
+  useCount    Int       @default(0) @map("use_count")
+  
+  // 状态
+  isDefault   Boolean   @default(false) @map("is_default")
+  isPublic    Boolean   @default(true) @map("is_public")
+  isActive    Boolean   @default(true) @map("is_active")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@index([type])
+  @@index([institution])
+  @@index([isDefault])
+  @@index([isActive])
+  @@map("doc_templates")
+}
+
+enum TemplateType {
+  PAPER    @map("paper")
+  REPORT   @map("report")
+  ARTICLE  @map("article")
+  RESUME   @map("resume")
+  CONTRACT @map("contract")
+  OTHER    @map("other")
+}
+
+// 用户模板收藏表
+model UserTemplate {
+  id          String    @id @default(cuid())
+  
+  userId      String    @map("user_id")
+  templateId  String    @map("template_id")
+  
+  // 用户自定义配置
+  customConfig Json?   @map("custom_config")
+  
+  isFavorite  Boolean   @default(false) @map("is_favorite")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@unique([userId, templateId])
+  @@index([userId])
+  @@map("user_templates")
+}
+
+// ============================================================
+// 第三部分：执行增强与系统支撑表
+// ============================================================
+
+// 1. 任务产出物表 - 存储任务执行产生的文件、代码、文档等
+model TaskArtifact {
+  id          String   @id @default(cuid())
+  
+  taskId      String   @map("task_id")
+  stepId      String?  @map("step_id")
+  
+  // 产出物类型: FILE / CODE / DOC / IMAGE / DATA / OTHER
+  type        String   @map("type")
+  name        String   @map("name")
+  
+  // 内容存储（小内容直接存，大内容存路径）
+  content     String?  @db.Text @map("content")
+  storagePath String?  @map("storage_path")
+  
+  mimeType    String   @map("mime_type")
+  size        Int      @map("size")
+  
+  // 元数据
+  metadata    Json?    @map("metadata")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  // 关联
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  step        TaskStep? @relation(fields: [stepId], references: [id], onDelete: SetNull)
+  
+  @@index([taskId])
+  @@index([stepId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("task_artifacts")
+}
+
+// 2. 任务通知表 - 任务状态变更通知记录
+model TaskNotification {
+  id          String    @id @default(cuid())
+  
+  taskId      String    @map("task_id")
+  userId      String    @map("user_id")
+  
+  // 通知渠道: WEB / EMAIL / WECHAT / DINGTALK / FEISHU / SMS
+  channel     String    @map("channel")
+  
+  // 通知类型: STARTED / PROGRESS / COMPLETED / FAILED / ROLLBACKED / NEED_CONFIRM
+  type        String    @map("type")
+  
+  title       String    @map("title")
+  content     String    @db.Text @map("content")
+  
+  // 动作链接
+  actionUrl   String?   @map("action_url")
+  
+  // 发送状态
+  sentAt      DateTime? @map("sent_at")
+  errorInfo   String?   @map("error_info")
+  
+  // 阅读状态
+  readAt      DateTime? @map("read_at")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  
+  // 关联
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([taskId])
+  @@index([userId])
+  @@index([channel])
+  @@index([type])
+  @@index([readAt])
+  @@index([createdAt])
+  @@map("task_notifications")
+}
+
+// 3. 多智能体团队表 - Agent协作配置
+model AgentTeam {
+  id          String    @id @default(cuid())
+
+  userId      String    @map("user_id")
+
+  name        String    @map("name")
+  description String?   @map("description")
+
+  // 团队成员配置（JSON存储灵活结构）
+  // [{agentId, role: "parent"|"child", callOrder, model, permissions, instructions}]
+  members     Json      @map("members")
+  
+  // 协作流程定义
+  workflow    Json?     @map("workflow")
+  
+  // 共享上下文配置
+  sharedContext Json?   @map("shared_context")
+  
+  isActive    Boolean   @default(true) @map("is_active")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  // 关联
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([isActive])
+  @@map("agent_teams")
+}
+
+// 4. 模型提供商配置表 - 用户自定义模型配置
+model ModelProvider {
+  id          String    @id @default(cuid())
+  
+  userId      String    @map("user_id")
+  
+  name        String    @map("name")
+  
+  // 协议类型: openai / anthropic / gemini / claude / custom
+  protocol    String    @map("protocol")
+  
+  baseUrl     String    @map("base_url")
+  
+  // API密钥（加密存储）
+  apiKey      String    @map("api_key")
+  
+  // 支持的模型列表
+  models      Json      @map("models")
+  
+  // 默认参数
+  defaultParams Json? @map("default_params")
+  
+  // 限额配置
+  rateLimit   Json?     @map("rate_limit")
+  
+  isDefault   Boolean   @default(false) @map("is_default")
+  isActive    Boolean   @default(true) @map("is_active")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  // 关联
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, name])
+  @@index([userId])
+  @@index([protocol])
+  @@index([isDefault])
+  @@map("model_providers")
+}
+
+// 5. 系统指标表 - 性能监控和统计分析
+model SystemMetric {
+  id          String   @id @default(cuid())
+  
+  // 指标类型: TASK_COUNT / LATENCY / ERROR_RATE / TOKEN_USAGE / COST
+  metricType  String   @map("metric_type")
+  
+  value       Float    @map("value")
+  
+  // 标签（用于多维度筛选）
+  // {userId?, toolType?, status?, model?, hour?}
+  labels      Json     @map("labels")
+  
+  recordedAt  DateTime @map("recorded_at")
+  
+  // 聚合周期: raw / minute / hour / day
+  period      String   @default("raw") @map("period")
+  
+  @@index([metricType])
+  @@index([recordedAt])
+  @@index([period])
+  @@index([labels])
+  @@map("system_metrics")
+}
+
+// 7. 消息收件箱表 - 用户系统通知（区别于原有的UserNotification）
+model InboxNotification {
+  id          String    @id @default(cuid())
+  
+  userId      String    @map("user_id")
+  
+  // 通知类型: SYSTEM / TASK / SECURITY / BILLING / FEATURE
+  type        String    @map("type")
+  
+  priority    String    @default("normal") @map("priority")
+  // urgent / high / normal / low
+  
+  title       String    @map("title")
+  content     String    @db.Text @map("content")
+  
+  // 动作按钮
+  actionUrl   String?   @map("action_url")
+  actionText  String?   @map("action_text")
+  
+  // 图标/图片
+  icon        String?   @map("icon")
+  imageUrl    String?   @map("image_url")
+  
+  // 过期时间
+  expiresAt   DateTime? @map("expires_at")
+  
+  // 阅读状态
+  isRead      Boolean   @default(false) @map("is_read")
+  readAt      DateTime? @map("read_at")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  
+  // 关联
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([type])
+  @@index([isRead])
+  @@index([priority])
+  @@index([createdAt])
+  @@map("inbox_notifications")
+}
+
+// 8. 通知设置表 - 用户通知偏好配置
+model NotificationSetting {
+  id          String    @id @default(cuid())
+  
+  userId      String    @map("user_id")
+  
+  // 事件类型: task_completed / task_failed / security_alert / 
+  // billing_reminder / feature_update / system_maintenance
+  eventType   String    @map("event_type")
+  
+  // 通知渠道: ["web", "email", "wechat", "dingtalk", "sms"]
+  channels    Json      @map("channels")
+  
+  // 是否启用
+  enabled     Boolean   @default(true) @map("enabled")
+  
+  // 静默时间段
+  quietHours  Json?     @map("quiet_hours")
+  // {start: "22:00", end: "08:00", timezone: "Asia/Shanghai"}
+  
+  // 频率限制
+  throttle    Json?     @map("throttle")
+  // {maxPerHour: 5, digestMode: true}
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  // 关联
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, eventType])
+  @@index([userId])
+  @@map("notification_settings")
+}
+
+// 9. 用户反馈表 - Bug报告、功能建议、投诉
+model Feedback {
+  id          String    @id @default(cuid())
+  
+  userId      String    @map("user_id")
+  
+  // 反馈类型: BUG / FEATURE / COMPLAINT / QUESTION / PRAISE
+  type        String    @map("type")
+  
+  // 分类标签
+  category    String?   @map("category")
+  
+  subject     String    @map("subject")
+  content     String    @db.Text @map("content")
+  
+  // 附件列表
+  attachments Json?     @map("attachments")
+  // [{name, url, type, size}]
+  
+  // 状态: PENDING / PROCESSING / RESOLVED / REJECTED / CLOSED
+  status      String    @default("pending") @map("status")
+  
+  // 优先级: urgent / high / normal / low
+  priority    String    @default("normal") @map("priority")
+  
+  // 分配处理人
+  assigneeId  String?   @map("assignee_id")
+  
+  // 解决信息
+  resolution  String?   @map("resolution")
+  resolvedAt  DateTime? @map("resolved_at")
+  
+  // 用户满意度
+  rating      Int?      @map("rating")
+  
+  // 时间戳
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  // 关联
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 关联回复
+  comments    FeedbackComment[]
+  
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+  @@map("feedback")
+}
+
+// 10. 反馈回复表 - 反馈处理的对话记录
+model FeedbackComment {
+  id          String    @id @default(cuid())
+  
+  feedbackId  String    @map("feedback_id")
+  userId      String    @map("user_id")
+  
+  content     String    @db.Text @map("content")
+  
+  // 是否内部备注（用户不可见）
+  isInternal  Boolean   @default(false) @map("is_internal")
+  
+  // 附件
+  attachments Json?     @map("attachments")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  
+  // 关联
+  feedback    Feedback  @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([feedbackId])
+  @@index([userId])
+  @@index([isInternal])
+  @@index([createdAt])
+  @@map("feedback_comments")
+}
+
+// ==================== Data Audit & Rollback ====================
+
+// 模型变更历史表 - 支持字段级变更追踪和精准回滚
+model ModelChangeLog {
+  id              String    @id @default(cuid())
+  
+  // 关联模型
+  modelId         String    @map("model_id")
+  model           AiModel   @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  
+  // 同步批次
+  syncBatchId     String?   @map("sync_batch_id")
+  syncBatch       SyncBatch? @relation(fields: [syncBatchId], references: [id], onDelete: SetNull)
+  
+  // 变更类型: CREATE | UPDATE | DELETE | SYNC
+  changeType      String    @map("change_type")
+  
+  // 变更前数据快照
+  beforeData      Json?     @map("before_data")
+  // 变更后数据快照
+  afterData       Json?     @map("after_data")
+  // 变更字段摘要
+  changedFields   String[]  @map("changed_fields")
+  
+  // 变更来源
+  source          String?   @map("source") // sync_script | admin_manual | api
+  sourceIp        String?   @map("source_ip")
+  operatorId      String?   @map("operator_id")
+  
+  // 回滚状态
+  isReverted      Boolean   @default(false) @map("is_reverted")
+  revertedAt      DateTime? @map("reverted_at")
+  revertReason    String?   @map("revert_reason")
+  
+  // 校验状态
+  validationStatus String   @default("pending") @map("validation_status") // pending | valid | invalid
+  checksum        String?   @map("checksum")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@index([modelId, createdAt])
+  @@index([syncBatchId])
+  @@index([changeType, createdAt])
+  @@index([isReverted])
+  @@index([validationStatus])
+  @@map("model_change_logs")
+}
+
+// 同步批次表 - 追踪模型数据同步批次，支持批量回滚
+model SyncBatch {
+  id              String    @id @default(cuid())
+  
+  // 批次编号
+  batchCode       String    @unique @map("batch_code")
+  
+  // 来源信息
+  source          String?   @map("source") // official_api | crawler | manual
+  sourceUrl       String?   @map("source_url")
+  
+  // 统计信息
+  totalRecords    Int       @default(0) @map("total_records")
+  successRecords  Int       @default(0) @map("success_records")
+  failedRecords   Int       @default(0) @map("failed_records")
+  
+  // 状态: running | completed | failed | partial
+  status          String    @default("running") @map("status")
+  
+  // 校验结果
+  validationSummary Json? @map("validation_summary")
+  errorSamples    Json?   @map("error_samples")
+  
+  // 操作信息
+  operatorId      String? @map("operator_id")
+  operatorNotes   String? @map("operator_notes")
+  
+  // 关联变更日志
+  changeLogs      ModelChangeLog[]
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([batchCode])
+  @@index([status, createdAt])
+  @@map("sync_batches")
+}
+
+// 自定义评分指标表 - 用户可配置自定义评分公式
+model CustomMetric {
+  id              String    @id @default(cuid())
+  
+  // 唯一编码
+  metricCode      String    @unique @map("metric_code")
+  
+  // 基础信息
+  name            String
+  description     String?
+  
+  // 计算公式
+  formulaExpression String? @map("formula_expression") // 如："reasoning_score / (price_input * 100)"
+  formulaJson     Json?   @map("formula_json")        // 结构化存储
+  
+  // 数据源配置
+  sourceTables    String[] @map("source_tables")      // ['model_scores', 'model_prices']
+  sourceFields    String[] @map("source_fields")      // ['reasoning_score', 'price_input']
+  
+  // 计算配置
+  calcFrequency   String   @default("on_demand") @map("calc_frequency") // on_demand | realtime | hourly | daily
+  lastCalculatedAt DateTime? @map("last_calculated_at")
+  cacheDuration   Int      @default(300) @map("cache_duration") // 秒
+  
+  // 状态
+  isActive        Boolean  @default(true) @map("is_active")
+  isPublic        Boolean  @default(false) @map("is_public")
+  status          String   @default("active") @map("status") // active | disabled | archived
+  
+  // 创建者
+  createdBy       String?  @map("created_by")
+  userId          String?  @map("user_id")
+  
+  // 关联值
+  metricValues    CustomMetricValue[]
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  @@index([metricCode])
+  @@index([userId])
+  @@index([isActive])
+  @@index([status])
+  @@index([calcFrequency])
+  @@map("custom_metrics")
+}
+
+// 自定义指标值表 - 预计算结果，支持快速查询和缓存
+model CustomMetricValue {
+  id              String    @id @default(cuid())
+  
+  // 关联自定义指标
+  metricId        String    @map("metric_id")
+  metric          CustomMetric @relation(fields: [metricId], references: [id], onDelete: Cascade)
+  
+  // 关联模型
+  modelId         String    @map("model_id")
+  model           AiModel   @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  
+  // 计算值
+  rawValue        Float?    @map("raw_value")           // 原始计算结果
+  normalizedValue Float?    @map("normalized_value")     // 归一化后（0-100）
+  rankPosition    Int?      @map("rank_position")       // 在该指标下的排名
+  
+  // 计算详情（可追溯）
+  calcDetails     Json?     @map("calc_details")        // { numerator_value, denominator_value, calc_at }
+  
+  // 缓存控制
+  calcVersion     Int       @default(1) @map("calc_version")
+  expiresAt       DateTime? @map("expires_at")           // 缓存过期时间
+  
+  // 状态
+  status          String    @default("active") @map("status") // active | stale | error
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@unique([metricId, modelId, calcVersion])
+  @@index([metricId, rankPosition])
+  @@index([modelId])
+  @@index([expiresAt])
+  @@index([status])
+  @@map("custom_metric_values")
+}
+
+// ==================== Resource Management Extensions ====================
+
+// 厂商关系表 - 支持厂商合并、收购等关系追踪
+model VendorRelation {
+  id              String    @id @default(cuid())
+  
+  parentVendorId  String    @map("parent_vendor_id")
+  parentVendor    Vendor    @relation("ParentRelations", fields: [parentVendorId], references: [id], onDelete: Cascade)
+  
+  childVendorId   String    @map("child_vendor_id")
+  childVendor     Vendor    @relation("ChildRelations", fields: [childVendorId], references: [id], onDelete: Cascade)
+  
+  relationType    String    @map("relation_type") // merge | acquire | partner | subsidiary
+  relationStart   DateTime? @map("relation_start")
+  relationEnd     DateTime? @map("relation_end")
+  isCurrent       Boolean   @default(true) @map("is_current")
+  description     String?
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@unique([parentVendorId, childVendorId, relationType])
+  @@index([parentVendorId])
+  @@index([childVendorId])
+  @@index([relationType])
+  @@index([isCurrent])
+  @@map("vendor_relations")
+}
+
+// 模型版本链表 - 追踪模型版本演进
+model ModelVersion {
+  id              String    @id @default(cuid())
+  
+  modelId         String    @map("model_id")
+  model           AiModel   @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  
+  // 版本链
+  parentModelId   String?   @unique @map("parent_model_id")
+  parentModel     AiModel?  @relation("VersionChain", fields: [parentModelId], references: [id])
+  
+  versionName     String?   @map("version_name")
+  versionSequence Int       @default(1) @map("version_sequence")
+  changeSummary   String?   @map("change_summary")
+  inheritedFields String[]  @map("inherited_fields")
+  breakingChanges Boolean   @default(false) @map("breaking_changes")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@unique([modelId, versionSequence])
+  @@index([modelId])
+  @@index([parentModelId])
+  @@map("model_versions")
+}
+
+// 用户收藏表
+model UserCollection {
+  id              String    @id @default(cuid())
+  
+  userId          String    @map("user_id")
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  collectionType  String    @map("collection_type") // model | skill | mcp | chart | document
+  resourceId      String    @map("resource_id")
+  resourceType    String    @map("resource_type")
+  
+  collectionName  String?   @map("collection_name")
+  description     String?
+  tags            String[]
+  isPublic        Boolean   @default(false) @map("is_public")
+  sortOrder       Int       @default(0) @map("sort_order")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@unique([userId, collectionType, resourceId])
+  @@index([userId])
+  @@index([collectionType])
+  @@index([isPublic])
+  @@map("user_collections")
+}
+
+// 价格提醒表
+model PriceAlert {
+  id              String    @id @default(cuid())
+  
+  userId          String    @map("user_id")
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  modelId         String    @map("model_id")
+  model           AiModel   @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  
+  alertType       String    @map("alert_type") // price_drop | price_increase | threshold
+  thresholdValue  Float?    @map("threshold_value")
+  
+  isTriggered     Boolean   @default(false) @map("is_triggered")
+  triggeredAt     DateTime? @map("triggered_at")
+  notificationSent Boolean  @default(false) @map("notification_sent")
+  isActive        Boolean   @default(true) @map("is_active")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([modelId])
+  @@index([alertType])
+  @@index([isTriggered])
+  @@index([isActive])
+  @@map("price_alerts")
+}
+
+// API使用统计表
+model ModelApiUsage {
+  id              String    @id @default(cuid())
+  
+  modelId         String    @map("model_id")
+  model           AiModel   @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  
+  userId          String?   @map("user_id")
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  apiEndpoint     String?   @map("api_endpoint")
+  requestCount    Int       @default(0) @map("request_count")
+  tokenInput      Int       @default(0) @map("token_input")
+  tokenOutput     Int       @default(0) @map("token_output")
+  
+  latencyAvg      Float?    @map("latency_avg")
+  latencyP95      Float?    @map("latency_p95")
+  latencyP99      Float?    @map("latency_p99")
+  errorRate       Float?    @map("error_rate")
+  
+  usageDate       DateTime  @map("usage_date") @db.Date
+  hourOfDay       Int       @map("hour_of_day")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@unique([modelId, userId, usageDate, hourOfDay])
+  @@index([modelId])
+  @@index([userId])
+  @@index([usageDate])
+  @@map("model_api_usage")
+}
+
+// 资源访问日志表
+model ResourceAccessLog {
+  id              String    @id @default(cuid())
+  
+  userId          String?   @map("user_id")
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  resourceType    String    @map("resource_type") // model | skill | mcp | document | chart
+  resourceId      String    @map("resource_id")
+  action          String    // view | download | favorite | share | compare
+  
+  ipAddress       String?   @map("ip_address")
+  userAgent       String?   @map("user_agent")
+  referrer        String?
+  sessionId       String?   @map("session_id")
+  metadata        Json?     @map("metadata")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([resourceType])
+  @@index([resourceId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([sessionId])
+  @@map("resource_access_logs")
+}
+
+// 标签表
+model Tag {
+  id              String    @id @default(cuid())
+  
+  name            String    @unique
+  nameCn          String?   @map("name_cn")
+  description     String?
+  category        String    @default("other") // capability | use_case | industry | feature
+  weight          Int       @default(0)
+  usageCount      Int       @default(0) @map("usage_count")
+  isActive        Boolean   @default(true) @map("is_active")
+  
+  // 关联
+  resourceTags    ResourceTag[]
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@index([weight])
+  @@index([isActive])
+  @@map("tags")
+}
+
+// 资源标签关联表
+model ResourceTag {
+  id              String    @id @default(cuid())
+  
+  tagId           String    @map("tag_id")
+  tag             Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  resourceType    String    @map("resource_type") // model | skill | mcp | vendor
+  resourceId      String    @map("resource_id")
+  resourceWeight  Int       @default(0) @map("resource_weight")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@unique([tagId, resourceType, resourceId])
+  @@index([tagId])
+  @@index([resourceType, resourceId])
+  @@map("resource_tags")
+}
+
+// ==================== RBAC权限体系 ====================
+
+// 角色表 - RBAC角色定义
+model Role {
+  id          String    @id @default(cuid())
+  
+  // 业务字段
+  code        String    @unique
+  name        String
+  description String?
+  isSystem    Boolean   @default(false) @map("is_system")
+  sortOrder   Int       @default(0) @map("sort_order")
+  
+  // 状态字段
+  status      Int       @default(1) // 0-禁用 1-正常 2-弃用
+  isActive    Boolean   @default(true) @map("is_active")
+  
+  // 租户
+  tenantId    String    @default("0") @map("tenant_id")
+  
+  // 关联
+  userRoleMappings   UserRoleMapping[]
+  rolePermissions RolePermission[]
+  
+  // 审计
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdBy   String?   @map("created_by")
+  updatedBy   String?   @map("updated_by")
+  version     Int       @default(1)
+  
+  // 扩展
+  extJson     Json?     @map("ext_json")
+  
+  @@index([code])
+  @@index([status])
+  @@index([isActive])
+  @@index([tenantId])
+  @@map("roles")
+}
+
+// 权限表 - 资源-操作权限定义
+model Permission {
+  id          String    @id @default(cuid())
+  
+  // 业务字段
+  code        String    @unique
+  name        String
+  resource    String    // model, skill, user, system等
+  action      String    // create, read, update, delete, execute
+  description String?
+  
+  // 状态
+  status      Int       @default(1) // 0-禁用 1-正常 2-弃用
+  isActive    Boolean   @default(true) @map("is_active")
+  
+  // 关联
+  rolePermissions RolePermission[]
+  
+  // 审计
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  version     Int       @default(1)
+  
+  // 扩展
+  extJson     Json?     @map("ext_json")
+  
+  @@index([resource])
+  @@index([action])
+  @@index([status])
+  @@map("permissions")
+}
+
+// 用户角色关联表
+model UserRoleMapping {
+  id          String    @id @default(cuid())
+  
+  // 关联
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  roleId      String    @map("role_id")
+  role        Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  
+  // 租户
+  tenantId    String    @default("0") @map("tenant_id")
+  
+  // 授权信息
+  grantedBy   String?   @map("granted_by")
+  grantedAt   DateTime  @default(now()) @map("granted_at")
+  expiresAt   DateTime? @map("expires_at")
+  
+  // 状态
+  status      Int       @default(1)
+  isActive    Boolean   @default(true) @map("is_active")
+  
+  // 审计
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  version     Int       @default(1)
+  
+  // 扩展
+  extJson     Json?     @map("ext_json")
+  
+  @@unique([userId, roleId, tenantId])
+  @@index([userId])
+  @@index([roleId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("user_roles")
+}
+
+// 角色权限关联表
+model RolePermission {
+  id          String    @id @default(cuid())
+  
+  // 关联
+  roleId      String    @map("role_id")
+  role        Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  
+  permissionId String   @map("permission_id")
+  permission  Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  
+  // 权限条件
+  conditions  Json?     // {"own_data_only": true}
+  
+  // 状态
+  status      Int       @default(1)
+  isActive    Boolean   @default(true) @map("is_active")
+  
+  // 审计
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  version     Int       @default(1)
+  
+  // 扩展
+  extJson     Json?     @map("ext_json")
+  
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+// ==================== 组织架构 ====================
+
+// 部门表
+model Department {
+  id          String    @id @default(cuid())
+  
+  // 层级
+  parentId    String?   @map("parent_id")
+  level       Int       @default(1)
+  
+  // 业务字段
+  code        String
+  name        String
+  description String?
+  managerId   String?   @map("manager_id")
+  
+  // 状态
+  status      Int       @default(1)
+  isActive    Boolean   @default(true) @map("is_active")
+  
+  // 租户
+  tenantId    String    @default("0") @map("tenant_id")
+  
+  // 关联
+  teams       Team[]
+  
+  // 审计
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdBy   String?   @map("created_by")
+  updatedBy   String?   @map("updated_by")
+  version     Int       @default(1)
+  
+  // 扩展
+  extJson     Json?     @map("ext_json")
+  
+  @@unique([tenantId, code])
+  @@index([parentId])
+  @@index([status])
+  @@index([tenantId])
+  @@index([managerId])
+  @@map("departments")
+}
+
+// 团队表
+model Team {
+  id          String    @id @default(cuid())
+  
+  // 关联
+  departmentId String?  @map("department_id")
+  department  Department? @relation(fields: [departmentId], references: [id])
+  
+  // 业务字段
+  name        String
+  description String?
+  leaderId    String?   @map("leader_id")
+  maxMembers  Int       @default(10) @map("max_members")
+  
+  // 状态
+  status      Int       @default(1)
+  isActive    Boolean   @default(true) @map("is_active")
+  
+  // 租户
+  tenantId    String    @default("0") @map("tenant_id")
+  
+  // 关联
+  teamMembers TeamMember[]
+  
+  // 审计
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdBy   String?   @map("created_by")
+  updatedBy   String?   @map("updated_by")
+  version     Int       @default(1)
+  
+  // 扩展
+  extJson     Json?     @map("ext_json")
+  
+  @@index([departmentId])
+  @@index([status])
+  @@index([tenantId])
+  @@index([leaderId])
+  @@map("teams")
+}
+
+// 团队成员表
+model TeamMember {
+  id          String    @id @default(cuid())
+  
+  // 关联
+  teamId      String    @map("team_id")
+  team        Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 团队内角色
+  roleInTeam  String    @default("member") @map("role_in_team") // leader, member, guest
+  
+  // 状态
+  status      Int       @default(1)
+  isActive    Boolean   @default(true) @map("is_active")
+  
+  // 时间
+  joinedAt    DateTime  @default(now()) @map("joined_at")
+  
+  // 审计
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  version     Int       @default(1)
+  
+  // 扩展
+  extJson     Json?     @map("ext_json")
+  
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+  @@index([status])
+  @@map("team_members")
+}
+
+// ==================== 付费订阅套餐 ====================
+
+// 订阅套餐表
+model SubscriptionPlan {
+  id          String    @id @default(cuid())
+  
+  // 业务字段
+  code        String    @unique // free, pro, enterprise
+  name        String
+  description String?
+  priceMonthly Decimal? @map("price_monthly")
+  priceYearly  Decimal? @map("price_yearly")
+  currency    String    @default("CNY")
+  
+  // 配额配置
+  quotas      Json      @default("{\"api_calls_per_day\": 100, \"models_max\": 5, \"storage_mb\": 100, \"team_members_max\": 1, \"skills_max\": 10, \"agents_max\": 3}")
+  features    Json?     @default("[]")
+  sortOrder   Int       @default(0) @map("sort_order")
+  
+  // 状态
+  status      Int       @default(1)
+  isActive    Boolean   @default(true) @map("is_active")
+  
+  // 关联
+  userQuotas  UserQuota[]
+  
+  // 审计
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdBy   String?   @map("created_by")
+  updatedBy   String?   @map("updated_by")
+  version     Int       @default(1)
+  
+  // 扩展
+  extJson     Json?     @map("ext_json")
+  
+  @@index([code])
+  @@index([status])
+  @@index([isActive])
+  @@map("subscription_plans")
+}
+
+// 用户配额表
+model UserQuota {
+  id          String    @id @default(cuid())
+  
+  // 关联
+  userId      String    @unique @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  planId      String?   @map("plan_id")
+  plan        SubscriptionPlan? @relation(fields: [planId], references: [id])
+  
+  // API调用配额
+  apiCallsLimit   Int?    @map("api_calls_limit")
+  apiCallsUsed    Int     @default(0) @map("api_calls_used")
+  apiCallsResetAt DateTime? @map("api_calls_reset_at")
+  
+  // 存储配额
+  storageLimitMb  Int?    @map("storage_limit_mb")
+  storageUsedMb   Int     @default(0) @map("storage_used_mb")
+  
+  // 模型配额
+  modelsLimit     Int?    @map("models_limit")
+  modelsCreated   Int     @default(0) @map("models_created")
+  
+  // 团队配额
+  teamMembersLimit Int?   @map("team_members_limit")
+  teamMembersCount Int    @default(0) @map("team_members_count")
+  
+  // Skill配额
+  skillsLimit     Int?    @map("skills_limit")
+  skillsCreated   Int     @default(0) @map("skills_created")
+  
+  // Agent配额
+  agentsLimit     Int?    @map("agents_limit")
+  agentsCreated   Int     @default(0) @map("agents_created")
+  
+  // 额外配额包
+  extraQuotas     Json?   @map("extra_quotas")
+  
+  // 状态
+  status      Int       @default(1)
+  isActive    Boolean   @default(true) @map("is_active")
+  
+  // 审计
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  version     Int       @default(1)
+  
+  // 扩展
+  extJson     Json?     @map("ext_json")
+  
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+  @@map("user_quotas")
+}
+
+// ==================== Admin System Core Models ====================
+
+// Phase 10: 定时脚本管理
+model ScheduledScript {
+  id          String    @id @default(cuid())
+
+  name        String
+  scriptPath  String    @map("script_path")
+  params      Json?
+  cronExpression String? @map("cron_expression")
+
+  lastRunAt   DateTime? @map("last_run_at")
+  nextRunAt   DateTime? @map("next_run_at")
+
+  status      Int       @default(1)
+  isActive    Boolean   @default(true) @map("is_active")
+
+  executions  ScriptExecution[]
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdBy   String?   @map("created_by")
+  updatedBy   String?   @map("updated_by")
+  version     Int       @default(1)
+
+  extJson     Json?     @map("ext_json")
+
+  @@index([isActive])
+  @@index([status])
+  @@index([nextRunAt])
+  @@map("scheduled_scripts")
+}
+
+model ScriptExecution {
+  id          String    @id @default(cuid())
+
+  scriptId    String    @map("script_id")
+  script      ScheduledScript @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+
+  status      Int       @default(0) // 0:执行中 1:成功 2:失败
+  startedAt   DateTime  @map("started_at")
+  finishedAt  DateTime? @map("finished_at")
+  durationMs  Int?      @map("duration_ms")
+  output      String?   @db.Text
+  errorMsg    String?   @map("error_msg") @db.Text
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([scriptId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("script_executions")
+}
+
+// Phase 11: 模型评测管理
+model Evaluation {
+  id          String    @id @default(cuid())
+
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title       String?
+  description String?   @db.Text
+  prompt      String    @db.Text
+
+  evalType    String    @default("single") @map("eval_type") // single, comparison, batch
+  comparisonMode String? @map("comparison_mode") // parallel, sequential, ab_test
+
+  config      Json      @default("{}")
+  criteria    Json      @default("{}")
+  metadata    Json?     @map("metadata")
+  results     Json?     @map("results")
+  winnerModelId String? @map("winner_model_id")
+
+  status      Int       @default(0) // 0:待执行 1:执行中 2:已完成 3:失败
+  progress    Int       @default(0)
+  isPaid      Boolean   @default(false) @map("is_paid")
+  cost        Decimal   @default(0) @map("cost")
+  startedAt   DateTime? @map("started_at")
+  completedAt DateTime? @map("completed_at")
+  errorMsg    String?   @map("error_msg") @db.Text
+
+  evaluationModels EvaluationModel[]
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@index([userId])
+  @@index([status])
+  @@index([evalType])
+  @@index([createdAt])
+  @@map("evaluations")
+}
+
+model EvaluationModel {
+  id          String    @id @default(cuid())
+
+  evaluationId String   @map("evaluation_id")
+  evaluation  Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+
+  modelId     String    @map("model_id")
+  model       AiModel   @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  response    String?   @db.Text
+  thinking    String?   @db.Text
+  reasoningContent String? @map("reasoning_content") @db.Text
+
+  tokensInput   Int     @default(0) @map("tokens_input")
+  tokensOutput  Int     @default(0) @map("tokens_output")
+  tokensThinking Int    @default(0) @map("tokens_thinking")
+  tokensTotal   Int     @default(0) @map("tokens_total")
+
+  latencyMs     Int?    @map("latency_ms")
+  ttftMs        Int?    @map("ttft_ms")
+
+  score         Float?
+  accuracyScore Float?  @map("accuracy_score")
+  relevanceScore Float? @map("relevance_score")
+  coherenceScore Float? @map("coherence_score")
+  creativityScore Float? @map("creativity_score")
+
+  rawResponse   Json?   @map("raw_response")
+  status        String  @default("completed") // pending, running, completed, failed
+  errorMessage  String? @map("error_message") @db.Text
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([evaluationId, modelId])
+  @@index([evaluationId])
+  @@index([modelId])
+  @@index([status])
+  @@map("evaluation_models")
+}
+
+// Phase 16: 审计日志
+model AuditLog {
+  id          String    @id @default(cuid())
+
+  // 用户关联
+  userId      String?   @map("user_id")
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  tableName   String    @map("table_name")
+  recordId    String    @map("record_id")
+  action      Int       // 1:INSERT 2:UPDATE 3:DELETE
+
+  oldData     Json?     @map("old_data")
+  newData     Json?     @map("new_data")
+  changedFields String[] @map("changed_fields")
+
+  actorId     String?   @map("actor_id")
+  actorIp     String?   @map("actor_ip")
+
+  tenantId    String    @default("0") @map("tenant_id")
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([tableName])
+  @@index([recordId])
+  @@index([action])
+  @@index([userId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ==================== Phase 17: 新增表 ====================
+
+// 公告表 - aidean_system.announcements
+model Announcement {
+  id            String    @id @default(cuid())
+  title         String
+  content       String    @db.Text
+  type          String    @default("system") // system | maintenance | update | promotion
+  priority      Int       @default(0) // 0-普通 1-重要 2-紧急
+  isPinned      Boolean   @default(false) @map("is_pinned")
+  isPublished   Boolean   @default(false) @map("is_published")
+  publishedAt   DateTime? @map("published_at")
+  expiredAt     DateTime? @map("expired_at")
+  targetRoles   Int[]     @default([]) @map("target_roles") // 空数组=所有角色
+  authorId      String?   @map("author_id")
+  viewCount     Int       @default(0) @map("view_count")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  @@index([isPublished, publishedAt])
+  @@index([type])
+  @@index([priority])
+  @@map("announcements")
+}
+
+// API文档表 - aidean_resources.api_documents
+model ApiDocument {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  title         String
+  titleEn       String?   @map("title_en")
+  description   String?   @db.Text
+  category      String    // authentication | models | tools | billing | system
+  version       String    @default("v1")
+  content       Json      // {endpoints: [{method, path, params, response, examples}]}
+  orderNum      Int       @default(0) @map("order_num")
+  isPublic      Boolean   @default(true) @map("is_public")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  @@index([category])
+  @@index([isPublic])
+  @@map("api_documents")
+}
+
+// 数据库备份记录表 - aidean_system.backup_records
+model BackupRecord {
+  id              String    @id @default(cuid())
+  backupType      String    @map("backup_type") // full | incremental | differential
+  status          String    @default("running") // running | completed | failed
+  fileSize        Int?      @map("file_size") // bytes
+  storagePath     String?   @map("storage_path")
+  startedAt       DateTime  @map("started_at")
+  completedAt     DateTime? @map("completed_at")
+  durationMs      Int?      @map("duration_ms")
+  tablesIncluded  String[]  @default([]) @map("tables_included")
+  triggerType     String    @default("manual") // manual | scheduled | auto
+  operatorId      String?   @map("operator_id")
+  checksum        String?
+  errorMsg        String?   @map("error_msg") @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@index([status])
+  @@index([backupType])
+  @@index([startedAt])
+  @@map("backup_records")
+}
+
+// 管理员操作日志 - aidean_system.operation_logs
+model OperationLog {
+  id            String    @id @default(cuid())
+  operatorId    String?   @map("operator_id")
+  operatorName  String?   @map("operator_name")
+  operatorIp    String?   @map("operator_ip")
+  module        String    // models | tools | users | finance | content | settings | scripts | rbac
+  action        String    // create | update | delete | import | export | execute | login | logout
+  target        String?   // 操作对象标识
+  detail        Json?     // 操作详情
+  userAgent     String?   @map("user_agent")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([operatorId])
+  @@index([module])
+  @@index([action])
+  @@index([createdAt])
+  @@map("operation_logs")
+}
+
+// 数据导入导出记录 - aidean_system.data_imports
+model DataImport {
+  id            String    @id @default(cuid())
+  type          String    // import | export
+  format        String    // csv | json | xlsx
+  dataType      String    @map("data_type") // models | vendors | skills | mcps | agents | users
+  status        String    @default("pending") // pending | processing | completed | failed
+  totalRecords  Int       @default(0) @map("total_records")
+  successCount  Int       @default(0) @map("success_count")
+  failCount     Int       @default(0) @map("fail_count")
+  filePath      String?   @map("file_path")
+  errorMsg      String?   @map("error_msg") @db.Text
+  operatorId    String?   @map("operator_id")
+  startedAt     DateTime? @map("started_at")
+  completedAt   DateTime? @map("completed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([type])
+  @@index([dataType])
+  @@index([status])
+  @@index([createdAt])
+  @@map("data_imports")
+}

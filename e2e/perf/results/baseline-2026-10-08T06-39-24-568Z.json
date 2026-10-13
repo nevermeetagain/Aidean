@@ -1,0 +1,1240 @@
+{
+  "label": "baseline",
+  "iter": 3,
+  "base": "http://127.0.0.1:3000",
+  "ts": "2026-10-08T06-39-24-568Z",
+  "samples": [
+    {
+      "key": "nav:/login",
+      "iter": 1,
+      "type": "nav",
+      "status": 200,
+      "dcl": 126,
+      "load": 158,
+      "ttfb": 55,
+      "server": 58,
+      "fcp": 136,
+      "lcp": 136,
+      "wall": 175
+    },
+    {
+      "key": "act:登录提交→auth响应",
+      "iter": 1,
+      "type": "act",
+      "ms": 282,
+      "ok": true
+    },
+    {
+      "key": "nav:/user/console",
+      "iter": 1,
+      "type": "nav",
+      "status": 200,
+      "dcl": 154,
+      "load": 250,
+      "ttfb": 107,
+      "server": null,
+      "fcp": 164,
+      "lcp": 240,
+      "wall": 268
+    },
+    {
+      "key": "act:tab→模型配置可见",
+      "iter": 1,
+      "type": "act",
+      "ms": 115,
+      "ok": true
+    },
+    {
+      "key": "act:tab→免费额度可见",
+      "iter": 1,
+      "type": "act",
+      "ms": 86,
+      "ok": true
+    },
+    {
+      "key": "act:tab→平台密钥可见",
+      "iter": 1,
+      "type": "act",
+      "ms": 102,
+      "ok": true
+    },
+    {
+      "key": "act:tab→自有密钥可见",
+      "iter": 1,
+      "type": "act",
+      "ms": 91,
+      "ok": true
+    },
+    {
+      "key": "act:tab→调用测试台可见",
+      "iter": 1,
+      "type": "act",
+      "ms": 102,
+      "ok": true
+    },
+    {
+      "key": "act:tab→统计报表可见",
+      "iter": 1,
+      "type": "act",
+      "ms": 105,
+      "ok": true
+    },
+    {
+      "key": "act:tab→统计图表canvas/chart",
+      "iter": 1,
+      "type": "act",
+      "ms": 818,
+      "ok": true
+    },
+    {
+      "key": "act:stats切7d→api",
+      "iter": 1,
+      "type": "act",
+      "ms": 115,
+      "ok": true
+    },
+    {
+      "key": "act:stats切90d→api",
+      "iter": 1,
+      "type": "act",
+      "ms": 132,
+      "ok": true
+    },
+    {
+      "key": "act:tab→自定义渠道可见",
+      "iter": 1,
+      "type": "act",
+      "ms": 216,
+      "ok": true
+    },
+    {
+      "key": "api首响:api-keys(加载期预取)",
+      "iter": 1,
+      "type": "api",
+      "ms": 485,
+      "ok": true,
+      "status": 200
+    },
+    {
+      "key": "api首响:station-keys(加载期预取)",
+      "iter": 1,
+      "type": "api",
+      "ms": 485,
+      "ok": true,
+      "status": 200
+    },
+    {
+      "key": "api首响:stats",
+      "iter": 1,
+      "type": "api",
+      "ms": 158,
+      "ok": true,
+      "status": 200
+    },
+    {
+      "key": "api首响:custom-channels",
+      "iter": 1,
+      "type": "api",
+      "ms": null,
+      "ok": false
+    },
+    {
+      "key": "warm:nav:/user/console",
+      "iter": 1,
+      "type": "nav",
+      "status": 200,
+      "dcl": 114,
+      "load": 181,
+      "ttfb": 84,
+      "server": 85,
+      "fcp": 128,
+      "lcp": 180,
+      "wall": 185
+    },
+    {
+      "key": "nav:/user/balance",
+      "iter": 1,
+      "type": "nav",
+      "status": 200,
+      "dcl": 206,
+      "load": 225,
+      "ttfb": 165,
+      "server": 165,
+      "fcp": 212,
+      "lcp": 212,
+      "wall": 236
+    },
+    {
+      "key": "warm:nav:/user/balance",
+      "iter": 1,
+      "type": "nav",
+      "status": 200,
+      "dcl": 133,
+      "load": 173,
+      "ttfb": 112,
+      "server": 113,
+      "fcp": null,
+      "lcp": null,
+      "wall": 183
+    },
+    {
+      "key": "nav:/models(天梯)",
+      "iter": 1,
+      "type": "nav",
+      "status": 200,
+      "dcl": 158,
+      "load": 195,
+      "ttfb": 126,
+      "server": 127,
+      "fcp": null,
+      "lcp": null,
+      "wall": 208
+    },
+    {
+      "key": "warm:nav:/models(天梯)",
+      "iter": 1,
+      "type": "nav",
+      "status": 200,
+      "dcl": 160,
+      "load": 177,
+      "ttfb": 107,
+      "server": 108,
+      "fcp": 148,
+      "lcp": 148,
+      "wall": 194
+    },
+    {
+      "key": "nav:/(首页)",
+      "iter": 1,
+      "type": "nav",
+      "status": 200,
+      "dcl": 127,
+      "load": 196,
+      "ttfb": 95,
+      "server": null,
+      "fcp": null,
+      "lcp": null,
+      "wall": 208
+    },
+    {
+      "key": "nav:/admin/login",
+      "iter": 1,
+      "type": "nav",
+      "status": 200,
+      "dcl": 128,
+      "load": 164,
+      "ttfb": 72,
+      "server": 73,
+      "fcp": 156,
+      "lcp": null,
+      "wall": 178
+    },
+    {
+      "key": "act:admin登录提交→auth响应",
+      "iter": 1,
+      "type": "act",
+      "ms": 286,
+      "ok": true
+    },
+    {
+      "key": "nav:/admin/users",
+      "iter": 1,
+      "type": "nav",
+      "dcl": 194,
+      "load": 23,
+      "listApiMs": 194,
+      "apiOk": true
+    },
+    {
+      "key": "warm:nav:/admin/users",
+      "iter": 1,
+      "type": "nav",
+      "status": 200,
+      "dcl": 95,
+      "load": 134,
+      "ttfb": 75,
+      "server": 75,
+      "fcp": 108,
+      "lcp": 108,
+      "wall": 145
+    },
+    {
+      "key": "nav:/login",
+      "iter": 2,
+      "type": "nav",
+      "status": 200,
+      "dcl": 110,
+      "load": 144,
+      "ttfb": 54,
+      "server": 55,
+      "fcp": 120,
+      "lcp": 120,
+      "wall": 159
+    },
+    {
+      "key": "act:登录提交→auth响应",
+      "iter": 2,
+      "type": "act",
+      "ms": 272,
+      "ok": true
+    },
+    {
+      "key": "nav:/user/console",
+      "iter": 2,
+      "type": "nav",
+      "status": 200,
+      "dcl": 132,
+      "load": 206,
+      "ttfb": 99,
+      "server": 102,
+      "fcp": 148,
+      "lcp": 216,
+      "wall": 219
+    },
+    {
+      "key": "act:tab→模型配置可见",
+      "iter": 2,
+      "type": "act",
+      "ms": 94,
+      "ok": true
+    },
+    {
+      "key": "act:tab→免费额度可见",
+      "iter": 2,
+      "type": "act",
+      "ms": 192,
+      "ok": true
+    },
+    {
+      "key": "act:tab→平台密钥可见",
+      "iter": 2,
+      "type": "act",
+      "ms": 91,
+      "ok": true
+    },
+    {
+      "key": "act:tab→自有密钥可见",
+      "iter": 2,
+      "type": "act",
+      "ms": 87,
+      "ok": true
+    },
+    {
+      "key": "act:tab→调用测试台可见",
+      "iter": 2,
+      "type": "act",
+      "ms": 95,
+      "ok": true
+    },
+    {
+      "key": "act:tab→统计报表可见",
+      "iter": 2,
+      "type": "act",
+      "ms": 93,
+      "ok": true
+    },
+    {
+      "key": "act:tab→统计图表canvas/chart",
+      "iter": 2,
+      "type": "act",
+      "ms": 832,
+      "ok": true
+    },
+    {
+      "key": "act:stats切7d→api",
+      "iter": 2,
+      "type": "act",
+      "ms": 116,
+      "ok": true
+    },
+    {
+      "key": "act:stats切90d→api",
+      "iter": 2,
+      "type": "act",
+      "ms": 135,
+      "ok": true
+    },
+    {
+      "key": "act:tab→自定义渠道可见",
+      "iter": 2,
+      "type": "act",
+      "ms": 229,
+      "ok": true
+    },
+    {
+      "key": "api首响:api-keys(加载期预取)",
+      "iter": 2,
+      "type": "api",
+      "ms": 412,
+      "ok": true,
+      "status": 200
+    },
+    {
+      "key": "api首响:station-keys(加载期预取)",
+      "iter": 2,
+      "type": "api",
+      "ms": 412,
+      "ok": true,
+      "status": 200
+    },
+    {
+      "key": "api首响:stats",
+      "iter": 2,
+      "type": "api",
+      "ms": 141,
+      "ok": true,
+      "status": 200
+    },
+    {
+      "key": "api首响:custom-channels",
+      "iter": 2,
+      "type": "api",
+      "ms": 188,
+      "ok": true,
+      "status": 200
+    },
+    {
+      "key": "warm:nav:/user/console",
+      "iter": 2,
+      "type": "nav",
+      "status": 200,
+      "dcl": 87,
+      "load": 162,
+      "ttfb": 61,
+      "server": 62,
+      "fcp": null,
+      "lcp": null,
+      "wall": 164
+    },
+    {
+      "key": "nav:/user/balance",
+      "iter": 2,
+      "type": "nav",
+      "status": 200,
+      "dcl": 203,
+      "load": 234,
+      "ttfb": 180,
+      "server": null,
+      "fcp": null,
+      "lcp": null,
+      "wall": 247
+    },
+    {
+      "key": "warm:nav:/user/balance",
+      "iter": 2,
+      "type": "nav",
+      "status": 200,
+      "dcl": 153,
+      "load": 193,
+      "ttfb": 122,
+      "server": null,
+      "fcp": null,
+      "lcp": null,
+      "wall": 204
+    },
+    {
+      "key": "nav:/models(天梯)",
+      "iter": 2,
+      "type": "nav",
+      "status": 200,
+      "dcl": 143,
+      "load": 184,
+      "ttfb": 115,
+      "server": 116,
+      "fcp": 160,
+      "lcp": 160,
+      "wall": 203
+    },
+    {
+      "key": "warm:nav:/models(天梯)",
+      "iter": 2,
+      "type": "nav",
+      "status": 200,
+      "dcl": 119,
+      "load": 148,
+      "ttfb": 89,
+      "server": 90,
+      "fcp": null,
+      "lcp": null,
+      "wall": 165
+    },
+    {
+      "key": "nav:/(首页)",
+      "iter": 2,
+      "type": "nav",
+      "status": 200,
+      "dcl": 168,
+      "load": 230,
+      "ttfb": 117,
+      "server": 118,
+      "fcp": 172,
+      "lcp": 172,
+      "wall": 242
+    },
+    {
+      "key": "nav:/admin/login",
+      "iter": 2,
+      "type": "nav",
+      "status": 200,
+      "dcl": 101,
+      "load": 171,
+      "ttfb": 81,
+      "server": null,
+      "fcp": 168,
+      "lcp": null,
+      "wall": 185
+    },
+    {
+      "key": "act:admin登录提交→auth响应",
+      "iter": 2,
+      "type": "act",
+      "ms": 302,
+      "ok": true
+    },
+    {
+      "key": "nav:/admin/users",
+      "iter": 2,
+      "type": "nav",
+      "dcl": 187,
+      "load": 25,
+      "listApiMs": 187,
+      "apiOk": true
+    },
+    {
+      "key": "warm:nav:/admin/users",
+      "iter": 2,
+      "type": "nav",
+      "status": 200,
+      "dcl": 99,
+      "load": 131,
+      "ttfb": 74,
+      "server": 75,
+      "fcp": 112,
+      "lcp": 112,
+      "wall": 145
+    },
+    {
+      "key": "nav:/login",
+      "iter": 3,
+      "type": "nav",
+      "status": 200,
+      "dcl": 91,
+      "load": 179,
+      "ttfb": 67,
+      "server": 69,
+      "fcp": 164,
+      "lcp": 164,
+      "wall": 195
+    },
+    {
+      "key": "act:登录提交→auth响应",
+      "iter": 3,
+      "type": "act",
+      "ms": 290,
+      "ok": true
+    },
+    {
+      "key": "nav:/user/console",
+      "iter": 3,
+      "type": "nav",
+      "status": 200,
+      "dcl": 189,
+      "load": 260,
+      "ttfb": 115,
+      "server": 117,
+      "fcp": 200,
+      "lcp": 200,
+      "wall": 267
+    },
+    {
+      "key": "act:tab→模型配置可见",
+      "iter": 3,
+      "type": "act",
+      "ms": 131,
+      "ok": true
+    },
+    {
+      "key": "act:tab→免费额度可见",
+      "iter": 3,
+      "type": "act",
+      "ms": 213,
+      "ok": true
+    },
+    {
+      "key": "act:tab→平台密钥可见",
+      "iter": 3,
+      "type": "act",
+      "ms": 202,
+      "ok": true
+    },
+    {
+      "key": "act:tab→自有密钥可见",
+      "iter": 3,
+      "type": "act",
+      "ms": 91,
+      "ok": true
+    },
+    {
+      "key": "act:tab→调用测试台可见",
+      "iter": 3,
+      "type": "act",
+      "ms": 85,
+      "ok": true
+    },
+    {
+      "key": "act:tab→统计报表可见",
+      "iter": 3,
+      "type": "act",
+      "ms": 112,
+      "ok": true
+    },
+    {
+      "key": "act:tab→统计图表canvas/chart",
+      "iter": 3,
+      "type": "act",
+      "ms": 830,
+      "ok": true
+    },
+    {
+      "key": "act:stats切7d→api",
+      "iter": 3,
+      "type": "act",
+      "ms": 124,
+      "ok": true
+    },
+    {
+      "key": "act:stats切90d→api",
+      "iter": 3,
+      "type": "act",
+      "ms": 130,
+      "ok": true
+    },
+    {
+      "key": "act:tab→自定义渠道可见",
+      "iter": 3,
+      "type": "act",
+      "ms": 210,
+      "ok": true
+    },
+    {
+      "key": "api首响:api-keys(加载期预取)",
+      "iter": 3,
+      "type": "api",
+      "ms": 555,
+      "ok": true,
+      "status": 200
+    },
+    {
+      "key": "api首响:station-keys(加载期预取)",
+      "iter": 3,
+      "type": "api",
+      "ms": 560,
+      "ok": true,
+      "status": 200
+    },
+    {
+      "key": "api首响:stats",
+      "iter": 3,
+      "type": "api",
+      "ms": 169,
+      "ok": true,
+      "status": 200
+    },
+    {
+      "key": "api首响:custom-channels",
+      "iter": 3,
+      "type": "api",
+      "ms": 176,
+      "ok": true,
+      "status": 200
+    },
+    {
+      "key": "warm:nav:/user/console",
+      "iter": 3,
+      "type": "nav",
+      "status": 200,
+      "dcl": 88,
+      "load": 126,
+      "ttfb": 65,
+      "server": 65,
+      "fcp": null,
+      "lcp": null,
+      "wall": 137
+    },
+    {
+      "key": "nav:/user/balance",
+      "iter": 3,
+      "type": "nav",
+      "status": 200,
+      "dcl": 219,
+      "load": 243,
+      "ttfb": 167,
+      "server": 167,
+      "fcp": null,
+      "lcp": null,
+      "wall": 255
+    },
+    {
+      "key": "warm:nav:/user/balance",
+      "iter": 3,
+      "type": "nav",
+      "status": 200,
+      "dcl": 128,
+      "load": 169,
+      "ttfb": 109,
+      "server": 110,
+      "fcp": null,
+      "lcp": null,
+      "wall": 181
+    },
+    {
+      "key": "nav:/models(天梯)",
+      "iter": 3,
+      "type": "nav",
+      "status": 200,
+      "dcl": 144,
+      "load": 186,
+      "ttfb": 109,
+      "server": null,
+      "fcp": null,
+      "lcp": null,
+      "wall": 201
+    },
+    {
+      "key": "warm:nav:/models(天梯)",
+      "iter": 3,
+      "type": "nav",
+      "status": 200,
+      "dcl": 123,
+      "load": 165,
+      "ttfb": 87,
+      "server": 88,
+      "fcp": 136,
+      "lcp": 136,
+      "wall": 178
+    },
+    {
+      "key": "nav:/(首页)",
+      "iter": 3,
+      "type": "nav",
+      "status": 200,
+      "dcl": 132,
+      "load": 197,
+      "ttfb": 97,
+      "server": 98,
+      "fcp": 148,
+      "lcp": 148,
+      "wall": 209
+    },
+    {
+      "key": "nav:/admin/login",
+      "iter": 3,
+      "type": "nav",
+      "status": 200,
+      "dcl": 109,
+      "load": 144,
+      "ttfb": 63,
+      "server": 64,
+      "fcp": 120,
+      "lcp": 120,
+      "wall": 158
+    },
+    {
+      "key": "act:admin登录提交→auth响应",
+      "iter": 3,
+      "type": "act",
+      "ms": 292,
+      "ok": true
+    },
+    {
+      "key": "nav:/admin/users",
+      "iter": 3,
+      "type": "nav",
+      "dcl": 177,
+      "load": 9,
+      "listApiMs": 177,
+      "apiOk": true
+    },
+    {
+      "key": "warm:nav:/admin/users",
+      "iter": 3,
+      "type": "nav",
+      "status": 200,
+      "dcl": 70,
+      "load": 105,
+      "ttfb": 55,
+      "server": 55,
+      "fcp": 80,
+      "lcp": 80,
+      "wall": 116
+    }
+  ],
+  "agg": {
+    "nav:/login": {
+      "n": 3,
+      "ttfb": {
+        "med": 55,
+        "min": 54,
+        "max": 67
+      },
+      "server": {
+        "med": 58,
+        "min": 55,
+        "max": 69
+      },
+      "dcl": {
+        "med": 110,
+        "min": 91,
+        "max": 126
+      },
+      "load": {
+        "med": 158,
+        "min": 144,
+        "max": 179
+      },
+      "fcp": {
+        "med": 136,
+        "min": 120,
+        "max": 164
+      },
+      "lcp": {
+        "med": 136,
+        "min": 120,
+        "max": 164
+      }
+    },
+    "act:登录提交→auth响应": {
+      "n": 3,
+      "ms": {
+        "med": 282,
+        "min": 272,
+        "max": 290
+      }
+    },
+    "nav:/user/console": {
+      "n": 3,
+      "ttfb": {
+        "med": 107,
+        "min": 99,
+        "max": 115
+      },
+      "server": {
+        "med": 110,
+        "min": 102,
+        "max": 117
+      },
+      "dcl": {
+        "med": 154,
+        "min": 132,
+        "max": 189
+      },
+      "load": {
+        "med": 250,
+        "min": 206,
+        "max": 260
+      },
+      "fcp": {
+        "med": 164,
+        "min": 148,
+        "max": 200
+      },
+      "lcp": {
+        "med": 216,
+        "min": 200,
+        "max": 240
+      }
+    },
+    "act:tab→模型配置可见": {
+      "n": 3,
+      "ms": {
+        "med": 115,
+        "min": 94,
+        "max": 131
+      }
+    },
+    "act:tab→免费额度可见": {
+      "n": 3,
+      "ms": {
+        "med": 192,
+        "min": 86,
+        "max": 213
+      }
+    },
+    "act:tab→平台密钥可见": {
+      "n": 3,
+      "ms": {
+        "med": 102,
+        "min": 91,
+        "max": 202
+      }
+    },
+    "act:tab→自有密钥可见": {
+      "n": 3,
+      "ms": {
+        "med": 91,
+        "min": 87,
+        "max": 91
+      }
+    },
+    "act:tab→调用测试台可见": {
+      "n": 3,
+      "ms": {
+        "med": 95,
+        "min": 85,
+        "max": 102
+      }
+    },
+    "act:tab→统计报表可见": {
+      "n": 3,
+      "ms": {
+        "med": 105,
+        "min": 93,
+        "max": 112
+      }
+    },
+    "act:tab→统计图表canvas/chart": {
+      "n": 3,
+      "ms": {
+        "med": 830,
+        "min": 818,
+        "max": 832
+      }
+    },
+    "act:stats切7d→api": {
+      "n": 3,
+      "ms": {
+        "med": 116,
+        "min": 115,
+        "max": 124
+      }
+    },
+    "act:stats切90d→api": {
+      "n": 3,
+      "ms": {
+        "med": 132,
+        "min": 130,
+        "max": 135
+      }
+    },
+    "act:tab→自定义渠道可见": {
+      "n": 3,
+      "ms": {
+        "med": 216,
+        "min": 210,
+        "max": 229
+      }
+    },
+    "api首响:api-keys(加载期预取)": {
+      "n": 3,
+      "ms": {
+        "med": 485,
+        "min": 412,
+        "max": 555
+      }
+    },
+    "api首响:station-keys(加载期预取)": {
+      "n": 3,
+      "ms": {
+        "med": 485,
+        "min": 412,
+        "max": 560
+      }
+    },
+    "api首响:stats": {
+      "n": 3,
+      "ms": {
+        "med": 158,
+        "min": 141,
+        "max": 169
+      }
+    },
+    "api首响:custom-channels": {
+      "n": 3,
+      "ms": {
+        "med": 182,
+        "min": 176,
+        "max": 188
+      }
+    },
+    "warm:nav:/user/console": {
+      "n": 3,
+      "ttfb": {
+        "med": 65,
+        "min": 61,
+        "max": 84
+      },
+      "server": {
+        "med": 65,
+        "min": 62,
+        "max": 85
+      },
+      "dcl": {
+        "med": 88,
+        "min": 87,
+        "max": 114
+      },
+      "load": {
+        "med": 162,
+        "min": 126,
+        "max": 181
+      },
+      "fcp": {
+        "med": 128,
+        "min": 128,
+        "max": 128
+      },
+      "lcp": {
+        "med": 180,
+        "min": 180,
+        "max": 180
+      }
+    },
+    "nav:/user/balance": {
+      "n": 3,
+      "ttfb": {
+        "med": 167,
+        "min": 165,
+        "max": 180
+      },
+      "server": {
+        "med": 166,
+        "min": 165,
+        "max": 167
+      },
+      "dcl": {
+        "med": 206,
+        "min": 203,
+        "max": 219
+      },
+      "load": {
+        "med": 234,
+        "min": 225,
+        "max": 243
+      },
+      "fcp": {
+        "med": 212,
+        "min": 212,
+        "max": 212
+      },
+      "lcp": {
+        "med": 212,
+        "min": 212,
+        "max": 212
+      }
+    },
+    "warm:nav:/user/balance": {
+      "n": 3,
+      "ttfb": {
+        "med": 112,
+        "min": 109,
+        "max": 122
+      },
+      "server": {
+        "med": 112,
+        "min": 110,
+        "max": 113
+      },
+      "dcl": {
+        "med": 133,
+        "min": 128,
+        "max": 153
+      },
+      "load": {
+        "med": 173,
+        "min": 169,
+        "max": 193
+      }
+    },
+    "nav:/models(天梯)": {
+      "n": 3,
+      "ttfb": {
+        "med": 115,
+        "min": 109,
+        "max": 126
+      },
+      "server": {
+        "med": 122,
+        "min": 116,
+        "max": 127
+      },
+      "dcl": {
+        "med": 144,
+        "min": 143,
+        "max": 158
+      },
+      "load": {
+        "med": 186,
+        "min": 184,
+        "max": 195
+      },
+      "fcp": {
+        "med": 160,
+        "min": 160,
+        "max": 160
+      },
+      "lcp": {
+        "med": 160,
+        "min": 160,
+        "max": 160
+      }
+    },
+    "warm:nav:/models(天梯)": {
+      "n": 3,
+      "ttfb": {
+        "med": 89,
+        "min": 87,
+        "max": 107
+      },
+      "server": {
+        "med": 90,
+        "min": 88,
+        "max": 108
+      },
+      "dcl": {
+        "med": 123,
+        "min": 119,
+        "max": 160
+      },
+      "load": {
+        "med": 165,
+        "min": 148,
+        "max": 177
+      },
+      "fcp": {
+        "med": 142,
+        "min": 136,
+        "max": 148
+      },
+      "lcp": {
+        "med": 142,
+        "min": 136,
+        "max": 148
+      }
+    },
+    "nav:/(首页)": {
+      "n": 3,
+      "ttfb": {
+        "med": 97,
+        "min": 95,
+        "max": 117
+      },
+      "server": {
+        "med": 108,
+        "min": 98,
+        "max": 118
+      },
+      "dcl": {
+        "med": 132,
+        "min": 127,
+        "max": 168
+      },
+      "load": {
+        "med": 197,
+        "min": 196,
+        "max": 230
+      },
+      "fcp": {
+        "med": 160,
+        "min": 148,
+        "max": 172
+      },
+      "lcp": {
+        "med": 160,
+        "min": 148,
+        "max": 172
+      }
+    },
+    "nav:/admin/login": {
+      "n": 3,
+      "ttfb": {
+        "med": 72,
+        "min": 63,
+        "max": 81
+      },
+      "server": {
+        "med": 69,
+        "min": 64,
+        "max": 73
+      },
+      "dcl": {
+        "med": 109,
+        "min": 101,
+        "max": 128
+      },
+      "load": {
+        "med": 164,
+        "min": 144,
+        "max": 171
+      },
+      "fcp": {
+        "med": 156,
+        "min": 120,
+        "max": 168
+      },
+      "lcp": {
+        "med": 120,
+        "min": 120,
+        "max": 120
+      }
+    },
+    "act:admin登录提交→auth响应": {
+      "n": 3,
+      "ms": {
+        "med": 292,
+        "min": 286,
+        "max": 302
+      }
+    },
+    "nav:/admin/users": {
+      "n": 3,
+      "dcl": {
+        "med": 187,
+        "min": 177,
+        "max": 194
+      },
+      "load": {
+        "med": 23,
+        "min": 9,
+        "max": 25
+      },
+      "listApiMs": {
+        "med": 187,
+        "min": 177,
+        "max": 194
+      }
+    },
+    "warm:nav:/admin/users": {
+      "n": 3,
+      "ttfb": {
+        "med": 74,
+        "min": 55,
+        "max": 75
+      },
+      "server": {
+        "med": 75,
+        "min": 55,
+        "max": 75
+      },
+      "dcl": {
+        "med": 95,
+        "min": 70,
+        "max": 99
+      },
+      "load": {
+        "med": 131,
+        "min": 105,
+        "max": 134
+      },
+      "fcp": {
+        "med": 108,
+        "min": 80,
+        "max": 112
+      },
+      "lcp": {
+        "med": 108,
+        "min": 80,
+        "max": 112
+      }
+    }
+  }
+}

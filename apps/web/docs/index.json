@@ -1,0 +1,1101 @@
+{
+  "generatedAt": "2026-08-18T07:41:19.017Z",
+  "sourceDir": "docs",
+  "documents": [
+    {
+      "filename": "API接口文档.md",
+      "path": "../../docs/architecture/API接口文档.md",
+      "title": "API接口文档",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "API 接口文档",
+          "anchor": "#api-接口文档",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "1. URL 规范",
+          "anchor": "#1-url-规范",
+          "line": 5
+        },
+        {
+          "level": 2,
+          "title": "2. 认证",
+          "anchor": "#2-认证",
+          "line": 11
+        },
+        {
+          "level": 2,
+          "title": "3. 接口分层",
+          "anchor": "#3-接口分层",
+          "line": 20
+        },
+        {
+          "level": 2,
+          "title": "4. 统一响应",
+          "anchor": "#4-统一响应",
+          "line": 24
+        },
+        {
+          "level": 2,
+          "title": "5. 接口清单（按模块）",
+          "anchor": "#5-接口清单按模块",
+          "line": 32
+        },
+        {
+          "level": 3,
+          "title": "5.1 认证 auth",
+          "anchor": "#51-认证-auth",
+          "line": 34
+        },
+        {
+          "level": 3,
+          "title": "5.2 天梯 ladder 与模型 models",
+          "anchor": "#52-天梯-ladder-与模型-models",
+          "line": 43
+        },
+        {
+          "level": 3,
+          "title": "5.3 模型站 stations",
+          "anchor": "#53-模型站-stations",
+          "line": 52
+        },
+        {
+          "level": 3,
+          "title": "5.4 统一 API 聚合（.design.md 第 6 条核心）",
+          "anchor": "#54-统一-api-聚合designmd-第-6-条核心",
+          "line": 60
+        },
+        {
+          "level": 3,
+          "title": "5.5 资源 resources（工具/Skills/Agents/MCP）",
+          "anchor": "#55-资源-resources工具skillsagentsmcp",
+          "line": 66
+        },
+        {
+          "level": 3,
+          "title": "5.6 系统 system",
+          "anchor": "#56-系统-system",
+          "line": 72
+        },
+        {
+          "level": 3,
+          "title": "5.7 后台 admin（第二阶段）",
+          "anchor": "#57-后台-admin第二阶段",
+          "line": 79
+        },
+        {
+          "level": 2,
+          "title": "6. 中间件",
+          "anchor": "#6-中间件",
+          "line": 82
+        },
+        {
+          "level": 2,
+          "title": "7. 缓存",
+          "anchor": "#7-缓存",
+          "line": 86
+        }
+      ],
+      "lastModified": "2026-08-18T06:06:23.391Z",
+      "size": 3842
+    },
+    {
+      "filename": "API架构设计方案.md",
+      "path": "../../docs/architecture/API架构设计方案.md",
+      "title": "API架构设计方案",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "API 架构设计方案（主平台）",
+          "anchor": "#api-架构设计方案主平台",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "一、路由分层",
+          "anchor": "#一路由分层",
+          "line": 6
+        },
+        {
+          "level": 2,
+          "title": "二、统一响应结构",
+          "anchor": "#二统一响应结构",
+          "line": 26
+        },
+        {
+          "level": 2,
+          "title": "三、错误码段位（权威见《API接口文档》§4）",
+          "anchor": "#三错误码段位权威见api接口文档4",
+          "line": 44
+        },
+        {
+          "level": 2,
+          "title": "四、鉴权与权限",
+          "anchor": "#四鉴权与权限",
+          "line": 58
+        },
+        {
+          "level": 2,
+          "title": "五、分页 / 限流 / 缓存",
+          "anchor": "#五分页-限流-缓存",
+          "line": 65
+        },
+        {
+          "level": 2,
+          "title": "六、契约测试",
+          "anchor": "#六契约测试",
+          "line": 71
+        }
+      ],
+      "lastModified": "2026-08-18T06:41:28.292Z",
+      "size": 3193
+    },
+    {
+      "filename": "README.md",
+      "path": "../../docs/README.md",
+      "title": "README",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "Aidean · 开发文档中心",
+          "anchor": "#aidean-开发文档中心",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "一、这个仓库是什么",
+          "anchor": "#一这个仓库是什么",
+          "line": 8
+        },
+        {
+          "level": 2,
+          "title": "二、文档导航（TOC）",
+          "anchor": "#二文档导航toc",
+          "line": 16
+        },
+        {
+          "level": 3,
+          "title": "核心文档（先读）",
+          "anchor": "#核心文档先读",
+          "line": 20
+        },
+        {
+          "level": 3,
+          "title": "研发与运维",
+          "anchor": "#研发与运维",
+          "line": 27
+        },
+        {
+          "level": 3,
+          "title": "辅助",
+          "anchor": "#辅助",
+          "line": 40
+        },
+        {
+          "level": 2,
+          "title": "三、强约束（全站通用）",
+          "anchor": "#三强约束全站通用",
+          "line": 48
+        },
+        {
+          "level": 2,
+          "title": "四、本次重构说明（2026-08-18）",
+          "anchor": "#四本次重构说明2026-08-18",
+          "line": 56
+        }
+      ],
+      "lastModified": "2026-08-18T06:41:52.536Z",
+      "size": 4245
+    },
+    {
+      "filename": "UI设计文档.md",
+      "path": "../../docs/product/design/UI设计文档.md",
+      "title": "UI设计文档",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "UI 设计文档",
+          "anchor": "#ui-设计文档",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "1. 设计语言",
+          "anchor": "#1-设计语言",
+          "line": 5
+        },
+        {
+          "level": 2,
+          "title": "2. 设计令牌（Tailwind）",
+          "anchor": "#2-设计令牌tailwind",
+          "line": 9
+        },
+        {
+          "level": 3,
+          "title": "2.1 色彩",
+          "anchor": "#21-色彩",
+          "line": 11
+        },
+        {
+          "level": 3,
+          "title": "2.2 字体与排版",
+          "anchor": "#22-字体与排版",
+          "line": 25
+        },
+        {
+          "level": 3,
+          "title": "2.3 间距与圆角",
+          "anchor": "#23-间距与圆角",
+          "line": 31
+        },
+        {
+          "level": 2,
+          "title": "3. 核心组件规范",
+          "anchor": "#3-核心组件规范",
+          "line": 36
+        },
+        {
+          "level": 2,
+          "title": "4. 图表规范（ECharts）",
+          "anchor": "#4-图表规范echarts",
+          "line": 47
+        },
+        {
+          "level": 2,
+          "title": "5. 图标",
+          "anchor": "#5-图标",
+          "line": 53
+        },
+        {
+          "level": 2,
+          "title": "6. 组件库分层",
+          "anchor": "#6-组件库分层",
+          "line": 57
+        }
+      ],
+      "lastModified": "2026-08-18T06:08:06.557Z",
+      "size": 3201
+    },
+    {
+      "filename": "功能设计文档.md",
+      "path": "../../docs/product/design/功能设计文档.md",
+      "title": "功能设计文档",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "功能设计文档（主平台）",
+          "anchor": "#功能设计文档主平台",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "一、技术栈",
+          "anchor": "#一技术栈",
+          "line": 7
+        },
+        {
+          "level": 2,
+          "title": "二、架构分层",
+          "anchor": "#二架构分层",
+          "line": 23
+        },
+        {
+          "level": 2,
+          "title": "三、核心模块实现要点",
+          "anchor": "#三核心模块实现要点",
+          "line": 40
+        },
+        {
+          "level": 3,
+          "title": "3.1 天梯图数据流",
+          "anchor": "#31-天梯图数据流",
+          "line": 42
+        },
+        {
+          "level": 3,
+          "title": "3.2 排名算法",
+          "anchor": "#32-排名算法",
+          "line": 49
+        },
+        {
+          "level": 3,
+          "title": "3.3 用户与余额",
+          "anchor": "#33-用户与余额",
+          "line": 53
+        },
+        {
+          "level": 3,
+          "title": "3.4 数据采集（Extract→Transform→Load）",
+          "anchor": "#34-数据采集extracttransformload",
+          "line": 58
+        },
+        {
+          "level": 3,
+          "title": "3.5 后台管理",
+          "anchor": "#35-后台管理",
+          "line": 63
+        },
+        {
+          "level": 2,
+          "title": "四、关键交互（概述）",
+          "anchor": "#四关键交互概述",
+          "line": 67
+        }
+      ],
+      "lastModified": "2026-08-18T06:41:07.210Z",
+      "size": 3910
+    },
+    {
+      "filename": "开发环境搭建.md",
+      "path": "../../docs/engineering/开发环境搭建.md",
+      "title": "开发环境搭建",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "开发环境搭建",
+          "anchor": "#开发环境搭建",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "一、前置依赖",
+          "anchor": "#一前置依赖",
+          "line": 6
+        },
+        {
+          "level": 2,
+          "title": "二、本地启动（开发）",
+          "anchor": "#二本地启动开发",
+          "line": 18
+        },
+        {
+          "level": 1,
+          "title": "1. 安装依赖",
+          "anchor": "#1-安装依赖",
+          "line": 21
+        },
+        {
+          "level": 1,
+          "title": "2. 准备环境变量",
+          "anchor": "#2-准备环境变量",
+          "line": 24
+        },
+        {
+          "level": 1,
+          "title": "3. 数据库",
+          "anchor": "#3-数据库",
+          "line": 27
+        },
+        {
+          "level": 1,
+          "title": "4. 启动开发服务",
+          "anchor": "#4-启动开发服务",
+          "line": 32
+        },
+        {
+          "level": 2,
+          "title": "三、Docker 部署（生产，Ubuntu）",
+          "anchor": "#三docker-部署生产ubuntu",
+          "line": 47
+        },
+        {
+          "level": 1,
+          "title": "一键启动全部（含基础服务 + web）",
+          "anchor": "#一键启动全部含基础服务-web",
+          "line": 52
+        },
+        {
+          "level": 1,
+          "title": "仅基础服务",
+          "anchor": "#仅基础服务",
+          "line": 55
+        },
+        {
+          "level": 2,
+          "title": "四、数据库与缓存",
+          "anchor": "#四数据库与缓存",
+          "line": 63
+        },
+        {
+          "level": 2,
+          "title": "五、常见问题",
+          "anchor": "#五常见问题",
+          "line": 72
+        }
+      ],
+      "lastModified": "2026-08-18T06:25:52.907Z",
+      "size": 3000
+    },
+    {
+      "filename": "技术架构文档.md",
+      "path": "../../docs/architecture/技术架构文档.md",
+      "title": "技术架构文档",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "技术架构文档",
+          "anchor": "#技术架构文档",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "1. 总体架构",
+          "anchor": "#1-总体架构",
+          "line": 5
+        },
+        {
+          "level": 2,
+          "title": "2. 技术选型",
+          "anchor": "#2-技术选型",
+          "line": 22
+        },
+        {
+          "level": 2,
+          "title": "3. 后端分层三原则（继承旧体系）",
+          "anchor": "#3-后端分层三原则继承旧体系",
+          "line": 38
+        },
+        {
+          "level": 2,
+          "title": "4. 关键架构决策",
+          "anchor": "#4-关键架构决策",
+          "line": 46
+        },
+        {
+          "level": 3,
+          "title": "D1：数据层从\"原生 SQL\"回归\"Prisma + SQL 初始化并存\"",
+          "anchor": "#d1数据层从原生-sql回归prisma-sql-初始化并存",
+          "line": 48
+        },
+        {
+          "level": 3,
+          "title": "D2：同步管线（sync）作为独立模块",
+          "anchor": "#d2同步管线sync作为独立模块",
+          "line": 54
+        },
+        {
+          "level": 3,
+          "title": "D3：i18n 重做而非修补",
+          "anchor": "#d3i18n-重做而非修补",
+          "line": 59
+        },
+        {
+          "level": 3,
+          "title": "D4：认证 JWT + API Key 双模式（继承旧 API 体系）",
+          "anchor": "#d4认证-jwt-api-key-双模式继承旧-api-体系",
+          "line": 64
+        },
+        {
+          "level": 3,
+          "title": "D5：缓存策略",
+          "anchor": "#d5缓存策略",
+          "line": 69
+        },
+        {
+          "level": 2,
+          "title": "5. 非功能设计",
+          "anchor": "#5-非功能设计",
+          "line": 74
+        }
+      ],
+      "lastModified": "2026-08-18T07:14:17.675Z",
+      "size": 4548
+    },
+    {
+      "filename": "数据库文档.md",
+      "path": "../../docs/architecture/数据库文档.md",
+      "title": "数据库文档",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "数据库文档（主平台）",
+          "anchor": "#数据库文档主平台",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "一、命名空间与规模",
+          "anchor": "#一命名空间与规模",
+          "line": 7
+        },
+        {
+          "level": 2,
+          "title": "二、通用字段规范",
+          "anchor": "#二通用字段规范",
+          "line": 21
+        },
+        {
+          "level": 2,
+          "title": "三、核心表（摘要）",
+          "anchor": "#三核心表摘要",
+          "line": 32
+        },
+        {
+          "level": 2,
+          "title": "四、价格换算",
+          "anchor": "#四价格换算",
+          "line": 49
+        },
+        {
+          "level": 2,
+          "title": "五、初始化与迁移",
+          "anchor": "#五初始化与迁移",
+          "line": 53
+        },
+        {
+          "level": 2,
+          "title": "六、索引与性能",
+          "anchor": "#六索引与性能",
+          "line": 61
+        }
+      ],
+      "lastModified": "2026-08-18T06:41:07.216Z",
+      "size": 2955
+    },
+    {
+      "filename": "文档索引.md",
+      "path": "../../docs/文档索引.md",
+      "title": "文档索引",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "文档索引",
+          "anchor": "#文档索引",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "分层结构",
+          "anchor": "#分层结构",
+          "line": 5
+        },
+        {
+          "level": 3,
+          "title": "第一层：核心文档（先读）",
+          "anchor": "#第一层核心文档先读",
+          "line": 7
+        },
+        {
+          "level": 3,
+          "title": "第二层：研发与运维",
+          "anchor": "#第二层研发与运维",
+          "line": 16
+        },
+        {
+          "level": 3,
+          "title": "第三层：辅助",
+          "anchor": "#第三层辅助",
+          "line": 29
+        },
+        {
+          "level": 2,
+          "title": "上游输入（只读，不属于本体系）",
+          "anchor": "#上游输入只读不属于本体系",
+          "line": 37
+        },
+        {
+          "level": 2,
+          "title": "约定",
+          "anchor": "#约定",
+          "line": 42
+        }
+      ],
+      "lastModified": "2026-08-18T07:26:50.739Z",
+      "size": 2639
+    },
+    {
+      "filename": "旧资产迁移清单.md",
+      "path": "../../docs/archive/旧资产迁移清单.md",
+      "title": "旧资产迁移清单",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "旧资产迁移清单",
+          "anchor": "#旧资产迁移清单",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "0. 关键发现（影响全局）",
+          "anchor": "#0-关键发现影响全局",
+          "line": 7
+        },
+        {
+          "level": 2,
+          "title": "1. 数据库资产",
+          "anchor": "#1-数据库资产",
+          "line": 14
+        },
+        {
+          "level": 2,
+          "title": "2. 后端/服务资产",
+          "anchor": "#2-后端服务资产",
+          "line": 30
+        },
+        {
+          "level": 2,
+          "title": "3. 前端资产",
+          "anchor": "#3-前端资产",
+          "line": 41
+        },
+        {
+          "level": 2,
+          "title": "4. 基础设施资产",
+          "anchor": "#4-基础设施资产",
+          "line": 57
+        },
+        {
+          "level": 2,
+          "title": "5. 文档资产（方法论继承，非内容照搬）",
+          "anchor": "#5-文档资产方法论继承非内容照搬",
+          "line": 68
+        },
+        {
+          "level": 2,
+          "title": "6. 坑位表（复用时必须处理）",
+          "anchor": "#6-坑位表复用时必须处理",
+          "line": 78
+        }
+      ],
+      "lastModified": "2026-08-18T07:35:26.191Z",
+      "size": 7706
+    },
+    {
+      "filename": "术语表.md",
+      "path": "../../docs/governance/术语表.md",
+      "title": "术语表",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "术语表",
+          "anchor": "#术语表",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "一、产品与平台",
+          "anchor": "#一产品与平台",
+          "line": 5
+        },
+        {
+          "level": 2,
+          "title": "二、天梯图核心概念",
+          "anchor": "#二天梯图核心概念",
+          "line": 15
+        },
+        {
+          "level": 2,
+          "title": "三、业务与计费",
+          "anchor": "#三业务与计费",
+          "line": 26
+        },
+        {
+          "level": 2,
+          "title": "四、技术",
+          "anchor": "#四技术",
+          "line": 36
+        },
+        {
+          "level": 2,
+          "title": "五、数据同步",
+          "anchor": "#五数据同步",
+          "line": 47
+        }
+      ],
+      "lastModified": "2026-08-18T06:25:52.901Z",
+      "size": 3109
+    },
+    {
+      "filename": "测试与验收文档.md",
+      "path": "../../docs/engineering/测试与验收文档.md",
+      "title": "测试与验收文档",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "测试与验收文档（主平台）",
+          "anchor": "#测试与验收文档主平台",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "一、测试分层",
+          "anchor": "#一测试分层",
+          "line": 6
+        },
+        {
+          "level": 2,
+          "title": "二、主链路 E2E（核心）",
+          "anchor": "#二主链路-e2e核心",
+          "line": 15
+        },
+        {
+          "level": 2,
+          "title": "三、契约测试",
+          "anchor": "#三契约测试",
+          "line": 27
+        },
+        {
+          "level": 2,
+          "title": "四、上线门禁",
+          "anchor": "#四上线门禁",
+          "line": 31
+        },
+        {
+          "level": 2,
+          "title": "五、验证清单（每次发布前）",
+          "anchor": "#五验证清单每次发布前",
+          "line": 41
+        },
+        {
+          "level": 2,
+          "title": "六、环境注意",
+          "anchor": "#六环境注意",
+          "line": 50
+        }
+      ],
+      "lastModified": "2026-08-18T06:30:11.245Z",
+      "size": 2213
+    },
+    {
+      "filename": "界面交互文档.md",
+      "path": "../../docs/product/design/界面交互文档.md",
+      "title": "界面交互文档",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "界面交互文档（主平台）",
+          "anchor": "#界面交互文档主平台",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "一、全局导航规范",
+          "anchor": "#一全局导航规范",
+          "line": 7
+        },
+        {
+          "level": 2,
+          "title": "二、天梯图交互",
+          "anchor": "#二天梯图交互",
+          "line": 16
+        },
+        {
+          "level": 3,
+          "title": "2.1 版本与视图",
+          "anchor": "#21-版本与视图",
+          "line": 18
+        },
+        {
+          "level": 3,
+          "title": "2.2 筛选栏（六筛选项）",
+          "anchor": "#22-筛选栏六筛选项",
+          "line": 23
+        },
+        {
+          "level": 3,
+          "title": "2.3 排序栏（五种）",
+          "anchor": "#23-排序栏五种",
+          "line": 30
+        },
+        {
+          "level": 3,
+          "title": "2.4 矩阵表格 / 柱状图",
+          "anchor": "#24-矩阵表格-柱状图",
+          "line": 35
+        },
+        {
+          "level": 2,
+          "title": "三、模型详情页",
+          "anchor": "#三模型详情页",
+          "line": 40
+        },
+        {
+          "level": 2,
+          "title": "四、右下角悬浮 Dock",
+          "anchor": "#四右下角悬浮-dock",
+          "line": 47
+        },
+        {
+          "level": 2,
+          "title": "五、主题 / 语言 / 响应式",
+          "anchor": "#五主题-语言-响应式",
+          "line": 53
+        }
+      ],
+      "lastModified": "2026-08-18T06:30:11.266Z",
+      "size": 3165
+    },
+    {
+      "filename": "目录结构文档.md",
+      "path": "../../docs/governance/目录结构文档.md",
+      "title": "目录结构文档",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "目录结构文档（重新设计蓝图）",
+          "anchor": "#目录结构文档重新设计蓝图",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "一、设计原则",
+          "anchor": "#一设计原则",
+          "line": 9
+        },
+        {
+          "level": 2,
+          "title": "二、目标总结构",
+          "anchor": "#二目标总结构",
+          "line": 19
+        },
+        {
+          "level": 2,
+          "title": "三、`src/` — 应用源码（核心）",
+          "anchor": "#三src-应用源码核心",
+          "line": 45
+        },
+        {
+          "level": 2,
+          "title": "四、支撑目录职责",
+          "anchor": "#四支撑目录职责",
+          "line": 123
+        },
+        {
+          "level": 3,
+          "title": "4.1 `prisma/`",
+          "anchor": "#41-prisma",
+          "line": 125
+        },
+        {
+          "level": 3,
+          "title": "4.2 `docker/`",
+          "anchor": "#42-docker",
+          "line": 133
+        },
+        {
+          "level": 3,
+          "title": "4.3 `scripts/`",
+          "anchor": "#43-scripts",
+          "line": 143
+        },
+        {
+          "level": 3,
+          "title": "4.4 `public/`",
+          "anchor": "#44-public",
+          "line": 153
+        },
+        {
+          "level": 2,
+          "title": "五、`.env` 配置体系",
+          "anchor": "#五env-配置体系",
+          "line": 162
+        },
+        {
+          "level": 2,
+          "title": "六、迁移执行清单（已完成）",
+          "anchor": "#六迁移执行清单已完成",
+          "line": 175
+        }
+      ],
+      "lastModified": "2026-08-18T07:34:57.964Z",
+      "size": 10044
+    },
+    {
+      "filename": "部署运维文档.md",
+      "path": "../../docs/engineering/部署运维文档.md",
+      "title": "部署运维文档",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "部署运维文档",
+          "anchor": "#部署运维文档",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "1. 环境要求",
+          "anchor": "#1-环境要求",
+          "line": 5
+        },
+        {
+          "level": 2,
+          "title": "2. 环境变量",
+          "anchor": "#2-环境变量",
+          "line": 11
+        },
+        {
+          "level": 2,
+          "title": "3. 本地开发",
+          "anchor": "#3-本地开发",
+          "line": 22
+        },
+        {
+          "level": 2,
+          "title": "4. 生产部署",
+          "anchor": "#4-生产部署",
+          "line": 43
+        },
+        {
+          "level": 2,
+          "title": "5. 数据库初始化与备份",
+          "anchor": "#5-数据库初始化与备份",
+          "line": 54
+        },
+        {
+          "level": 2,
+          "title": "6. 运维",
+          "anchor": "#6-运维",
+          "line": 59
+        },
+        {
+          "level": 2,
+          "title": "7. 国内可用性",
+          "anchor": "#7-国内可用性",
+          "line": 68
+        }
+      ],
+      "lastModified": "2026-08-18T06:10:21.206Z",
+      "size": 2342
+    },
+    {
+      "filename": "需求文档.md",
+      "path": "../../docs/product/requirements/需求文档.md",
+      "title": "需求文档",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "需求文档（主平台）",
+          "anchor": "#需求文档主平台",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "一、概述",
+          "anchor": "#一概述",
+          "line": 7
+        },
+        {
+          "level": 2,
+          "title": "二、用户角色",
+          "anchor": "#二用户角色",
+          "line": 15
+        },
+        {
+          "level": 2,
+          "title": "三、核心功能需求",
+          "anchor": "#三核心功能需求",
+          "line": 25
+        },
+        {
+          "level": 3,
+          "title": "3.1 天梯图（核心）",
+          "anchor": "#31-天梯图核心",
+          "line": 27
+        },
+        {
+          "level": 3,
+          "title": "3.2 模型详情页",
+          "anchor": "#32-模型详情页",
+          "line": 34
+        },
+        {
+          "level": 3,
+          "title": "3.3 测评 / 对比（非 MVP，需求保留）",
+          "anchor": "#33-测评-对比非-mvp需求保留",
+          "line": 39
+        },
+        {
+          "level": 3,
+          "title": "3.4 资源模块",
+          "anchor": "#34-资源模块",
+          "line": 43
+        },
+        {
+          "level": 3,
+          "title": "3.5 用户与余额（MVP 核心）",
+          "anchor": "#35-用户与余额mvp-核心",
+          "line": 46
+        },
+        {
+          "level": 3,
+          "title": "3.6 功能开关",
+          "anchor": "#36-功能开关",
+          "line": 51
+        },
+        {
+          "level": 2,
+          "title": "四、排名算法",
+          "anchor": "#四排名算法",
+          "line": 54
+        },
+        {
+          "level": 2,
+          "title": "五、全局强约束",
+          "anchor": "#五全局强约束",
+          "line": 65
+        },
+        {
+          "level": 2,
+          "title": "六、MVP 定义",
+          "anchor": "#六mvp-定义",
+          "line": 73
+        },
+        {
+          "level": 2,
+          "title": "七、验收标准（摘要）",
+          "anchor": "#七验收标准摘要",
+          "line": 77
+        }
+      ],
+      "lastModified": "2026-08-18T06:28:27.019Z",
+      "size": 4136
+    },
+    {
+      "filename": "ADR-0001-结构重构.md",
+      "path": "../../docs/ADR/ADR-0001-结构重构.md",
+      "title": "ADR-0001-结构重构",
+      "anchors": [
+        {
+          "level": 1,
+          "title": "ADR-0001 · 主平台项目结构与文档体系重构",
+          "anchor": "#adr-0001-主平台项目结构与文档体系重构",
+          "line": 1
+        },
+        {
+          "level": 2,
+          "title": "一、背景（Context）",
+          "anchor": "#一背景context",
+          "line": 7
+        },
+        {
+          "level": 2,
+          "title": "二、决策（Decision）",
+          "anchor": "#二决策decision",
+          "line": 16
+        },
+        {
+          "level": 2,
+          "title": "三、理由（Rationale）",
+          "anchor": "#三理由rationale",
+          "line": 23
+        },
+        {
+          "level": 2,
+          "title": "四、后果（Consequences）",
+          "anchor": "#四后果consequences",
+          "line": 29
+        },
+        {
+          "level": 2,
+          "title": "五、升级路径（未来可选）",
+          "anchor": "#五升级路径未来可选",
+          "line": 35
+        }
+      ],
+      "lastModified": "2026-08-18T06:25:52.898Z",
+      "size": 3032
+    }
+  ]
+}

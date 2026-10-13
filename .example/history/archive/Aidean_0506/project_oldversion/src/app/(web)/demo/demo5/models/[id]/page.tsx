@@ -1,0 +1,1 @@
+export default function ModelDetailPage() { return <div>Model Detail</div>; }

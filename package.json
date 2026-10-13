@@ -1,0 +1,37 @@
+{
+  "name": "aidean-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Aidean Monorepo - AI Ladder Diagram Platform",
+  "scripts": {
+    "dev": "turbo run dev --filter=web",
+    "build": "turbo run build --filter=web",
+    "lint": "turbo run lint --filter=web",
+    "typecheck": "turbo run typecheck --filter=web",
+    "db:generate": "turbo run db:generate --filter=web",
+    "db:push": "turbo run db:push --filter=web",
+    "db:migrate": "turbo run db:migrate --filter=web",
+    "db:seed": "turbo run db:seed --filter=web",
+    "test": "turbo run test --filter=web",
+    "test:e2e": "playwright test --config e2e/playwright.config.ts",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md,yml,yaml}\"",
+    "gates": "powershell -ExecutionPolicy Bypass -File scripts/check-gates.ps1",
+    "contract:check": "node apps/web/scripts/check-runtime-contract.mjs --mode all",
+    "contract:strict": "node apps/web/scripts/check-runtime-contract.mjs --mode all --strict",
+    "gate:contract:build": "pnpm --filter web run contract:build",
+    "gate:contract:runtime": "pnpm --filter web run contract:runtime",
+    "regression:brand": "node apps/web/scripts/qa-fe-01-regression.mjs",
+    "regression:brand:full": "node apps/web/scripts/qa-fe-01-regression.mjs --with-e2e",
+    "gate:regression": "node apps/web/scripts/gate-regression.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "turbo": "^2.0.0",
+    "prettier": "^3.2.0",
+    "typescript": "5.5.4"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

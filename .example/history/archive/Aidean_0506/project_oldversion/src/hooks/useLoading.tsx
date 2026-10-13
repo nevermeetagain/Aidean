@@ -1,0 +1,311 @@
+"use client";
+
+import { useState, useCallback, useRef } from "react";
+
+// ==================== 基础加载状态 ====================
+
+export interface UseLoadingReturn {
+  isLoading: boolean;
+  startLoading: () => void;
+  stopLoading: () => void;
+  toggleLoading: () => void;
+  withLoading: <T>(promise: Promise<T>) => Promise<T>;
+}
+
+export function useLoading(initial = false): UseLoadingReturn {
+  const [isLoading, setIsLoading] = useState(initial);
+
+  const startLoading = useCallback(() => setIsLoading(true), []);
+  const stopLoading = useCallback(() => setIsLoading(false), []);
+  const toggleLoading = useCallback(() => setIsLoading((prev) => !prev), []);
+
+  const withLoading = useCallback(
+    async <T extends unknown>(promise: Promise<T>): Promise<T> => {
+      setIsLoading(true);
+      try {
+        const result = await promise;
+        return result;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  return {
+    isLoading,
+    startLoading,
+    stopLoading,
+    toggleLoading,
+    withLoading,
+  };
+}
+
+// ==================== 多操作加载状态 ====================
+
+interface LoadingStates {
+  [key: string]: boolean;
+}
+
+export interface UseMultiLoadingReturn {
+  states: LoadingStates;
+  isAnyLoading: boolean;
+  isAllLoading: boolean;
+  start: (key: string) => void;
+  stop: (key: string) => void;
+  isLoading: (key: string) => boolean;
+  withLoading: <T>(key: string, promise: Promise<T>) => Promise<T>;
+}
+
+export function useMultiLoading(
+  keys: string[],
+  initial = false
+): UseMultiLoadingReturn {
+  const [states, setStates] = useState<LoadingStates>(() =>
+    keys.reduce((acc, key) => ({ ...acc, [key]: initial }), {})
+  );
+
+  const start = useCallback((key: string) => {
+    setStates((prev) => ({ ...prev, [key]: true }));
+  }, []);
+
+  const stop = useCallback((key: string) => {
+    setStates((prev) => ({ ...prev, [key]: false }));
+  }, []);
+
+  const isLoading = useCallback(
+    (key: string) => states[key] || false,
+    [states]
+  );
+
+  const withLoading = useCallback(
+    async <T extends unknown>(key: string, promise: Promise<T>): Promise<T> => {
+      start(key);
+      try {
+        const result = await promise;
+        return result;
+      } finally {
+        stop(key);
+      }
+    },
+    [start, stop]
+  );
+
+  const isAnyLoading = Object.values(states).some(Boolean);
+  const isAllLoading = Object.values(states).every(Boolean);
+
+  return {
+    states,
+    isAnyLoading,
+    isAllLoading,
+    start,
+    stop,
+    isLoading,
+    withLoading,
+  };
+}
+
+// ==================== 防抖加载 ====================
+
+interface UseDebounceLoadingOptions {
+  minDuration?: number;
+  delay?: number;
+}
+
+export function useDebounceLoading(
+  options: UseDebounceLoadingOptions = {}
+): UseLoadingReturn {
+  const { minDuration = 300, delay = 100 } = options;
+  const [isLoading, setIsLoading] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number>(0);
+
+  const startLoading = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      setIsLoading(true);
+      startTimeRef.current = Date.now();
+    }, delay);
+  }, [delay]);
+
+  const stopLoading = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    const elapsed = Date.now() - startTimeRef.current;
+    const remaining = Math.max(0, minDuration - elapsed);
+
+    if (remaining > 0 && isLoading) {
+      setTimeout(() => setIsLoading(false), remaining);
+    } else {
+      setIsLoading(false);
+    }
+  }, [minDuration, isLoading]);
+
+  const toggleLoading = useCallback(() => {
+    if (isLoading) {
+      stopLoading();
+    } else {
+      startLoading();
+    }
+  }, [isLoading, startLoading, stopLoading]);
+
+  const withLoading = useCallback(
+    async <T extends unknown>(promise: Promise<T>): Promise<T> => {
+      startLoading();
+      startTimeRef.current = Date.now();
+      try {
+        const result = await promise;
+        return result;
+      } finally {
+        const elapsed = Date.now() - startTimeRef.current;
+        const remaining = Math.max(0, minDuration - elapsed);
+        if (remaining > 0) {
+          await new Promise((resolve) => setTimeout(resolve, remaining));
+        }
+        stopLoading();
+      }
+    },
+    [minDuration, startLoading, stopLoading]
+  );
+
+  return {
+    isLoading,
+    startLoading,
+    stopLoading,
+    toggleLoading,
+    withLoading,
+  };
+}
+
+// ==================== 页面加载进度 ====================
+
+export interface UsePageLoadingReturn {
+  progress: number;
+  isLoading: boolean;
+  start: () => void;
+  done: () => void;
+  setProgress: (value: number) => void;
+  increment: (value?: number) => void;
+}
+
+export function usePageLoading(): UsePageLoadingReturn {
+  const [progress, setProgressState] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const start = useCallback(() => {
+    setIsLoading(true);
+    setProgressState(0);
+
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    intervalRef.current = setInterval(() => {
+      setProgressState((prev) => {
+        if (prev >= 90) return prev;
+        return prev + Math.random() * 15;
+      });
+    }, 200);
+  }, []);
+
+  const done = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setProgressState(100);
+    setTimeout(() => {
+      setIsLoading(false);
+      setProgressState(0);
+    }, 300);
+  }, []);
+
+  const setProgress = useCallback((value: number) => {
+    setProgressState(Math.min(100, Math.max(0, value)));
+  }, []);
+
+  const increment = useCallback((value = 5) => {
+    setProgressState((prev) => Math.min(100, prev + value));
+  }, []);
+
+  return {
+    progress,
+    isLoading,
+    start,
+    done,
+    setProgress,
+    increment,
+  };
+}
+
+// ==================== 骨架屏/加载组件 ====================
+
+export function TableSkeleton({ rows = 5, cols = 4 }: { rows?: number; cols?: number }) {
+  return (
+    <div className="animate-pulse">
+      {/* Header */}
+      <div className="flex gap-4 mb-4 pb-4 border-b border-[rgb(var(--admin-border-light))]">
+        {Array.from({ length: cols }).map((_, i) => (
+          <div
+            key={`header-${i}`}
+            className="h-4 bg-[rgb(var(--admin-bg-hover))] rounded flex-1"
+            style={{ width: `${Math.random() * 20 + 15}%` }}
+          />
+        ))}
+      </div>
+
+      {/* Rows */}
+      {Array.from({ length: rows }).map((_, rowIdx) => (
+        <div
+          key={`row-${rowIdx}`}
+          className="flex gap-4 mb-3 py-3"
+        >
+          {Array.from({ length: cols }).map((_, colIdx) => (
+            <div
+              key={`cell-${rowIdx}-${colIdx}`}
+              className="h-4 bg-[rgb(var(--admin-bg-hover))] rounded flex-1"
+              style={{ width: `${Math.random() * 20 + 15}%` }}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function CardSkeleton() {
+  return (
+    <div className="animate-pulse p-4 rounded-xl bg-[rgb(var(--admin-bg-sidebar))] border border-[rgb(var(--admin-border))]">
+      <div className="h-5 bg-[rgb(var(--admin-bg-hover))] rounded w-1/3 mb-3" />
+      <div className="h-8 bg-[rgb(var(--admin-bg-hover))] rounded w-2/3 mb-2" />
+      <div className="h-4 bg-[rgb(var(--admin-bg-hover))] rounded w-1/2" />
+    </div>
+  );
+}
+
+export function PageSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* 标题 */}
+      <div className="animate-pulse h-8 bg-[rgb(var(--admin-bg-hover))] rounded w-48" />
+
+      {/* 统计卡片 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <CardSkeleton key={i} />
+        ))}
+      </div>
+
+      {/* 表格 */}
+      <div className="rounded-xl bg-[rgb(var(--admin-bg-sidebar))] border border-[rgb(var(--admin-border))] p-4">
+        <TableSkeleton rows={5} cols={5} />
+      </div>
+    </div>
+  );
+}

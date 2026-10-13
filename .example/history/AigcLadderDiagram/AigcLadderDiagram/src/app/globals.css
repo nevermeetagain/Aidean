@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 250 247 240;
+  --fg: 24 24 27;
+  --muted: 113 113 122;
+  --card: 255 255 255;
+  --border: 228 228 231;
+  --accent: 16 185 129;
+  --accent-2: 245 158 11;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  color: rgb(var(--fg));
+  background: rgb(var(--bg));
+}
+
+* {
+  border-color: rgb(var(--border));
+}
+
+/* Admin Design Tokens - 晨光科技感 */
+[data-admin] {
+  /* 主色：晨光蓝 - 温暖而不失科技感 */
+  --admin-primary: 59 130 246;          /* blue-500 */
+  --admin-primary-hover: 37 99 235;     /* blue-600 */
+  --admin-primary-light: 239 246 255;   /* blue-50 */
+  --admin-primary-ring: 96 165 250;     /* blue-400 */
+
+  /* 辅助色：晨光金 - 温暖点缀 */
+  --admin-accent: 245 158 11;           /* amber-500 */
+  --admin-accent-light: 255 251 235;  /* amber-50 */
+
+  /* 背景：通透浅色 */
+  --admin-bg: 248 250 252;              /* slate-50 */
+  --admin-bg-card: 255 255 255;         /* white */
+  --admin-bg-sidebar: 255 255 255;        /* white */
+  --admin-bg-hover: 241 245 249;        /* slate-100 */
+
+  /* 文字 */
+  --admin-text-primary: 15 23 42;       /* slate-900 */
+  --admin-text-secondary: 100 116 139;  /* slate-500 */
+  --admin-text-muted: 148 163 184;      /* slate-400 */
+
+  /* 边框 */
+  --admin-border: 226 232 240;          /* slate-200 */
+  --admin-border-light: 241 245 249;    /* slate-100 */
+
+  /* 圆角 */
+  --admin-radius-sm: 6px;
+  --admin-radius-md: 8px;
+  --admin-radius-lg: 12px;
+  --admin-radius-xl: 16px;
+
+  /* 阴影 */
+  --admin-shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --admin-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
+  --admin-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+
+  /* 状态色 */
+  --admin-success: 16 185 129;          /* emerald-500 */
+  --admin-warning: 245 158 11;          /* amber-500 */
+  --admin-danger: 239 68 68;            /* red-500 */
+  --admin-info: 59 130 246;             /* blue-500 */
+}

@@ -1,0 +1,27 @@
+# 构建上下文排除清单（SubTask 0.5.1）
+# 注意：裸目录名只匹配根级；monorepo 必须用 **/ 前缀过滤 apps/*/packages/ 内部同名物，
+# 否则 Windows 宿主的 node_modules（含 win 原生引擎）与 .env 秘钥会被 COPY 进 Linux 镜像。
+node_modules
+**/node_modules
+.next
+**/.next
+out
+**/out
+logs
+*.log
+.git
+.gitignore
+.vscode
+.idea
+.env
+.env.*
+**/.env
+**/.env.*
+docker
+.docs
+.memory.md
+.turbo
+**/.turbo
+tests
+e2e
+.example

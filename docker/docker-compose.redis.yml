@@ -1,0 +1,82 @@
+# Aidean Redis Docker Compose 配置
+# 用途: Ubuntu/Linux 生产/开发环境
+# 版本: 1.0
+
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: aidean-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./docker/redis/redis.dev.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis_data:/data
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - aidean-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    # 环境变量
+    environment:
+      - TZ=Asia/Shanghai
+
+  # Redis Commander (Redis Web管理界面，可选)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: aidean-redis-commander
+    restart: unless-stopped
+    ports:
+      - "3002:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+      - TZ=Asia/Shanghai
+    networks:
+      - aidean-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    profiles:
+      - dev  # 仅在dev模式启动
+
+  # Redis Exporter (Prometheus监控，可选)
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: aidean-redis-exporter
+    restart: unless-stopped
+    ports:
+      - "9121:9121"
+    environment:
+      - REDIS_ADDR=redis:6379
+      - TZ=Asia/Shanghai
+    networks:
+      - aidean-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    profiles:
+      - monitoring  # 仅在monitoring模式启动
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  aidean-network:
+    driver: bridge
+    name: aidean-network

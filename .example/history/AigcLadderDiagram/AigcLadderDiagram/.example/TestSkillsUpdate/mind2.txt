@@ -1,0 +1,661 @@
+
+
+
+
+让我先阅读更多相关文件来了解现有设计：
+
+---
+
+## 🔬 多智能体深度思考：外部数据同步更新方案
+
+### 🎭 **Phase 1: 单一智能体设计 - Primary Designer**
+
+#### 理解锁定 (Understanding Lock)
+
+**需求澄清：**
+- **目标**：从外部来源（官方API、爬虫、手动导入）每日更新模型、Skill、MCP、Agent数据
+- **频率**：每日（也可支持实时/小时级）
+- **数据源**：多个外部源（OpenAI、Anthropic、HuggingFace、官方文档等）
+- **数据类型**：结构化数据（模型参数、价格）+ 半结构化数据（文档、描述）
+
+**核心挑战：**
+1. 数据源多样性（API、网页、文档）
+2. 数据质量不一致
+3. 增量更新 vs 全量更新
+4. 变更追踪与回滚
+5. 并发与性能
+6. 异常处理与重试
+
+---
+
+### 🎯 **设计方案**
+
+#### 一、技术架构（三层架构）
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    数据采集层 (Collection Layer)               │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │  API适配器   │  │  爬虫引擎    │  │  文件导入    │       │
+│  │  Adapters    │  │  Crawlers    │  │  Importers   │       │
+│  └──────────────┘  └──────────────┘  └──────────────┘       │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                    数据处理层 (Processing Layer)               │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │  数据清洗    │  │  数据转换    │  │  数据验证    │       │
+│  │  Cleaning    │  │  Transform   │  │  Validation  │       │
+│  └──────────────┘  └──────────────┘  └──────────────┘       │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                    数据持久层 (Persistence Layer)              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │  增量更新    │  │  变更日志    │  │  事务管理    │       │
+│  │  Upsert      │  │  Audit Logs  │  │  Transaction │       │
+│  └──────────────┘  └──────────────┘  └──────────────┘       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 二、核心数据表扩展
+
+**新增/完善同步相关表：**
+
+```sql
+-- 数据源配置表
+CREATE TABLE data_sources (
+    id BIGINT PRIMARY KEY,
+    source_code VARCHAR(50) UNIQUE NOT NULL,  -- openai_api, anthropic_docs, hf_crawler
+    source_name VARCHAR(100) NOT NULL,
+    source_type VARCHAR(20) NOT NULL CHECK (source_type IN ('API', 'CRAWLER', 'FILE', 'MANUAL')),
+    endpoint_url VARCHAR(500),
+    auth_config JSONB,  -- {api_key: xxx, headers: {}, rate_limit: 100}
+    fetch_strategy JSONB,  -- {type: 'incremental', field: 'updated_at', batch_size: 100}
+    schedule_config JSONB,  -- {cron: '0 2 * * *', timezone: 'Asia/Shanghai'}
+    is_active BOOLEAN DEFAULT TRUE,
+    last_fetch_at TIMESTAMPTZ,
+    last_fetch_status VARCHAR(20),
+    last_error_message TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 同步任务表（扩展sync_batches）
+CREATE TABLE sync_tasks (
+    id BIGINT PRIMARY KEY,
+    batch_id BIGINT REFERENCES sync_batches(id),
+    data_source_id BIGINT REFERENCES data_sources(id),
+    task_type VARCHAR(30) NOT NULL,  -- model_sync, skill_sync, mcp_sync, agent_sync
+    entity_type VARCHAR(30) NOT NULL,  -- ai_model, skill, mcp_server, agent
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending/running/completed/failed/cancelled
+    priority INT DEFAULT 5,  -- 1-10, 数字越小优先级越高
+    
+    -- 执行参数
+    fetch_params JSONB,  -- {filters: {}, limit: 1000, since: '2024-01-01'}
+    transform_config JSONB,  -- 数据转换规则
+    
+    -- 执行统计
+    total_records INT DEFAULT 0,
+    processed_records INT DEFAULT 0,
+    failed_records INT DEFAULT 0,
+    skipped_records INT DEFAULT 0,
+    
+    -- 时间追踪
+    started_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ,
+    duration_ms INT,  -- 执行耗时
+    
+    -- 错误处理
+    error_count INT DEFAULT 0,
+    last_error TEXT,
+    retry_count INT DEFAULT 0,
+    max_retries INT DEFAULT 3,
+    
+    -- 执行节点（分布式支持）
+    worker_node VARCHAR(100),
+    
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 数据映射规则表（ETL配置）
+CREATE TABLE data_mapping_rules (
+    id BIGINT PRIMARY KEY,
+    data_source_id BIGINT REFERENCES data_sources(id),
+    entity_type VARCHAR(30) NOT NULL,  -- ai_model, skill, mcp_server
+    
+    source_field VARCHAR(100) NOT NULL,  -- 源字段名
+    target_field VARCHAR(100) NOT NULL,  -- 目标字段名
+    transform_function VARCHAR(500),  -- 转换函数：trim, lowercase, json_extract, date_parse
+    default_value TEXT,  -- 默认值
+    is_required BOOLEAN DEFAULT FALSE,
+    validation_regex VARCHAR(500),  -- 验证正则
+    
+    priority INT DEFAULT 100,  -- 执行顺序
+    is_active BOOLEAN DEFAULT TRUE,
+    
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 同步数据临时表（Staging）
+CREATE TABLE sync_staging (
+    id BIGINT PRIMARY KEY,
+    task_id BIGINT REFERENCES sync_tasks(id),
+    data_source_id BIGINT REFERENCES data_sources(id),
+    entity_type VARCHAR(30) NOT NULL,
+    external_id VARCHAR(100),  -- 外部系统ID
+    raw_data JSONB NOT NULL,  -- 原始数据
+    processed_data JSONB,  -- 处理后的数据
+    
+    -- 处理状态
+    status VARCHAR(20) DEFAULT 'pending',  -- pending/processing/completed/failed
+    error_message TEXT,
+    
+    -- 目标记录关联
+    target_table VARCHAR(50),
+    target_id BIGINT,
+    
+    -- 变更检测
+    change_type VARCHAR(20),  -- create/update/delete/no_change
+    diff_fields JSONB,  -- 变更字段详情
+    
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    processed_at TIMESTAMPTZ
+);
+
+-- 数据版本表（支持历史追溯）
+CREATE TABLE data_versions (
+    id BIGINT PRIMARY KEY,
+    entity_type VARCHAR(30) NOT NULL,  -- ai_model, skill
+    entity_id BIGINT NOT NULL,
+    version_number INT NOT NULL,
+    data_snapshot JSONB NOT NULL,  -- 完整数据快照
+    change_summary JSONB,  -- 变更摘要 {fields: [], type: 'update'}
+    source_task_id BIGINT REFERENCES sync_tasks(id),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    
+    UNIQUE(entity_type, entity_id, version_number)
+);
+```
+
+#### 三、同步策略设计
+
+**1. 增量同步策略**
+
+```typescript
+interface IncrementalSyncStrategy {
+  type: 'incremental';
+  // 基于时间戳的增量
+  timestampField: string;  // 'updated_at', 'last_modified'
+  lastSyncTime: Date;
+  
+  // 基于游标的增量
+  cursorField?: string;  // 'id', 'offset'
+  lastCursor?: string;
+  
+  // 基于变更日志（CDC）
+  changeLogTable?: string;
+}
+
+interface FullSyncStrategy {
+  type: 'full';
+  // 全量同步，通常用于首次或修复
+  deleteBeforeInsert: boolean;  // 是否先清空
+  backupBeforeDelete: boolean;  // 删除前备份
+}
+```
+
+**2. 冲突解决策略**
+
+```typescript
+type ConflictResolution = 
+  | 'source_wins'      // 外部数据源优先
+  | 'target_wins'      // 本地数据优先
+  | 'merge'            // 智能合并
+  | 'manual_review'    // 人工审核
+  | 'newer_wins';      // 时间戳较新者胜
+
+interface MergeRule {
+  field: string;
+  strategy: ConflictResolution;
+  mergeFunction?: string;  // 自定义合并函数
+}
+```
+
+#### 四、异常处理设计
+
+**1. 分级重试策略**
+
+| 错误类型 | 重试次数 | 重试间隔 | 处理策略 |
+|---------|---------|---------|---------|
+| 网络超时 | 5次 | 指数退避(1s, 2s, 4s, 8s, 16s) | 自动重试 |
+| API限流(429) | 10次 | 60s | 自动重试 |
+| 数据格式错误 | 0次 | - | 记录错误，跳过 |
+| 数据验证失败 | 3次 | 立即 | 人工审核队列 |
+| 数据库连接失败 | 无限 | 30s | 告警，人工介入 |
+
+**2. 死信队列（DLQ）设计**
+
+```sql
+-- 死信队列表
+CREATE TABLE sync_dead_letters (
+    id BIGINT PRIMARY KEY,
+    task_id BIGINT REFERENCES sync_tasks(id),
+    staging_id BIGINT REFERENCES sync_staging(id),
+    entity_type VARCHAR(30),
+    external_id VARCHAR(100),
+    raw_data JSONB,
+    
+    error_type VARCHAR(50),  -- validation_error, transform_error, db_error
+    error_message TEXT,
+    error_stack TEXT,
+    
+    -- 重试记录
+    retry_history JSONB[],  -- [{attempt: 1, time: xxx, error: yyy}, ...]
+    
+    -- 处理状态
+    status VARCHAR(20) DEFAULT 'pending',  -- pending/reviewing/fixed/discarded
+    reviewed_by BIGINT,
+    reviewed_at TIMESTAMPTZ,
+    resolution_notes TEXT,
+    
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### 五、实现方案（Node.js + TypeScript）
+
+**1. 核心模块结构**
+
+```
+src/sync/
+├── adapters/                 # 数据源适配器
+│   ├── base-adapter.ts      # 适配器基类
+│   ├── openai-adapter.ts    # OpenAI API适配器
+│   ├── anthropic-adapter.ts # Anthropic适配器
+│   ├── huggingface-adapter.ts # HF适配器
+│   └── crawler-adapter.ts   # 爬虫适配器基类
+├── transformers/            # 数据转换器
+│   ├── base-transformer.ts
+│   ├── model-transformer.ts
+│   ├── skill-transformer.ts
+│   └── mcp-transformer.ts
+├── validators/              # 数据验证器
+│   ├── schema-validator.ts
+│   └── business-validator.ts
+├── loaders/                 # 数据加载器
+│   └── bulk-loader.ts       # 批量加载优化
+├── pipeline.ts              # ETL流水线
+├── scheduler.ts             # 任务调度器
+├── conflict-resolver.ts     # 冲突解决器
+├── version-manager.ts       # 版本管理
+└── index.ts                 # 入口
+```
+
+**2. ETL流水线代码框架**
+
+```typescript
+// pipeline.ts
+export class ETLPipeline {
+  constructor(
+    private adapter: DataSourceAdapter,
+    private transformer: DataTransformer,
+    private validator: DataValidator,
+    private loader: DataLoader,
+    private auditLogger: AuditLogger
+  ) {}
+
+  async execute(task: SyncTask): Promise<SyncResult> {
+    const startTime = Date.now();
+    
+    try {
+      // 1. Extract
+      const rawData = await this.adapter.fetch(task.fetchParams);
+      
+      // 2. Transform
+      const transformedData = await Promise.all(
+        rawData.map(item => this.transformer.transform(item, task.transformConfig))
+      );
+      
+      // 3. Validate
+      const validationResults = await Promise.all(
+        transformedData.map(data => this.validator.validate(data))
+      );
+      
+      const validData = validationResults.filter(r => r.isValid);
+      const invalidData = validationResults.filter(r => !r.isValid);
+      
+      // 4. Load (使用事务批量加载)
+      const loadResult = await this.loader.load(validData, {
+        conflictResolution: task.conflictConfig,
+        batchSize: 100,
+        enableVersioning: true
+      });
+      
+      // 5. 记录审计日志
+      await this.auditLogger.log({
+        taskId: task.id,
+        stats: {
+          total: rawData.length,
+          valid: validData.length,
+          invalid: invalidData.length,
+          inserted: loadResult.inserted,
+          updated: loadResult.updated,
+          failed: loadResult.failed
+        },
+        errors: invalidData.map(r => r.errors),
+        duration: Date.now() - startTime
+      });
+      
+      return {
+        status: 'completed',
+        ...loadResult,
+        errors: invalidData
+      };
+      
+    } catch (error) {
+      await this.handleError(task, error);
+      throw error;
+    }
+  }
+}
+```
+
+**3. 调度器配置**
+
+```typescript
+// scheduler.ts
+import { CronJob } from 'cron';
+
+export class SyncScheduler {
+  private jobs: Map<string, CronJob> = new Map();
+
+  scheduleAll(): void {
+    // 每日凌晨2点执行全量模型同步
+    this.schedule('model-daily-sync', '0 2 * * *', () => 
+      this.runSync('ai_model', 'full')
+    );
+    
+    // 每4小时执行增量模型价格同步
+    this.schedule('model-price-sync', '0 */4 * * *', () => 
+      this.runSync('model_prices', 'incremental')
+    );
+    
+    // 每日凌晨3点执行Skill同步
+    this.schedule('skill-daily-sync', '0 3 * * *', () => 
+      this.runSync('skill', 'full')
+    );
+    
+    // 每日凌晨4点执行MCP同步
+    this.schedule('mcp-daily-sync', '0 4 * * *', () => 
+      this.runSync('mcp_servers', 'full')
+    );
+    
+    // 每周日凌晨5点执行数据校验和清理
+    this.schedule('weekly-maintenance', '0 5 * * 0', () => 
+      this.runMaintenance()
+    );
+  }
+}
+```
+
+---
+
+### 🎭 **Phase 2: 结构化审查 - 多智能体评审**
+
+#### 2️⃣ **Skeptic / Challenger（质疑者）**
+
+> "假设这个同步方案在生产中失败，为什么？"
+
+**发现的风险：**
+
+| 风险点 | 严重性 | 说明 |
+|--------|--------|------|
+| **单点故障** | 🔴 高 | ETL Pipeline 是同步执行的，如果某个适配器卡死，会阻塞整个任务 |
+| **内存溢出** | 🔴 高 | 全量同步时，如果外部数据源有10万条记录，全部加载到内存会OOM |
+| **数据库连接池耗尽** | 🟡 中 | 高并发批量插入时，可能耗尽连接池 |
+| **数据不一致** | 🟡 中 | 增量同步依赖时间戳，如果外部系统时间不准确，会漏数据 |
+| **幂等性问题** | 🟡 中 | 如果同一批数据被同步两次，是否会产生重复记录？ |
+| **缺乏熔断机制** | 🟡 中 | 外部API故障时，会持续重试，没有熔断保护 |
+| **监控缺失** | 🟢 低 | 没有提到实时监控和告警机制 |
+
+**建议修复：**
+
+1. **流式处理（Streaming）**：使用Generator/Yield，边获取边处理，不全部加载到内存
+2. **连接池管理**：使用数据库连接池，限制并发数
+3. **幂等性设计**：使用`external_id` + `source`作为唯一键
+4. **熔断器（Circuit Breaker）**：连续失败5次后，熔断30分钟
+5. **实时监控**：集成Prometheus + Grafana，监控同步延迟、成功率、错误率
+
+---
+
+#### 3️⃣ **Constraint Guardian（约束守护者）**
+
+> "这些设计在性能、可靠性和成本方面有什么隐患？"
+
+**约束检查：**
+
+| 约束项 | 当前设计 | 评估 | 建议 |
+|--------|---------|------|------|
+| **性能** | 批量插入100条/批 | 🟡 可接受 | 可调整到500-1000条测试 |
+| **数据库连接** | 未明确限制 | 🔴 风险 | 使用连接池，最大10连接 |
+| **存储成本** | 保存所有历史版本 | 🟡 中等 | 设置版本保留策略（如保留90天） |
+| **API限流** | 指数退避 | ✅ 良好 | 符合最佳实践 |
+| **并发控制** | 未明确 | 🔴 风险 | 使用分布式锁，防止重复执行 |
+| **事务大小** | 批量100条 | ✅ 良好 | 避免超大事务 |
+
+**补充约束：**
+
+```typescript
+// 连接池配置
+const poolConfig = {
+  min: 2,
+  max: 10,
+  acquireTimeoutMillis: 30000,
+  idleTimeoutMillis: 30000,
+};
+
+// 流式批量处理
+async function* batchStream<T>(
+  items: AsyncIterable<T>,
+  batchSize: number
+): AsyncGenerator<T[]> {
+  let batch: T[] = [];
+  for await (const item of items) {
+    batch.push(item);
+    if (batch.length >= batchSize) {
+      yield batch;
+      batch = [];
+    }
+  }
+  if (batch.length > 0) {
+    yield batch;
+  }
+}
+```
+
+---
+
+#### 4️⃣ **User Advocate（用户代言人）**
+
+> "运维人员和开发人员使用这个系统时会遇到什么困难？"
+
+**用户体验问题：**
+
+| 问题 | 影响 | 解决方案 |
+|------|------|----------|
+| **缺乏可视化界面** | 无法直观查看同步状态 | 开发同步监控Dashboard |
+| **错误信息难以理解** | 原始错误堆栈对运维不友好 | 提供结构化错误码和中文说明 |
+| **无法手动触发同步** | 只能等定时任务 | 提供API接口手动触发 |
+| **缺乏数据预览** | 无法查看同步前后的差异 | 提供数据对比预览功能 |
+| **配置过于复杂** | 需要写JSON配置 | 提供Web配置界面 |
+
+**用户体验改进：**
+
+```typescript
+// 错误码设计
+enum SyncErrorCode {
+  // 1xx: 网络相关
+  NETWORK_TIMEOUT = 'SYNC_101',
+  API_RATE_LIMIT = 'SYNC_102',
+  
+  // 2xx: 数据相关
+  DATA_FORMAT_INVALID = 'SYNC_201',
+  REQUIRED_FIELD_MISSING = 'SYNC_202',
+  VALIDATION_FAILED = 'SYNC_203',
+  
+  // 3xx: 数据库相关
+  DB_CONNECTION_FAILED = 'SYNC_301',
+  DUPLICATE_KEY = 'SYNC_302',
+  
+  // 4xx: 业务相关
+  CONFLICT_RESOLUTION_FAILED = 'SYNC_401',
+  VERSION_CONFLICT = 'SYNC_402',
+}
+
+// 中文错误消息映射
+const errorMessages: Record<SyncErrorCode, string> = {
+  [SyncErrorCode.NETWORK_TIMEOUT]: '网络连接超时，请检查数据源地址和防火墙设置',
+  [SyncErrorCode.API_RATE_LIMIT]: 'API请求频率超限，正在自动重试',
+  [SyncErrorCode.DATA_FORMAT_INVALID]: '数据格式不符合预期，请检查数据源格式',
+  // ...
+};
+```
+
+---
+
+#### 5️⃣ **Integrator / Arbiter（整合者/仲裁员）**
+
+**审查决策日志：**
+
+| 决策 | 状态 | 理由 |
+|------|------|------|
+| 流式处理替代全量加载 | ✅ 接受 | 解决OOM风险，必须实现 |
+| 添加熔断机制 | ✅ 接受 | 提高系统稳定性，必须实现 |
+| 连接池配置 | ✅ 接受 | 资源管理必需 |
+| 分布式锁 | ✅ 接受 | 防止重复执行，必须实现 |
+| Dashboard界面 | ⚠️ 延期 | 高优先级但可后续迭代 |
+| 版本保留策略 | ✅ 接受 | 控制存储成本，必须实现 |
+
+**最终设计方案确认：**
+
+---
+
+## 📋 最终方案：Aidean数据同步平台
+
+### 一、使用场景
+
+| 场景 | 需求 | 解决方案 |
+|------|------|----------|
+| **每日模型数据更新** | 从OpenAI、Anthropic等获取最新模型列表和参数 | API适配器 + 增量同步 + 定时任务 |
+| **模型价格更新** | 获取最新定价信息 | 高频增量同步（每4小时） |
+| **Skill生态同步** | 从Skill市场获取新Skill | 每日全量同步 + 增量检测 |
+| **MCP服务器更新** | 同步MCP服务器列表和配置 | 每日同步 + 版本管理 |
+| **数据修复** | 手动触发重新同步特定数据源 | 管理界面手动触发 |
+| **历史回溯** | 查看某模型历史版本 | 数据版本表查询 |
+
+### 二、技术架构
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         管理层 (Management)                      │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │ Web Dashboard │  │  管理API      │  │  告警通知     │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                        调度层 (Scheduler)                        │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │  Cron任务    │  │  任务队列     │  │  分布式锁     │          │
+│  │  (node-cron) │  │  (Bull/BullMQ)│  │  (Redis)     │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                        执行层 (Executor)                         │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                  ETL Pipeline (流式)                     │   │
+│  │  ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌────────┐  │   │
+│  │  │ Extract │ → │Transform│ → │Validate │ → │ Load   │  │   │
+│  │  │ (流式)  │   │(管道)   │   │(并发)   │   │(批量)  │  │   │
+│  │  └─────────┘   └─────────┘   └─────────┘   └────────┘  │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                         ↓ 异常                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │ 重试机制     │  │ 死信队列     │  │ 熔断器       │          │
+│  │ (指数退避)   │  │ (PostgreSQL) │  │ (opossum)    │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                       数据层 (Data Layer)                        │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │  业务数据表  │  │  同步任务表   │  │  版本历史表   │          │
+│  │  (89张表)   │  │  sync_tasks  │  │  data_versions│          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 三、核心字段要求
+
+**数据表结构（新增/完善）：**
+
+| 表名 | 核心字段 | 说明 |
+|------|---------|------|
+| `data_sources` | source_code, source_type, endpoint_url, auth_config, schedule_config | 数据源配置 |
+| `sync_tasks` | task_type, entity_type, status, priority, fetch_params, transform_config, worker_node | 同步任务 |
+| `sync_staging` | external_id, raw_data, processed_data, change_type, diff_fields | 数据暂存 |
+| `data_versions` | entity_type, entity_id, version_number, data_snapshot, change_summary | 版本历史 |
+| `sync_dead_letters` | error_type, error_message, retry_history, status, resolution_notes | 死信队列 |
+
+### 四、实现方案
+
+**技术栈：**
+- **调度**：Bull/BullMQ（Redis-backed queue）
+- **ETL**：Node.js + TypeScript + RxJS（流式处理）
+- **熔断**：opossum
+- **数据库**：PostgreSQL + Prisma
+- **监控**：Prometheus + Grafana
+
+**核心代码结构：**
+
+```
+src/
+├── sync/
+│   ├── adapters/           # 数据源适配器
+│   ├── transformers/       # 数据转换器
+│   ├── validators/         # 数据验证器
+│   ├── loaders/           # 数据加载器
+│   ├── pipeline.ts        # ETL流水线（流式）
+│   ├── scheduler.ts       # 任务调度器
+│   ├── conflict-resolver.ts # 冲突解决器
+│   ├── version-manager.ts # 版本管理
+│   ├── circuit-breaker.ts # 熔断器
+│   └── index.ts
+├── api/
+│   └── sync-routes.ts     # 同步管理API
+├── dashboard/
+│   └── sync-monitor.tsx   # 监控界面
+└── jobs/
+    └── sync-worker.ts     # 队列消费者
+```
+
+### 五、异常处理
+
+| 异常类型 | 处理策略 | 实现方式 |
+|---------|---------|---------|
+| **网络超时** | 指数退避重试5次 | axios-retry |
+| **API限流** | 等待60s后重试，最多10次 | 自动重试 |
+| **数据格式错误** | 记录到死信队列，跳过 | try-catch + DLQ |
+| **数据验证失败** | 人工审核队列 | 状态标记 + 通知 |
+| **数据库错误** | 事务回滚，重试 | Prisma事务 |
+| **外部API故障** | 熔断30分钟 | opossum熔断器 |
+| **重复执行** | 分布式锁阻止 | Redlock |
+
+---
+
+**决策状态：✅ APPROVED**
+
+该方案已通过多智能体审查，解决了核心风险（OOM、单点故障、幂等性），符合性能约束，并考虑了用户体验。可以进入实施阶段。

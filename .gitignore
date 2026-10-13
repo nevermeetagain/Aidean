@@ -1,0 +1,74 @@
+# ── 依赖 ──
+node_modules/
+package-lock.json
+
+# ── 构建产物 ──
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# ── 环境变量 ──
+.env
+.env.local
+.env.test
+.env.*.local
+
+# ── 测试 ──
+test-results*
+playwright-report/
+
+# ── 系统 ──
+.DS_Store
+Thumbs.db
+
+# ── 本地开发工具产物 ──
+.turbo/
+.workbuddy/
+
+# ── 性能探针运行时产物（非基线，本地度量）──
+e2e/perf/results/
+
+# ── Playwright storageState（e2e 运行时产物，不入库）──
+.auth/
+
+# ── REL-ENG-02 release hygiene: quarantine/snapshot/e2e evidence/logs/tmp ──
+.next.quarantine-*
+.next.pre-*
+.next.broken-*
+.next.junk-*
+.next-fe01/
+.feui02-standalone/
+tsconfig.tsbuildinfo.quarantine-*
+.pw-*/
+.pw-count.json
+.qg02-logs/
+.rel01-tmp/
+scratch/
+.scratch/
+apps/scratch/
+_tmp_*
+*.log
+.box-agent/
+2026-09-08-*/
+
+*.log.bak-*
+*.xlsx
+
+# ── 标准卫生条目（PROJECT-STRUCTURE-SPEC）──
+# 本地/临时目录
+.local/
+# 备份文件
+*.bak
+# 命名违规产物
+*_final*
+*_old*
+*_copy*
+# 临时目录
+_tmp/
+tmp/
+.zcode/
+
+# ── 临时数据/生成产物 ──
+data/tmp_wt02/
+.archify/

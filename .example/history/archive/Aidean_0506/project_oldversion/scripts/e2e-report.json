@@ -1,0 +1,500 @@
+[
+  {
+    "m": "SiteHeader",
+    "f": "页面加载 http://localhost:3000",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "SiteHeader",
+    "f": "模型→天梯图",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "SiteHeader",
+    "f": "模型→手机端",
+    "s": "FAIL",
+    "d": "子菜单未显示"
+  },
+  {
+    "m": "SiteHeader",
+    "f": "资源→资讯",
+    "s": "FAIL",
+    "d": "子菜单未显示"
+  },
+  {
+    "m": "SiteHeader",
+    "f": "资源→Skills",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "SiteHeader",
+    "f": "产品→AI员工",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "SiteHeader",
+    "f": "产品→解决方案",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "SiteHeader",
+    "f": "文档→帮助",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "SiteHeader",
+    "f": "文档→价格",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "SiteHeader",
+    "f": "关于→合作",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "SiteHeader",
+    "f": "关于→联系",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "SiteHeader",
+    "f": "登录→AuthModal弹出",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "SiteFooter",
+    "f": "页脚可见, 17个链接",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-Banner",
+    "f": "立即体验→/models",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-Banner",
+    "f": "进入对比→/compare",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-统计",
+    "f": "覆盖模型",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-统计",
+    "f": "可用工具",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-统计",
+    "f": "解决方案",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-统计",
+    "f": "专属应用",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-快捷入口",
+    "f": "模型天梯图",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-快捷入口",
+    "f": "对比评测",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-快捷入口",
+    "f": "公开解决方案",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-快捷入口",
+    "f": "AI资源",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-内容案例",
+    "f": "教程",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-内容案例",
+    "f": "排行榜解读",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-内容案例",
+    "f": "精选测评",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-服务",
+    "f": "专属服务",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-服务",
+    "f": "拓展服务",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-理由",
+    "f": "统一口径",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-理由",
+    "f": "多维分析",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-理由",
+    "f": "持续更新",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "首页-理由",
+    "f": "可操作性强",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "天梯图",
+    "f": "页面加载 http://localhost:3000/models",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "天梯图",
+    "f": "模型数据渲染",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "天梯图",
+    "f": "模型详情跳转",
+    "s": "PASS",
+    "d": "http://localhost:3000/models/o1-preview"
+  },
+  {
+    "m": "Skills",
+    "f": "页面加载 http://localhost:3000/resources/skills",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "Skills",
+    "f": "标题: Skill技能",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "Skills",
+    "f": "搜索框输入",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "Skills",
+    "f": "宽度1920px",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "MCP",
+    "f": "页面加载 http://localhost:3000/resources/mcp",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "MCP",
+    "f": "标题: MCP工具",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "MCP",
+    "f": "搜索框输入",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "MCP",
+    "f": "宽度1920px",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "Agent",
+    "f": "页面加载 http://localhost:3000/resources/agent",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "Agent",
+    "f": "标题: Agent集合",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "Agent",
+    "f": "搜索框输入",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "Agent",
+    "f": "宽度1920px",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "登录页",
+    "f": "页面加载 http://localhost:3000/auth/login",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "登录页",
+    "f": "邮箱输入",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "登录页",
+    "f": "密码输入",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "登录页",
+    "f": "去注册链接",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "登录页",
+    "f": "表单可见",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "注册页",
+    "f": "页面加载 http://localhost:3000/auth/register",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "注册页",
+    "f": "表单可见",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "注册页",
+    "f": "去登录链接",
+    "s": "PASS",
+    "d": ""
+  },
+  {
+    "m": "/evaluation",
+    "f": "页面加载 http://localhost:3000/evaluation",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/compare",
+    "f": "页面加载 http://localhost:3000/compare",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/resources/news",
+    "f": "页面加载 http://localhost:3000/resources/news",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/resources/scenarios",
+    "f": "页面加载 http://localhost:3000/resources/scenarios",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/products/ai-employee",
+    "f": "页面加载 http://localhost:3000/products/ai-employee",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/products/solutions",
+    "f": "页面加载 http://localhost:3000/products/solutions",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/products/consulting",
+    "f": "页面加载 http://localhost:3000/products/consulting",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/products/knowledge-base",
+    "f": "页面加载 http://localhost:3000/products/knowledge-base",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/docs/help",
+    "f": "页面加载 http://localhost:3000/docs/help",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/docs/help-center",
+    "f": "页面加载 http://localhost:3000/docs/help-center",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/docs/pricing",
+    "f": "页面加载 http://localhost:3000/docs/pricing",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/docs/api",
+    "f": "页面加载 http://localhost:3000/docs/api",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/about/cooperation",
+    "f": "页面加载 http://localhost:3000/about/cooperation",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/about/jobs",
+    "f": "页面加载 http://localhost:3000/about/jobs",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/about/contact",
+    "f": "页面加载 http://localhost:3000/about/contact",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/models/mobile",
+    "f": "页面加载 http://localhost:3000/models/mobile",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/models/image",
+    "f": "页面加载 http://localhost:3000/models/image",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/models/video",
+    "f": "页面加载 http://localhost:3000/models/video",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "/models/audio",
+    "f": "页面加载 http://localhost:3000/models/audio",
+    "s": "PASS",
+    "d": "HTTP 200"
+  },
+  {
+    "m": "API",
+    "f": "系统统计 /api/v1/system/stats",
+    "s": "PASS",
+    "d": "HTTP 200 {\"success\":true,\"data\":{\"models\":0,\"users\":0},\"message\":\"Success\"}"
+  },
+  {
+    "m": "API",
+    "f": "系统健康 /api/v1/system/health",
+    "s": "PASS",
+    "d": "HTTP 200 {\"status\":\"ok\",\"timestamp\":\"2026-04-16T02:49:41.540Z\"}"
+  },
+  {
+    "m": "API",
+    "f": "Skills列表 /api/v1/tools/skills",
+    "s": "PASS",
+    "d": "HTTP 200 {\"items\":[],\"pagination\":{\"page\":1,\"limit\":20,\"total\":0,\"totalPages\":0}}"
+  },
+  {
+    "m": "API",
+    "f": "MCP列表 /api/v1/tools/mcp",
+    "s": "PASS",
+    "d": "HTTP 200 {\"items\":[],\"pagination\":{\"page\":1,\"limit\":20,\"total\":0,\"totalPages\":0}}"
+  },
+  {
+    "m": "API",
+    "f": "Agent列表 /api/v1/tools/agents",
+    "s": "PASS",
+    "d": "HTTP 200 {\"items\":[],\"pagination\":{\"page\":1,\"limit\":20,\"total\":0,\"totalPages\":0}}"
+  },
+  {
+    "m": "API",
+    "f": "模型列表 /api/v1/models",
+    "s": "PASS",
+    "d": "HTTP 200 {\"items\":[{\"id\":\"cmnyr552p001n14ikt9cy5ccv\",\"modelCode\":\"doubao-pro-32k\",\"nameDisplay\":\"Doubao-Pro-3"
+  },
+  {
+    "m": "API",
+    "f": "天梯图 /api/v1/ladder",
+    "s": "PASS",
+    "d": "HTTP 200 {\"items\":[{\"id\":\"cmnyr55ec003q14ikexyiyuqo\",\"chartCode\":\"llm-professional\",\"name\":\"大模型专业版天梯图\",\"nameC"
+  },
+  {
+    "m": "API",
+    "f": "评价列表 /api/v1/evaluations",
+    "s": "PASS",
+    "d": "HTTP 200 {\"items\":[],\"pagination\":{\"page\":1,\"limit\":20,\"total\":0,\"totalPages\":0}}"
+  },
+  {
+    "m": "API",
+    "f": "收藏列表 /api/v1/favorites",
+    "s": "PASS",
+    "d": "HTTP 200 {\"items\":[],\"pagination\":{\"page\":1,\"limit\":50,\"total\":0,\"totalPages\":0}}"
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "name": "@aidean/config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Aidean 共享工程配置包（ESLint / TypeScript / Prettier）",
+  "license": "UNLICENSED",
+  "files": ["eslint/", "tsconfig/", "prettier/"],
+  "exports": {
+    "./eslint": "./eslint/index.cjs",
+    "./tsconfig/*": "./tsconfig/*",
+    "./prettier/*": "./prettier/*"
+  }
+}

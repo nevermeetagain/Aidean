@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <title>Aidean</title>
+  <desc>Compatibility logo entrypoint. Primary logo lives at /images/icons/logo.svg</desc>
+  <rect width="128" height="128" fill="white"/>
+  <image href="/images/icons/logo.svg" x="0" y="0" width="128" height="128" preserveAspectRatio="xMidYMid meet"/>
+</svg>

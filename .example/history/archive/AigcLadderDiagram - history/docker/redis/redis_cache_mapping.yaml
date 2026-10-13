@@ -1,0 +1,262 @@
+# Aidean Redis 缓存映射配置
+# PG表与Redis缓存映射关系
+# 格式：YAML
+
+cache_mappings:
+  # ============================
+  # 用户域
+  # ============================
+  users:
+    key_pattern: "aidean:user:profile:{id}"
+    data_type: "hash"
+    ttl: 1800  # 30分钟
+    update_strategy: "write_then_delete"
+    fields:
+      - id
+      - email
+      - nickname
+      - avatar_url
+      - role
+      - status
+      - balance
+      - created_at
+    invalidation:
+      - event: "user.updated"
+        keys: ["aidean:user:profile:{user_id}"]
+      - event: "user.deleted"
+        keys: ["aidean:user:profile:{user_id}"]
+
+  user_session:
+    key_pattern: "aidean:user:session:{token}"
+    data_type: "hash"
+    ttl: 7200  # 2小时
+    update_strategy: "write_through"
+    fields:
+      - user_id
+      - email
+      - nickname
+      - role
+      - expires_at
+
+  # ============================
+  # 模型域
+  # ============================
+  models:
+    key_pattern: "aidean:model:detail:{id}"
+    data_type: "hash"
+    ttl: 3600  # 1小时
+    update_strategy: "write_then_delete"
+    fields:
+      - id
+      - name
+      - name_zh
+      - name_en
+      - slug
+      - provider_id
+      - type
+      - category
+      - params
+      - context_length
+      - is_open_source
+      - protocol
+      - status
+      - popularity_score
+    invalidation:
+      - event: "model.updated"
+        keys: ["aidean:model:detail:{model_id}"]
+      - event: "model.deleted"
+        keys: ["aidean:model:detail:{model_id}"]
+
+  model_slug:
+    key_pattern: "aidean:model:slug:{slug}"
+    data_type: "string"
+    ttl: 3600  # 1小时
+    update_strategy: "write_then_delete"
+    invalidation:
+      - event: "model.updated"
+        keys: ["aidean:model:slug:{slug}"]
+
+  providers:
+    key_pattern: "aidean:provider:list"
+    data_type: "zset"
+    ttl: 86400  # 永久，需手动同步
+    score_field: "sort_order"
+    update_strategy: "manual_sync"
+    invalidation:
+      - event: "provider.created"
+      - event: "provider.updated"
+      - event: "provider.deleted"
+
+  # ============================
+  # 天梯图域
+  # ============================
+  ladder_list:
+    key_pattern: "aidean:ladder:list:{type}:{page}"
+    data_type: "zset"
+    ttl: 300  # 5分钟
+    update_strategy: "scheduled_refresh"
+    refresh_cron: "*/5 * * * *"  # 每5分钟
+    fields:
+      - model_id
+      - rank
+      - score
+      - provider_name
+      - model_name
+    invalidation:
+      - event: "ranking.recalculated"
+        keys: ["aidean:ladder:list:*"]
+
+  ladder_top100:
+    key_pattern: "aidean:ladder:top100:{type}"
+    data_type: "zset"
+    ttl: 60  # 1分钟
+    update_strategy: "scheduled_refresh"
+    refresh_cron: "*/1 * * * *"  # 每分钟
+    fields:
+      - model_id
+      - rank
+      - score
+    invalidation:
+      - event: "ranking.recalculated"
+        keys: ["aidean:ladder:top100:*"]
+
+  # ============================
+  # 基准测试域
+  # ============================
+  benchmarks:
+    key_pattern: "aidean:benchmark:model:{model_id}"
+    data_type: "hash"
+    ttl: 3600  # 1小时
+    update_strategy: "write_then_delete"
+    fields:
+      - benchmark_name
+      - score
+      - max_score
+      - source
+      - recorded_at
+
+  # ============================
+  # 测评域
+  # ============================
+  evaluation_history:
+    key_pattern: "aidean:evaluation:history:{user_id}"
+    data_type: "zset"
+    ttl: 1800  # 30分钟
+    update_strategy: "write_then_delete"
+    score_field: "created_at"
+    fields:
+      - id
+      - prompt
+      - status
+      - is_paid
+      - cost
+      - created_at
+    invalidation:
+      - event: "evaluation.created"
+        keys: ["aidean:evaluation:history:{user_id}"]
+
+  # ============================
+  # 收藏域
+  # ============================
+  favorites:
+    key_pattern: "aidean:favorite:list:{user_id}:{type}"
+    data_type: "set"
+    ttl: 3600  # 1小时
+    update_strategy: "write_then_delete"
+    invalidation:
+      - event: "favorite.added"
+        keys: ["aidean:favorite:list:{user_id}:*"]
+      - event: "favorite.removed"
+        keys: ["aidean:favorite:list:{user_id}:*"]
+
+  # ============================
+  # 财务域
+  # ============================
+  transaction_count:
+    key_pattern: "aidean:transaction:count:{user_id}:{date}"
+    data_type: "string"
+    ttl: 2592000  # 30天
+    update_strategy: "increment"
+    invalidation:
+      - event: "transaction.created"
+        keys: ["aidean:transaction:count:{user_id}:{date}"]
+
+  # ============================
+  # 系统域
+  # ============================
+  feature_flags:
+    key_pattern: "aidean:feature:all"
+    data_type: "hash"
+    ttl: 0  # 永久
+    update_strategy: "sync_on_change"
+    fields:
+      - key
+      - name
+      - enabled
+      - config
+    invalidation:
+      - event: "feature.updated"
+        keys: ["aidean:feature:all"]
+
+  dict_items:
+    key_pattern: "aidean:dict:{category}"
+    data_type: "hash"
+    ttl: 0  # 永久
+    update_strategy: "sync_on_change"
+    fields:
+      - code
+      - label
+      - label_en
+      - sort_order
+    invalidation:
+      - event: "dict.updated"
+        keys: ["aidean:dict:{category}"]
+
+# ============================
+# 分布式锁配置
+# ============================
+locks:
+  cache_refresh:
+    key_pattern: "aidean:lock:cache_refresh:{table}:{id}"
+    ttl: 30  # 30秒
+    wait_timeout: 5  # 5秒等待
+
+  evaluation_execute:
+    key_pattern: "aidean:lock:evaluation:{evaluation_id}"
+    ttl: 300  # 5分钟
+    wait_timeout: 10
+
+  ranking_recalculate:
+    key_pattern: "aidean:lock:ranking:recalculate:{ladder_type}"
+    ttl: 600  # 10分钟
+    wait_timeout: 30
+
+# ============================
+# 计数器配置
+# ============================
+counters:
+  user_login:
+    key_pattern: "aidean:counter:login:{user_id}:{date}"
+    ttl: 2592000  # 30天
+
+  model_view:
+    key_pattern: "aidean:counter:model:view:{model_id}:{date}"
+    ttl: 2592000  # 30天
+
+  api_request:
+    key_pattern: "aidean:counter:api:{user_id}:{date}"
+    ttl: 2592000  # 30天
+
+# ============================
+# 布隆过滤器配置
+# ============================
+bloom_filters:
+  model_ids:
+    key: "aidean:bloom:model:ids"
+    expected_items: 100000
+    false_rate: 0.001
+
+  user_ids:
+    key: "aidean:bloom:user:ids"
+    expected_items: 1000000
+    false_rate: 0.001

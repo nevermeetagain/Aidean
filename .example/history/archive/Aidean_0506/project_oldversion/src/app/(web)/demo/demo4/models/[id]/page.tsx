@@ -1,0 +1,1 @@
+export default function Demo4ModelPage() { return <div>Model Detail</div>; }

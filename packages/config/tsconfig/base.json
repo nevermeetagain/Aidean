@@ -1,0 +1,28 @@
+{
+  // Aidean 共享 TS 基线（@aidean/config/tsconfig/base.json），对齐 create-next-app 生成的
+  // Next.js 官方推荐 tsconfig 并收紧为 strict 模式。消费方式：
+  //   apps/web/tsconfig.json → { "extends": "@aidean/config/tsconfig/base.json", ... }
+  //
+  // 【paths 别名说明】原计划在此统一定义 `"@/*": ["./src/*"]`，但 paths 以"包含该字段的
+  // 文件位置"为基准解析，跨包共享会指向错误目录，故移除实际字段、改为注释由各应用自声明。
+  // apps/web 请在其 tsconfig.json 的 compilerOptions 中按自身布局声明，例如：
+  //   "baseUrl": ".",
+  //   "paths": { "@/*": ["./*"] }
+  "display": "Aidean Shared Base Config",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}
