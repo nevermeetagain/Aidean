@@ -1,0 +1,70 @@
+# install
+apps/web postinstall: Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+apps/web postinstall: Done
+Done in 37.7s
+
+# docs-rule
+[铁律1] docs rule PASS：apps/ 下无实体 .md（README.md 豁免）。
+[铁律-数字] 数字真源断言 PASS（锚=文档，代码=实测）：schema model=68, enum=37, admin API 域=36, admin 页面=32, Next.js=15.0.x
+
+real	0m0.218s
+user	0m0.038s
+sys	0m0.022s
+
+# docs-facts
+✅ seed-no-official: seed.ts 中无 OFFICIAL/官方测试（provenance 修复后） → expected=0, actual=0
+✅ lib-features-count: lib/features 子目录数 = 18（S7.4 新增 announcements 前台公告读服务目录，17→18） → expected=18, actual=18
+✅ aidean-ui-refs: @aidean/ui 在 apps/web/components 的 import 数 = 61（S5 新增 HoldsPanel/WalletsTabs 各引 @aidean/ui，59→61） → expected=62, actual=62
+✅ route-count: apps/web route.ts 文件数（含 app/ 全域）= 148（S5 新增 admin/holds 在途冻结款只读分页端点） → expected=148, actual=148
+✅ page-count: apps/web page.tsx 文件数 = 56（S2r 新增 /admin/reports 独立报表页） → expected=56, actual=56
+✅ next-version: Next.js 版本 = 15.x → expected=15.x, actual=15.x
+✅ spec-count: spec 文件总数 = 151 (38 e2e + 113 unit)（S8 新增 home/site-sections.spec 跑马灯+关于正文读取兑底） → expected=151, actual=151
+✅ queryraw-biz: apps/web 业务代码 $queryRaw/$executeRaw = 0 → expected=0, actual=0
+✅ batch-count: admin batch 路由数 = 15 → expected=15, actual=15
+✅ db-doc-product-fields: 《数据库文档》products 行已登记 display_name 与 ProductCategory（DB 模型变更文档同步） → expected=2/2, actual=2/2
+✅ category-label-single-source: apps/web 中硬编码「label: "特供"」式分类映射 = 0（文案唯一来源 lib/product-label.ts） → expected=0, actual=0
+✅ usage-stats-anchor-pair: 《API架构设计方案》含 usage-stats-architecture 锚 且《API接口文档》含其回链（铁律 2 双向互引） → expected=2/2, actual=2/2
+
+All 14 assertions passed.
+
+real	0m1.078s
+user	0m0.088s
+sys	0m0.091s
+
+# tsc shared
+
+real	0m8.094s
+user	0m4.519s
+sys	0m0.261s
+# tsc web
+
+real	0m24.856s
+user	0m23.227s
+sys	0m0.915s
+
+# vitest shared
+ Test Files  12 passed (12)
+      Tests  118 passed (118)
+   Duration  4.35s (transform 273ms, setup 0ms, collect 780ms, tests 74ms, environment 2ms, prepare 1.76s)
+# vitest web
+ Test Files  112 passed (112)
+      Tests  1081 passed (1081)
+   Duration  65.21s (transform 2.68s, setup 0ms, collect 22.88s, tests 8.98s, environment 15ms, prepare 13.52s)
+# vitest ui
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Duration  371ms (transform 39ms, setup 0ms, collect 41ms, tests 7ms, environment 0ms, prepare 142ms)
+
+# lint
+./components/common/SafeImage.tsx
+19:14  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+real	0m25.873s
+user	0m11.650s
+sys	0m0.866s
+
+# next build (2nd run, warm cache)
+ ✓ Compiled successfully
++ First Load JS shared by all                            99.3 kB
+ƒ Middleware                                             127 kB
+real	1m27.896s
