@@ -1,0 +1,20 @@
+import { PGlite } from '@electric-sql/pglite';
+import { uuid_ossp } from '@electric-sql/pglite/contrib/uuid_ossp';
+import { pg_trgm } from '@electric-sql/pglite/contrib/pg_trgm';
+import { btree_gin } from '@electric-sql/pglite/contrib/btree_gin';
+import fs from 'fs'; import path from 'path';
+const dir='/workspace/work/Aidean/apps/web/prisma/migrations';
+const db=new PGlite({extensions:{uuid_ossp,pg_trgm,btree_gin}});
+const v=await db.query('select version()'); console.log(v.rows[0].version);
+const migs=fs.readdirSync(dir).filter(d=>fs.statSync(path.join(dir,d)).isDirectory()).sort();
+let ok=0;
+for(const m of migs){ let sql=fs.readFileSync(path.join(dir,m,'migration.sql'),'utf8');
+  sql=sql.replace('CREATE EXTENSION IF NOT EXISTS pgcrypto;','-- pgcrypto skipped (PGlite; gen_random_uuid is core since PG13)');
+  try{ await db.exec(sql); ok++; console.log('OK',m);}catch(e){console.log('FAIL',m,e.message); process.exit(1);} }
+console.log('applied',ok,'/',migs.length);
+const t=await db.query(`select count(*)::int c from information_schema.tables where table_schema='public' and table_type='BASE TABLE'`); console.log('base tables',t.rows[0].c);
+const idx=await db.query(`select indexdef from pg_indexes where tablename='model_prices'`); idx.rows.forEach(r=>console.log(r.indexdef));
+const cols=await db.query(`select table_name,column_name,is_nullable,data_type from information_schema.columns where table_name in ('ai_models','vendors') and is_nullable='NO' and column_default is null`); console.log(JSON.stringify(cols.rows));
+await db.dumpDataDir && 0;
+globalThis.db=db;
+fs.writeFileSync('/tmp/pgl/ok','1');
