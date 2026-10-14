@@ -1,0 +1,465 @@
+# > 版本: v0.4 | 更新: 2026-10-14 | 变更: V0.4.0 任务数据单一源——继承 V0.2.0/V0.3.0 55 卡（代码无 delta，逐卡沿用）+ 模型源监控体系新卡 056–075 + 执行者/条件卡口径
+# -*- coding: utf-8 -*-
+# 渲染：python3 gen.py（生成任务卡/索引/DAG/所有权/成本/阶段/追溯矩阵，并做机械校验）
+import copy, os, sys
+sys.path.insert(0, os.path.dirname(__file__))
+import base_v010 as B
+
+P = "docs/任务规划V0.4.0"
+P1 = "docs/任务规划V0.1.0"
+HDR = "> 版本: v0.4 | 更新: 2026-10-14 | 变更: 任务规划V0.4.0（基于 main@bfb3aef 复核，业务树 = 77c7952；未实现需求核查 + 模型源监控体系纳入统一规划）"
+
+OWNERS = copy.deepcopy(B.OWNERS)
+OWNERS["Agent-Docs"]["except"] = [P1 + "/", "docs/任务规划V0.2.0/", "docs/任务规划V0.3.0/", P + "/"]
+OWNERS["Agent-API"]["own"].append("apps/web/lib/monitoring/")
+
+COMMON_FORBID = [
+    ".example/history/**（铁律4 历史只读）",
+    f"{P}/contracts/**（冻结契约；变更须先提 ADR 并经 opus/fable 券审批）",
+    "docs/任务规划V0.1.0/** · docs/任务规划V0.2.0/** · docs/任务规划V0.3.0/**（历代规划只读）",
+    "AGENTS.md",
+]
+
+def _swap(v):
+    if isinstance(v, str):
+        return v.replace(P1, P)
+    if isinstance(v, list):
+        return [_swap(x) for x in v]
+    return v
+
+T = []
+for t in B.T:
+    t2 = {k: _swap(v) for k, v in copy.deepcopy(t).items()}
+    t2.setdefault("cond", None)
+    t2["v2"] = "沿用（V0.2.0 已对 main@59e83dd 复核前提仍成立）"
+    T.append(t2)
+
+def get(i):
+    return next(t for t in T if t["id"] == i)
+
+def patch(i, **kw):
+    t = get(i)
+    t.update(kw)
+
+def insert_after(after_id, **kw):
+    kw.setdefault("cond", None)
+    idx = next(n for n, t in enumerate(T) if t["id"] == after_id)
+    T.insert(idx + 1, kw)
+
+# ------------------------------------------------------------------ 复核结论：逐卡差异
+patch("001", v2="沿用（复核：旧表 packages/shared/src/types/index.ts:72-89 仍在且全仓 0 引用；web 22 码未变；selfcheck mism=0）")
+patch("003", v2="沿用（复核：/system/health 无 DB 时实测仍 200，route.ts:11-14 不探依赖）")
+patch("006", v2="沿用 + 证据升级：规划期以 PGlite(PG16.4 WASM) 空库重放 16/16 迁移成功、68 张表（EVD-BASELINE-V2/pglite-replay.txt），CI 真 PG16 复验仍必需")
+
+patch("007",
+      name="守卫脚本：根目录污染 / 密钥扫描 / 模块边界 / 端口区间一致性（零新依赖）",
+      req="§9.4 自动化守卫 / REQ-C-02 端口（Aidean 3000–3100，用户 2026-10-14 口径；子平台区间以 P-1/P-2 裁决为准）",
+      steps=["root-pollution：根目录文件白名单 = 当前 git ls-files 根级文件集合，新增根级文件即失败",
+             "secret-scan：git ls-files 全量扫描私钥头/AKIA/sk-[A-Za-z0-9]{20,}/password= 明文模式，.env.example 豁免",
+             "module-boundary：packages/** 不得 import apps/**；apps/web/components/** 不得 import @prisma/client 或 lib/db/**",
+             "port-consistency：Aidean 自身入口（apps/web/package.json dev/start、playwright baseURL、Dockerfile EXPOSE/PORT、auth/constants.ts AUTH_ISSUER 默认值）全部 ∈ 3000–3100；seed.ts OIDC localhost 回调端口逐一必须落在 scripts/guard/port-ranges.json 登记区间内——区间表初值只登记已确认项（Aidean 3000–3100、BotHot 3200–3300、AideanFleet 3100–3200），P-1/P-2 未裁决项输出 WARN 不失败"],
+      accept=["四脚本在当前 HEAD 全部 exit 0（端口项允许 WARN，WARN 清单写入证据）", "人为加入根级文件/私钥样本/3500 端口回调时对应脚本 exit 1（负向测试证据）", "CI verify job 含 guard 步骤"],
+      deps=[],
+      v2="修订：删除 V0.1.0 的「seed 必须含 3333 且不得含 3200」断言与对 TASK-008 的依赖——该前提被推翻（3200 = BotHot 前端宿主端口，见 02_事实基线 §2.6）；端口区间改为数据表驱动")
+
+patch("008",
+      name="OIDC 种子 wechat-rag 回调白名单按端口裁决对齐（保留 BotHot 3200；AideanBot 3333 按 P-2 补录）",
+      req="REQ-C-02 端口 / P-2（AideanBot 是否仍需 3333 回调）",
+      goal="seed.ts wechat-rag.redirectUris 与 P-2 裁决一致：方案A（AideanBot 仍在用）= [wechat-rag.aidean.local, localhost:3200, localhost:3333]；方案B（AideanBot 已由 BotHot 取代）= 保持现状 [wechat-rag.aidean.local, localhost:3200]，sso-3333 e2e 的去留另行立卡（Agent-Guard 所有，本卡不改 e2e）",
+      docs=["docs/product/modules/子平台规范说明.md §5.0 端口区间", "BotHot AGENTS.md 端口表（3200 前端宿主，外部仓 aideanew/BotHot@13acacc）"],
+      pre_state="P-2 已由用户裁决",
+      steps=["方案A：seed.ts:354 redirectUris 追加 'http://localhost:3333/auth/aidean/callback'（不删 3200）", "本地 db:seed 两次（upsert 幂等），运行 node apps/web/scripts/check-oidc.mjs", "方案B：不改代码，证据目录写入裁决原文"],
+      accept=["方案A：`grep -c \"localhost:3200/auth/aidean/callback\\|localhost:3333/auth/aidean/callback\" apps/web/prisma/seed.ts` 两个回调均命中；check-oidc has3333=true", "方案B：git diff 为空且证据含裁决记录", "TASK-007 端口守卫对 seed 回调无 ERROR"],
+      verify="grep -n \"auth/aidean/callback\" apps/web/prisma/seed.ts && node scripts/guard/port-consistency.mjs",
+      block_cond="P-2 未裁决 → 不执行（条件卡）", cond="P-2",
+      v2="需要返工：V0.1.0 要求「3200→3333 替换」会删除 BotHot 回调（BotHot AGENTS.md：3200=BotHot 前端宿主；BotHot ci.yml:287「主平台 OIDC 白名单已登记 bothot redirect_uri」；BotHot 复用 wechat-rag client）。改为「保留 3200 + 按裁决补 3333」")
+
+patch("010",
+      name="固化复现：PG16 集成测试证明二次写价违反唯一索引（规划期已在 PGlite PG16.4 复现 23505）",
+      goal="新增集成测试在真实 PG16 上断言：现行 persistPrices 第二次写价抛 P2002（SQLSTATE 23505），作为 TASK-011/012 的红灯测试",
+      steps=["以 EVD-BASELINE-V2/repro.mjs 的 SQL 序列为蓝本改写为 vitest 集成测试（Prisma 客户端，DATABASE_URL 门控）", "断言：第 1 次成功、第 2/3 次 P2002；同批 2 条 is_current=true 亦 P2002", "无 DATABASE_URL 时 describe.skip，不影响 1081 基线"],
+      accept=["CI PG16 上该 spec 在 TASK-011 之前为红（预期失败已用 it.fails 标注）且错误码=P2002", "无 DATABASE_URL 时 spec 自动 skip，`pnpm --filter web test` 仍 1081 通过"],
+      block_cond="真 PG16 上未复现（与 PGlite 结论矛盾）→ 停止，升 opus 复核 PGlite 差异", 
+      v2="修订：缺陷由「部分确认」升级为「已确认」（PGlite PG16.4 + 16 条真实迁移 + 1:1 SQL：第 2 次写价 23505，EVD-BASELINE-V2/pglite-repro-p2002.txt）；本卡由「复现或证伪」改为「固化为回归测试」")
+patch("011", v2="沿用 + 证据升级：M-001 草案已在 PGlite 验证——三次写价全部成功、current 恰 1 条、OFFICIAL current + PROMOTION(is_current=false) 可并存（EVD-BASELINE-V2/pglite-verify-m001.txt）")
+patch("012", v2="沿用（复核强化：M-001 后同批 2 条 is_current=true 仍会 23505——本卡「仅最新一条 current」为必需而非可选）")
+patch("015", v2="沿用（复核：grep featureFlag|feature_flags 在 apps/web/{app,lib,components,stores,hooks,middleware.ts} 0 命中）")
+patch("016", v2="沿用（复核：app/api/v1/admin/ 36 个域目录中无 feature-flags；需求文档 §3.10「功能开关 ✅GET/✅PATCH」为文档错误）")
+patch("022", v2="沿用（复核：Favorite 模型在 schema 中，运行时 grep -i favorite 0 命中）")
+patch("027", v2="沿用（复核：gateway/repository.ts:89,109 仍只取 isCurrent=true；PROMOTION 仅枚举/注释）；注意：币种/计价单位归一另由 TASK-048 在同一解析器内完成（资源锁串行）")
+patch("034", v2="沿用（复核：components/site/* 无搜索组件；条件卡 U-5）", cond="U-5")
+for i in ("032", "033", "035", "036"):
+    patch(i, cond="U-5")
+for i in ("043",):
+    patch(i, cond="U-3")
+for i in ("044", "045", "046"):
+    patch(i, cond="U-4")
+patch("037", v2="沿用（复核：两配置 --list 仍为 138/26 与 64/14）；若 P-2=方案B，sso-3333.spec.ts 的 skip 处理须另立 Guard 卡，本卡禁止改 spec")
+patch("040",
+      goal="需求文档 v1.15：§3.5 JWT 有效期、§3.9/§3.10 功能开关实装口径（后台域表中「功能开关 ✅GET/PATCH」改为实测）、§3.11 导航、§六 MVP（微信扫码/在线支付暂停）、§3.2 计价展示口径（¥/M 与汇率，按 U-15）与代码/裁决一致，并在文末链接统一追溯矩阵",
+      v2="修订：新增 §3.2 汇率口径（U-15）与 §3.10 功能开关域表错误两条修订点；文末链接 RTM（TASK-051）")
+patch("041", v2="沿用（复核：台账仍 155,968 字节；另发现台账内部状态矛盾 #17/#36——交 TASK-051 消解）")
+patch("042", cond="U-3", v2="沿用（条件：生产数据策略属发布事务，随 U-3）")
+
+# ------------------------------------------------------------------ 新卡
+insert_after("007", id="050", slice="S0", name="CI 门禁补齐：lint + @aidean/ui 单测进入 verify job",
+     owner="Agent-Guard", assignee="外部Agent", tier="sonnect", tier_reason="CI 配置追加两个既有命令，确定性",
+     req="REQ-NF-03 测试可复现 / §9.4 守卫（ci.yml 现无 lint 与 packages/ui 测试步骤）", sol="SOL-S0",
+     goal="CI verify job 新增 `pnpm --filter web lint`（0 error）与 `pnpm --filter @aidean/ui exec vitest run`（4 例）两步，任一失败阻断合并",
+     docs=[".github/workflows/ci.yml:47-69", "11_基线指标.md §11.2（lint 0 error/1 warning、ui 4 例）"], contracts=["无（CI 配置）"],
+     pre_state="TASK-006/007 已合并（同文件资源锁）",
+     outputs=[".github/workflows/ci.yml"],
+     steps=["在 Typecheck(web) 之后插入 Lint(web) 步骤", "在 Unit tests(shared) 之后插入 Unit tests(ui) 步骤", "本地按 CI 顺序复跑两命令"],
+     accept=["CI verify job 日志含 Lint(web) 与 Unit tests(ui) 两步且均成功", "lint 输出 0 error（既有 1 warning SafeImage.tsx:19 允许）", "@aidean/ui 4 tests passed"],
+     verify="pnpm --filter web lint && pnpm --filter @aidean/ui exec vitest run",
+     allow=[".github/workflows/ci.yml"], forbid=["apps/**", "packages/**"], deps=["007"],
+     block_cond="lint 在 CI Node 20 下出现本地无的 error → 不改业务代码，登记并上报", escalate="2 次失败 → 升 opus", size="小", hours=2,
+     v2="新增：V0.2.0 复核发现 ci.yml 无 lint/ui 测试步骤（V0.1.0 未登记）")
+
+insert_after("026", id="055", slice="S4", name="种子：系统配置新增 pricing.fxUsdCny 默认行（值取 U-15 裁决）",
+     owner="Agent-Data", assignee="外部Agent", tier="haiku", tier_reason="seed 单行数据追加",
+     req="REQ-F-011 计价口径归一（汇率默认值）", sol="ADR-P005",
+     goal="apps/web/prisma/seed.ts systemConfigsData 追加 {configKey:'pricing.fxUsdCny', configGroup:'pricing', configValue:<U-15 裁决值>}，db:seed 幂等复跑后该行存在",
+     docs=["03_solution/decisions/ADR-P005-计价口径归一.md", "apps/web/lib/features/auth/__tests__/admin-config-seed-parity.spec.ts（registry⊆seed 守卫）"],
+     contracts=["PRICE_NORMALIZATION.FX_CONFIG_KEY"],
+     pre_state="U-15 已裁决（给出汇率数值）",
+     outputs=["apps/web/prisma/seed.ts"],
+     steps=["在 systemConfigsData 追加一行（configType 与 047 的 registry 条目一致：STRING，值为十进制字符串）", "本地 db:seed 两次", "运行 parity 守卫"],
+     accept=["`grep -n \"pricing.fxUsdCny\" apps/web/prisma/seed.ts` 恰 1 行", "`pnpm --filter web exec vitest run lib/features/auth/__tests__/admin-config-seed-parity.spec.ts` 通过"],
+     verify="pnpm --filter web exec vitest run lib/features/auth/__tests__/admin-config-seed-parity.spec.ts",
+     allow=["apps/web/prisma/seed.ts"], forbid=["apps/web/prisma/schema.prisma", "apps/web/prisma/migrations/**", "packages/**"], deps=["026"],
+     block_cond="U-15 未裁决 → 不执行（条件卡）", escalate="无", size="小", hours=1, cond="U-15",
+     v2="新增：配置键四处同步约束（shared registry / admin configs PUT 白名单 / seed / parity 守卫，见 auth/constants.ts:27,101）要求 seed 先于 registry 落地")
+
+insert_after("055", id="047", slice="S4", name="计价口径归一契约：币种 CNY + 每百万 Token + 汇率配置键（EffectivePrice 扩展）",
+     owner="Agent-Contract", assignee="Hark(主Agent)", tier="opus", tier_reason="资金路径契约语义（币种/单位），不可逆度高",
+     req="REQ-F-02b 价格统一 ¥/M Tokens 与 ¥5=$1 换算（需求文档 §3.2）/ REQ-C-03 价格透明", sol="ADR-P005 / DESIGN-003",
+     goal="packages/shared/src/schemas/promotion.schema.ts 的 EffectivePriceSchema 增加 currency='CNY'、unit='per_million_tokens'、sourceCurrency、sourceUnit、fxRate 字段，并导出 PRICE_NORMALIZATION 常量与 normalizeUnitPrice 纯函数；shared 单测覆盖 CNY/USD × per_1k/per_million 四象限",
+     docs=["contracts/01-api.contract.ts §S4 PRICE_NORMALIZATION", "03_solution/decisions/ADR-P005-计价口径归一.md"],
+     contracts=["EffectivePriceSchema（v0.2 扩展）", "PRICE_NORMALIZATION", "normalizeUnitPrice"],
+     pre_state="TASK-026、TASK-055 已合并；U-15（汇率口径）已裁决",
+     outputs=["packages/shared/src/schemas/promotion.schema.ts", "packages/shared/src/utils/price-normalization.ts（新建）", "packages/shared/src/constants/admin-config.constants.ts（registry 增 pricing.fxUsdCny）", "packages/shared/src/utils/pricing-config.ts（PRICING_CONFIG_KEYS 增 fxUsdCny）", "packages/shared/src/index.ts", "packages/shared/src/__tests__/price-normalization.spec.ts（新建）"],
+     steps=["按冻结稿落地 PRICE_NORMALIZATION（目标币种 CNY、目标单位 per_million_tokens、配置键 pricing.fxUsdCny）", "normalizeUnitPrice(value, currency, unit, fx)：per_1k×1000；USD×fx；未知币种抛错（调用方 fail-closed）", "EffectivePriceSchema 扩展字段", "ADMIN_CONFIG_REGISTRY 增 pricing.fxUsdCny（valueRule >0，defaultValue = TASK-055 种子值），使后台 PUT /api/v1/admin/configs 白名单可写", "单测四象限 + 未知币种 + fx<=0 拒绝"],
+     accept=["`pnpm --filter @aidean/shared test` 全绿且新增 ≥6 例", "`pnpm --filter @aidean/shared exec tsc --noEmit` 0", "price-normalization.ts 无硬编码汇率数值（汇率只来自参数）", "`pnpm --filter web exec vitest run lib/features/auth/__tests__/admin-config-seed-parity.spec.ts` 通过（registry 与 seed 一致）"],
+     verify="pnpm --filter @aidean/shared exec tsc --noEmit && pnpm --filter @aidean/shared test",
+     allow=["packages/shared/src/schemas/promotion.schema.ts", "packages/shared/src/utils/price-normalization.ts", "packages/shared/src/constants/admin-config.constants.ts", "packages/shared/src/utils/pricing-config.ts", "packages/shared/src/index.ts", "packages/shared/src/__tests__/price-normalization.spec.ts"],
+     forbid=["apps/**", "packages/shared/src/utils/billing.ts（calcCharge 不动）"], deps=["026", "055"],
+     block_cond="U-15 未裁决 → 不执行（条件卡）；需要改 calcCharge 的签名或精度 → 停止，升 fable", escalate="与 provider-pricing.ts 既有展示口径冲突 → 升 opus 仲裁", size="中", hours=4, cond="U-15",
+     v2="新增：V0.2.0 发现网关扣费忽略 billingCurrency/billingUnit（gateway/service.ts:681-704、990-1003 直接以 priceInput 作 ¥/M），seed 82 条价格中 48 条 USD")
+
+insert_after("027", id="048", slice="S4", name="生效价解析器接入币种/单位归一（网关扣费与读侧同口径）",
+     owner="Agent-API", assignee="Hark(主Agent)", tier="opus", tier_reason="资金路径：改变实际扣费金额",
+     req="REQ-F-02b / REQ-F-07 计费公式", sol="ADR-P005 / DESIGN-003",
+     goal="resolveEffectivePrice 返回的 priceInput/priceOutput 一律为 CNY/百万 Token（USD 行按 pricing.fxUsdCny 换算、per_1k 行 ×1000），网关 PLATFORM 预扣与结算、/api/v1/models/[id]、pricing 读侧全部消费归一后的价格；无法归一的价格行使该候选被跳过（降级链继续）",
+     docs=["03_solution/design/DESIGN-003-生效价解析器.md", "docs/architecture/网关计费时序契约.md"],
+     contracts=["EffectivePriceSchema（v0.2）", "PRICE_NORMALIZATION"],
+     pre_state="TASK-027、TASK-047 已合并；U-15 已裁决；TASK-049 盘点结果已入证据（存量 USD/per_1k 行数），且人工抽样确认 USD 行为美元原价（ADR-P005 反证排除）",
+     outputs=["apps/web/lib/features/pricing/effective-price.ts", "apps/web/lib/features/pricing/__tests__/effective-price-normalization.spec.ts"],
+     steps=["解析器读取 billingCurrency/billingUnit 并调用 normalizeUnitPrice", "汇率读 SystemConfig pricing.fxUsdCny（经 shared PRICING_CONFIG_KEYS；缺失 → 视为不可归一，候选跳过并记 warn 日志）", "单测：USD per_million / CNY per_1k / 未知币种 / 汇率缺失 四路径 + 网关预扣金额断言", "回归 gateway 全部 __tests__"],
+     accept=["新增单测 ≥8 例全绿", "`pnpm --filter web exec vitest run lib/features/gateway lib/features/pricing` 全绿", "USD 1.00/M、fx=F 时扣费基准 = F 元/M（表驱动断言）"],
+     verify="pnpm --filter web exec vitest run lib/features/pricing lib/features/gateway && pnpm --filter web exec tsc --noEmit",
+     allow=["apps/web/lib/features/pricing/**"], forbid=["packages/shared/**", "apps/web/lib/features/billing/**", "apps/web/prisma/**", "apps/web/lib/features/gateway/service.ts"],
+     deps=["047", "027"], block_cond="U-15 未裁决 → 不执行（条件卡）；需改 gateway/service.ts → 停止回报", escalate="资金回归任一失败 → 立即回滚并重写任务书", size="中", hours=8, cond="U-15",
+     v2="新增：修复 V0.2.0 新发现的计价口径缺陷 D-NEW-1")
+
+insert_after("028", id="049", slice="S4", name="存量价格行口径盘点脚本（只读：币种×计价单位×来源）",
+     owner="Agent-Guard", assignee="外部Agent", tier="sonnect", tier_reason="只读统计脚本",
+     req="REQ-F-02b（为 U-15 裁决提供数据）", sol="ADR-P005",
+     goal="`node scripts/audit/price-normalization-audit.mjs` 对任意库输出 model_prices 中 is_current=true 行按 billing_currency × billing_unit × source_type 的计数表与 5 条样例，退出码恒 0",
+     docs=["03_solution/decisions/ADR-P005-计价口径归一.md"], contracts=["无（只读盘点）"],
+     pre_state="TASK-006 已合并（CI 有 seed 后的 PG16）",
+     outputs=["scripts/audit/price-normalization-audit.mjs（新建）"],
+     steps=["用 @prisma/client 只读查询（无写语句；脚本内 grep 自检无 create/update/delete）", "输出 markdown 表到 stdout", "在 CI seed 后库运行一次并存证"],
+     accept=["seed 后库输出含 USD 与 CNY 两行，合计 = is_current 行总数", "`grep -nE \"\\.(create|update|delete|upsert)\" scripts/audit/price-normalization-audit.mjs` 无输出"],
+     verify="node scripts/audit/price-normalization-audit.mjs",
+     allow=["scripts/audit/**"], forbid=["apps/**", "packages/**"], deps=["006"],
+     block_cond="无 DATABASE_URL → 打印用法后 exit 0 并在证据注明", escalate="无", size="小", hours=3,
+     v2="新增：为 U-15/TASK-048 提供存量数据证据（规划期静态统计 seed：82 条中 USD 48、CNY 34）")
+
+insert_after("029", id="053", slice="S4", name="UI：价格页/详情页统一 ¥/M 展示（附原币原价注记）",
+     owner="Agent-App", assignee="Hark(主Agent)", tier="opus", tier_reason="全部 UI 设计实现由主 Agent 负责；展示口径直接面向用户",
+     req="REQ-F-02b / REQ-C-03 价格透明（展示价与官方一致：原币原价须可见）", sol="DESIGN-003",
+     goal="/pricing 网关单价表与 /models/[slug] 参数表的价格列统一显示「¥x.xx / M Tokens」，USD 官方价以次级文字「官方 $y / M」并列（不隐藏原价）；三套浅色主题对比度 ≥4.5:1",
+     docs=["contracts/06-ux-states.contract.ts PRICING_TABLE", "docs/product/design/UI设计文档.md"],
+     contracts=["EffectivePriceSchema（v0.2）", "UX_STATES.pricingTable"],
+     pre_state="TASK-048、TASK-029 已合并（同页资源锁）",
+     outputs=["apps/web/app/(site)/pricing/page.tsx", "apps/web/app/(site)/models/[slug]/page.tsx"],
+     steps=["价格单元格改读 EffectivePrice.priceInput/priceOutput（已归一）", "sourceCurrency≠CNY 时追加原币注记", "空态/错误态沿用契约⑥", "三主题截图存证"],
+     accept=["`pnpm --filter web exec tsc --noEmit` 0 且 `pnpm --filter web lint` 0 error", "页面无 `$` 作为主价格符号（e2e/人工：主列均为 ¥）", "原币注记对 USD 行可见（人工截图）"],
+     verify="pnpm --filter web exec tsc --noEmit && pnpm --filter web lint",
+     allow=["apps/web/app/(site)/pricing/**", "apps/web/app/(site)/models/[slug]/**"], forbid=["apps/web/lib/**", "packages/**"],
+     deps=["048", "029"], block_cond="U-15 未裁决 → 不执行（条件卡）", escalate="设计与「展示价=官方价」约束冲突 → 升 opus 并回报用户", size="中", hours=6, cond="U-15",
+     v2="新增：需求 §3.2「统一 ￥/M Tokens」与现 /pricing 以 $ 显示 USD 行（pricing/page.tsx:6,80-83）不一致")
+
+insert_after("031", id="054", slice="S4", name="S4b 文档同步：计价口径归一（网关计费时序契约 + API 文档 + 术语表）",
+     owner="Agent-Docs", assignee="外部Agent", tier="haiku", tier_reason="文档登记",
+     req="REQ-F-02b / 铁律2 双向锚", sol="ADR-P005",
+     goal="《网关计费时序契约》补「生效价归一」一节、《API接口文档》EffectivePrice 字段表补 currency/unit/fx、术语表新增「计价口径归一」，三处双向锚，升版本头",
+     docs=["03_solution/decisions/ADR-P005-计价口径归一.md"], contracts=["EffectivePriceSchema（v0.2）"],
+     pre_state="TASK-053 已合并",
+     outputs=["docs/architecture/网关计费时序契约.md", "docs/architecture/API接口文档.md", "docs/governance/术语表.md"],
+     steps=["补节与锚", "版本头", "门禁"],
+     accept=["check-docs-rule exit 0", "check-docs-facts 全 PASS", "三文档出现「计价口径归一」锚且互链可达"],
+     verify="node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs",
+     allow=["docs/architecture/网关计费时序契约.md", "docs/architecture/API接口文档.md", "docs/governance/术语表.md"], forbid=["apps/**", "packages/**", f"{P}/**"],
+     deps=["053", "031"], block_cond="无", escalate="无", size="小", hours=2, cond="U-15",
+     v2="新增：S4b 文档闭环")
+
+insert_after("041", id="051", slice="S7", name="统一需求追溯矩阵入库 + 台账内部状态矛盾消解（#17/#36）",
+     owner="Agent-Docs", assignee="外部Agent", tier="sonnect", tier_reason="按本规划 RTM 机械入库 + 两处状态对账",
+     req="本次需求「建立统一规划体系」/ AGENTS 铁律1 单一事实来源", sol="ADR-P004 / 本规划 03a",
+     goal="docs/product/requirements/需求追溯矩阵.md 成为需求→状态→任务的唯一追溯表（内容取自本规划 03a，逐行带证据路径），需求文档/台账/待执行大纲改为链接它；台账 #17（L44 🟡 vs §7.12 R-83 ✅）与 #36（L113 🟡 vs L295 ✅）各保留一个现行状态",
+     docs=[f"{P}/03a_统一需求追溯矩阵.md", "docs/plans/未完成事项目录.md L44/L113/L295"], contracts=["无（文档）"],
+     pre_state="TASK-041 已合并（台账拆分后路径）；TASK-040 已合并",
+     outputs=["docs/product/requirements/需求追溯矩阵.md（新建）", "docs/plans/**（链接与状态对账）", "docs/文档索引.md", "scripts/check-docs-facts.mjs（新增 RTM 行数断言）"],
+     steps=["复制 RTM 表并把「本规划任务号」列改为相对链接", "台账 #17/#36 状态对账（以 §7.12 收口回执与代码为准）", "check-docs-facts 增断言：RTM 中「未实现/部分」行均有任务号或「暂不执行」理由", "文档索引登记"],
+     accept=["check-docs-rule exit 0", "check-docs-facts 全 PASS（含新断言）", "`grep -c \"^| REQ-\" docs/product/requirements/需求追溯矩阵.md` = 本规划 RTM 行数"],
+     verify="node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs",
+     allow=["docs/product/requirements/需求追溯矩阵.md", "docs/plans/**", "docs/文档索引.md", "scripts/check-docs-facts.mjs"], forbid=["apps/**", "packages/**", f"{P}/**", ".example/**"],
+     deps=["041"], block_cond="RTM 与 TASK-040 后的需求文档条目数不一致 → 停止回报 Hark 对账", escalate="无", size="中", hours=3,
+     v2="新增：本轮重点需求「建立统一规划体系」的落盘卡")
+
+insert_after("042", id="052", slice="S8", name="RC-02 遗留文档闭环：发布环境契约 + 发布回滚与恢复验收",
+     owner="Agent-Docs", assignee="外部Agent", tier="sonnect", tier_reason="以既有 RC-02 spec 与 TASK-042 演练证据成文",
+     req="REQ-NF-02 可运维 / harden-rc02-standalone-address checklist C4/C5（未勾）", sol="SOL-S8",
+     goal="docs/engineering/发布环境契约.md（env 五件套、NEXT_PUBLIC_SITE_URL 构建期注入、端口 3000）与 docs/engineering/发布回滚与恢复验收.md（引用 TASK-042 演练 diff=0 证据）成文并登记文档索引；RC-02 checklist 中代码侧已满足项按证据补勾",
+     docs=["docs/specs/harden-rc02-standalone-address/spec.md", "apps/web/middleware.ts:65（RC-02 已落码）", "apps/web/app/oauth/authorize/route.ts:80-86"],
+     contracts=["contracts/04-resources.contract.ts（公开基址规则）"],
+     pre_state="TASK-042 已合并",
+     outputs=["docs/engineering/发布环境契约.md（新建）", "docs/engineering/发布回滚与恢复验收.md（新建）", "docs/specs/harden-rc02-standalone-address/checklist.md", "docs/文档索引.md"],
+     steps=["成文两份", "checklist A1 依代码证据补勾，B/C 段需运行态项保持未勾并注明", "文档索引登记"],
+     accept=["check-docs-rule exit 0", "两文档带版本头且登记索引", "checklist 每个补勾项附证据路径"],
+     verify="node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs",
+     allow=["docs/engineering/发布环境契约.md", "docs/engineering/发布回滚与恢复验收.md", "docs/specs/harden-rc02-standalone-address/checklist.md", "docs/文档索引.md"], forbid=["apps/**", "packages/**", f"{P}/**"],
+     deps=["042"], block_cond="无", escalate="无", size="小", hours=4, cond="U-3",
+     v2="新增：V0.2.0 核查 specs 未勾项发现 RC-02 文档交付物（C4/C5）从未成文")
+
+# 条件标记汇总（gen.py 用于关键路径与批次排除）
+COND_REASON = {"U-5": "顶栏搜索是否需要", "U-3": "生产部署资源", "U-4": "截图素材", "U-15": "汇率口径", "P-2": "AideanBot 3333 回调是否保留"}
+
+SLICES = copy.deepcopy(B.SLICES)
+SLICES["S0"] = ("步行骨架与契约守卫", "契约唯一源 + 就绪探针 + 鉴权写闭环 e2e + CI 真库重放 + 守卫脚本 + CI 补 lint/ui 测试", "P-2 仅影响条件卡 TASK-008")
+SLICES["S1"] = ("价格历史唯一约束修复（数据完整性，已确认缺陷）", "同一模型多次采集不再 P2002；为限时优惠多行价格铺路", "无（缺陷已在 PGlite PG16.4 复现）")
+SLICES["S4"] = ("生效价：限时优惠 + 计价口径归一（需求 §3.6/§3.2）", "后台建优惠 → 前台显示优惠价 → 网关按优惠价扣费；USD/per_1k 价格行按统一口径扣费与展示", "U-9（优惠是否叠加折扣）/ U-15（汇率口径，BLOCKING 局部：仅 048/053/054）")
+SLICES["S7"] = ("文档治理收口 + 统一需求追溯矩阵", "需求文档 v1.15 + 台账拆分 + RTM 入库 + 台账状态矛盾消解", "U-1/U-2/U-11/U-15")
+SLICES["S8"] = ("生产部署实弹（含 RC-02 文档闭环）", "备份恢复演练通过 → 生产 ready=200；发布环境契约成文", "U-3（BLOCKING）")
+
+# ======================================================================
+# V0.4.0：继承卡统一标注（业务代码自 77c7952 无 delta，见 18b_V0.4.0代码重核与监控需求映射.md §一）
+# ======================================================================
+for _t in T:
+    _t["v2"] = "沿用（V0.4.0 重核：bfb3aef 业务树=77c7952，无代码 delta；V0.2.0 判定 = " + _t["v2"].split("（")[0].split("：")[0] + "）"
+
+# ======================================================================
+# V0.4.0 新增：模型源监控体系（REQ-M-001..016；需求输入 = 用户「当前我找到的」+ 补充1/补充2，经核验见 19_外部来源核验证据.md）
+# ======================================================================
+MD = "docs/任务规划V0.4.0/03_solution/design/DESIGN-004-模型源监控体系.md"
+MC = "contracts/07-monitoring.contract.ts"
+def mk(**kw):
+    kw.setdefault("cond", None)
+    kw.setdefault("sol", "DESIGN-004 / ADR-P007")
+    kw.setdefault("forbid", [])
+    kw["forbid"] = list(kw["forbid"]) + ["apps/web/prisma/migrations/2026*（既有迁移只读，M-002 仅 TASK-058 可新建）" if kw.get("owner") != "Agent-Data" else "apps/web/prisma/migrations/2026092*、20261008*、20261010*、20261012*（既有迁移只读）"]
+    kw.setdefault("v2", "新增（V0.4.0 模型源监控）")
+    T.append(kw)
+
+mk(id="056", slice="S10", name="监控契约落地：monitoring.schema.ts（源/快照/观测/变更事件/管理端 DTO）+ 2 个新错误码",
+   owner="Agent-Contract", assignee="Hark(主Agent)", tier="opus", tier_reason="契约语义（源分级、证据口径、错误码）影响数据/API/UI 三端，不可逆度高",
+   req="REQ-M-001/002/003/004/012", goal="packages/shared 导出 MonitoringSource*/CatalogSnapshot*/ProviderModelObservation*/CatalogChangeEvent*/AdminMonitoring* zod 与 MONITOR_SOURCE_NOT_FOUND=20004、MONITOR_SOURCE_CREDENTIAL_MISSING=50012；码值与既有 25 码无冲突（单测断言）",
+   docs=[MD, MC, "contracts/02-errors.contract.ts"], contracts=["MonitoringSourceSchema", "SOURCE_TIERS", "CatalogChangeEventSchema", "MONITORING_ERROR_CODES", "MONITORING_UX_STATES"],
+   pre_state="TASK-001 已合并（errors.ts 唯一源已存在）",
+   outputs=["packages/shared/src/schemas/monitoring.schema.ts（新建）", "packages/shared/src/errors.ts（追加 2 码 + HTTP 映射 50012→503）", "packages/shared/src/index.ts", "packages/shared/src/__tests__/monitoring.spec.ts（新建）"],
+   steps=["将 contracts/07-monitoring.contract.ts 中 zod 定义原样落入 monitoring.schema.ts（不得改字段名/枚举值）",
+          "errors.ts 追加 MONITOR_SOURCE_NOT_FOUND:20004、MONITOR_SOURCE_CREDENTIAL_MISSING:50012 与 DEFAULT_STATUS_BY_CODE[20004]=404、[50012]=503、ERROR_PRESENTATION 两条",
+          "index.ts 导出；monitoring.spec.ts 断言：SOURCE_TIERS=[S1,S2,A,B,C]、码值全局唯一、CatalogChangeEvent 判别联合 4 种 kind 可解析样例"],
+   accept=["`pnpm --filter @aidean/shared exec tsc --noEmit` exit 0", "`pnpm --filter @aidean/shared test` 全绿（含 monitoring.spec.ts）", "`node -e` 读取 ERROR_CODES 值去重后数量 = 27", "contracts/selfcheck-monitoring.ts 输出 collisions=0"],
+   verify="pnpm --filter @aidean/shared exec tsc --noEmit && pnpm --filter @aidean/shared test",
+   allow=["packages/shared/src/schemas/monitoring.schema.ts", "packages/shared/src/errors.ts", "packages/shared/src/index.ts", "packages/shared/src/__tests__/monitoring.spec.ts"],
+   forbid=["apps/**"], deps=["001"], block_cond="冻结稿字段与 Prisma 草案（05 §5.6）不一致 → 停止，回报规划者", escalate="需改既有码值 → 升 fable", size="中", hours=4)
+
+mk(id="057", slice="S10", name="文档：模型源监控设计入库 + 需求文档新增 §3.4.2「模型源监控」+ 文档索引登记",
+   owner="Agent-Docs", assignee="外部Agent", tier="sonnect", tier_reason="按 DESIGN-004 与 RTM 机械成文，无新决策",
+   req="REQ-M-001..016（需求登记）/ REQ-L 文档治理", goal="docs/architecture/模型源监控设计.md 与需求文档 §3.4.2 成文（MUST/SHOULD/COULD/MUST NOT 与 REQ-M 编号一致），check-docs-rule/facts 通过",
+   docs=[MD, "docs/任务规划V0.4.0/03b_监控需求增量.md", "docs/architecture/AI市场发现与智能引擎设计文档.md"], contracts=["无（文档）"],
+   pre_state="APPROVE 已给出；U-M1..M6 裁决结果（若已有）写入",
+   outputs=["docs/architecture/模型源监控设计.md（新建，带版本头）", "docs/product/requirements/需求文档.md（新增 §3.4.2）", "docs/文档索引.md"],
+   steps=["以 DESIGN-004 为底稿成文（引用而非复制 .example/history）", "需求文档 §3.4.2 写入 REQ-M 表与 MUST NOT 清单，版本头递增", "文档索引登记；若 check-docs-facts 断言 schema 模型数，等 TASK-058 合并后再同步数字"],
+   accept=["`node scripts/check-docs-rule.mjs` exit 0", "`node scripts/check-docs-facts.mjs` exit 0", "需求文档 §3.4.2 含 REQ-M-001..016 全部编号（grep 计数=16）"],
+   verify="node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs && grep -c 'REQ-M-0' docs/product/requirements/需求文档.md",
+   allow=["docs/architecture/模型源监控设计.md", "docs/product/requirements/需求文档.md", "docs/文档索引.md"],
+   forbid=["apps/**", "packages/**"], deps=["056"], block_cond="无", escalate="无", size="中", hours=4)
+
+mk(id="058", slice="S10", name="迁移 M-002：monitoring_sources / catalog_snapshots / provider_model_observations / catalog_change_events + 种子注册公开源 + 后台导航节点",
+   owner="Agent-Data", assignee="Hark(主Agent)", tier="opus", tier_reason="新增 4 表 + 索引 + 种子，迁移不可逆且需串行（持有 M-002）",
+   req="REQ-M-001/002/003/004/005", goal="新增迁移 20261015000000_model_source_monitoring（仅 CREATE，不改既有表）在空库重放与存量升级均成功；seed 注册 5 个公开源（openrouter/aihubmix/quanzil/huggingface/llmtest）",
+   docs=[MD, "docs/任务规划V0.4.0/05_数据模型基线.md §5.6", "docs/任务规划V0.4.0/database/002_monitoring.sql"], contracts=["MonitoringSourceSchema", "CatalogSnapshotSchema", "ProviderModelObservationSchema", "CatalogChangeEventSchema"],
+   pre_state="TASK-011（M-001）已合并；TASK-056 已合并",
+   outputs=["apps/web/prisma/schema.prisma（追加 4 model + 2 enum）", "apps/web/prisma/migrations/20261015000000_model_source_monitoring/migration.sql（新建）", "apps/web/prisma/seed.ts（monitoringSourcesData 5 行，upsert by key）", "apps/web/lib/admin-nav-default-tree.ts（新增「模型源监控」节点 /admin/monitoring）"],
+   steps=["按 database/002_monitoring.sql 写 Prisma model（字段/索引/唯一键逐一对应），`prisma migrate dev --create-only` 生成并人工比对 SQL",
+          "seed：monitoringSourcesData（key, tier, kind, endpoint, authRequired, cadenceCron, tosStatus, enabled）5 行；tosStatus 初值取 U-M6 裁决（未裁决=pending，仅后台可见）；authRequired=true 的源默认 enabled=false",
+          "admin-nav-default-tree.ts 增节点（权限码复用 admin:sync:read，避免新增权限码）",
+          "PG16 空库：migrate deploy + db:seed 两次（幂等）"],
+   accept=["`DATABASE_URL=... npx prisma validate` exit 0", "空库 `prisma migrate deploy` 17/17 成功（证据含输出）", "seed 两次后 monitoring_sources 恰 5 行", "既有 16 条迁移文件 `git diff --stat` 为空", "admin-navigation 相关单测全绿"],
+   verify="cd apps/web && DATABASE_URL=$TEST_DATABASE_URL npx prisma migrate deploy && DATABASE_URL=$TEST_DATABASE_URL npx prisma db seed && pnpm --filter web exec vitest run lib/admin-nav",
+   allow=["apps/web/prisma/schema.prisma", "apps/web/prisma/migrations/20261015000000_model_source_monitoring/", "apps/web/prisma/seed.ts", "apps/web/lib/admin-nav-default-tree.ts"],
+   forbid=["apps/web/app/**", "packages/**"], deps=["011", "056"], block_cond="需要 ALTER 既有表 → 停止并提 ADR（本迁移只允许 CREATE）", escalate="空库重放失败 2 次 → 升 opus 复审 SQL", size="大", hours=8)
+
+mk(id="059", slice="S10", name="仓储：目录快照与观测写入器（幂等、原始响应哈希、首次/末次出现）",
+   owner="Agent-Data", assignee="外部Agent", tier="sonnect", tier_reason="CRUD + 幂等键，契约与表已冻结",
+   req="REQ-M-003/004/005", goal="lib/sync/writers/catalog-snapshot.ts 提供 persistCatalogSnapshot(sourceKey, fetchedAt, items, rawSha256)：同源同 rawSha256 重复调用不产生新快照；观测按 (sourceKey, externalModelId) upsert，维护 firstSeenAt/lastSeenAt/isListed",
+   docs=[MD], contracts=["CatalogSnapshotSchema", "ProviderModelObservationSchema"], pre_state="TASK-058 已合并",
+   outputs=["apps/web/lib/sync/writers/catalog-snapshot.ts（新建）", "apps/web/lib/sync/writers/catalog-snapshot.spec.ts（新建，Prisma mock）"],
+   steps=["实现 persistCatalogSnapshot：事务内 create snapshot（rawSha256 唯一冲突→返回既有）→ 批量 upsert observations → 将本次未出现的 isListed=true 观测置 false 并记 delistedAt", "原始响应体不入库，仅存 sha256 + 字节数 + 采样前 2KB（rawSample）", "单测覆盖：首采/重复/下架/重新上架 4 场景"],
+   accept=["`pnpm --filter web exec vitest run lib/sync/writers/catalog-snapshot.spec.ts` 全绿（≥4 用例）", "`pnpm --filter web exec tsc --noEmit` exit 0", "重复调用断言 snapshot.create 仅 1 次"],
+   verify="pnpm --filter web exec vitest run lib/sync/writers/catalog-snapshot.spec.ts && pnpm --filter web exec tsc --noEmit",
+   allow=["apps/web/lib/sync/writers/catalog-snapshot.ts", "apps/web/lib/sync/writers/catalog-snapshot.spec.ts"],
+   forbid=["apps/web/prisma/**", "apps/web/lib/sync/writers/index.ts"], deps=["058"], block_cond="需改 schema → 停止回报 Agent-Data 串行队列", escalate="无", size="中", hours=5)
+
+mk(id="060", slice="S10", name="目录采集器框架 + 3 个公开源（OpenRouter /api/v1/models、AIHubMix /api/v1/models、Quanzil /api/pricing）",
+   owner="Agent-API", assignee="Hark(主Agent)", tier="opus", tier_reason="跨源归一（价格单位/模型 ID 规范化）是监控体系核心，高难度",
+   req="REQ-M-002/003/006/007", goal="lib/monitoring/catalog/ 下 CatalogCollector 接口 + 3 实现，各自把源响应归一为 ProviderModelObservation[]（价格统一为 USD/1M tokens 原币字段 + 原始字段保留），fixture 单测通过；不依赖任何 API Key",
+   docs=[MD, "docs/任务规划V0.4.0/19_外部来源核验证据.md（实测字段）", "apps/web/lib/sync/adapters/openrouter.ts", "apps/web/lib/sync/adapters/quanzil.ts"],
+   contracts=["ProviderModelObservationSchema", "MonitoringSourceSchema"], pre_state="TASK-056 已合并",
+   outputs=["apps/web/lib/monitoring/catalog/types.ts", "apps/web/lib/monitoring/catalog/openrouter.ts", "apps/web/lib/monitoring/catalog/aihubmix.ts", "apps/web/lib/monitoring/catalog/quanzil.ts", "apps/web/lib/monitoring/catalog/registry.ts", "apps/web/lib/monitoring/catalog/__tests__/*.spec.ts + fixtures/*.json（截取 ≤20 条真实响应）"],
+   steps=["复用 lib/security/url-policy safeFetch/readCappedJson（响应上限按源配置，OpenRouter 实测 ~773KB、AIHubMix ~892KB，设 4MB 上限）",
+          "OpenRouter：pricing.prompt/completion 为 USD/token 字符串 → ×1e6；`?output_modalities=all` 拉全量（实测默认仅 text 462，all 667）",
+          "Quanzil：复用既有 QuanzilAdapter 的 ratio→价格换算函数（抽出纯函数，不改 adapter 行为），vendors[] 查表",
+          "AIHubMix：字段 model_id/model_name/developer_id → 观测；价格字段按实测 fixture 映射，缺失置 null 不猜",
+          "registry.ts：key→collector，键集合须与 seed monitoringSourcesData 一致（单测断言）"],
+   accept=["`pnpm --filter web exec vitest run lib/monitoring/catalog` 全绿", "每个 collector 对 fixture 产出的每条观测均通过 ProviderModelObservationSchema.parse", "OpenRouter fixture 中 openai/gpt-4 价格 prompt=30、completion=60（USD/1M）断言", "tsc exit 0"],
+   verify="pnpm --filter web exec vitest run lib/monitoring/catalog && pnpm --filter web exec tsc --noEmit",
+   allow=["apps/web/lib/monitoring/catalog/"], forbid=["apps/web/lib/sync/adapters/**（本卡只读复用）"],
+   deps=["056"], block_cond="源响应形状与 fixture 不符且无法确定字段语义 → 该源置 kind=unsupported 并回报，不得猜测映射", escalate="价格单位歧义 → 升 opus 与 ADR-P005 对齐", size="大", hours=10)
+
+mk(id="061", slice="S10", name="变更检测：快照 diff → catalog_change_events（新上架/下架/价格变动/新模型首次出现）+ 证据链",
+   owner="Agent-API", assignee="外部Agent", tier="sonnect", tier_reason="纯函数 diff + 写事件，规则在 DESIGN-004 已冻结",
+   req="REQ-M-004/005/008", goal="lib/monitoring/diff/ 对同源相邻两次快照产出 4 类事件（listed/delisted/price_changed/model_first_seen），每条事件携带 sourceKey、snapshotId、sourceUrl、before/after，价格变动阈值 ≥1% 才记",
+   docs=[MD], contracts=["CatalogChangeEventSchema"], pre_state="TASK-059、TASK-060 已合并",
+   outputs=["apps/web/lib/monitoring/diff/detect.ts", "apps/web/lib/monitoring/diff/persist.ts", "apps/web/lib/monitoring/diff/__tests__/detect.spec.ts"],
+   steps=["detect(prev, curr) 纯函数（按 externalModelId 对齐）", "model_first_seen：externalModelId 规范化后在全部源观测中首次出现", "persist：事件写 catalog_change_events，并为 model_first_seen 写 EvidenceChain(evidenceType='discovery', source='aggregator', sourceUrl)", "单测：4 类事件 + 阈值边界 0.99%/1%"],
+   accept=["`pnpm --filter web exec vitest run lib/monitoring/diff` 全绿", "事件均可被 CatalogChangeEventSchema.parse", "tsc exit 0"],
+   verify="pnpm --filter web exec vitest run lib/monitoring/diff && pnpm --filter web exec tsc --noEmit",
+   allow=["apps/web/lib/monitoring/diff/"], deps=["059", "060"], block_cond="无", escalate="无", size="中", hours=6)
+
+mk(id="062", slice="S10", name="调度脚本 monitor_catalogs.ts（按源 cron 运行 collector→writer→diff，单源失败不影响他源）",
+   owner="Agent-Guard", assignee="外部Agent", tier="sonnect", tier_reason="薄封装脚本，沿用 crawl_llmtest.ts 范式",
+   req="REQ-M-009/010", goal="`npx tsx scripts/crawl/monitor_catalogs.ts --source openrouter --dry-run` 输出观测数；非 dry-run 写库；任一源异常记 monitoring_sources.lastError 且退出码仍为 0（部分成功）、全部失败退出码 1",
+   docs=[MD, "scripts/crawl/crawl_llmtest.ts（范式）", "apps/web/lib/features/admin/script-executor.ts（调度执行器）"], contracts=["MonitoringSourceSchema"],
+   pre_state="TASK-061 已合并", outputs=["scripts/crawl/monitor_catalogs.ts（新建）"],
+   steps=["参数：--source <key|all> --dry-run --limit N", "按 enabled 且 authRequired=false（或凭证已配置）的源顺序执行；每源 try/catch", "更新 monitoring_sources.lastRunAt/lastStatus/lastError/lastCount"],
+   accept=["`npx tsx scripts/crawl/monitor_catalogs.ts --help` exit 0", "--dry-run 在无 DB 环境下对 fixture 模式（MONITOR_FIXTURE_DIR）输出 3 源计数", "人工断网时退出码 1 且 stderr 含每源错误"],
+   verify="npx tsx scripts/crawl/monitor_catalogs.ts --help && MONITOR_FIXTURE_DIR=apps/web/lib/monitoring/catalog/__tests__/fixtures npx tsx scripts/crawl/monitor_catalogs.ts --source all --dry-run",
+   allow=["scripts/crawl/monitor_catalogs.ts"], deps=["061"], block_cond="无", escalate="无", size="小", hours=3)
+
+mk(id="063", slice="S10", name="管理端 API：/api/v1/admin/monitoring/{sources, sources/:key, sources/:key/run, changes}",
+   owner="Agent-API", assignee="外部Agent", tier="sonnect", tier_reason="CRUD 路由，契约冻结，复用 requireAdminApi",
+   req="REQ-M-009/011/012", goal="4 端点按 07-monitoring.contract.ts 实现：GET 源列表（含健康）、PATCH 启停/cadence（仅 enabled、cadenceCron 可改）、POST run（Redis 锁防重入，202）、GET changes 分页；未授权 401/403，未知源 20004，缺凭证源 run → 50012",
+   docs=[MD, MC], contracts=["AdminMonitoringSourceListResponse", "AdminMonitoringSourcePatchBody", "AdminMonitoringChangeQuery", "MONITORING_ERROR_CODES"], pre_state="TASK-058、TASK-061 已合并",
+   outputs=["apps/web/app/api/v1/admin/monitoring/sources/route.ts", "apps/web/app/api/v1/admin/monitoring/sources/[key]/route.ts", "apps/web/app/api/v1/admin/monitoring/sources/[key]/run/route.ts", "apps/web/app/api/v1/admin/monitoring/changes/route.ts", "apps/web/lib/monitoring/__tests__/admin-routes.spec.ts"],
+   steps=["鉴权：requireAdminApi('admin:sync:read') 读、'admin:sync:write' 写（复用既有权限码，见 03-identity）", "run：SETNX lock:monitor:run:<key> TTL 300s；已锁返回 TOO_MANY_REQUESTS", "changes：page/pageSize/sourceKey/kind/since 过滤，按 detectedAt desc"],
+   accept=["`pnpm --filter web exec vitest run lib/monitoring/__tests__/admin-routes.spec.ts` 全绿（含 401/403/20004/50012 用例）", "响应均可被对应 zod Response schema parse", "tsc exit 0"],
+   verify="pnpm --filter web exec vitest run lib/monitoring/__tests__/admin-routes.spec.ts && pnpm --filter web exec tsc --noEmit",
+   allow=["apps/web/app/api/v1/admin/monitoring/", "apps/web/lib/monitoring/__tests__/admin-routes.spec.ts"], deps=["058", "061"],
+   block_cond="需要新增权限码 → 停止，提 ADR（Identity 契约冻结）", escalate="无", size="中", hours=6)
+
+mk(id="064", slice="S10", name="后台 UI：「模型源监控」页（源分级卡片 + 健康/最后运行 + 变更流 + 手动运行，五态齐全）",
+   owner="Agent-App", assignee="Hark(主Agent)", tier="opus", tier_reason="UI 设计与实现（用户指令：UI 由主 Agent 完成）；需新设计信息架构",
+   req="REQ-M-009/011/013", goal="/admin/monitoring 展示源表（tier 徽章 S1/S2/A/B/C、kind、authRequired、enabled 开关、lastRunAt/lastStatus/lastCount）与变更流（4 类事件筛选、分页、证据链接），空/加载/错误/无权限/成功五态按 MONITORING_UX_STATES testid 实现",
+   docs=[MD, "contracts/06-ux-states.contract.ts", MC, "docs/product/design/UI设计文档.md"], contracts=["MONITORING_UX_STATES", "AdminMonitoringSourceListResponse", "AdminMonitoringChangeListResponse"],
+   pre_state="TASK-063 已合并", outputs=["apps/web/app/(admin)/admin/monitoring/page.tsx", "apps/web/components/admin/monitoring/SourceTable.tsx", "apps/web/components/admin/monitoring/ChangeFeed.tsx", "apps/web/components/admin/monitoring/TierBadge.tsx"],
+   steps=["沿用后台既有表格/卡片组件与 Tailwind 4 token（不引新 UI 库）", "变更流事件卡：模型 ID、源、前后价格（USD/1M 原币，不做汇率换算，避免 U-15 依赖）、证据外链", "手动运行按钮：202 后轮询 lastRunAt（5s×12 上限）", "五态 testid：monitoring-empty/loading/error/forbidden/ready"],
+   accept=["`pnpm --filter web exec tsc --noEmit` exit 0", "`pnpm --filter web lint` 0 error", "`next build` 路由表含 /admin/monitoring", "人工：1280/768 宽度截图存证，五态各一张（mock API）"],
+   verify="pnpm --filter web exec tsc --noEmit && pnpm --filter web lint && cd apps/web && npx next build",
+   allow=["apps/web/app/(admin)/admin/monitoring/", "apps/web/components/admin/monitoring/"], deps=["063"], block_cond="契约字段不足以渲染 → 停止回报（不得在前端猜字段）", escalate="无", size="大", hours=10)
+
+mk(id="065", slice="S10", name="E2E：后台监控页五态 + 手动运行后变更流出现新事件（fixture 源）",
+   owner="Agent-Guard", assignee="外部Agent", tier="sonnect", tier_reason="E2E 脚本",
+   req="REQ-M-009/013", goal="e2e/admin/monitoring.spec.ts 在测试库 + MONITOR_FIXTURE_DIR 下跑通：登录管理员→进入 /admin/monitoring→运行 openrouter→变更流出现 ≥1 条 listed 事件；未授权用户见 forbidden 态",
+   docs=[MD], contracts=["MONITORING_UX_STATES"], pre_state="TASK-062、TASK-064 已合并；e2e 唯一配置（TASK-037）与 CI e2e job（TASK-006）已合并",
+   outputs=["e2e/admin/monitoring.spec.ts（新建）"], steps=["复用 e2e/fixtures.ts 登录助手", "fixture 模式运行脚本而非外网", "断言五态 testid 至少 ready/forbidden/empty 三态"],
+   accept=["`npx playwright test e2e/admin/monitoring.spec.ts` 通过（CI e2e job）", "--list 计数 +≥3"],
+   verify="npx playwright test e2e/admin/monitoring.spec.ts --config playwright.config.ts",
+   allow=["e2e/admin/monitoring.spec.ts"], deps=["062", "064", "037", "006"], block_cond="CI 无 PG 服务 → 标记 待其他员工完成（依赖 TASK-006）", escalate="无", size="中", hours=4)
+
+mk(id="066", slice="S11", name="公开 API：GET /api/v1/models/{id}/offerings（该模型在各监控源的上架与原币价格，含来源与采集时间）",
+   owner="Agent-API", assignee="外部Agent", tier="sonnect", tier_reason="只读查询路由，契约冻结",
+   req="REQ-M-006/007/014", goal="按 AiModel.code ↔ observation.normalizedModelId 匹配，返回 {items:[{sourceKey,tier,isListed,priceInputUsdPer1M,priceOutputUsdPer1M,firstSeenAt,lastSeenAt,sourceUrl}]}；中转源（kind=relay）条目必须带 identityVerified=false 标志",
+   docs=[MD, MC], contracts=["ModelOfferingsResponse"], pre_state="TASK-059 已合并",
+   outputs=["apps/web/app/api/v1/models/[id]/offerings/route.ts", "apps/web/lib/monitoring/__tests__/offerings-route.spec.ts"],
+   steps=["只返回 monitoring_sources.tos_status ∈ {allowed, attribution_required} 的源（pending 源仅后台可见，ADR-P007）；attribution_required 源填 attribution", "PUBLIC 鉴权；Redis 缓存 600s（键 cache:model-offerings:<id>，沿用 05-events 缓存标签规则）", "未知模型 → MODEL_NOT_FOUND 20001", "按 tier 排序 S1>S2>A>B>C"],
+   accept=["vitest 路由单测全绿（含 20001、relay 标志用例）", "响应 parse 通过", "tsc exit 0"],
+   verify="pnpm --filter web exec vitest run lib/monitoring/__tests__/offerings-route.spec.ts && pnpm --filter web exec tsc --noEmit",
+   allow=["apps/web/app/api/v1/models/[id]/offerings/", "apps/web/lib/monitoring/__tests__/offerings-route.spec.ts"], deps=["059", "056"], block_cond="无", escalate="无", size="中", hours=4)
+
+mk(id="067", slice="S11", name="前台 UI：模型详情页「在哪里可调用」区块（多源上架/价格对比/中转风险提示/来源署名）",
+   owner="Agent-App", assignee="Hark(主Agent)", tier="opus", tier_reason="用户可见 UI 设计与实现（用户指令：UI 由主 Agent 完成）",
+   req="REQ-M-006/007/014/015", goal="/models/[slug] 新增区块：表格列 源（tier 徽章）/上架状态/输入·输出原币价/最后采集时间/来源链接；relay 源显示「身份未验证」提示；五态齐全；数据来自 TASK-066",
+   docs=[MD, "contracts/06-ux-states.contract.ts", "docs/product/design/UI设计文档.md"], contracts=["ModelOfferingsResponse", "MONITORING_UX_STATES"], pre_state="TASK-066 已合并",
+   outputs=["apps/web/components/models/ModelOfferings.tsx（新建）", "apps/web/app/(site)/models/[slug]/page.tsx（挂载区块）"],
+   steps=["价格以原币 USD/1M 显示并标注来源，不做汇率换算（U-15 未决前不得出现 ¥ 换算值）", "若数据含 Artificial Analysis 来源，区块底部显示署名链接（ADR-P007）", "testid：offerings-empty/loading/error/ready"],
+   accept=["tsc exit 0；lint 0 error", "next build 通过", "人工：桌面/移动截图存证；relay 提示可见"],
+   verify="pnpm --filter web exec tsc --noEmit && pnpm --filter web lint && cd apps/web && npx next build",
+   allow=["apps/web/components/models/ModelOfferings.tsx", "apps/web/app/(site)/models/[slug]/page.tsx"], deps=["066"], block_cond="无", escalate="设计与天梯模块口径冲突 → 升 opus", size="大", hours=8)
+
+mk(id="068", slice="S11", name="上架同步：观测 → ProviderModelOffering（源↔平台实体映射，listedAt=firstSeenAt，isActive=isListed）",
+   owner="Agent-Data", assignee="Hark(主Agent)", tier="opus", tier_reason="实体映射（ModelProvider vs APIStation）与模型身份对齐，错误会污染人工数据",
+   req="REQ-M-005/006", goal="按 U-M5 裁决：方案A 映射到 ModelProvider.code、方案B 映射到 APIStation；只更新 sync 所有字段（listedAt/isActive/价格原币），不覆盖人工字段（defaultMultiplier/discount*），每次写入留 EvidenceChain",
+   docs=[MD, "docs/product/design/功能设计文档.md 五、字段所有权矩阵"], contracts=["ProviderModelObservationSchema"], pre_state="U-M5 已裁决；TASK-059 已合并",
+   outputs=["apps/web/lib/sync/writers/offering-sync.ts（新建）", "apps/web/lib/sync/writers/offering-sync.spec.ts（新建）"],
+   steps=["映射表：monitoring_sources.mappedEntityType/mappedEntityId（M-002 已含字段）", "模型对齐：仅 normalizedModelId 精确命中 AiModel.code 才写；未命中进入 DiscoveryCandidate(candidateType='model') 待人工", "单测：人工字段不被覆盖、未命中不写 offering"],
+   accept=["vitest 全绿（≥5 用例）", "tsc exit 0", "人工字段保持断言通过"],
+   verify="pnpm --filter web exec vitest run lib/sync/writers/offering-sync.spec.ts && pnpm --filter web exec tsc --noEmit",
+   allow=["apps/web/lib/sync/writers/offering-sync.ts", "apps/web/lib/sync/writers/offering-sync.spec.ts"], deps=["059"], block_cond="U-M5 未裁决 → 不执行（条件卡）", escalate="映射歧义 → 升 opus", size="大", hours=8, cond="U-M5")
+
+mk(id="069", slice="S11", name="发现引擎汇率统一：pricing-extraction.ts 硬编码 7.2 → 读 system_configs pricing.fxUsdCny",
+   owner="Agent-API", assignee="外部Agent", tier="sonnect", tier_reason="单文件常量替换 + 单测",
+   req="REQ-F-02b（计价口径）/ REQ-M-007", goal="apps/web/lib/discovery/pricing-extraction.ts:217-243 四处 7.2 全部改为注入的 fx（来自 pricing.fxUsdCny，缺失时抛 GATEWAY_NO_ROUTE 语义的可识别错误并跳过写 PriceRule）",
+   docs=["docs/任务规划V0.4.0/03_solution/decisions/ADR-P005-计价口径归一.md"], contracts=["FxConfigSchema"], pre_state="TASK-055 已合并（fx 种子）；U-15 已裁决",
+   outputs=["apps/web/lib/discovery/pricing-extraction.ts", "apps/web/lib/discovery/__tests__/pricing-extraction-fx.spec.ts（新建）"],
+   steps=["抽出 toMinorCny(value, unit, fx) 纯函数", "调用方读取 SystemConfig（复用既有 config 读取工具）", "单测：fx=5 与 fx=7.2 两组 + 缺失 fx"],
+   accept=["`grep -n '7\\.2' apps/web/lib/discovery/pricing-extraction.ts` 无输出", "vitest 全绿", "tsc exit 0"],
+   verify="! grep -n '7\\.2' apps/web/lib/discovery/pricing-extraction.ts && pnpm --filter web exec vitest run lib/discovery && pnpm --filter web exec tsc --noEmit",
+   allow=["apps/web/lib/discovery/pricing-extraction.ts", "apps/web/lib/discovery/__tests__/pricing-extraction-fx.spec.ts"], deps=["055"], block_cond="U-15 未裁决 → 不执行（条件卡）", escalate="无", size="小", hours=3, cond="U-15")
+
+mk(id="070", slice="S12", name="密钥源目录采集：SiliconFlow /v1/models、DeepSeek /models 等官方/托管目录（缺凭证时健康=credential_missing）",
+   owner="Agent-API", assignee="Hark(主Agent)", tier="opus", tier_reason="凭证处理 + 多厂商接口差异，安全敏感",
+   req="REQ-M-002/010/016", goal="lib/monitoring/keyed/ 实现 S1/S2/A 级 keyed collector（首批按 U-M1 清单），凭证仅从环境变量读取（MONITOR_KEY_<SOURCE>），日志与快照中不得出现凭证；缺凭证返回 MONITOR_SOURCE_CREDENTIAL_MISSING 而非异常",
+   docs=[MD, "docs/任务规划V0.4.0/19_外部来源核验证据.md（SiliconFlow 无 key 实测 401）"], contracts=["MonitoringSourceSchema", "MONITORING_ERROR_CODES"], pre_state="U-M1 已裁决并提供凭证；TASK-060 已合并",
+   outputs=["apps/web/lib/monitoring/keyed/"], steps=["每源 collector + fixture 单测（fixture 由持 key 者一次性录制并脱敏）", "secret-scan 规则（TASK-007）覆盖 MONITOR_KEY_ 前缀", "SiliconFlow 仅返回 id/object/owned_by（实测文档），价格不从该接口取"],
+   accept=["vitest 全绿", "`grep -rn 'sk-' apps/web/lib/monitoring/keyed` 无输出", "缺 env 时 collector 返回 credential_missing（单测）"],
+   verify="pnpm --filter web exec vitest run lib/monitoring/keyed && node scripts/guard/secret-scan.mjs",
+   allow=["apps/web/lib/monitoring/keyed/"], deps=["060"], block_cond="U-M1 未裁决/未提供凭证 → 不执行（条件卡）", escalate="厂商 ToS 禁止自动化列举 → 停止并回报", size="大", hours=8, cond="U-M1")
+
+mk(id="071", slice="S12", name="可用性与中转真实性探针：最小请求探测 → ReliabilityObservation + 身份信号（含 Claude thinking signature 检查）",
+   owner="Agent-API", assignee="Hark(主Agent)", tier="opus", tier_reason="涉及真实付费调用、反伪造判定逻辑与误报风险，高难度",
+   req="REQ-M-008/015/016", goal="lib/monitoring/probe/ 对 enabled 中转源按预算执行最小请求（max_tokens≤16）记录延迟/成功率写 ReliabilityObservation；对声称 Claude 的模型做 thinking signature 存在性检查，结果仅作「身份信号」，不得据此自动下架或 promote",
+   docs=[MD, "docs/任务规划V0.4.0/19_外部来源核验证据.md（Veridrop 方法与 AGPL 许可）"], contracts=["AvailabilityProbeResultSchema"], pre_state="U-M3 已裁决（预算/是否允许真实调用）；TASK-070 已合并",
+   outputs=["apps/web/lib/monitoring/probe/"], steps=["每源每日预算上限（env MONITOR_PROBE_DAILY_BUDGET_USD），超限即停", "不引入 Veridrop 代码（AGPL-3.0），仅参考公开方法自研", "结果写 ReliabilityObservation(entityType='station')"],
+   accept=["vitest 全绿（mock fetch）", "预算超限用例断言不再发请求", "tsc exit 0"],
+   verify="pnpm --filter web exec vitest run lib/monitoring/probe && pnpm --filter web exec tsc --noEmit",
+   allow=["apps/web/lib/monitoring/probe/"], deps=["070"], block_cond="U-M3 未裁决 → 不执行（条件卡）", escalate="误报争议 → 升 opus", size="大", hours=10, cond="U-M3")
+
+mk(id="072", slice="S12", name="Artificial Analysis Data API v2 适配器重写（/api/v2/language/models/free，x-api-key，署名字段）",
+   owner="Agent-API", assignee="外部Agent", tier="sonnect", tier_reason="单适配器重写，文档已核验",
+   req="REQ-M-002/015", goal="artificial-analysis.ts 改为调用 https://artificialanalysis.ai/api/v2/language/models/free（x-api-key），移除已 404 的 /api/leaderboard 主路径；每日请求 ≤ 免费额度 100/24h；产出数据带 attribution='Artificial Analysis' + sourceUrl",
+   docs=["docs/任务规划V0.4.0/19_外部来源核验证据.md（AA 文档：Free 100 次/24h、需署名、再分发需联系）"], contracts=["无新增（沿用 RawModelData + attribution 字段）"],
+   pre_state="U-M2 已裁决（申请 key 并接受条款）", outputs=["apps/web/lib/sync/adapters/artificial-analysis.ts", "apps/web/lib/sync/__tests__/artificial-analysis-v2.spec.ts（新建）"],
+   steps=["分页 page=1..total_pages，遵守 X-RateLimit-Remaining", "缺 key 时回落到既有 OpenRouter benchmarks 代理路径并标注 source='openrouter-proxy'", "单测 fixture 取自官方文档示例"],
+   accept=["vitest 全绿", "`grep -n 'api/leaderboard' apps/web/lib/sync/adapters/artificial-analysis.ts` 无输出", "tsc exit 0"],
+   verify="pnpm --filter web exec vitest run lib/sync/__tests__/artificial-analysis-v2.spec.ts && pnpm --filter web exec tsc --noEmit",
+   allow=["apps/web/lib/sync/adapters/artificial-analysis.ts", "apps/web/lib/sync/__tests__/artificial-analysis-v2.spec.ts"], deps=["056"], block_cond="U-M2 未裁决 → 不执行（条件卡）", escalate="条款不允许展示 → 停止回报", size="中", hours=4, cond="U-M2")
+
+mk(id="073", slice="S11", name="llmtest 观测入时序：composite 分数/存活/通过计数写 ReliabilityObservation（不再只塞 description）",
+   owner="Agent-API", assignee="外部Agent", tier="sonnect", tier_reason="既有映射扩展 + 单测",
+   req="REQ-M-008", goal="每次 llmtest 采集把 score/isAlive/total_checks/pass_count/last_alive_at 写 ReliabilityObservation(entityType='station' 或 candidate 关联)，窗口=采集日；保留既有候选发现行为不变",
+   docs=["apps/web/lib/discovery/llmtest.ts", "docs/任务规划V0.4.0/19_外部来源核验证据.md（composite 实测 51 条、rank 从 2 开始）"], contracts=["无新增"], pre_state="TASK-058 已合并",
+   outputs=["apps/web/lib/discovery/llmtest.ts", "apps/web/lib/discovery/llmtest.spec.ts", "apps/web/lib/discovery/llmtest-observations.ts（新建）"],
+   steps=["新增 mapLlmtestItemToObservation 纯函数", "llmtest.spec.ts 增 3 用例（缺字段/isAlive=false/重复采集）", "rank 缺 1 的现象记录为数据源特性，不做补齐"],
+   accept=["`pnpm --filter web exec vitest run lib/discovery/llmtest.spec.ts` 全绿", "既有用例不变（用例数只增不减）", "tsc exit 0"],
+   verify="pnpm --filter web exec vitest run lib/discovery/llmtest.spec.ts && pnpm --filter web exec tsc --noEmit",
+   allow=["apps/web/lib/discovery/llmtest.ts", "apps/web/lib/discovery/llmtest.spec.ts", "apps/web/lib/discovery/llmtest-observations.ts"], deps=["058"], block_cond="无", escalate="无", size="中", hours=4)
+
+COND_REASON.update({"U-M1": "keyed 源 API Key 提供与保管", "U-M2": "Artificial Analysis key 与条款", "U-M3": "中转探针真实调用预算", "U-M5": "provider 映射到 ModelProvider 还是 APIStation"})
+SLICES["S10"] = ("模型源监控·步行骨架（公开源）", "后台可见：5 个公开源按分级注册 → 运行 OpenRouter/AIHubMix/Quanzil 目录采集 → 快照/观测入库 → 变更流显示「新上架/下架/调价」", "无 BLOCKING（全部公开源，无需 Key）；U-M4/U-M6 以默认假设推进")
+SLICES["S11"] = ("模型多源上架与价格对比（前台可见）", "模型详情页显示该模型在哪些源可调用及原币价格；llmtest 观测入时序；（条件）观测同步到平台实体；（条件）发现引擎汇率统一", "U-M5（仅 TASK-068）/ U-15（仅 TASK-069）")
+SLICES["S12"] = ("密钥源 + 中转真实性 + AA 数据（条件刀）", "持 Key 的官方/托管目录入监控；中转可用性与身份信号入时序；AA 免费数据带署名入库", "U-M1/U-M2/U-M3（BLOCKING）")

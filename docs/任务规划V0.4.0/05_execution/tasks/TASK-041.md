@@ -1,0 +1,86 @@
+# TASK-041：台账拆分 + 勾选滞后补录 + CHANGELOG 补录 finalize 里程碑
+
+> 版本: v0.4 | 更新: 2026-10-14 | 变更: 任务规划V0.4.0（基于 main@bfb3aef 复核，业务树 = 77c7952；未实现需求核查 + 模型源监控体系纳入统一规划）
+
+> 执行者：**外部Agent** ｜ 所有权 Agent：**Agent-Docs** ｜ 建议档位：**haiku**
+
+> V0.3.0→V0.4.0：沿用（V0.4.0 重核：bfb3aef 业务树=77c7952，无代码 delta；V0.2.0 判定 = 沿用）
+
+## 归属
+- 所属切片：S7（文档治理收口 + 统一需求追溯矩阵）
+- 来源需求：AGENTS 铁律6（单文档 >3000 字须拆分）
+- RTM 追溯（V0.4.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-C-008、REQ-L-008
+- 来源方案：SOL-S7
+
+## 目标
+未完成事项目录（155,968 字节）按 §一~§八/§7.x 回执拆为主表 + 回执分册；finalize-admin-ia-and-ops-gaps/tasks.md 按代码证据补勾；CHANGELOG 补 finalize 条目；文档索引同步
+
+## 输入
+- 文档：`docs/plans/未完成事项目录.md`；`docs/specs/finalize-admin-ia-and-ops-gaps/tasks.md`；`CHANGELOG.md`
+- 契约：`无`
+- 前置任务：TASK-040
+- 前置状态：无（与实现无文件交集；但与其他 Agent-Docs 卡串行）
+
+## 输出
+- 新增/修改的文件路径：
+  - `docs/plans/未完成事项目录.md`
+  - `docs/plans/未完成事项回执/*.md（新建分册）`
+  - `docs/specs/finalize-admin-ia-and-ops-gaps/tasks.md`
+  - `CHANGELOG.md`
+  - `docs/文档索引.md`
+  - `docs/plans/README.md`
+  - `docs/任务规划V0.4.0/06_validation/evidence/EVD-041/`（取证：命令输出/截图/日志）
+
+## Execution Steps
+1. [ ] 重算本切片引入的计数漂移（route/page/spec/lib-features/@aidean/ui refs）并同步 scripts/check-docs-facts.mjs 期望值；admin 域/页数变化同步《功能设计文档》§3.5 口径锚（check-docs-rule 以文档为锚）
+2. [ ] 拆分保持锚点可达（被引用锚改为分册链接）
+3. [ ] 补勾每项附证据路径（如 lib/admin-nav-default-tree.ts、api/v1/admin/holds）
+4. [ ] 门禁
+5. [ ] 运行「验证命令」并将完整输出存入证据目录
+
+## 验收标准
+- [ ] check-docs-rule exit 0
+- [ ] check-docs-facts 全 PASS
+- [ ] `grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+- [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
+
+## 验证命令
+```bash
+node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs
+```
+
+## 证据路径
+`docs/任务规划V0.4.0/06_validation/evidence/EVD-041/`
+
+## 允许修改
+- `scripts/check-docs-facts.mjs`
+- `docs/plans/**`
+- `docs/specs/finalize-admin-ia-and-ops-gaps/tasks.md`
+- `CHANGELOG.md`
+- `docs/文档索引.md`
+- `docs/任务规划V0.4.0/06_validation/evidence/EVD-041/**`
+
+## 禁止修改
+- `apps/**`
+- `packages/**`
+- `docs/任务规划V0.4.0/**`
+- `.example/**`
+- `.example/history/**（铁律4 历史只读）`
+- `docs/任务规划V0.4.0/contracts/**（冻结契约；变更须先提 ADR 并经 opus/fable 券审批）`
+- `docs/任务规划V0.1.0/** · docs/任务规划V0.2.0/** · docs/任务规划V0.3.0/**（历代规划只读）`
+- `AGENTS.md`
+
+## 依赖与阻塞
+- Depends on：TASK-040
+- 资源锁串行（同文件，须在其后执行）：TASK-013
+- Blocks：TASK-051
+- 阻塞条件：check-docs-facts 硬引用台账路径 → 本卡同步脚本中的路径（Agent-Docs 所有）
+
+## 建议执行档位
+haiku　理由：整理与拆分，不改语义
+
+## 升级条件
+无；通用熔断：同一任务连续 2 次验收失败 → 停止改代码，改为重写任务书/升级档位/标记 blocked（禁止第 3 次硬撞）
+
+## 预估规模
+中　约 5h　≥2h
