@@ -1,0 +1,29 @@
+
+> @aidean/shared@0.1.0 test /workspace/work/Aidean/packages/shared
+> vitest run
+
+
+ RUN  v3.2.7 /workspace/work/Aidean/packages/shared
+
+ ✓ src/__tests__/product-intro.spec.ts (19 tests) 12ms
+ ✓ src/__tests__/gateway.spec.ts (15 tests) 9ms
+ ✓ src/__tests__/user.spec.ts (5 tests) 11ms
+ ✓ src/__tests__/schemas.spec.ts (12 tests) 7ms
+ ✓ src/__tests__/auth.spec.ts (4 tests) 6ms
+ ✓ src/__tests__/provider-pricing.spec.ts (29 tests) 7ms
+ ✓ src/__tests__/money.spec.ts (11 tests) 5ms
+ ✓ src/__tests__/admin-permissions.spec.ts (6 tests) 4ms
+ ✓ src/__tests__/billing.spec.ts (9 tests) 4ms
+ ✓ src/__tests__/envelope.spec.ts (2 tests) 4ms
+ ✓ src/__tests__/ladder.spec.ts (2 tests) 3ms
+ ✓ src/__tests__/pricing-config.spec.ts (4 tests) 4ms
+
+ Test Files  12 passed (12)
+      Tests  118 passed (118)
+   Start at  04:11:24
+   Duration  6.15s (transform 357ms, setup 0ms, collect 1.23s, tests 75ms, environment 1ms, prepare 2.69s)
+
+
+real	0m12.297s
+user	0m3.788s
+sys	0m0.539s

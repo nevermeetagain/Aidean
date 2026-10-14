@@ -1,0 +1,20 @@
+# 架构说明（规划视角）
+
+> 版本: v0.2 | 更新: 2026-10-14 | 变更: 任务规划V0.2.0——在 V0.1.0 架构说明基础上增补生效价归一层与端口区间
+
+## 现状（main@59e83dd，已确认）
+- 单体 Next.js 15.0.0 App Router（apps/web）+ packages/{shared,ui,config}，pnpm 9 + turbo；PostgreSQL 16（Prisma 6.19.3，68 model / 37 enum / 16 迁移）+ Redis；148 route.ts / 56 page.tsx。
+- 分层：`app/api/v1/**/route.ts`（withApi 信封）→ `lib/features/<域>/{service,repository}` → Prisma；跨端契约在 `packages/shared`（zod）。
+- 异步面：无消息队列；`revalidateTag/Path` 做缓存失效；scheduler sidecar 每分钟 run-due；OIDC back-channel HTTP。
+
+## 本规划引入的结构变化（全部为增量，不改分层）
+| 层 | 新增 | 切片 |
+|---|---|---|
+| 契约 | errors.ts 唯一源、system/feature-flags/favorites/promotion/search schema、price-normalization 纯函数 | S0/S2/S3/S4/S5 |
+| 领域 | lib/features/{system,flags,favorites,pricing,search} | S0/S2/S3/S4/S5 |
+| 数据 | 唯一一条迁移 M-001（部分唯一索引） | S1 |
+| 守卫 | scripts/guard/*、scripts/audit/*、scripts/contract/*、CI e2e-skeleton job、CI lint/ui 步骤 | S0/S4/S6 |
+| 生效价 | 选行（优惠优先）+ 归一（CNY/M）单函数，计费与展示共用（DESIGN-003） | S4 |
+
+## 端口
+Aidean 3000（区间 3000–3100，已确认）；子平台区间与 OIDC 回调口径见 ADR-P006（P-1/P-2 待裁决）。
