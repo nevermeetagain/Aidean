@@ -1,0 +1,5 @@
+# TASK-004 取证  时间: 2026-10-14T11:46+08
+命令: node scripts/contract/gen-contract-tests.mjs
+输出:
+[gen-contract-tests] 生成 3 个契约 spec：码表 25 码 / HTTP 映射 10 条 / §4 登记 9 行 / 域 30 / AUTHZ deny 4 条 → packages/shared/src/__tests__/contract/
+exit=0

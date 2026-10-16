@@ -1,0 +1,10 @@
+# TASK-004 取证 CI 步  时间: 2026-10-14（本地，含 R-1 加固）
+ci.yml verify job 新增（Docs facts 之后、Prisma generate 之前）：
+      - name: Contract tests (generate + drift check)
+        run: |
+          node scripts/contract/gen-contract-tests.mjs
+          git add -A packages/shared/src/__tests__/contract
+          git diff --cached --exit-code HEAD -- packages/shared/src/__tests__/contract
+
+加固理由（CodeReview TASK-004 Warning）：原 `git diff --exit-code <path>` 对未跟踪 ?? 文件恒 0（空转）。
+改为 add -A + --cached diff HEAD 后，同时捕获：漂移 / 手改生成物 / 生成物未入库 三类。

@@ -1,0 +1,12 @@
+# TASK-077 auth 全目录回归（防全局 mock 污染同域既有用例）  时间: 2026-10-14
+命令: pnpm --filter web exec vitest run lib/features/auth/__tests__
+
+ ✓ lib/features/auth/__tests__/oidc-redlines.spec.ts (12 tests) 205ms
+ ✓ lib/features/auth/__tests__/refresh-replay-alert.spec.ts (2 tests)
+
+ Test Files  46 passed (46)
+      Tests  373 passed (373)   （审查修复后：本 spec 7→12，全目录 368→373）
+
+结论：新增 spec 的 vi.mock（prisma/clients/session/codes）与 R3 的 doMock/doUnmock
+（service/rate-limit）经 vitest 文件级隔离，未影响既有 45 个 auth 测试；refresh-replay-alert 仍绿。
+R-1 修复引入的 console.error spy（R2）在 finally 内 mockRestore，未泄漏到其它用例。

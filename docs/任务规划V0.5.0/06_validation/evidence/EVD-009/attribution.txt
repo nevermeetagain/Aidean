@@ -1,0 +1,15 @@
+﻿# 计数漂移归因（全部落到 S0 切片；满足 TASK-009「无法归因本切片停止上报」反面）
+
+## route-count 148 -> 149（+1）
+250350ce feat(web): TASK-003 GET /api/v1/system/ready DB+Redis 灏辩华鎺㈤拡
+
+## spec-count 156 -> 160（+4）
+5bbfa78c test(e2e): TASK-005 S0 姝ヨ楠ㄦ灦 e2e锛堟敞鍐岀櫥褰曢壌鏉冨啓鎺у埗鍙板彲瑙佸尶鍚?01淇″皝灏辩华锛?250350ce feat(web): TASK-003 GET /api/v1/system/ready DB+Redis 灏辩华鎺㈤拡
+847ddcea test(web): TASK-077 OIDC 瀹夊叏绾㈢嚎鍥炲綊娴嬭瘯锛圥KCE/閲嶆斁/host-only锛?
+
+## lib-features-count 18 -> 19（+1 目录 system/）
+  由 TASK-003 引入 apps/web/lib/features/system/（就绪探针域目录）
+
+## 实测复核（与 check-docs-facts actual 一致）
+  route.ts under apps/web/app = 149
+  e2e .spec.ts = 40 ; apps/web .spec.ts(排 node_modules) = 120 ; 合计 160

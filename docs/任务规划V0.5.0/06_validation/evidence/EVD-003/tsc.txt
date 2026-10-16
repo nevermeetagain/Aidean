@@ -1,0 +1,4 @@
+﻿pnpm --filter web exec tsc --noEmit
+exit=0
+
+(no output above => no type errors)

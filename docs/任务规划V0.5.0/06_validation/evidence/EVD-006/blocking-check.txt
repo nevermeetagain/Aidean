@@ -1,0 +1,18 @@
+# 阻塞条件核验：TASK-006「seed 依赖外网（上游采集）→ 停止，列出外网调用点」
+
+结论：未触发（已确认）。seed 全链路为纯离线写库，不发起任何网络请求，不执行爬虫。
+
+## 证据
+1. grep 全部 seed 脚本运行期网络/进程调用：
+   文件：seed.ts, seed-official-news.ts, seed-official-platforms.ts, seed-navigation-menu.ts, seed-rbac.ts
+   模式：fetch( / https?.request / axios / child_process / execSync / spawn / crawl
+   → `fetch(` 命中数 = 0（无 HTTP 请求）。
+2. `crawl` 仅 2 处命中，均为数据字段（非调用）：
+   seed.ts:304  scriptPath: 'scripts/crawl/crawl_models.ts'   ← ScheduledScript 记录的字符串值
+   seed.ts:313  scriptPath: 'scripts/crawl/crawl_llmtest.ts'  ← ScheduledScript 记录的字符串值
+   scheduledScriptsData(L300-317) 是写入 DB 的定时任务配置（cron），由 docker/scheduler 运行期独立触发，seed 阶段仅落库不执行。
+3. apiStationsData(L320+) 的 https:// 均为静态 API 站点元数据（baseUrl/name 等），写库展示用，非网络调用。
+4. seed 内 DEMO_MODEL_COUNT=922 条演示模型为内存生成（无外部拉取）。
+
+## 判定
+CI 空库 `db:seed` 不会因外网依赖导致不稳定 → 不满足停止条件 → 继续执行。

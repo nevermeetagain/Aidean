@@ -1,0 +1,16 @@
+# TASK-005 环境前置核验（干净 shell，无 env 泄漏）
+
+- 端口 :3000 启动前 FREE；实测无残留监听（已停 TASK-003 遗留 :3010 dev，避免 .next 目录冲突）。
+- 当前 shell env 泄漏核验：DATABASE_URL-NOT-IN-ENV (good) / REDIS_URL-NOT-IN-ENV (good)。
+  （TASK-003 曾因此类泄漏致假阴性 503；本次全程在干净 shell 起 :3000 dev。）
+- 依赖服务：PostgreSQL :5435 LISTEN；Redis :6379 LISTEN。
+- `npx prisma migrate status`：17 migrations found → "Database schema is up to date!"（ApiKey/User 表就绪）。
+- Playwright：chromium 已安装；`playwright.config.ts` webServer 注释（测试不私拉服务，须外部起 :3000 → 本次已起）。
+- 就绪探针热备：GET http://localhost:3000/api/v1/system/ready → 200
+    {"code":0,"data":{"status":"ready","checks":{"db":"ok","redis":"ok"},"time":"2026-10-15T07:08:22.022Z"}}
+- 鉴权页面守卫可行性核验：AUTH_ISSUER = NEXT_PUBLIC_SITE_URL = "http://localhost:3000"（.env/.env.local），
+  middleware 经同源 /.well-known/jwks.json 验签 RS256 → 注册/登录后鉴权导航 /user/console 天然可达（实跑可见断言通过佐证）。
+
+起服命令（干净 env，仅 development）：
+  cd apps/web; $env:NODE_ENV="development"; npx next dev -p 3000
+（Next 依 "Environments: .env.local, .env" 载入；无进程级同名变量覆盖。）

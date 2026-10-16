@@ -1,0 +1,5 @@
+# TASK-002 取证 时间: 2026-10-14T11:35+08
+命令: pnpm --filter web exec tsc --noEmit
+结果: (无输出) exit=0
+
+注: 首轮修复 response.ts(67,23) TS7053 后方为 exit 0（见 summary「关键决策」）。

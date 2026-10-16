@@ -1,0 +1,19 @@
+=== verify job steps (post-reorder) ===
+ 1. (uses:actions/checkout@v4)
+ 2. (uses:pnpm/action-setup@v4)
+ 3. (uses:actions/setup-node@v4)
+ 4. Install dependencies
+ 5. Docs rule (铁律 1)
+ 6. Docs facts (基线不变量)
+ 7. Guard rails (TASK-007 根污染/密钥/模块边界/端口区间)
+ 8. Contract tests (generate + drift check)
+ 9. Prisma generate
+10. Typecheck (shared)
+11. Typecheck (web)
+12. Lint (web)
+13. Unit tests (shared)
+14. Unit tests (ui)
+15. Unit tests (web)
+16. Production build
+
+YAML OK (jobs: verify, docker-build, e2e-skeleton)

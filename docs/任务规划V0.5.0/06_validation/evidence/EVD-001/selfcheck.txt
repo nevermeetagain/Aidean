@@ -1,0 +1,13 @@
+﻿# TASK-001 取证（Fix A 返工后复验）  时间: 2026-10-14T11:22+08
+
+## 命令
+cd docs/任务规划V0.5.0/contracts
+node apps/web/node_modules/tsx/dist/cli.mjs selfcheck.ts
+
+## 输出（比对 冻结契约 02-errors.contract.ts ↔ 现网 web，独立于 shared 落地）
+{"total":25,"web":22,"dup":[],"mism":0,"missingPres":[],"failurePaths":14,"sample":true,"bad":false}
+
+## 解读
+- total=25 契约码总数；web=22 web 现有码数；dup=[] 无重复；mism=0 无逐值矛盾
+- missingPres=[] 每个码均有展示配置；failurePaths=14 失败路径全覆盖
+- sample=true/bad=false 抽样正/反例行为正确

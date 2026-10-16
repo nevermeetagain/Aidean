@@ -1,0 +1,3 @@
+# TASK-077 web 类型检查  时间: 2026-10-14（本地）
+命令: pnpm --filter web exec tsc --noEmit
+结果: exit 0（新增 spec 类型干净；无 TS7053/未用变量告警）

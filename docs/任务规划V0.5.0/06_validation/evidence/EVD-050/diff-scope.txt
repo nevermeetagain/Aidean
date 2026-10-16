@@ -1,0 +1,40 @@
+﻿=== git status --short (tracked code changes for TASK-050) ===
+ M .github/workflows/ci.yml
+ M apps/web/lib/sync/writers/__tests__/persist-prices.int.spec.ts
+
+=== docs changes (untracked plan dir; committed via docs mirror at push) ===
+docs/任务规划V0.5.0/05_execution/tasks/TASK-050.md (v0.5 -> v0.5.1 窄豁免+版本锚定)
+docs/任务规划V0.5.0/06_validation/evidence/EVD-050/** (新增证据)
+
+=== ci.yml diff ===
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 722ced01..fb475e14 100755
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -1,6 +1,6 @@
+ # CI 门禁（G-2 硬门禁实装，2026-08-28）
+ #
+-# 门禁链：铁律1 文档检查 → 自动化守卫(TASK-007：根污染/密钥/模块边界/端口区间) → prisma generate → 双包 typecheck（tsc --noEmit）→ 双包单测 → 生产构建
++# 门禁链：铁律1 文档检查 → 自动化守卫(TASK-007：根污染/密钥/模块边界/端口区间) → prisma generate → 双包 typecheck（tsc --noEmit）→ lint(web) → 三包单测（shared/ui/web）→ 生产构建
+ # 取舍：
+ #   - e2e：S0 步行骨架子集（smoke 七断言 + walking-skeleton）进独立 e2e-skeleton job（真 PG16/Redis7 服务容器 + 空库 prisma migrate deploy + seed + next start :3000 + /system/ready 轮询）；全量 9 spec（含 3333 等外部依赖）仍本地 `pnpm test:e2e`，不进 CI；
+ #   - tsc 与 next build 分开跑：build 内置 typecheck，但独立 tsc 失败信息定位更直接；
+@@ -64,9 +64,17 @@ jobs:
+       - name: Typecheck (web)
+         run: pnpm --filter web exec tsc --noEmit
+ 
++      - name: Lint (web)
++        # TASK-050：把既有 lint 纳入硬门禁（Execution Step 1：Typecheck(web) 之后）。命令 = next lint（等价根 `pnpm -w lint`，lint 脚本仅 web 定义）。
++        run: pnpm --filter web lint
++
+       - name: Unit tests (shared)
+         run: pnpm --filter @aidean/shared test
+ 
++      - name: Unit tests (ui)
++        # TASK-050：packages/ui 既有 vitest 用例（cn tailwind-merge 冲突消解 4 例）纳入门禁（Execution Step 2：Unit tests(shared) 之后）。
++        run: pnpm --filter @aidean/ui test
++
+       - name: Unit tests (web)
+         run: pnpm --filter web test
+ 
+

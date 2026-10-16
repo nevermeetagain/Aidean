@@ -1,0 +1,11 @@
+# TASK-004 取证  时间: 2026-10-14T11:46+08
+命令: pnpm --filter @aidean/shared exec tsc --noEmit
+结果: exit 0（生成物类型干净）
+
+命令: pnpm --filter @aidean/shared test
+ Test Files  16 passed (16)
+      Tests  139 passed (139)
+  · src/__tests__/contract/errors.generated.spec.ts (7 tests)
+  · src/__tests__/contract/identity.generated.spec.ts (3 tests)
+  · src/__tests__/contract/envelope.generated.spec.ts (3 tests)
+基线 126（TASK-001 后）+ 生成 13 = 139，全绿。

@@ -1,0 +1,3 @@
+# TASK-002 取证 时间: 2026-10-14T11:35+08
+命令: grep -nE "^\s+[A-Z_]+: [0-9]{5}," apps/web/app/api/v1/_lib/errors.ts
+结果: 无输出（web 侧零本地码值，双源已消除）

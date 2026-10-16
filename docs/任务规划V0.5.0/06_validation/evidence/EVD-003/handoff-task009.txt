@@ -1,0 +1,17 @@
+TASK-003 → TASK-009 计数门禁同步移交注记（B-1 让渡实体化）
+==============================================================
+
+背景：TASK-003.md L40 明文「计数类断言由 TASK-009 同步」。本卡按 L40 让渡，未改
+`scripts/check-docs-facts.mjs`（该脚本不在本卡「允许修改」清单，改动即违反本卡范围门禁）。
+
+本卡合入后 `node scripts/check-docs-facts.mjs` 三条计数门禁的实际值（供 TASK-009 拉平基准）：
+  - lib-features-count : expected=18  → 本卡后 actual=19   （新增 lib/features/system/）
+  - route-count        : expected=148 → 本卡后 actual=149  （新增 app/api/v1/system/ready/route.ts）
+  - spec-count         : expected=156 → HEAD(847ddcea) 已 157（TASK-077 oidc-redlines.spec.ts 未 bump）
+                          → 本卡后 159（+readiness.spec.ts +ready-route.spec.ts）
+
+注意：后续 S0 卡（TASK-005 步行骨架 e2e / TASK-006 CI job / TASK-007 守卫脚本）仍会新增
+route/spec，故 **TASK-009 必须在整个 S0 代码批次落地后一次性重算并 bump 这三条 expected**，
+不得只对齐本文件所列数值。本注记仅为增量归因证据链，非最终目标值。
+
+queryraw-biz 门禁：本卡 0 违规（lib/features/system 内 grep queryRaw/executeRaw = 0），无需 TASK-009 处理。

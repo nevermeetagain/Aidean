@@ -1,0 +1,7 @@
+﻿# TASK-001 取证（Fix A 返工后复验）  时间: 2026-10-14T11:22+08
+
+## 命令
+pnpm --filter @aidean/shared exec tsc --noEmit
+
+## 结果
+tsc exit=0

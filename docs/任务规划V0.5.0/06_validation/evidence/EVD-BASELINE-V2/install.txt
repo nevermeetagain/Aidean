@@ -1,0 +1,27 @@
+! Corepack is about to download https://registry.npmjs.org/pnpm/-/pnpm-9.0.0.tgz
+Scope: all 5 workspace projects
+
+   ╭───────────────────────────────────────────────────────────────────╮
+   │                                                                   │
+   │                Update available! 9.0.0 → 12.11.2.                 │
+   │   Changelog: https://github.com/pnpm/pnpm/releases/tag/v12.11.2   │
+   │     Run "corepack prepare pnpm@12.11.2 --activate" to update.     │
+   │                                                                   │
+   │      Follow @pnpmjs for updates: https://twitter.com/pnpmjs       │
+   │                                                                   │
+   ╰───────────────────────────────────────────────────────────────────╯
+
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+apps/web postinstall$ prisma generate
+apps/web postinstall: Prisma schema loaded from prisma/schema.prisma
+apps/web postinstall: ✔ Generated Prisma Client (v6.19.3) to ./../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client in 683ms
+apps/web postinstall: Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+apps/web postinstall: Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+apps/web postinstall: Done
+Done in 48.4s
+
+real	0m49.040s
+user	0m4.162s
+sys	0m0.679s

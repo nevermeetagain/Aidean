@@ -1,0 +1,3 @@
+tsc_exit=0
+{"collisions":[],"tiers":5,"endpoints":5,"eventSampleOk":true,"sourceSampleOk":true}
+{"total":25,"web":22,"dup":[],"mism":0,"missingPres":[],"failurePaths":14,"sample":true,"bad":false}

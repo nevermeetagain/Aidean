@@ -1,0 +1,12 @@
+﻿== M-001 部分唯一索引物理落地实证 (pg_indexes, 空库 aidean_evd13 纯迁移重建后) ==
+时间: 2026-10-15T10:52:09.1544699+08:00
+
+             indexname             |                                                           indexdef                                                            
+-----------------------------------+-------------------------------------------------------------------------------------------------------------------------------
+ model_prices_effective_from_idx   | CREATE INDEX model_prices_effective_from_idx ON public.model_prices USING btree (effective_from)
+ model_prices_is_current_idx       | CREATE INDEX model_prices_is_current_idx ON public.model_prices USING btree (is_current)
+ model_prices_model_id_current_key | CREATE UNIQUE INDEX model_prices_model_id_current_key ON public.model_prices USING btree (model_id) WHERE (is_current = true)
+ model_prices_model_id_idx         | CREATE INDEX model_prices_model_id_idx ON public.model_prices USING btree (model_id)
+ model_prices_pkey                 | CREATE UNIQUE INDEX model_prices_pkey ON public.model_prices USING btree (id)
+(5 rows)
+

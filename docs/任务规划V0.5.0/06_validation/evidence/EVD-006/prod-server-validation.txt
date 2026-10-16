@@ -1,0 +1,27 @@
+# 生产 next start 验证：本机 :3000 即 next start（非 dev）
+
+## 关键结论
+CI job 用 `next start -p 3000`（NODE_ENV=production）。本机 :3000 经进程命令行核实同样是 **生产 start 服务器**，
+故本地两套件绿灯已覆盖 CI 的两处生产专属语义（Secure Cookie / 限流生效），残余风险面大幅收窄。
+
+## 证据
+1. Get-NetTCPConnection -LocalPort 3000 → node PID=25752
+   CommandLine:
+   "C:\Program Files\nodejs\node.exe" E:\Code\Aidean\node_modules\.pnpm\next@15.0.0_...\next\dist\server\lib\start-server.js
+   → start-server.js 是 `next start`（生产）入口；`next dev` 走 next-dev.js，路径不同。判定：生产模式。
+2. GET /api/v1/system/ready → 200
+   body={"code":0,...,"data":{"status":"ready","checks":{"db":"ok","redis":"ok"},...}} → 符合 SystemReadySchema。
+3. 生产语义间接证实（本地实跑 EXIT=0）：
+   - smoke[6] SUPER_ADMIN 登录 → /admin 200：isProduction() 下 baseCookieOptions.secure=true，
+     Cookie 仍经 http://localhost 回传 → Chromium 视 localhost 为安全上下文（spec 设计注记一致）。
+   - smoke[5][6][7] + walking 主链路共 4 次真实登录全 200，无 429 → 生产下 bypass 失效，
+     但 4 < LOGIN_IP_RATE_LIMIT=20/600s 兜底成立。
+
+## 命令
+- pnpm exec playwright test --project=web e2e/web/walking-skeleton.spec.ts → 3 passed (EXIT=0)
+- pnpm exec playwright test --project=smoke → 7 passed (EXIT=0)
+（原始输出见 playwright-walking-skeleton.txt / playwright-smoke.txt）
+
+## 局限
+本机 DB 为已迁移/已 seed 的开发库（:5435）；CI 为一次性空库 :5432 全新 migrate deploy + seed。
+差异仅在「空库重放」，属标准 Prisma migrate deploy 行为，无法本地无侵入复现（不重置开发库）。

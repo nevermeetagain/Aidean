@@ -1,0 +1,4 @@
+﻿=== git diff seed.ts (方案B 应为空) ===
+(empty)
+
+EXITCODE(empty diff)=0

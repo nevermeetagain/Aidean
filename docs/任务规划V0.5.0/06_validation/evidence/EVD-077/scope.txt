@@ -1,0 +1,11 @@
+# TASK-077 范围核验（禁止修改 auth 源码，只读）  时间: 2026-10-14
+命令: git status -s ; git diff --name-only HEAD
+
+git status -s:
+?? apps/web/lib/features/auth/__tests__/oidc-redlines.spec.ts
+?? docs/任务规划V0.5.0/   （镜像/规划树，本卡不入代码主干，见 EVD-004 R-1 裁定）
+
+git diff --name-only HEAD:
+（空）→ 无任何已跟踪文件被改动 ⇒ apps/web/lib/features/auth/*.ts 等源码零改动，只读铁律守住。
+
+结论：本卡交付仅 1 个新建 spec 文件，落在「允许修改」白名单内。

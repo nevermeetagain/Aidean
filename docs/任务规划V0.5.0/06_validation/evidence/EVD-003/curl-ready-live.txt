@@ -1,0 +1,9 @@
+GET /api/v1/system/ready (local dev :3010, DB+Redis reachable)
+HTTP 200
+{"code":0,"message":"ok","data":{"status":"ready","checks":{"db":"ok","redis":"ok"},"time":"2026-10-15T05:00:52.550Z"},"requestId":"eaa753d1-f019-4bad-9a12-dc3de0ec0b02"}
+
+--- NEGATIVE CASE (spec acceptance #2) ---
+GET /api/v1/system/ready (dev :3011, DATABASE_URL=*** dead :5499/deaddb)
+HTTP 503
+{"code":50010,"message":"依赖不可用: db","data":null,"requestId":"00605ecf-6b4d-4098-84bf-dcff19f661e0"}
+[no reachable DB -> 503] PASS=true

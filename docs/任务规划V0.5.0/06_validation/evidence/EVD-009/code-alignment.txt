@@ -1,0 +1,38 @@
+# §4 全量 25 码单表 ↔ 唯一源 `packages/shared/src/errors.ts` 逐码对齐
+
+对齐口径来源：
+- 码值 = `ERROR_CODES`（errors.ts:9-40）
+- HTTP = `httpStatusOf()`（errors.ts:60-62）= `DEFAULT_STATUS_BY_CODE[code] ?? (code===50000 ? 500 : 400)`（映射表 errors.ts:46-57）
+- 前端展示 = `ERROR_PRESENTATION[code]`（errors.ts:80-106）
+
+| 码位 | 标识 | 表 HTTP | 源推 HTTP | 表展示 | 源展示 | 一致 |
+|---|---|---|---|---|---|---|
+| 10001 | USER_NOT_FOUND | 400 | 400(默认) | inline | inline | ✓ |
+| 10002 | EMAIL_DUPLICATED | 400 | 400(默认) | inline | inline | ✓ |
+| 10003 | INVALID_CREDENTIALS | 401 | 401(map) | inline | inline | ✓ |
+| 10004 | UNAUTHENTICATED | 401 | 401(map) | redirect | redirect | ✓ |
+| 10005 | ACCOUNT_DISABLED | 403 | 403(map) | page | page | ✓ |
+| 10006 | TOO_MANY_REQUESTS | 429 | 429(map) | toast | toast | ✓ |
+| 10007 | FORBIDDEN_CLIENT_SCOPE | 403 | 403(map) | page | page | ✓ |
+| 10008 | FORBIDDEN | 403 | 403(map) | page | page | ✓ |
+| 10009 | CREDENTIAL_NOT_REVOCABLE | 409 | 409(map) | toast | toast | ✓ |
+| 20001 | MODEL_NOT_FOUND | 400 | 400(默认) | page | page | ✓ |
+| 20002 | RANKING_TYPE_INVALID | 400 | 400(默认) | inline | inline | ✓ |
+| 20003 | FAVORITE_TARGET_NOT_FOUND | 400 | 400(默认) | toast | toast | ✓ |
+| 30001 | SITE_UNAVAILABLE | 400 | 400(默认) | toast | toast | ✓ |
+| 30002 | GATEWAY_NO_ROUTE | 400 | 400(默认) | inline | inline | ✓ |
+| 30003 | GATEWAY_ALL_FAILED | 400 | 400(默认) | inline | inline | ✓ |
+| 30004 | UPSTREAM_ERROR | 400 | 400(默认) | inline | inline | ✓ |
+| 40000 | BAD_REQUEST | 400 | 400(默认) | inline | inline | ✓ |
+| 40001 | INSUFFICIENT_BALANCE | 400 | 400(默认) | inline | inline | ✓ |
+| 40002 | RECHARGE_ORDER_NOT_FOUND | 400 | 400(默认) | toast | toast | ✓ |
+| 40003 | ORDER_STATE_INVALID | 400 | 400(默认) | toast | toast | ✓ |
+| 40004 | HOLD_INVALID | 400 | 400(默认) | toast | toast | ✓ |
+| 40005 | NOTIFY_SIGNATURE_INVALID | 401 | 401(map) | toast | toast | ✓ |
+| 50000 | INTERNAL_ERROR | 500 | 500(规则) | toast | toast | ✓ |
+| 50010 | SERVICE_UNAVAILABLE | 503 | 503(map) | page | page | ✓ |
+| 50011 | FEATURE_DISABLED | 403 | 403(map) | page | page | ✓ |
+
+- 行数：1xxxx 9 + 2xxxx 3 + 3xxxx 4 + 4xxxx 6 + 5xxxx 3 = **25**（与 `ERROR_CODES` 键数、表数据行数、验收「§4 表行数=25」三者一致）
+- 实测表数据行：`API接口文档.md` L46–L70 = 25 行（Read 逐行核对）
+- 结论：`已确认` — §4 单表与唯一源逐码对齐，无缺码/多码/错映射；新增 3 码（20003/50010/50011）已登记。

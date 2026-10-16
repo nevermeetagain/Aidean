@@ -1,0 +1,4 @@
+# TASK-004 取证 幂等  时间: 2026-10-14T11:46+08
+方法: 记录 3 个 generated.spec.ts 的 SHA256 → 重跑生成器 → 再记录 → Compare-Object
+结果: ===IDEMPOTENT: YES (byte-identical across 2 runs)===
+（输出排序稳定 + 无时间戳 → 同输入必同输出）

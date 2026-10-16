@@ -1,0 +1,21 @@
+fetched_at=2026-10-14T07:27:25Z
+https://openrouter.ai/api/v1/models | HTTP 200 | bytes 773224 | {"data":[{"id":"~unbiased/pareto-latest","canonical_slug":"~unbiased/pareto-latest","alias_target":{"name":"Pareto 26.9","slug":"unbiased/pareto-26.9"},"hugging
+https://openrouter.ai/api/v1/models/count | HTTP 200 | bytes 22 | {"data":{"count":462}}
+https://api.siliconflow.cn/v1/models | HTTP 401 | bytes 56 | {"code":30014,"data":null,"message":"Token is invalid."}
+https://quanzil.com/api/pricing | HTTP 200 | bytes 529071 | {"data":[{"model_name":"gpt-6-astra","description":"GPT-6 Astra is the most capable model of OpenAI, built for the hardest end-to-end work. Use it for complex r
+https://quanzil.com/v1/models | HTTP 401 | bytes 111 | {"error":{"message":"Token not provided (request id: 20261014152727670587609hPQvUxWC)","type":"new_api_error"}}
+https://llmtest.cn/api/leaderboard/composite | HTTP 200 | bytes 15152 | {"ok":true,"data":[{"url":"https://api.poixe.com","name":"poixe","score":88,"isAlive":true,"discovered_at":"2026-04-07 02:11:06","total_alive_days":32,"last_ali
+https://huggingface.co/api/models?sort=createdAt&limit=2 | HTTP 200 | bytes 461 | [{"_id":"6acf2ed49ae86ab1bde960d6","id":"alfred8995/r16-H-c4b-qkd-s200","likes":0,"private":false,"downloads":0,"tags":["region:us"],"createdAt":"2026-10-14T07:
+https://artificialanalysis.ai/api/v2/language/models/free | HTTP 401 | bytes 31 | {"error":"API key is required"}
+https://aihubmix.com/api/v1/models | HTTP 200 | bytes 892450 | {"data":[{"model_id":"auto","model_name":"Auto","developer_id":12,"desc":"AIHubMix Smart Router: Fill in the model name as auto, and the gateway will automatica
+https://www.dmxapi.cn/v1/models | HTTP 401 | bytes 126 | {"error":{"code":"","message":"无效的令牌 (request id: 20261014072729823254016c14228f5fHyFIqHz)","type":"dmx_api_error"}}
+OpenRouter /api/v1/models (no auth) total: 462
+  openai/* count: 104
+  gpt-6/luna/sol matches: ['openai/gpt-6.1-sol-pro|OpenAI: GPT-6.1 Sol Pro', 'openai/gpt-6.1-sol-pro:batch|OpenAI: GPT-6.1 Sol Pro (batch)', 'openai/gpt-6.1-sol|OpenAI: GPT-6.1 Sol', 'openai/gpt-6.1-sol:batch|OpenAI: GPT-6.1 Sol (batch)', 'openai/gpt-6-luna-pro|OpenAI: GPT-6 Luna Pro', 'openai/gpt-6-luna-pro:batch|OpenAI: GPT-6 Luna Pro (batch)', 'openai/gpt-6-luna|OpenAI: GPT-6 Luna', 'openai/gpt-6-luna:batch|OpenAI: GPT-6 Luna (batch)', 'openai/gpt-6-sol-pro|OpenAI: GPT-6 Sol Pro', 'openai/gpt-6-sol-pro:batch|OpenAI: GPT-6 Sol Pro (batch)', 'openai/gpt-6-sol|OpenAI: GPT-6 Sol', 'openai/gpt-6-sol:batch|OpenAI: GPT-6 Sol (batch)']
+  :free count: 14
+  sample keys: ['architecture', 'canonical_slug', 'context_length', 'created', 'default_parameters', 'description', 'expiration_date', 'hugging_face_id', 'id', 'knowledge_cutoff', 'links', 'name', 'per_request_limits', 'pricing', 'supported_parameters', 'supported_voices', 'top_provider']
+AIHubMix /api/v1/models total: 869
+Quanzil /api/pricing total: 335 keys: ['available', 'completion_ratio', 'cover_image', 'created_time', 'description', 'enable_groups', 'model_name', 'model_price', 'model_ratio', 'model_type', 'owner_by', 'quota_type', 'show_image_upload', 'supported_endpoint_types', 'tags', 'type', 'usage_count', 'vendor_id']
+OpenRouter ?output_modalities=all total: 667 openai/*: 122
+  'decisions' matches: ['microsoft/microsoft-decision-1', 'openai/gpt-6-luna-decisions']
+Quanzil top-level keys: ['data', 'group_ratio', 'success', 'supported_endpoint', 'usable_group', 'vendors'] vendors: 24

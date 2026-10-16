@@ -1,0 +1,8 @@
+﻿
+=== root-pollution（根目录污染） ===
+  [FAIL] 提交型污染：根级 tracked 文件不在基线 root-allowlist.txt 中：zz-negtest.txt
+  [PASS] 未发现新增/游离的根级文件（未跟踪非忽略集合为空）。
+
+=== root-pollution: SUMMARY ===
+  failures=1 warnings=0
+RESULT: FAIL (root-pollution)

@@ -1,0 +1,16 @@
+# TASK-077 目标 spec 运行（审查修复后）  时间: 2026-10-14
+命令: pnpm --filter web exec vitest run lib/features/auth/__tests__/oidc-redlines.spec.ts
+（前置：Remove-Item Env:\DATABASE_URL，避免跨会话残留触发真实连库）
+
+ RUN  v2.1.9 E:/Code/Aidean/apps/web
+ ✓ lib/features/auth/__tests__/oidc-redlines.spec.ts (12 tests) 189ms
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+
+用例构成（7 → 12，补齐 R-1 审查缺口）：
+  R1 authorize：plain 拒 / S256 对照 / 缺 method / pkceRequired 缺 challenge（4）
+  R1 机制层 verifyPkce：S256 匹配 / plain 兜底拒 / 长度<43 拒 / 长度>128 拒（4）
+  R2 token：gen0 轮换→重放 invalid_grant+整链失效+refresh_replay 告警 / 伪造令牌 invalid_grant（2）
+  R3 login：baseCookieOptions 无 domain（机制） / 真 login Set-Cookie 无 Domain=（效果）（2）
+状态码断言：回跳收紧为 toBe(307)（NextResponse.redirect 默认）→ 通过，证实非臆造。

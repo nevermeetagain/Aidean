@@ -1,0 +1,35 @@
+# CI e2e-skeleton 设计依据（逐条关联代码/实测证据）
+
+## env 注入清单与理由
+- DATABASE_URL = postgresql://aidean:aidean@localhost:5432/aidean?schema=public
+  → 指向 GH postgres:16 服务（POSTGRES_DB=aidean 建库），宿主 :5432 映射服务容器。
+  migrate deploy / seed / next start / ready 探活（prisma.user.count）均用之。
+- REDIS_URL = redis://localhost:6379
+  → GH redis:7 服务。ready 探针经独立 ioredis 短连 PING（readiness.ts，不复用 fail-open getRedis）；
+  授权码一次性消费/限流（checkFixedWindow）用之。
+- JWT_SECRET = ci-e2e-skeleton-throwaway-secret-not-a-real-key（非真实凭据，占位串）
+  → env-check.assertJwtSecret() 在 login/register 令牌签发期强制读取，缺失即抛错 → smoke[5][6][7]/walking 全红。
+  注：非 production，check-runtime-contract 对占位值仅 WARN，不阻断（本 job 不调 strict 契约）。
+- NEXT_PUBLIC_SITE_URL = http://localhost:3000
+  → constants.ts AUTH_ISSUER = NEXT_PUBLIC_SITE_URL ?? http://localhost:3000；
+  middleware.ts jwks 基准 = new URL("/.well-known/jwks.json", AUTH_ISSUER)，且重定向 Location 用 AUTH_ISSUER 绝对基址。
+  build 期内联 → 必须与 :3000 对齐，否则 smoke[3] 307 到错误基址、middleware 自取 jwks 失败致 smoke[6] 红。
+- AIDEAN_ENABLE_MOCK_UPSTREAM = 1
+  → seed 落 mock 站 baseUrl=http://localhost:3000/api/v1/mock-upstream（gateway e2e 夹具）；本骨架子集不触网关，注入无害，按任务书步骤1。
+- AIDEAN_BYPASS_LOGIN_RATE_LIMIT = 1
+  → constants.ts:142 双条件 `==="1" && !isProduction()`。next start 下 NODE_ENV=production → 该 bypass 不生效；
+  但本子集仅 4 次真实登录 < LOGIN_IP_RATE_LIMIT=20/600s → 无 429 风险（bypass 是为全量 9 spec >20 登录设计）。
+  注入仅为对齐任务书步骤1，实际由登录数远低于阈值兜底。
+- CHECKPOINT_DISABLE = 1（对齐 verify job，规避 prisma checkpoint 交互）。
+- 不注入 JWT_PRIVATE_KEY：keys.ts 优先级 env→Redis keyring(auth:rs256:keyring)→内存兜底；单实例自洽可验签。
+
+## 迁移「16 vs 17」规格漂移
+- 任务书 TASK-006 目标/验收写「16 条」，基线 main@cd5b1a9。
+- 实测 apps/web/prisma/migrations = 17 目录（新增 20261014000000_model_prices_partial_current_unique）。
+- job 用 prisma migrate deploy（全量重放，非硬编码计数），按真实 17 执行；已在 job 注释与本证据记录漂移。
+
+## playwright 作用域
+- 根 playwright.config.ts projects: web(./e2e/web, storageState .auth/web-guest.json) / smoke(./e2e/tests, testMatch smoke.spec.ts) / admin / admin-setup / mobile。
+- e2e/web 目录含 9 spec；仅 --project=web 会全跑 → 必须路径过滤到 walking-skeleton.spec.ts。
+- webServer 注释（测试不得私拉服务）→ job 自建 next start + 轮询 ready，符合铁律。
+- globalSetup 仅 ping "/" 生成 web-guest.json，不 seed；故 job 在跑测试前先 mkdir -p .auth（.auth 被 gitignore，CI 缺失）。

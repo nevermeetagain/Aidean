@@ -1,0 +1,6 @@
+# TASK-004 取证 漂移负测  时间: 2026-10-14T11:46+08
+方法: orig=hash(identity.generated) ; Add-Content 注入 "// 手改注入漂移" ; 重跑生成器 ; regen=hash
+结果:
+orig!=tamped: True
+regen==orig (drift reverted): True
+=> CI 的 `node gen-contract-tests.mjs && git diff --exit-code` 能捕获手改/源漂移（重生成还原规范内容）。

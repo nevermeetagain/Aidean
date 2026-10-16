@@ -1,0 +1,9 @@
+﻿# TASK-005 diff 范围核对（git status --porcelain / git diff --name-only）
+captured: 2026-10-15T15:13:27.9170992+08:00
+
+## 已跟踪文件被修改（git diff --name-only）应为空（apps/** packages/** 未动）
+(none)
+
+## git status --porcelain（本次仅新增 spec + EVD-005；docs/任务规划V0.5.0 为规划树整体未跟踪，入主干动作归 push/TASK-009）
+?? "docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.5.0/"
+?? e2e/web/walking-skeleton.spec.ts

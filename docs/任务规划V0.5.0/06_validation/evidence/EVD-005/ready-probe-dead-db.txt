@@ -1,0 +1,26 @@
+# TASK-005 无 DB 负例：/system/ready 明确返回 503（fail-fast，非超时）
+
+前置：独立 dev 实例（隔离 shell，DATABASE_URL 覆盖为不可达 dummy：postgresql://e2edummy:***@localhost:5499/e2e_dead，非真实凭据），端口 3099。
+
+## 探针级证据（node fetch，含耗时）
+冷启动首调（含路由按需编译）：
+  {"status":503,"elapsedMs":2359,"body":"{\"code\":50010,\"message\":\"依赖不可用: db\",\"data\":null,\"requestId\":\"4b14e523-...\"}"}
+热调用（路由已编译，实测探活耗时 ≈ readiness PROBE_TIMEOUT_MS 上界）：
+  {"status":503,"warmElapsedMs":1063}
+
+结论：DB 不可达时 /system/ready 有界地在 ~1s 内返回 HTTP 503 + 错误信封（code=50010，data=null，requestId 非空），
+      属确定性响应（非 socket 挂起/无响应）。
+
+## 规格级证据（Playwright 真实跑 walking-skeleton ready 用例，--grep system/ready，base=http://localhost:3099）
+  Running 1 test using 1 worker
+  ✘  1 [web] … GET /system/ready → 200 且就绪体符合 SystemReadySchema (1.3s)
+  Error: expect(received).toBe(expected) // Object.is equality
+      Expected: 200
+      Received: 503
+      at e2e\web\walking-skeleton.spec.ts:119:27
+  1 failed
+→ 该 spec 的 ready 用例因 HTTP 503 断言失败而明确 fail（1.3s 完成，非测试超时/abort）。
+
+命令（可复现）：
+  $env:E2E_BASE_URL="http://localhost:3099"
+  pnpm exec playwright test e2e/web/walking-skeleton.spec.ts --config playwright.config.ts --project=web --workers=1 --grep "system/ready"

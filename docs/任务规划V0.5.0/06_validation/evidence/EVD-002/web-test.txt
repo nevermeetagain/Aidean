@@ -1,0 +1,10 @@
+# TASK-002 取证 时间: 2026-10-14T11:35+08
+命令: (Remove-Item Env:\DATABASE_URL) ; pnpm --filter web test
+
+ Test Files  116 passed | 1 skipped (117)
+      Tests  1095 passed | 2 skipped (1097)
+   Duration  4.59s
+
+说明: 1 skipped 文件 = lib/sync/writers/__tests__/persist-prices.int.spec.ts
+      该 int spec 门控 !!process.env.DATABASE_URL，无 DB 环境变量时整组 skip（保护基线，避免误连共享开发库）。
+      首轮因跨会话 PowerShell 残留 DATABASE_URL=...aidean_evd13（已 drop）致该套件 beforeAll 失败；清除后恢复干净基线。

@@ -1,0 +1,6 @@
+﻿[_lib] node --check exit=0
+[root-pollution] node --check exit=0
+[secret-scan] node --check exit=0
+[module-boundary] node --check exit=0
+[port-consistency] node --check exit=0
+[run-all] node --check exit=0

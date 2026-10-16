@@ -1,0 +1,21 @@
+﻿== TASK-007 diff scope (pre-stage) ==
+
+-- git status --porcelain (tracked modified + untracked) --
+ M .github/workflows/ci.yml
+?? "docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.5.0/"
+?? scripts/guard/
+
+-- git diff --name-only (tracked working-tree modifications) --
+.github/workflows/ci.yml
+
+-- files under scripts/guard/ (new, to be committed) --
+scripts/guard/module-boundary.mjs
+scripts/guard/port-consistency.mjs
+scripts/guard/port-ranges.json
+scripts/guard/root-pollution.mjs
+scripts/guard/run-all.mjs
+scripts/guard/secret-scan.mjs
+scripts/guard/_lib.mjs
+
+-- allowed range per TASK-007: scripts/guard/**, .github/workflows/ci.yml, EVD-007/** --
+-- docs/任务规划V0.5.0/ 未跟踪：不在本卡代码提交范围，随 push 步骤走文档镜像仓 --

@@ -1,0 +1,7 @@
+# TASK-002 取证 时间: 2026-10-14T11:35+08
+命令: git diff --name-only
+结果:
+apps/web/app/api/v1/_lib/errors.ts
+apps/web/app/api/v1/_lib/response.ts
+
+（仅 2 文件，均在 TASK-002「允许修改」范围内；未触碰 packages/shared、route.ts、contracts）

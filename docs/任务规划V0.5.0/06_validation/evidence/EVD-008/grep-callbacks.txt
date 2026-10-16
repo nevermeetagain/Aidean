@@ -1,0 +1,5 @@
+﻿=== 验证命令: grep -n auth/aidean/callback apps/web/prisma/seed.ts ===
+    { clientId: 'aidean-rag', name: 'AideanRag', redirectUris: ['http://36.134.158.50:10001/auth/aidean/callback'], scopes: ['openid', 'profile', 'wallet:read'], secretEnv: 'OIDC_CLIENT_SECRET_AIDEAN_RAG', firstParty: true, pkceRequired: false },
+    { clientId: 'wechat-rag', name: 'WeChatRag', redirectUris: ['https://wechat-rag.aidean.local/auth/aidean/callback', 'http://localhost:3200/auth/aidean/callback'], scopes: ['openid', 'profile', 'wallet:read'], secretEnv: 'OIDC_CLIENT_SECRET_WECHAT_RAG', firstParty: true, pkceRequired: false },
+    { clientId: 'skills-cloud', name: 'SkillsCloud', redirectUris: ['https://skills-cloud.aidean.local/auth/aidean/callback'], scopes: ['openid', 'profile', 'wallet:read', 'billing:write'], secretEnv: 'OIDC_CLIENT_SECRET_SKILLS_CLOUD', firstParty: true, pkceRequired: false },
+

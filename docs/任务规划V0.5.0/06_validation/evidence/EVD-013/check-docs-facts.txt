@@ -1,0 +1,18 @@
+﻿# check-docs-facts 复核 2026-10-15T10:54:30.5286464+08:00
+
+鉁?schema-models: schema.prisma model 鏁?= 68锛圫3 RBAC 鏂板 Role/Permission/RolePermission/UserRoleAssignment锛?4鈫?8锛?鈫?expected=68, actual=68
+鉁?seed-models: seed.ts 妯″瀷鏉℃暟锛坢odelsData 闈欐€佹潯鐩?+ DEMO_MODEL_COUNT 鐢熸垚鍣級鈮?50锛堜笅闄愬紡锛孯-83 T1锛氭ā鍨嬫暟涓嶉檺鐢卞悗鍙伴厤缃級 鈫?expected=>=50, actual=1000
+鉁?seed-no-official: seed.ts 涓棤 OFFICIAL/瀹樻柟娴嬭瘯锛坧rovenance 淇鍚庯級 鈫?expected=0, actual=0
+鉁?lib-features-count: lib/features 瀛愮洰褰曟暟 = 18锛圫7.4 鏂板 announcements 鍓嶅彴鍏憡璇绘湇鍔＄洰褰曪紝17鈫?8锛?鈫?expected=18, actual=18
+鉁?aidean-ui-refs: @aidean/ui 鍦?apps/web/components 鐨?import 鏁?= 61锛圫5 鏂板 HoldsPanel/WalletsTabs 鍚勫紩 @aidean/ui锛?9鈫?1锛?鈫?expected=62, actual=62
+鉁?route-count: apps/web route.ts 鏂囦欢鏁帮紙鍚?app/ 鍏ㄥ煙锛? 148锛圫5 鏂板 admin/holds 鍦ㄩ€斿喕缁撴鍙鍒嗛〉绔偣锛?鈫?expected=148, actual=148
+鉁?page-count: apps/web page.tsx 鏂囦欢鏁?= 56锛圫2r 鏂板 /admin/reports 鐙珛鎶ヨ〃椤碉級 鈫?expected=56, actual=56
+鉁?next-version: Next.js 鐗堟湰 = 15.x 鈫?expected=15.x, actual=15.x
+鉁?spec-count: spec 鏂囦欢鎬绘暟 = 156 (39 e2e + 117 unit)锛圫1 鏂板 persist-prices.int/persist-prices 2 + field-ownership/change-log-coverage/tier-order 3锛?51鈫?56锛?鈫?expected=156, actual=156
+鉁?queryraw-biz: apps/web 涓氬姟浠ｇ爜 $queryRaw/$executeRaw = 0 鈫?expected=0, actual=0
+鉁?batch-count: admin batch 璺敱鏁?= 15 鈫?expected=15, actual=15
+鉁?db-doc-product-fields: 銆婃暟鎹簱鏂囨。銆媝roducts 琛屽凡鐧昏 display_name 涓?ProductCategory锛圖B 妯″瀷鍙樻洿鏂囨。鍚屾锛?鈫?expected=2/2, actual=2/2
+鉁?category-label-single-source: apps/web 涓‖缂栫爜銆宭abel: "鐗逛緵"銆嶅紡鍒嗙被鏄犲皠 = 0锛堟枃妗堝敮涓€鏉ユ簮 lib/product-label.ts锛?鈫?expected=0, actual=0
+鉁?usage-stats-anchor-pair: 銆夾PI鏋舵瀯璁捐鏂规銆嬪惈 usage-stats-architecture 閿?涓斻€夾PI鎺ュ彛鏂囨。銆嬪惈鍏跺洖閾撅紙閾佸緥 2 鍙屽悜浜掑紩锛?鈫?expected=2/2, actual=2/2
+
+All 14 assertions passed.

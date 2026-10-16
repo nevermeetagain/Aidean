@@ -1,0 +1,7 @@
+[{"typname":"BillingMode","l":["1","2","3","4"]},{"typname":"ModelType","l":["1","2","3","4","5","6","7","8","9","10","11","12","13"]},{"typname":"PriceSource","l":["1","2","3","4","5"]}]
+round 1 OK
+round 2 FAIL 23505 duplicate key value violates unique constraint "model_prices_model_id_is_current_key"
+round 3 FAIL 23505 duplicate key value violates unique constraint "model_prices_model_id_is_current_key"
+[{"is_current":false,"count":1},{"is_current":true,"count":1}]
+multi FAIL 23505 duplicate key value violates unique constraint "model_prices_model_id_is_current_key"
+promo coexist FAIL 23505 duplicate key value violates unique constraint "model_prices_model_id_is_current_key"

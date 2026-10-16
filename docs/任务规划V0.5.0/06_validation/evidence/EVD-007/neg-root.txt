@@ -1,0 +1,8 @@
+﻿
+=== root-pollution（根目录污染） ===
+  [PASS] 根级 tracked 文件（14 个）全部 ∈ 基线（14 项），无提交型污染。
+  [FAIL] 游离根级文件（未跟踪、未被 .gitignore 忽略）：zz-negtest.txt
+
+=== root-pollution: SUMMARY ===
+  failures=1 warnings=0
+RESULT: FAIL (root-pollution)

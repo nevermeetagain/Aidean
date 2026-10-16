@@ -1,0 +1,15 @@
+﻿TASK-003 diff 范围核验（git status --porcelain apps/web）
+  新增：
+    apps/web/app/api/v1/system/ready/route.ts
+    apps/web/lib/features/system/readiness.ts
+    apps/web/lib/features/system/__tests__/readiness.spec.ts
+    apps/web/lib/features/system/__tests__/ready-route.spec.ts
+  全部落在允许范围：
+    apps/web/app/api/v1/system/ready/**
+    apps/web/lib/features/system/**
+
+禁改路径零改动（git status 无 tracked 修改）：
+    packages/shared/** · apps/web/lib/db/** · apps/web/app/api/v1/system/health/** · docs/任务规划V0.5.0/contracts/**
+
+R-1 审查 M-1 处置：诊断临时件 apps/web/_t003_probe.mjs（越界、含 DATABASE_URL 掩码打印逻辑）
+  已删除，不入库；当前 git status 仅剩上述两个允许目录。

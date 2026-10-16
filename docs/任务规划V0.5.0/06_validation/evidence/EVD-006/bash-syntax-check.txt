@@ -1,0 +1,5 @@
+﻿# 内嵌 bash 语法校验（Git Bash bash -n）
+extract: python 解析 ci.yml -> e2e-skeleton.steps["Run E2E skeleton..."].run -> .scratch/ci-e2e-run.sh
+command: D:\SoftWare\Git\bin\bash.exe -n .scratch/ci-e2e-run.sh
+result:  BASH_N_EXIT=0  (syntax OK)
+覆盖 CodeReview Major-1 修复后的 trap EXIT + pkill 回收块。

@@ -1,0 +1,30 @@
+﻿# TASK-001 取证（Fix A 返工后复验）  时间: 2026-10-14T11:22+08
+
+## 命令
+pnpm --filter @aidean/shared test   (vitest run)
+
+## 结果  Test Files 13 passed (13) | Tests 126 passed (126)
+
+ RUN  v3.2.7 E:/Code/Aidean/packages/shared
+
+ ✓ src/__tests__/admin-permissions.spec.ts (6 tests)
+ ✓ src/__tests__/provider-pricing.spec.ts (29 tests)
+ ✓ src/__tests__/billing.spec.ts (9 tests)
+ ✓ src/__tests__/money.spec.ts (11 tests)
+ ✓ src/__tests__/envelope.spec.ts (2 tests)
+ ✓ src/__tests__/auth.spec.ts (4 tests)
+ ✓ src/__tests__/ladder.spec.ts (2 tests)
+ ✓ src/__tests__/user.spec.ts (5 tests)
+ ✓ src/__tests__/pricing-config.spec.ts (4 tests)
+ ✓ src/__tests__/product-intro.spec.ts (19 tests)
+ ✓ src/__tests__/errors.spec.ts (8 tests)
+ ✓ src/__tests__/gateway.spec.ts (15 tests)
+ ✓ src/__tests__/schemas.spec.ts (12 tests)
+
+ Test Files  13 passed (13)
+      Tests  126 passed (126)
+
+## Fix A 要点
+- errors.spec.ts 已删除 `import ... from ../../../../apps/web/...`（反向依赖，违反 TASK-007 模块边界铁律）
+- 改内嵌迁移时点冻结快照 WEB_ERROR_CODES_SNAPSHOT(22)/WEB_STATUS_SNAPSHOT(8)；总数硬锁 25
+- 不随 TASK-002 web 重导出而破坏（消除跨卡时弹）
