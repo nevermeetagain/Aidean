@@ -477,7 +477,11 @@ model ModelPrice {
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  @@unique([modelId, isCurrent]) // D3 修复：防止并发 sync 产生多条 isCurrent=true
+  // R-01 修复（ADR-P003 / M-001 / TASK-011）：不再用 @@unique([modelId, isCurrent])——
+  // 该全列唯一会限制同一 model 仅能存一行 is_current=false 历史价，导致连续采集写价 23505/P2002。
+  // 「每个 model 至多一条 is_current=true 当前价」改由迁移
+  // 20261014000000_model_prices_partial_current_unique 以部分唯一索引
+  // UNIQUE(model_id) WHERE is_current=true 在数据库层维护（Prisma schema 无法表达 WHERE）。
   @@index([modelId])
   @@index([isCurrent])
   @@index([effectiveFrom])

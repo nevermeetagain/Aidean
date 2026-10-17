@@ -1,9 +1,11 @@
 // 旧 @aidean/shared-types 收编评估结论（SubTask 1.1.2）
 // 并入: User / Model / ModelPricing / ModelCapabilities / BenchmarkScore /
-//       LadderEntry / LadderData(type 收敛为 models|stations) / ErrorCode(enum 转 const)
+//       LadderEntry / LadderData(type 收敛为 models|stations)
 // 不并入(已被新契约取代或平台私有):
 //   ApiResponse,PaginatedResponse -> schemas/common.schema.ts 的 envelope/PaginationMeta
 //   EnvConfig -> 平台启动期配置,不属跨端契约
+//   ErrorCode/ErrorCodeValue -> 旧冲突表(10002/10003/50001… 与运行时码值冲突)于 TASK-001 删除,
+//                              唯一源迁移至 errors.ts(ADR-P001 / REQ-NF-001)
 export interface User {
   id: string;
   email: string;
@@ -67,23 +69,3 @@ export interface LadderData {
   lastUpdated: Date;
   version: string;
 }
-
-/** 错误码定义（原 enum 改 const 对象,isolatedModules/tree-shaking 友好） */
-export const ErrorCode = {
-  USER_NOT_FOUND: 10001,
-  INVALID_CREDENTIALS: 10002,
-  TOKEN_EXPIRED: 10003,
-  TOKEN_INVALID: 10004,
-  PERMISSION_DENIED: 10005,
-  MODEL_NOT_FOUND: 20001,
-  LADDER_NOT_FOUND: 20002,
-  STATION_UNAVAILABLE: 30001,
-  STATION_UNREACHABLE: 30002,
-  GATEWAY_ROUTE_FAILED: 30003,
-  INSUFFICIENT_BALANCE: 40001,
-  PAYMENT_FAILED: 40002,
-  INTERNAL_ERROR: 50001,
-  SERVICE_UNAVAILABLE: 50002,
-  RATE_LIMITED: 50003,
-} as const;
-export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];

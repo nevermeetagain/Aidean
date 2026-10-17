@@ -11,6 +11,7 @@
  *       tier 门禁在 service 内（NORMAL → 403）。
  */
 import { requireUserApi } from "../../../../lib/features/auth/session";
+import { requireFeature } from "../../../../lib/features/flags/service";
 import { evaluationService } from "../../../../lib/features/evaluation/service";
 import { parseCreateEvaluationInput, parseEvaluationPage } from "../../../../lib/features/evaluation/schema";
 import { withApi } from "../_lib/handler";
@@ -19,6 +20,9 @@ export const dynamic = "force-dynamic";
 
 /** 创建对比测评（创建即跑；返回单，客户端轮询详情） */
 export const POST = withApi(async (req: Request) => {
+  // S2 受控面（TASK-015 / FEATURE_GATES["evaluation.enabled"]）：付费测评开关关闭 → 403+50011。先于鉴权短路，
+  // 阻断流量进入下游 createAndRun 计费；受控态已由 PUBLIC /system/features 公开，不新增泄露面。
+  await requireFeature("evaluation.enabled");
   const session = await requireUserApi();
   const input = parseCreateEvaluationInput(await req.json().catch(() => null));
   const result = await evaluationService.createAndRun(session.userId, session.tier, input);

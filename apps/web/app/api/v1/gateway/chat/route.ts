@@ -18,6 +18,7 @@ import {
 
 import { requireGatewayPrincipal } from "../../../../../lib/features/apikey/guard";
 import { gatewayOrchestrator } from "../../../../../lib/features/gateway/service";
+import { requireFeature } from "../../../../../lib/features/flags/service";
 import { ApiError, ERROR_CODES } from "../../_lib/errors";
 import { generateRequestId } from "../../_lib/response";
 import { withApi } from "../../_lib/handler";
@@ -25,6 +26,9 @@ import { withApi } from "../../_lib/handler";
 export const dynamic = "force-dynamic";
 
 export const POST = withApi(async (req: Request) => {
+  // S2 受控面（TASK-015 / FEATURE_GATES["gateway.chat"]）：开关关闭 → 403+50011。先于鉴权短路，
+  // 阻断未鉴权流量进入下游计费/tier 编排；受控态已由 PUBLIC /system/features 全量公开，此顺序不新增泄露面。
+  await requireFeature("gateway.chat");
   // GW-KEY-01 P2-S2.1：双通道首守卫——Bearer/x-api-key → 平台 API Key 路径（免 cookie）；
   // 均缺失 → 回落 requireUserApi()（cookie 行为零回退）。幂等与裸响应契约不变。
   const principal = await requireGatewayPrincipal(req);

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Fragment } from "react";
 
-import { NAV_ITEMS, type NavItem } from "../../lib/navigation";
+import { filterNavByFeatureFlags, NAV_ITEMS, type NavItem } from "../../lib/navigation";
+import { getFeatureFlags } from "../../lib/features/flags/service";
 import { ThemeSwitcher } from "../common/ThemeSwitcher";
 import { HeaderSession } from "./HeaderSession";
 import { MobileNav } from "./MobileNav";
@@ -82,9 +83,15 @@ function NavEntry({ item }: { item: NavItem }) {
  * 登录态原在 RSC 内经 getSession()→cookies() 读取，这使渲染树携带动态 API：
  * /models/[slug] ISR 化后触发「static→dynamic at runtime」硬错误（Next 14 非 PPR
  * 对 cookies 无 Suspense 动态洞机制）。现登录态整体迁至客户端槽位 HeaderSession
- * （挂载后探测 /api/v1/auth/me），本组件零动态 API，可进任意静态/ISR 壳。
+ * （挂载后探测 /api/v1/auth/me），本组件零请求态动态 API，可进任意静态/ISR 壳。
+ *
+ * TASK-018 功能开关驱动的导航隐藏：本组件读 getFeatureFlags()（unstable_cache tag
+ * feature-flags，DB 读缓存、非 cookies()/headers 等请求态 API）——与 B2 静态化不冲突：
+ * unstable_cache 属 ISR 兼容数据读（各页本就如此取数），构建期 DB 缺失由 fail-open 兜底不崩；
+ * 后台开关 PATCH 走 revalidateTag("feature-flags")，令承载本头部的页面在下一请求刷新，前台即时生效。
  */
-export function SiteHeader() {
+export async function SiteHeader() {
+  const navItems = filterNavByFeatureFlags(NAV_ITEMS, await getFeatureFlags());
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/70">
       <div className="mx-auto flex h-[64px] max-w-6xl items-center justify-between gap-6 px-4 md:px-6">
@@ -103,7 +110,7 @@ export function SiteHeader() {
 
         {/* 桌面端八项导航（首页+资讯+产品/价格/文档/路线图/合作/关于；产品下拉含天梯图/服务商/AideanWiki） */}
         <nav aria-label="主导航" className="hidden items-center gap-0.5 md:flex">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <NavEntry key={item.key} item={item} />
           ))}
         </nav>
@@ -113,8 +120,9 @@ export function SiteHeader() {
             <ThemeSwitcher />
           </div>
           <HeaderSession />
-          {/* 移动端抽屉导航（<768px）：替换此前 aria-hidden 装饰汉堡占位，提供可用导航 */}
-          <MobileNav />
+          {/* 移动端抽屉导航（<768px）：替换此前 aria-hidden 装饰汉堡占位，提供可用导航；
+              与桌面端共用同一按开关过滤后的 navItems（TASK-018，单一真源，client 端不二次取数）。 */}
+          <MobileNav items={navItems} />
         </div>
       </div>
     </header>

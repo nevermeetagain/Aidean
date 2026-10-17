@@ -15,6 +15,7 @@ import { ApiError, ERROR_CODES } from "../_lib/errors";
 import { withApi } from "../_lib/handler";
 import { ladderService } from "../../../../lib/features/ladder/service";
 import { getLadderLoadWindowPct } from "../../../../lib/features/ladder/config";
+import { requireFeature } from "../../../../lib/features/flags/service";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,9 @@ export const GET = withApi(async (req: Request) => {
   if (!parsed.success) {
     throw new ApiError(ERROR_CODES.RANKING_TYPE_INVALID, "榜单类型非法");
   }
+  // S2 受控面（TASK-015 / FEATURE_GATES）：models→ladder.model，stations→ladder.station；关闭 → 403+50011。
+  // 于 type 契约校验后、取数前短路（受控态已由 PUBLIC /system/features 公开）。
+  await requireFeature(parsed.data.type === "stations" ? "ladder.station" : "ladder.model");
   const sort = sp.get("sort") ?? undefined;
   if (sort && !EXT_SORT_KEYS.has(sort)) {
     throw new ApiError(ERROR_CODES.RANKING_TYPE_INVALID, "榜单类型非法");

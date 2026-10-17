@@ -1,6 +1,6 @@
 // S2.1 出厂默认三级导航树（板块 level1 → 分组 level2 → 叶 level3）。
 // 纯数据 + 展平函数：供 prisma/seed-admin-nav-default.ts 落库，及 lib/admin-nav-default-tree.spec.ts 直接
-// 喂 buildAdminNav 校验「7 板块 / 31 叶 / href 零缺失」。URL 全部沿用现值，仅重组层级与归属（只增不减）。
+// 喂 buildAdminNav 校验「7 板块 / 32 叶 / href 零缺失」。URL 全部沿用现值，仅重组层级与归属（只增不减）。
 import type { NavRow } from "./admin-navigation-core";
 
 export interface LeafSeed {
@@ -210,6 +210,7 @@ export const SECTIONS: SectionSeed[] = [
         order: 0,
         leaves: [
           { code: "adm_configs", name: "站点配置", href: "/admin/configs", icon: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.4-3a7.4 7.4 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L14.8 3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4L6.3 11a7.4 7.4 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6c.1-.3.1-.7.1-1Z" },
+          { code: "adm_feature_flags", name: "功能开关", href: "/admin/feature-flags", icon: "M12 2v10M18.36 6.64a9 9 0 1 1-12.73 0", perms: ["admin.configs.read"] },
         ],
       },
       {

@@ -70,36 +70,51 @@ async function resolveVendor(vendorName?: string): Promise<string> {
  * Only called when data.prices is non-empty.
  *
  * D5 修复：持久化 billingUnit 字段（之前 mapper 提取了 unit 但 writer 丢弃了）。
+ *
+ * R-01 / TASK-012 修复：
+ * - 同一模型「当前价」(is_current=true) 必须恰为 1 条：按 effectiveAt 降序，仅首条写为
+ *   isCurrent=true，其余（同批次内更早的价格）写为历史行 isCurrent=false。
+ *   配合迁移 20261014000000 的部分唯一索引 UNIQUE(model_id) WHERE is_current=true，
+ *   旧实现「循环内每条都写 isCurrent=true」在同批多价时会撞唯一索引 23505。
+ * - 降级 + 写入包在 $transaction 内，避免中途失败留下「0 条或 2 条当前价」的破损状态。
  */
 async function persistPrices(
   modelId: string,
   prices: NormalizedPriceData[],
   batchId: string,
 ): Promise<void> {
-  // Mark existing current prices as non-current (superseded by new sync data)
-  await prisma.modelPrice.updateMany({
-    where: { modelId, isCurrent: true },
-    data: { isCurrent: false, effectiveUntil: new Date() },
-  });
+  // 按 effectiveAt 降序：最新价格排首位，作为唯一「当前价」
+  const sorted = [...prices].sort(
+    (a, b) => b.effectiveAt.getTime() - a.effectiveAt.getTime(),
+  );
 
-  // Insert new price rows
-  for (const price of prices) {
-    await prisma.modelPrice.create({
-      data: {
-        modelId,
-        priceInput: price.inputPrice,
-        priceOutput: price.outputPrice,
-        billingCurrency: price.currency || 'CNY',
-        billingMode: 'PER_TOKEN',
-        billingUnit: price.unit || 'per_1k_tokens',
-        effectiveFrom: price.effectiveAt,
-        isCurrent: true,
-        sourceType: 'CRAWLER',
-        sourceName: `sync:${batchId.slice(0, 8)}`,
-        notes: `Auto-synced from batch ${batchId}`,
-      },
+  await prisma.$transaction(async (tx) => {
+    // 现有当前价全部降级为历史（新数据接管「当前」语义；历史行不受部分唯一索引限制）
+    await tx.modelPrice.updateMany({
+      where: { modelId, isCurrent: true },
+      data: { isCurrent: false, effectiveUntil: new Date() },
     });
-  }
+
+    // 逐条写入：仅首条（effectiveAt 最新）为当前价，其余为历史价
+    for (let i = 0; i < sorted.length; i++) {
+      const price = sorted[i];
+      await tx.modelPrice.create({
+        data: {
+          modelId,
+          priceInput: price.inputPrice,
+          priceOutput: price.outputPrice,
+          billingCurrency: price.currency || 'CNY',
+          billingMode: 'PER_TOKEN',
+          billingUnit: price.unit || 'per_1k_tokens',
+          effectiveFrom: price.effectiveAt,
+          isCurrent: i === 0,
+          sourceType: 'CRAWLER',
+          sourceName: `sync:${batchId.slice(0, 8)}`,
+          notes: `Auto-synced from batch ${batchId}`,
+        },
+      });
+    }
+  });
 }
 
 /**

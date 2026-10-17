@@ -2,7 +2,7 @@
  * S2.1.1 出厂默认三级导航树落库（7 板块 → 分组 → 叶，scope=ADMIN）。
  * - 不改旧 prisma/seed-navigation-menu.ts；叶复用其 menuCode（只重层级/归属，URL 不变，只增不减）。
  * - 落库逻辑复用 lib/admin/apply-default-nav.ts（与面板「应用推荐分组」按钮同一实现）。
- * - 末尾用 buildAdminNav 断言「7 板块 / 31 叶 / 31 入口 href 零缺失」，任一不满足则 FAIL 退出。
+ * - 末尾用 buildAdminNav 断言「7 板块 / 32 叶 / 33 入口 href 零缺失」，任一不满足则 FAIL 退出。
  * 运行：pnpm --filter web exec tsx prisma/seed-admin-nav-default.ts
  */
 import { PrismaClient, NavScope } from "@prisma/client";

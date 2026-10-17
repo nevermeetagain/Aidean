@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { NAV_ITEMS } from "../../lib/navigation";
+import { NAV_ITEMS, type NavItem } from "../../lib/navigation";
 
 /**
  * 移动端抽屉导航（<768px）。
@@ -15,9 +15,10 @@ import { NAV_ITEMS } from "../../lib/navigation";
  * - 汉堡按钮切换抽屉开合（aria-expanded / aria-controls 可达）；
  * - 点击任一导航项或路由变化（usePathname）自动收起，避免残留遮挡；
  * - 打开期间锁定 body 滚动，关闭（含 backdrop 点击）恢复；
- * - 数据源与桌面端同为 lib/navigation.ts NAV_ITEMS（含产品二级子项），顺序/文案单一真源。
+ * - 数据源与桌面端同源：优先用 SiteHeader 传入的 items（已按功能开关过滤，TASK-018），
+ *   缺省回落 lib/navigation.ts NAV_ITEMS（含产品二级子项），顺序/文案单一真源。
  */
-export function MobileNav() {
+export function MobileNav({ items = NAV_ITEMS }: { items?: readonly NavItem[] } = {}) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -67,7 +68,7 @@ export function MobileNav() {
             className="fixed inset-x-0 top-[64px] z-40 max-h-[calc(100dvh-64px)] overflow-y-auto border-b border-slate-200 bg-white px-4 py-3 shadow-xl"
           >
             <ul className="flex flex-col">
-              {NAV_ITEMS.map((item) => (
+              {items.map((item) => (
                 <li key={item.key}>
                   <Link
                     href={item.href}

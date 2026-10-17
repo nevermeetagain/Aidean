@@ -7,6 +7,8 @@
 // DB 不可用时降级空排行兜底渲染，页面保持可出（build 机无 Docker 不阻断）。
 import type { Metadata } from "next";
 import { LadderBoard } from "../../../components/ladder/LadderBoard";
+import { FeatureDisabled } from "../../../components/common/FeatureDisabled";
+import { getFeatureFlags } from "../../../lib/features/flags/service";
 import { ladderService } from "../../../lib/features/ladder/service";
 import { getLadderGranularity, getLadderHotVendorCount, getLadderLoadWindowPct } from "../../../lib/features/ladder/config";
 import {
@@ -43,6 +45,11 @@ async function loadInitialRanking(type: "models" | "stations", bandHeight: numbe
 }
 
 export default async function ModelsPage() {
+  // 受控面首行守卫（TASK-018 / FEATURE_GATES["ladder.model"]）：关闭时呈 feature-disabled 态。
+  // 页面级严格 403 受 next@15.0.0 无 forbidden() 限制（见 EVD-018）；受控 API GET /api/v1/ladder?type=models 抛 50011→403。
+  const flags = await getFeatureFlags();
+  if (!flags["ladder.model"]) return <FeatureDisabled />;
+
   const [rankingData, granularity, hotVendorCount] = await Promise.all([
     getLadderLoadWindowPct().then((pct) => loadInitialRanking("models", pct)),
     getLadderGranularity(),

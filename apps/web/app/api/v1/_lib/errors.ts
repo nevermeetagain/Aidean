@@ -3,8 +3,16 @@
  *
  * 段位对齐 docs/architecture/API接口文档.md §4：
  *   0 成功；1xxxx 用户/认证；2xxxx 模型/天梯；3xxxx 模型站/统一API；4xxxx 财务；5xxxx 系统。
- * 新增错误码须先在该文档登记，再回到本表补充。
+ *
+ * 唯一码源已迁至 @aidean/shared（TASK-001 / ADR-P001 / REQ-NF-001）：
+ *   本文件不再定义任何码值，仅重导出 ERROR_CODES / DEFAULT_STATUS_BY_CODE（TASK-002 消除双源）。
+ *   新增错误码须先在 contracts 与 shared 登记，不得回到本表补写码值。
+ *   formatZodMessage 与 ApiError 为 web 运行时专属，保留于本文件。
  */
+import { ERROR_CODES as SHARED_ERROR_CODES } from "@aidean/shared";
+
+// 唯一源重导出：码值与 HTTP 映射均来自 @aidean/shared，本文件零码值定义。
+export { ERROR_CODES, DEFAULT_STATUS_BY_CODE } from "@aidean/shared";
 
 /** formatZodMessage 入参结构（与 zod ZodIssue 兼容的最小面，避免 web 侧直连 zod 依赖） */
 export interface ZodLikeIssue {
@@ -35,66 +43,8 @@ export function formatZodMessage(issue: ZodLikeIssue): string {
   }
 }
 
-export const ERROR_CODES = {
-  /** 用户不存在（1xxxx 用户/认证段示例） */
-  USER_NOT_FOUND: 10001,
-  /** 邮箱已被注册（注册唯一约束冲突） */
-  EMAIL_DUPLICATED: 10002,
-  /** 凭据无效（用户不存在/密码错误统一码，防枚举） */
-  INVALID_CREDENTIALS: 10003,
-  /** 未登录/会话无效或已过期（含 refresh 令牌无效） */
-  UNAUTHENTICATED: 10004,
-  /** 账号已被禁用或锁定（status != ACTIVE） */
-  ACCOUNT_DISABLED: 10005,
-  /** 请求过于频繁（限流：登录/token 端点固定窗口，M-SSO P0.5） */
-  TOO_MANY_REQUESTS: 10006,
-  /** client scope 不足（服务间端点授权范围校验，M-SSO P1.8） */
-  FORBIDDEN_CLIENT_SCOPE: 10007,
-  /** 需要管理员权限（v1.9：后台配置端点 requireAdminApi 守卫） */
-  FORBIDDEN: 10008,
-  /** 凭据已吊销/停用，再次吊销按幂等冲突拒绝（S4 credentials revoke → 409） */
-  CREDENTIAL_NOT_REVOCABLE: 10009,
-  /** 模型不存在（2xxxx 模型/天梯段） */
-  MODEL_NOT_FOUND: 20001,
-  /** 榜单类型非法（ladder type 仅允许 models|stations） */
-  RANKING_TYPE_INVALID: 20002,
-  /** 站点不可用（3xxxx 模型站/统一API段） */
-  SITE_UNAVAILABLE: 30001,
-  /** 网关无可用路由（候选链为空：无配置且无可用 free 兜底） */
-  GATEWAY_NO_ROUTE: 30002,
-  /** 网关全部候选失败（沿降级链尝试耗尽仍无成功） */
-  GATEWAY_ALL_FAILED: 30003,
-  /** 上游返回错误（上游非 2xx 或响应不可解析） */
-  UPSTREAM_ERROR: 30004,
-  /** 通用请求参数非法（badRequest 默认码；message 承载具体语义） */
-  BAD_REQUEST: 40000,
-  /** 余额不足（4xxxx 财务段；可用额 = 余额 − 预扣冻结） */
-  INSUFFICIENT_BALANCE: 40001,
-  /** 充值订单不存在或不属于当前用户 */
-  RECHARGE_ORDER_NOT_FOUND: 40002,
-  /** 订单状态不允许该操作（非 PENDING 订单重复受理按幂等成功处理除外） */
-  ORDER_STATE_INVALID: 40003,
-  /** 预扣不存在/已捕获/已作废/已过期，无法继续操作 */
-  HOLD_INVALID: 40004,
-  /** 支付渠道回调验签失败 */
-  NOTIFY_SIGNATURE_INVALID: 40005,
-  /** 内部错误（5xxxx 系统段；未知异常统一收敛于此） */
-  INTERNAL_ERROR: 50000,
-} as const;
-
-/** 业务码 → HTTP 状态默认映射（仅登记偏离「非 50000 即 400」默认值的码位） */
-export const DEFAULT_STATUS_BY_CODE: Partial<Record<number, number>> = {
-  [ERROR_CODES.INVALID_CREDENTIALS]: 401,
-  [ERROR_CODES.UNAUTHENTICATED]: 401,
-  [ERROR_CODES.ACCOUNT_DISABLED]: 403,
-  [ERROR_CODES.FORBIDDEN]: 403,
-  [ERROR_CODES.TOO_MANY_REQUESTS]: 429,
-  [ERROR_CODES.FORBIDDEN_CLIENT_SCOPE]: 403,
-  [ERROR_CODES.NOTIFY_SIGNATURE_INVALID]: 401,
-  [ERROR_CODES.CREDENTIAL_NOT_REVOCABLE]: 409,
-};
-
-export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
+/** web 侧错误码值联合（类型派生自 shared 唯一源；与 shared ErrorCodeValue 同义，保留旧名以兼容既有引用） */
+export type ErrorCode = (typeof SHARED_ERROR_CODES)[keyof typeof SHARED_ERROR_CODES];
 
 /**
  * 业务异常：在 handler/service 内抛出后由 withApi 捕获，

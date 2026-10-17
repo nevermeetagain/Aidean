@@ -7,7 +7,9 @@ import Link from "next/link";
 import { ArrowRight, BarChart3, Gauge, KeyRound, ShieldCheck } from "lucide-react";
 
 import { PagePlaceholder } from "../../../components/common/PagePlaceholder";
+import { FeatureDisabled } from "../../../components/common/FeatureDisabled";
 import { prisma } from "../../../lib/db/prisma";
+import { getFeatureFlags } from "../../../lib/features/flags/service";
 import {
   calcDiscountPrice,
   formatListedPrice,
@@ -117,6 +119,14 @@ function loadProviders() {
 }
 
 export default async function ProvidersPage() {
+  // 受控面首行守卫（TASK-018 / 需求 §3.9 / FEATURE_GATES["ladder.station"]）：
+  // 关闭时直接呈 feature-disabled 态（testid feature-disabled + 返回首页）。
+  // 注：锁定技术栈 next@15.0.0 未导出 forbidden()（page 侧设 HTTP 403 的机制缺失，见 EVD-018），
+  //     故页面态以 feature-disabled 内联呈现；对应受控 API（GET /api/v1/ladder?type=stations）
+  //     由 requireFeature 抛 50011 → HTTP 403（TASK-015）。页面级严格 403 待 Next≥15.1 治理决策。
+  const flags = await getFeatureFlags();
+  if (!flags["ladder.station"]) return <FeatureDisabled />;
+
   // 查询所有启用的模型提供商及其模型挂载。
   // 降级兜底（构建健壮性）：本页为 ISR（revalidate=300），Next 会在构建期预渲染；
   // Docker builder 阶段仅有占位 DATABASE_URL（见 Dockerfile 第 50-52 行），构建期无真实 DB。

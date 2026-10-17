@@ -1,3 +1,5 @@
+import { FEATURE_GATES, type FeatureFlagCode } from "@aidean/shared";
+
 import { productCategoryLabel } from "./product-label";
 
 export interface NavItem {
@@ -51,3 +53,41 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { key: "partners", label: "合作", href: "/partners" },
   { key: "about", label: "关于", href: "/about" },
 ];
+
+/**
+ * 汇总当前处于「关闭」态的受控页面路径集合（TASK-018 / 需求 §3.9 / FEATURE_GATES.pages）。
+ * flags 中缺省（undefined）的码视为未配置 → 不隐藏（fail-open，与 ADR-P002 可用性优先一致）。
+ */
+function collectDisabledPages(
+  flags: Readonly<Partial<Record<FeatureFlagCode, boolean>>>,
+): Set<string> {
+  const disabled = new Set<string>();
+  for (const [code, gate] of Object.entries(FEATURE_GATES)) {
+    if (flags[code as FeatureFlagCode] === false) {
+      for (const page of gate.pages) disabled.add(page);
+    }
+  }
+  return disabled;
+}
+
+/**
+ * 按功能开关过滤主导航（TASK-018）：移除 href 命中「关闭态受控页」的顶层项与二级子项；
+ * 纯下拉容器（原有子项、过滤后全空）随子项一并隐藏。filter/flatMap 不改序，保持八项权威顺序。
+ * 纯函数、零副作用——供 SiteHeader（RSC）据此过滤后既渲染桌面端、又把结果透传给 MobileNav（client），
+ * 桌面/移动共用同一过滤结果，无需在 client 端二次取数。
+ */
+export function filterNavByFeatureFlags(
+  items: readonly NavItem[],
+  flags: Readonly<Partial<Record<FeatureFlagCode, boolean>>>,
+): NavItem[] {
+  const disabled = collectDisabledPages(flags);
+  if (disabled.size === 0) return [...items];
+  return items
+    .filter((item) => !disabled.has(item.href))
+    .flatMap((item) => {
+      if (!item.children) return [item];
+      const children = item.children.filter((child) => !disabled.has(child.href));
+      if (children.length === 0) return [];
+      return [{ ...item, children }];
+    });
+}

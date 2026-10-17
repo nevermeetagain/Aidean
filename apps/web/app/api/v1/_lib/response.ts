@@ -8,7 +8,7 @@
  */
 import { NextResponse } from "next/server";
 
-import { DEFAULT_STATUS_BY_CODE } from "./errors";
+import { DEFAULT_STATUS_BY_CODE, type ErrorCode } from "./errors";
 
 /** 信封主体（与 @aidean/shared 的 envelope() 校验形一致） */
 export interface ApiEnvelope<T> {
@@ -63,8 +63,9 @@ export function errorResponse(
   requestId?: string,
   statusOverride?: number
 ): NextResponse<ApiEnvelope<never>> {
+  // 唯一源 DEFAULT_STATUS_BY_CODE 以 ErrorCodeValue 字面量联合为键，故对入参 code 做窄化断言后索引
   const status =
-    statusOverride ?? DEFAULT_STATUS_BY_CODE[code] ?? (code === 50000 ? 500 : 400);
+    statusOverride ?? DEFAULT_STATUS_BY_CODE[code as ErrorCode] ?? (code === 50000 ? 500 : 400);
   return toEnvelopeResponse<never>(
     { code, message, data: null, requestId: requestId ?? generateRequestId() },
     status

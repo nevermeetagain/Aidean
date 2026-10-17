@@ -76,6 +76,7 @@ const GROUPS: GroupSeed[] = [
       { code: "adm_packages", name: "套餐管理", href: "/admin/packages", icon: "M3 8h18v12H3zM3 8l2-4h14l2 4M12 4v16" },
       { code: "adm_redemptions", name: "兑换码", href: "/admin/redemptions", icon: "M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4V9ZM13 7v10" },
       { code: "adm_configs", name: "站点配置", href: "/admin/configs", icon: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.4-3a7.4 7.4 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L14.8 3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4L6.3 11a7.4 7.4 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6c.1-.3.1-.7.1-1Z" },
+      { code: "adm_feature_flags", name: "功能开关", href: "/admin/feature-flags", icon: "M12 2v10M18.36 6.64a9 9 0 1 1-12.73 0", perms: ["admin.configs.read"] },
       { code: "adm_oidc", name: "OIDC 客户端", href: "/admin/oidc-clients", icon: "M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5", perms: ["admin.configs.read"] },
       { code: "adm_menus", name: "菜单配置", href: "/admin/menus", icon: "M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6", perms: ["admin.menus.read"] },
       { code: "adm_roles", name: "角色权限", href: "/admin/roles", icon: "M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5", perms: ["admin.roles.read"] },

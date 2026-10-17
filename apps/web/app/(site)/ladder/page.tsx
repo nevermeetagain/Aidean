@@ -5,6 +5,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Cloud, Info, Settings2 } from "lucide-react";
 import { LadderBoard } from "../../../components/ladder/LadderBoard";
+import { FeatureDisabled } from "../../../components/common/FeatureDisabled";
+import { getFeatureFlags } from "../../../lib/features/flags/service";
 import { ladderService } from "../../../lib/features/ladder/service";
 import { getLadderGranularity, getLadderHotVendorCount, getLadderLoadWindowPct, getLadderTierThresholds } from "../../../lib/features/ladder/config";
 import type { TierThresholds } from "../../../lib/features/ladder/config";
@@ -47,6 +49,11 @@ function NoteCard({ title, icon: Icon, children }: {
 }
 
 export default async function LadderPage() {
+  // 受控面首行守卫（TASK-018 / FEATURE_GATES["ladder.model"]）：关闭时呈 feature-disabled 态。
+  // 页面级严格 403 受 next@15.0.0 无 forbidden() 限制（见 EVD-018）。
+  const flags = await getFeatureFlags();
+  if (!flags["ladder.model"]) return <FeatureDisabled />;
+
   const [rankingData, granularity, tierThresholds, hotVendorCount] = await Promise.all([
     getLadderLoadWindowPct().then((pct) => loadStationsRanking(pct)),
     getLadderGranularity(),

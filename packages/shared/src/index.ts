@@ -11,6 +11,8 @@ export * from "./schemas/admin.schema";
 export * from "./schemas/menu.schema";
 export * from "./schemas/rbac.schema";
 export * from "./schemas/common.schema";
+export * from "./schemas/system.schema";
+export * from "./schemas/feature-flags.schema";
 export * from "./schemas/site-content.schema";
 export * from "./schemas/news.schema";
 export * from "./schemas/roadmap.schema";
@@ -31,6 +33,9 @@ export * from "./utils/money";
 export * from "./utils/billing";
 export * from "./utils/pricing-config";
 export * from "./utils/provider-pricing";
+
+// 全项目唯一错误码源（ADR-P001 / TASK-001）；apps/web 侧仅允许重导出（TASK-002）。
+export * from "./errors";
 
 export * from "./permissions";
 

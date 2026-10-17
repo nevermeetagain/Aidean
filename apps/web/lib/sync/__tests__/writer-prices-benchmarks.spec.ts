@@ -35,6 +35,9 @@ const prismaState = vi.hoisted(() => ({
     findFirst: vi.fn(), // D4: 查重依赖
     create: vi.fn(),
   },
+  // TASK-012：persistPrices 现包在 $transaction 内。回调式事务将 tx 传回同一 mock，
+  // 使 tx.modelPrice.* 仍命中 prismaState.modelPrice.*，既有断言无需改动。
+  $transaction: vi.fn(),
 }));
 
 // Mock dedup to always return false (never skip) — but still needs modelChangeLog.findFirst
@@ -83,6 +86,8 @@ const DATA_WITH_BENCHMARKS: NormalizedModelData = {
 describe("upsertModel prices/benchmarks 持久化（L3-2）", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // TASK-012: 回调式 $transaction —— 将 prismaState 作为 tx 回传，令 tx.modelPrice.* == prismaState.modelPrice.*
+    prismaState.$transaction.mockImplementation(async (cb: (tx: typeof prismaState) => Promise<unknown>) => cb(prismaState));
     // Default: modelChangeLog.findFirst returns null (no prior sync log → shouldSkip=false)
     prismaState.modelChangeLog.findFirst.mockResolvedValue(null);
     // D1: resolveVendor 默认返回已有 vendor
