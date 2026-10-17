@@ -1,0 +1,20 @@
+[铁律1] docs rule PASS：apps/ 下无实体 .md（README.md 豁免）。
+[铁律-数字] 数字真源断言 PASS（锚=文档，代码=实测）：schema model=68, enum=37, admin API 域=36, admin 页面=32, Next.js=15.0.x
+rule_exit=0
+✅ schema-models: schema.prisma model 数 = 68（S3 RBAC 新增 Role/Permission/RolePermission/UserRoleAssignment，64→68） → expected=68, actual=68
+✅ seed-models: seed.ts 模型条数（modelsData 静态条目 + DEMO_MODEL_COUNT 生成器）≥ 50（下限式，R-83 T1：模型数不限由后台配置） → expected=>=50, actual=1000
+✅ seed-no-official: seed.ts 中无 OFFICIAL/官方测试（provenance 修复后） → expected=0, actual=0
+✅ lib-features-count: lib/features 子目录数 = 18（S7.4 新增 announcements 前台公告读服务目录，17→18） → expected=18, actual=18
+✅ aidean-ui-refs: @aidean/ui 在 apps/web/components 的 import 数 = 61（S5 新增 HoldsPanel/WalletsTabs 各引 @aidean/ui，59→61） → expected=62, actual=62
+✅ route-count: apps/web route.ts 文件数（含 app/ 全域）= 148（S5 新增 admin/holds 在途冻结款只读分页端点） → expected=148, actual=148
+✅ page-count: apps/web page.tsx 文件数 = 56（S2r 新增 /admin/reports 独立报表页） → expected=56, actual=56
+✅ next-version: Next.js 版本 = 15.x → expected=15.x, actual=15.x
+✅ spec-count: spec 文件总数 = 151 (38 e2e + 113 unit)（S8 新增 home/site-sections.spec 跑马灯+关于正文读取兑底） → expected=151, actual=151
+✅ queryraw-biz: apps/web 业务代码 $queryRaw/$executeRaw = 0 → expected=0, actual=0
+✅ batch-count: admin batch 路由数 = 15 → expected=15, actual=15
+✅ db-doc-product-fields: 《数据库文档》products 行已登记 display_name 与 ProductCategory（DB 模型变更文档同步） → expected=2/2, actual=2/2
+✅ category-label-single-source: apps/web 中硬编码「label: "特供"」式分类映射 = 0（文案唯一来源 lib/product-label.ts） → expected=0, actual=0
+✅ usage-stats-anchor-pair: 《API架构设计方案》含 usage-stats-architecture 锚 且《API接口文档》含其回链（铁律 2 双向互引） → expected=2/2, actual=2/2
+
+All 14 assertions passed.
+facts_exit=0

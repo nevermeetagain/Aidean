@@ -1,0 +1,8 @@
+ ✓ src/__tests__/envelope.spec.ts (2 tests) 7ms
+ ✓ src/__tests__/ladder.spec.ts (2 tests) 3ms
+
+ Test Files  12 passed (12)
+      Tests  118 passed (118)
+   Start at  02:52:48
+   Duration  7.87s (transform 803ms, setup 0ms, collect 1.41s, tests 115ms, environment 2ms, prepare 3.41s)
+

@@ -1,0 +1,30 @@
+ffa158c CodingHeader 2026-10-16 21:40:15 +0800 docs(mirror): V0.6.0 快照 + 19_ v1.3 三端同步实态回填
+cd5b1a9 Hark 2026-10-14 07:43:07 +0000 docs: 任务规划V0.4.0 — 未实现需求核查/模型源监控体系纳入统一规划
+bfb3aef CodingHeader 2026-10-14 14:54:37 +0800 docs(plan): V0.3.0 re-verify unimplemented requirements vs current code; carry forward V0.2.0 artifacts (no code delta)
+e8deead Hark 2026-10-14 04:57:14 +0000 docs: 任务规划V0.2.0 — 未实现需求核查/统一规划体系
+59e83dd nevermeetagain 2026-10-13 07:10:20 +0000 docs: 任务规划V0.1.0 — 事实基线/契约冻结/切片/任务卡
+77c7952 CodingHeader 2026-10-13 14:16:35 +0800 chore: mirror snapshot (excluded .example/history/AideanSynapse reference archive)
+
+ffa158cf1fd8a9a059971dbfe969ce925b655bef	HEAD
+ffa158cf1fd8a9a059971dbfe969ce925b655bef	refs/heads/main
+
+remote: Repository not found.
+fatal: repository 'https://github.com/aideanew/Aidean.git/' not found
+
+20261012075217_navigation_menu_scope
+20261012082315_rbac_role_permission_user_role
+migration_lock.toml
+480:  @@unique([modelId, isCurrent]) // D3 修复：防止并发 sync 产生多条 isCurrent=true
+check-docs-facts.mjs
+check-docs-rule.mjs
+check-gates.ps1
+crawl
+db
+deploy
+ops
+ranking
+test
+health
+navigation
+0
+852

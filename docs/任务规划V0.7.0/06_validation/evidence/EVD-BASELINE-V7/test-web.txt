@@ -1,0 +1,16 @@
+ ✓ lib/features/admin/script-validation.spec.ts (7 tests) 25ms
+ ✓ lib/security/__tests__/url-policy-outbound.spec.ts (5 tests) 4ms
+ ✓ lib/intelligence/__tests__/intelligence.spec.ts (4 tests) 4ms
+ ✓ lib/sync/sources/registry.spec.ts (5 tests) 5ms
+ ✓ lib/features/auth/__tests__/sync-dedup.spec.ts (5 tests) 3ms
+ ✓ lib/features/ranking/__tests__/recap.spec.ts (7 tests) 5ms
+ ✓ lib/features/auth/__tests__/admin-errors.spec.ts (4 tests) 3ms
+ ✓ lib/features/auth/__tests__/login-rate-limit-bypass.spec.ts (4 tests) 3ms
+ ✓ lib/admin/load-guard.spec.ts (4 tests) 4ms
+
+ Test Files  112 passed (112)
+      Tests  1081 passed (1081)
+   Start at  02:50:57
+   Duration  92.36s (transform 3.85s, setup 0ms, collect 41.24s, tests 10.75s, environment 18ms, prepare 19.69s)
+
+web_test_exit=0
