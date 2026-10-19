@@ -1,0 +1,38 @@
+===== CARD verify 1: targeted vitest spec (>=8) =====
+ RUN  v2.1.9 E:/Code/Aidean/apps/web
+ ✓ lib/features/auth/__tests__/admin-promotions.spec.ts (16 tests) 13ms
+ Test Files  1 passed (1)
+      Tests  16 passed (16)
+   Duration  711ms
+SPEC_EXIT=0
+
+===== CARD verify 2: web tsc --noEmit =====
+WEB_TSC=0
+
+===== REGRESSION: web test (full) =====
+ Test Files  127 passed | 2 skipped (129)
+      Tests  1232 passed | 5 skipped (1237)
+   Duration  6.12s
+WEB_TEST=0
+（基线 1216 + 本卡新增 16 = 1232；含 2 个 skipped 文件 / 5 个 skipped 用例为既有 DB 集成门 RUN_DB_TESTS 未开）
+
+===== REGRESSION: shared tsc =====
+SHARED_TSC=0
+===== REGRESSION: shared test =====
+      Tests  210 passed (210)
+SHARED_TEST=0
+
+===== git status --short =====
+?? apps/web/app/api/v1/admin/prices/promotions/
+?? apps/web/lib/features/auth/__tests__/admin-promotions.spec.ts
+===== diff --name-only (tracked) =====
+（空——无跟踪文件改动）
+DONE
+
+复现命令：
+  export DATABASE_URL='postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder?schema=public'
+  pnpm --filter web exec vitest run lib/features/auth/__tests__/admin-promotions.spec.ts
+  pnpm --filter web exec tsc --noEmit
+  pnpm --filter web test
+  pnpm --filter @aidean/shared exec tsc --noEmit
+  pnpm --filter @aidean/shared test
