@@ -1,0 +1,37 @@
+===== CARD verify 1: targeted vitest spec =====
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mE:/Code/Aidean/apps/web[39m
+
+ [32m✓[39m lib/sync/writers/catalog-snapshot.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 18:01:22
+[2m   Duration [22m 719ms[2m (transform 40ms, setup 0ms, collect 43ms, tests 5ms, environment 0ms, prepare 93ms)[22m
+
+SPEC_EXIT=0
+===== CARD verify 2: web tsc --noEmit =====
+WEB_TSC=0
+===== REGRESSION: web test (full) =====
+
+[2m Test Files [22m [1m[32m126 passed[39m[22m[2m | [22m[33m2 skipped[39m[90m (128)[39m
+[2m      Tests [22m [1m[32m1216 passed[39m[22m[2m | [22m[33m5 skipped[39m[90m (1221)[39m
+[2m   Start at [22m 18:01:26
+[2m   Duration [22m 7.62s[2m (transform 21.66s, setup 0ms, collect 81.83s, tests 18.04s, environment 28ms, prepare 36.16s)[22m
+
+WEB_TEST=0
+===== REGRESSION: shared tsc =====
+SHARED_TSC=0
+===== REGRESSION: shared test =====
+[2m      Tests [22m [1m[32m210 passed[39m[22m[90m (210)[39m
+[2m   Start at [22m 18:01:37
+[2m   Duration [22m 1.58s[2m (transform 1.71s, setup 0ms, collect 6.83s, tests 192ms, environment 4ms, prepare 10.02s)[22m
+
+SHARED_TEST=0
+===== git status --short (expect 2 new files + optional EOL phantoms) =====
+?? apps/web/lib/sync/writers/catalog-snapshot.spec.ts
+?? apps/web/lib/sync/writers/catalog-snapshot.ts
+?? docs/任务规划V0.9.0/06_validation/evidence/EVD-059/
+===== diff --name-only (tracked changes only) =====
+DONE
