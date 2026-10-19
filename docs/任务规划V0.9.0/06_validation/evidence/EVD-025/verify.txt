@@ -1,0 +1,51 @@
+# EVD-025 验证输出（TASK-025 · S3 收藏数据模型/架构边界文档同步）
+
+命令：`node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs`（卡面验证命令）
++ gen-contract 幂等 + §7.11 锚对 + 回归四连。日期 2026-10-19。
+
+## 1. check-docs-rule.mjs —— RULE_EXIT=0
+- [铁律1] PASS：apps/ 下无实体 .md（README.md 豁免）
+- [铁律-数字] PASS：schema model=72, enum=37, admin API 域=37, admin 页面=33, Next.js=15.0.x
+  → 收藏属既有 user 域、零代码改动，admin 域/页 37/33 口径锚不变。
+
+## 2. check-docs-facts.mjs —— FACTS_EXIT=0（All 14 assertions passed）
+- lib-features-count=22/22；aidean-ui-refs=65/65；route-count=154/154；page-count=57/57；spec-count=170/170；batch-count=15/15
+- db-doc-product-fields=2/2（未动 products 行）；category-label-single-source=0/0；usage-stats-anchor-pair=2/2（不受本卡影响）
+- queryraw-biz=0；next-version=15.x；seed-models>=50(实际1000)；seed-no-official=0
+  → 纯文档零代码，无计数漂移，脚本期望值不改。
+
+## 3. 契约漂移门幂等 —— GEN_EXIT=0
+- gen-contract-tests.mjs：生成 3 spec（码表 27 码 / HTTP 映射 12 条 / §4 登记 27 行 / 域 30 / AUTHZ deny 4）
+- `git diff --stat -- packages/shared/src/__tests__/contract/`：仅 3 行 LF→CRLF warning，**无任何文件内容行** = errors.generated.spec.ts 字节不变
+  → 本卡未改 §4（20003 已在 §4 全 27 码表），不触发 CI「重跑 gen + git diff --exit-code」漂移门，零触碰 packages。
+
+## 4. §7.11 / favorites 铁律 2 双向锚对
+- arch §7.11 `id="favorites-architecture"` = 1
+- API接口文档 refs favorites-architecture = 2（§5.4.2 真链 + 版本头）
+- 数据库文档 refs favorites-architecture = 2（§九 favorites 行 + 版本头）
+- 功能设计文档 refs favorites-architecture = 1（§3.3b）
+- 数据库文档 §九 favorites「✅ 已激活」行 = 1
+- 功能设计文档 `### 3.3b 收藏` = 1
+
+## 5. git diff --name-only（EVD 提交前，恰 5 文档）
+```
+docs/architecture/API接口文档.md
+docs/architecture/API架构设计方案.md
+docs/architecture/数据库文档.md
+docs/product/design/功能设计文档.md
+docs/文档索引.md
+```
+（envelope/identity 生成物为 EOL 幻影，git diff --name-only 不列 = 内容零差）
+
+## 6. 回归四连 —— 全绿
+- SHARED_TSC=0
+- SHARED_TEST=0：Test Files 21 passed / Tests 210 passed（含 favorites.spec 8 / feature-flags.spec 8）
+- WEB_TSC=0
+- WEB_TEST=0（占位 DATABASE_URL）：Test Files 125 passed | 2 skipped（127）/ Tests 1210 passed | 5 skipped（1215）
+
+## 7. 版本头升迁（本卡）
+- API接口文档 v1.53 → v1.54
+- API架构设计方案 v1.15 → v1.16
+- 功能设计文档 v0.8.8 → v0.8.9
+- 数据库文档 v2.12 → v2.13
+- 文档索引：同步以上 4 行 + 校正数据库文档索引滞后 v2.11 → v2.13
