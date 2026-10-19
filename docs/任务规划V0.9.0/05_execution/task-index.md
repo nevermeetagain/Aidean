@@ -58,7 +58,7 @@
 | [TASK-059](tasks/TASK-059.md) | S10 | 仓储：目录快照与观测写入器（幂等、原始响应哈希、首次/末次出现） | 外部Agent | Agent-Data | sonnect | 中/5h | — | L0 | — | 未开工 |
 | [TASK-061](tasks/TASK-061.md) | S10 | 变更检测：快照 diff → catalog_change_events（新上架/下架/价格变动/新模型首次出现）+ 证据链 | 外部Agent | Agent-API | sonnect | 中/6h | 059 | L1 | — | 未开工 |
 | [TASK-062](tasks/TASK-062.md) | S10 | 调度脚本 monitor_catalogs.ts（按源 cron 运行 collector→writer→diff，单源失败不影响他源） | 外部Agent | Agent-Guard | sonnect | 小/3h | 061 | L2 | — | 未开工 |
-| [TASK-063](tasks/TASK-063.md) | S10 | 管理端 API：/api/v1/admin/monitoring/{sources, sources/:key, sources/:key/run, changes} | 外部Agent | Agent-API | sonnect | 中/6h | 061 | L2 | — | 未开工 |
+| [TASK-063](tasks/TASK-063.md) | S10 | 管理端 API：/api/v1/admin/monitoring/{sources, sources/:key, sources/:key/run, changes} | 外部Agent | Agent-API | sonnect | 中/6h | 061, 090 | L2 | — | 未开工 |
 | [TASK-064](tasks/TASK-064.md) | S10 | 后台 UI：「模型源监控」页（源分级卡片 + 健康/最后运行 + 变更流 + 手动运行，五态齐全） | Hark(主Agent) | Agent-App | opus | 大/10h | 063 | L3 | — | 未开工（Hark 核心） |
 | [TASK-094](tasks/TASK-094.md) | S10 | 后台导航登记「模型源监控」：admin-nav 新增 /admin/monitoring 叶（权限 admin.sync.read） | 外部Agent | Agent-Data | haiku | 小/1h | 064 | L4 | — | 未开工 |
 | [TASK-065](tasks/TASK-065.md) | S10 | E2E：后台监控页五态 + 手动运行后变更流出现新事件（fixture 源） | 外部Agent | Agent-Guard | sonnect | 中/4h | 062, 064, 037, 006 | L8 | — | 未开工 |

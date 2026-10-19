@@ -4,7 +4,7 @@
 
 > 执行者：**外部Agent** ｜ 所有权 Agent：**Agent-Docs** ｜ 建议档位：**haiku**
 
-> V0.9.0 状态：**未开工**｜V0.9.0：B-0' 已裁决 A'（镜像 main 为开发线），无需再等 TASK-085 才开工
+> V0.9.0 状态：**未开工**｜V0.9.0：B-0' 已裁决 A'（镜像 main 为开发线）；本卡仍依赖 TASK-085 的工件回补部分
 
 > 历史（V0.4.0→V0.5.0）：V0.7.0 新增
 
@@ -70,7 +70,7 @@ node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs && grep -q
 ## 依赖与阻塞
 - Depends on：TASK-085
 - 资源锁串行（同文件，须在其后执行）：无
-- Blocks：TASK-088
+- Blocks：TASK-063, TASK-088
 - 阻塞条件：huaweicloud docs/ 不可读 → 改为按 009/013/020/025 原卡在镜像直接执行
 
 ## 建议执行档位

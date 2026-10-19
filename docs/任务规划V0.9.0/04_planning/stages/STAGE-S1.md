@@ -16,7 +16,7 @@
 
 ## 切片验收（独立验证者只看 diff + 运行结果，输出 PASS / FAIL / UNKNOWN）
 
-- [ ] TASK-091：`test -n "$PG16_URL" || { echo PG16_URL_missing; exit 2; }; RUN_DB_TESTS=1 DATABASE_URL="$PG16_URL" pnpm --filter web exec vitest run lib/sync/writers/__tests__/persist-prices.int.spec.ts 2>&1 | tee /tmp/evd091.txt; ! grep -qi 'skipped' /tmp/evd091.txt && grep -q 'passed' /tmp/evd091.txt; echo exit=$?`
+- [ ] TASK-091：`test -n "$PG16_URL" || { echo PG16_URL_missing; exit 2; }; grep -Eq '23505|P2002' docs/任务规划V0.9.0/06_validation/evidence/EVD-091/favorites.txt && grep -q 'WHERE is_current' docs/任务规划V0.9.0/06_validation/evidence/EVD-091/model_prices.txt; echo exit=$?`
 - [ ] TASK-013：`node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs`
 - [ ] `node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs` 全 PASS
 - [ ] `pnpm --filter @aidean/shared exec tsc --noEmit && pnpm --filter web exec tsc --noEmit && pnpm --filter @aidean/shared test && pnpm --filter web test` 全绿（不得低于基线 118 / 1081 例）

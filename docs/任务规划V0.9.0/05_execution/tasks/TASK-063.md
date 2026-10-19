@@ -20,7 +20,7 @@
 ## 输入
 - 文档：`docs/任务规划V0.9.0/03_solution/design/DESIGN-004-模型源监控体系.md`；`contracts/07-monitoring.contract.ts`
 - 契约：`AdminMonitoringSourceListResponse`；`AdminMonitoringSourcePatchBody`；`AdminMonitoringChangeQuery`；`MONITORING_ERROR_CODES`
-- 前置任务：TASK-061
+- 前置任务：TASK-061, TASK-090
 - 前置状态：TASK-059、TASK-061 已合并；TASK-090 已在 API接口文档 §4 登记 20004/50012（先登记后实现，E9-15）
 
 ## 输出
@@ -33,7 +33,7 @@
   - `docs/任务规划V0.9.0/06_validation/evidence/EVD-063/`（取证：命令输出/截图/日志）
 
 ## Execution Steps
-1. [ ] 鉴权：requireAdminApi('admin:sync:read') 读、'admin:sync:write' 写（复用既有权限码，见 03-identity）
+1. [ ] 鉴权：requireAdminApi("admin.sync.read") 读、"admin.sync.write" 写（复用既有权限码，E9-09）
 2. [ ] run：SETNX lock:monitor:run:<key> TTL 300s；已锁返回 TOO_MANY_REQUESTS
 3. [ ] changes：page/pageSize/sourceKey/kind/since 过滤，按 detectedAt desc
 4. [ ] 运行「验证命令」并将完整输出存入证据目录
@@ -65,7 +65,7 @@ pnpm --filter web exec vitest run lib/monitoring/__tests__/admin-routes.spec.ts 
 - `AGENTS.md`
 
 ## 依赖与阻塞
-- Depends on：TASK-061
+- Depends on：TASK-061, TASK-090
 - 资源锁串行（同文件，须在其后执行）：无
 - Blocks：TASK-064
 - 阻塞条件：需要新增权限码 → 停止，提 ADR（Identity 契约冻结）

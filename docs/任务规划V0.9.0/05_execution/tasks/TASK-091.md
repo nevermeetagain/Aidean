@@ -25,25 +25,24 @@
 
 ## 输出
 - 新增/修改的文件路径：
-  - `docs/任务规划V0.9.0/06_validation/evidence/EVD-091/`
+  - `docs/任务规划V0.9.0/06_validation/evidence/EVD-091/favorites.txt`
+  - `docs/任务规划V0.9.0/06_validation/evidence/EVD-091/model_prices.txt`
   - `docs/任务规划V0.9.0/06_validation/evidence/EVD-091/`（取证：命令输出/截图/日志）
 
 ## Execution Steps
-1. [ ] `docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=p postgres:16`；`export PG16_URL=postgresql://postgres:p@127.0.0.1:5432/postgres?schema=public`
-2. [ ] `DATABASE_URL=$PG16_URL pnpm --filter web exec prisma migrate deploy`（记录迁移条数）
-3. [ ] `RUN_DB_TESTS=1 DATABASE_URL=$PG16_URL pnpm --filter web exec vitest run lib/sync/writers/__tests__/persist-prices.int.spec.ts`，输出存 EVD-091/int.txt
-4. [ ] `psql $PG16_URL -c "\d model_prices"` 输出存证（应见 WHERE is_current 部分唯一索引）
-5. [ ] 运行「验证命令」并将完整输出存入证据目录
+1. [ ] `docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=p postgres:16`（或 embedded PG16）；`export PG16_URL=...`；`DATABASE_URL=$PG16_URL pnpm --filter web exec prisma migrate deploy`
+2. [ ] 收藏唯一约束真库断言：同一 (userId, refType, refId) 第二次 insert 得 23505/P2002；POST /api/v1/user/favorites 幂等返回既有记录（可用 vitest int spec，RUN_DB_TESTS=1 门控，输出存 EVD-091/favorites.txt）
+3. [ ] `psql $PG16_URL -c "\d model_prices"` 输出存 EVD-091/model_prices.txt（应见 WHERE is_current 部分唯一索引）
+4. [ ] 运行「验证命令」并将完整输出存入证据目录
 
 ## 验收标准
-- [ ] migrate deploy exit 0
-- [ ] int spec exit 0 且输出中无 skipped（防门控跳过造成假通过）
+- [ ] 收藏重复插入被唯一约束拒绝（输出含 23505 或 P2002）且无 skipped
 - [ ] \d 输出含 `WHERE is_current`
 - [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
 
 ## 验证命令
 ```bash
-test -n "$PG16_URL" || { echo PG16_URL_missing; exit 2; }; RUN_DB_TESTS=1 DATABASE_URL="$PG16_URL" pnpm --filter web exec vitest run lib/sync/writers/__tests__/persist-prices.int.spec.ts 2>&1 | tee /tmp/evd091.txt; ! grep -qi 'skipped' /tmp/evd091.txt && grep -q 'passed' /tmp/evd091.txt; echo exit=$?
+test -n "$PG16_URL" || { echo PG16_URL_missing; exit 2; }; grep -Eq '23505|P2002' docs/任务规划V0.9.0/06_validation/evidence/EVD-091/favorites.txt && grep -q 'WHERE is_current' docs/任务规划V0.9.0/06_validation/evidence/EVD-091/model_prices.txt; echo exit=$?
 ```
 
 ## 证据路径

@@ -23,7 +23,7 @@
 
 - [ ] TASK-085：`git merge-base --is-ancestor c2da219 origin/main; echo ff=$?; test -f scripts/contract/gen-contract-tests.mjs && node scripts/contract/gen-contract-tests.mjs && git diff --exit-code packages/shared/src/__tests__/contract/; echo gen=$?; test -d scripts/guard; echo guard=$?`
 - [ ] TASK-008：`grep -n "auth/aidean/callback" apps/web/prisma/seed.ts && node scripts/guard/port-consistency.mjs`
-- [ ] TASK-086：`test $(grep -cE '^\| TASK-(0[0-2][0-9]|050|07[6-9]) ' docs/任务规划V0.9.0/06_validation/evidence/EVD-086/verdicts.md) -eq 30; echo rows_ok=$?`
+- [ ] TASK-086：`test $(grep -cE '^\| TASK-(00[1-5]|01[0-24-9]|02[1-4]|07[6-9]) ' docs/任务规划V0.9.0/06_validation/evidence/EVD-086/verdicts.md) -eq 22; echo rows_ok=$?`
 - [ ] TASK-009：`node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs`
 - [ ] TASK-006：`gh run list --workflow CI --limit 1 （或在 Actions 页面查看 e2e-skeleton job 结论）`
 - [ ] TASK-007：`node scripts/guard/run-all.mjs`

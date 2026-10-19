@@ -14,7 +14,7 @@
 | L0 | [TASK-059](../../05_execution/tasks/TASK-059.md) 仓储：目录快照与观测写入器（幂等、原始响应哈希、首次/末次出现） | 外部Agent | Agent-Data | — |
 | L1 | [TASK-061](../../05_execution/tasks/TASK-061.md) 变更检测：快照 diff → catalog_change_events（新上架/下架/价格变动/新模型首次出现）+ 证据链 | 外部Agent | Agent-API | TASK-059 |
 | L2 | [TASK-062](../../05_execution/tasks/TASK-062.md) 调度脚本 monitor_catalogs.ts（按源 cron 运行 collector→writer→diff，单源失败不影响他源） | 外部Agent | Agent-Guard | TASK-061 |
-| L2 | [TASK-063](../../05_execution/tasks/TASK-063.md) 管理端 API：/api/v1/admin/monitoring/{sources, sources/:key, sources/:key/run, changes} | 外部Agent | Agent-API | TASK-061 |
+| L2 | [TASK-063](../../05_execution/tasks/TASK-063.md) 管理端 API：/api/v1/admin/monitoring/{sources, sources/:key, sources/:key/run, changes} | 外部Agent | Agent-API | TASK-061, TASK-090 |
 | L3 | [TASK-064](../../05_execution/tasks/TASK-064.md) 后台 UI：「模型源监控」页（源分级卡片 + 健康/最后运行 + 变更流 + 手动运行，五态齐全） | Hark(主Agent) | Agent-App | TASK-063 |
 | L4 | [TASK-094](../../05_execution/tasks/TASK-094.md) 后台导航登记「模型源监控」：admin-nav 新增 /admin/monitoring 叶（权限 admin.sync.read） | 外部Agent | Agent-Data | TASK-064 |
 | L8 | [TASK-065](../../05_execution/tasks/TASK-065.md) E2E：后台监控页五态 + 手动运行后变更流出现新事件（fixture 源） | 外部Agent | Agent-Guard | TASK-062, TASK-064, TASK-037, TASK-006 |

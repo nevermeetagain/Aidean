@@ -15,10 +15,10 @@
 - 来源方案：ADR-P008
 
 ## 目标
-对 TASK-001…025、050、076–079 在镜像 main 上逐卡执行卡内「验证命令」，输出 PASS/FAIL/UNKNOWN 表；规划期已得单测 PASS 的卡，本卡补 e2e/真库/运行态三类证据
+对 V0.8.0 判「镜像已落地」并已移出卡集的 22 张卡（TASK-001–005、010–012、014–019、021–024、076–079；卡面原文见 docs/任务规划V0.8.0/05_execution/tasks/）在镜像 main 上逐卡执行原卡「验证命令」，输出 PASS/FAIL/UNKNOWN 表；单测已在规划/执行期复现，本卡补 e2e/真库/运行态三类证据；FAIL 卡重新立卡回到 V0.9.x
 
 ## 输入
-- 文档：`docs/任务规划V0.9.0/05_execution/task-index.md`；`docs/任务规划V0.5.0/06_validation/evidence/（他线证据，仅作对照）`
+- 文档：`docs/任务规划V0.9.0/07_原子任务卡全集.md（已移出卡清单）`；`docs/任务规划V0.8.0/05_execution/tasks/（22 张原卡面）`；`docs/任务规划V0.9.0/06_validation/evidence/EVD-058、EVD-089（Hark PG16 证据，可复用）`
 - 契约：`无（只读对照 docs/任务规划V0.5.0/contracts）`
 - 前置任务：TASK-091
 - 前置状态：TASK-089 已完成（V0.9.0）；TASK-091 已产出 PG16 证据（Hark 已在 PG16.14 实测 18 条迁移重放与 int spec，见 EVD-058/EVD-089，可复用）
@@ -33,18 +33,18 @@
 2. [ ] docker 起 postgres:16 + redis:7，`prisma migrate deploy` 空库重放
 3. [ ] `pnpm --filter web build && PORT=3000 pnpm --filter web start` 后跑 `pnpm test:e2e -g 'walking-skeleton|feature-flags|favorites|ladder-filter-all'`
 4. [ ] 逐卡只记 PASS/FAIL/UNKNOWN + 退出码 + 证据文件名
-5. [ ] 回写 task-index 状态列（交 TASK-088）
+5. [ ] FAIL 卡在 V0.9.x task-index 重新立卡（交 TASK-088 回写）
 6. [ ] 运行「验证命令」并将完整输出存入证据目录
 
 ## 验收标准
-- [ ] verdicts.md 恰 30 行且每行含退出码与证据文件
+- [ ] verdicts.md 恰 22 行且每行含退出码与证据文件
 - [ ] 无 PASS 行缺证据文件
-- [ ] FAIL 卡已转回「未开工/返工」
+- [ ] FAIL 卡已在 task-index 重新立卡
 - [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
 
 ## 验证命令
 ```bash
-test $(grep -cE '^\| TASK-(0[0-2][0-9]|050|07[6-9]) ' docs/任务规划V0.9.0/06_validation/evidence/EVD-086/verdicts.md) -eq 30; echo rows_ok=$?
+test $(grep -cE '^\| TASK-(00[1-5]|01[0-24-9]|02[1-4]|07[6-9]) ' docs/任务规划V0.9.0/06_validation/evidence/EVD-086/verdicts.md) -eq 22; echo rows_ok=$?
 ```
 
 ## 证据路径
@@ -66,7 +66,7 @@ test $(grep -cE '^\| TASK-(0[0-2][0-9]|050|07[6-9]) ' docs/任务规划V0.9.0/06
 - Depends on：TASK-091
 - 资源锁串行（同文件，须在其后执行）：无
 - Blocks：TASK-088, TASK-092
-- 阻塞条件：089、091 未完成 → 不开工（089 依赖 085，故 086 实际随 085 → 089 链启动）；执行环境缺 PG16/Docker/浏览器 → 对应卡记 UNKNOWN，不得写 PASS
+- 阻塞条件：091 未完成 → 不开工；执行环境缺 PG16/Docker/浏览器 → 对应卡记 UNKNOWN，不得写 PASS
 
 ## 建议执行档位
 opus　理由：独立验证者角色（防自证循环：执行者为他线 Agent，判定者须不同）

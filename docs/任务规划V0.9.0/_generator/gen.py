@@ -99,7 +99,7 @@ for a, b in itertools.combinations(order, 2):
     if tasks[a].get("cond") and not tasks[b].get("cond"):
         a, b = b, a
     lock_edges.append((a, b))
-all_edges = edges | set(lock_edges)
+all_edges = sorted(edges | set(lock_edges))  # V0.9.0：排序消除 set 迭代顺序随 PYTHONHASHSEED 变化导致的生成物抖动
 
 # 环检测（Kahn）
 indeg = {u: 0 for u in order}
@@ -126,7 +126,7 @@ dist = {}; prev = {}
 for u in topo:
     preds = [a for a, b in all_edges if b == u]
     if preds:
-        p = max(preds, key=lambda x: dist[x]); dist[u] = dist[p] + tasks[u]["hours"]; prev[u] = p
+        p = max(sorted(preds), key=lambda x: dist[x]); dist[u] = dist[p] + tasks[u]["hours"]; prev[u] = p
     else:
         dist[u] = tasks[u]["hours"]; prev[u] = None
 end = max(order, key=lambda x: dist[x]); cp = []
@@ -139,7 +139,7 @@ dist2 = {}; prev2 = {}
 for u in act:
     preds = [a for a, b in all_edges if b == u and a in act]
     if preds:
-        p = max(preds, key=lambda x: dist2[x]); dist2[u] = dist2[p] + tasks[u]["hours"]; prev2[u] = p
+        p = max(sorted(preds), key=lambda x: dist2[x]); dist2[u] = dist2[p] + tasks[u]["hours"]; prev2[u] = p
     else:
         dist2[u] = tasks[u]["hours"]; prev2[u] = None
 end2 = max(act, key=lambda x: dist2[x]); cp2 = []; x = end2
@@ -199,7 +199,7 @@ def w(rel, text):
     with open(path, "w", encoding="utf-8") as f: f.write(text)
 
 blocks = defaultdict(list)
-for u, v in edges: blocks[u].append(v)
+for u, v in sorted(edges): blocks[u].append(v)
 lock_in = defaultdict(list)
 for u, v in lock_edges: lock_in[v].append(u)
 

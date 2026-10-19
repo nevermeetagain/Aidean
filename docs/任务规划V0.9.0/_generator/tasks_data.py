@@ -1024,3 +1024,48 @@ _t61["accept"] = list(_t61["accept"]) + ["同一快照内多个 external_model_i
 _t61["v7"] += "；V0.9.0 STEP-4 审查：060 已交付 3 个 collector（AIHubMix 价格取 pricing_lines 默认档、计划退役不判下架，E9-16）"
 get("059")["v7"] += "；V0.9.0：058 表已在 PG16 落地（EVD-058），060 观测形状已定，可直接开工"
 get("062")["v7"] += "；V0.9.0：registry 仅含启用源的 collector（seed huggingface/llmtest enabled=false，E9-08），调度须跳过无 collector 的源并记 last_status=disabled"
+
+# ---- STEP-5 审查必改（review-step5 M3–M8）
+# M3：048 的 R9-01/R9-03 必须改 gateway/service.ts → 放开该文件的限定改动
+_t48 = get("048")
+_t48["allow"] = list(_t48["allow"]) + ["apps/web/lib/features/gateway/service.ts（仅限：resolveRouteChain 把请求时刻 now 传给 repository 的 at 参数；无价/不可归一候选 skip-candidate。计费公式与加价率/倍率乘法不得改）"]
+_t48["forbid"] = [f for f in _t48["forbid"] if f != "apps/web/lib/features/gateway/service.ts"]
+_t48["block_cond"] = "U-15 未裁决 → 不执行（条件卡）；需改 gateway/service.ts 允许范围之外的逻辑（计费公式、加价率/倍率、预扣/结算流程）→ 停止回报"
+_t48["outputs"] = list(_t48["outputs"]) + ["apps/web/lib/features/gateway/service.ts（限定改动）"]
+# M4：081 与 E9-05 对齐
+_t81 = get("081")
+_t81["steps"] = ["requestId 存幂等键（复用既有幂等机制，若无则停止提 ADR）；同 requestId 重放返回首次结果（replayed=true）",
+                 "逐行独立 upsert + writeAudit（每行各自事务；单行失败记入 failed[]，不回滚已成功行——E9-05 部分成功语义）",
+                 "响应满足 PriceBatchUpsertResponseSchema（total = created + updated + failed.length）；billingMode 缺省：新建 PER_TOKEN、更新保留原值",
+                 "单测：全成功 / 部分失败 / 重放 / 超限 501 行 / 越权 403"]
+_t81["accept"] = list(_t81["accept"]) + ["部分失败用例：成功行已落库且 failed[] 精确列出失败行 index", "重放用例：第二次调用不新增价格行且 replayed=true"]
+# M5：063 权限码与前置依赖
+_t63 = get("063")
+_t63["steps"] = [s.replace("requireAdminApi('admin:sync:read') 读、'admin:sync:write' 写（复用既有权限码，见 03-identity）", "requireAdminApi(\"admin.sync.read\") 读、\"admin.sync.write\" 写（复用既有权限码，E9-09）") for s in _t63["steps"]]
+_t63["deps"] = list(_t63["deps"]) + ["090"]
+# M6：068 落实 R9-05 / U-24
+_t68 = get("068")
+_t68["accept"] = list(_t68["accept"]) + ["U-24=A 时：mapped_entity_id 只存实体 id（非 code），写入非 uuid 值被拒的单测通过", "联表一律 `mapped_entity_id::text = <实体>.id`（原生 SQL 断言或 Prisma 查询单测）"]
+_t68["block_cond"] = "U-M5 或 U-24 未裁决 → 不执行（条件卡）"
+# M7：086 范围随卡集收窄；091 步骤补收藏
+_t86 = get("086")
+_t86["goal"] = ("对 V0.8.0 判「镜像已落地」并已移出卡集的 22 张卡（TASK-001–005、010–012、014–019、021–024、076–079；卡面原文见 docs/任务规划V0.8.0/05_execution/tasks/）"
+                "在镜像 main 上逐卡执行原卡「验证命令」，输出 PASS/FAIL/UNKNOWN 表；单测已在规划/执行期复现，本卡补 e2e/真库/运行态三类证据；FAIL 卡重新立卡回到 V0.9.x")
+_t86["docs"] = ["docs/任务规划V0.9.0/07_原子任务卡全集.md（已移出卡清单）", "docs/任务规划V0.8.0/05_execution/tasks/（22 张原卡面）", "docs/任务规划V0.9.0/06_validation/evidence/EVD-058、EVD-089（Hark PG16 证据，可复用）"]
+_t86["accept"] = ["verdicts.md 恰 22 行且每行含退出码与证据文件", "无 PASS 行缺证据文件", "FAIL 卡已在 task-index 重新立卡"]
+_t86["verify"] = "test $(grep -cE '^\\| TASK-(00[1-5]|01[0-24-9]|02[1-4]|07[6-9]) ' docs/任务规划V0.9.0/06_validation/evidence/EVD-086/verdicts.md) -eq 22; echo rows_ok=$?"
+_t86["block_cond"] = "091 未完成 → 不开工；执行环境缺 PG16/Docker/浏览器 → 对应卡记 UNKNOWN，不得写 PASS"
+_t86["steps"] = [s.replace("回写 task-index 状态列（交 TASK-088）", "FAIL 卡在 V0.9.x task-index 重新立卡（交 TASK-088 回写）") for s in _t86["steps"]]
+_t91 = get("091")
+_t91["steps"] = ["`docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=p postgres:16`（或 embedded PG16）；`export PG16_URL=...`；`DATABASE_URL=$PG16_URL pnpm --filter web exec prisma migrate deploy`",
+                 "收藏唯一约束真库断言：同一 (userId, refType, refId) 第二次 insert 得 23505/P2002；POST /api/v1/user/favorites 幂等返回既有记录（可用 vitest int spec，RUN_DB_TESTS=1 门控，输出存 EVD-091/favorites.txt）",
+                 "`psql $PG16_URL -c \"\\d model_prices\"` 输出存 EVD-091/model_prices.txt（应见 WHERE is_current 部分唯一索引）"]
+_t91["accept"] = ["收藏重复插入被唯一约束拒绝（输出含 23505 或 P2002）且无 skipped", "\\d 输出含 `WHERE is_current`"]
+_t91["verify"] = "test -n \"$PG16_URL\" || { echo PG16_URL_missing; exit 2; }; grep -Eq '23505|P2002' docs/任务规划V0.9.0/06_validation/evidence/EVD-091/favorites.txt && grep -q 'WHERE is_current' docs/任务规划V0.9.0/06_validation/evidence/EVD-091/model_prices.txt; echo exit=$?"
+_t91["outputs"] = ["docs/任务规划V0.9.0/06_validation/evidence/EVD-091/favorites.txt", "docs/任务规划V0.9.0/06_validation/evidence/EVD-091/model_prices.txt"]
+_t91["allow"] = []
+# M8：状态行与依赖一致
+for _t in T:
+    if "085" in _t["deps"]:
+        _t["v7"] = _t["v7"].replace("V0.9.0：B-0' 已裁决 A'（镜像 main 为开发线），无需再等 TASK-085 才开工",
+                                    "V0.9.0：B-0' 已裁决 A'（镜像 main 为开发线）；本卡仍依赖 TASK-085 的工件回补部分")

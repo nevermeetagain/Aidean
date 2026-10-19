@@ -30,15 +30,18 @@
   - `docs/任务规划V0.9.0/06_validation/evidence/EVD-081/`（取证：命令输出/截图/日志）
 
 ## Execution Steps
-1. [ ] requestId 存幂等键（复用既有幂等机制，若无则停止提 ADR）
-2. [ ] 事务内逐行 upsert + writeAudit
-3. [ ] 单测：成功/重放/超限/越权
-4. [ ] 运行「验证命令」并将完整输出存入证据目录
+1. [ ] requestId 存幂等键（复用既有幂等机制，若无则停止提 ADR）；同 requestId 重放返回首次结果（replayed=true）
+2. [ ] 逐行独立 upsert + writeAudit（每行各自事务；单行失败记入 failed[]，不回滚已成功行——E9-05 部分成功语义）
+3. [ ] 响应满足 PriceBatchUpsertResponseSchema（total = created + updated + failed.length）；billingMode 缺省：新建 PER_TOKEN、更新保留原值
+4. [ ] 单测：全成功 / 部分失败 / 重放 / 超限 501 行 / 越权 403
+5. [ ] 运行「验证命令」并将完整输出存入证据目录
 
 ## 验收标准
 - [ ] vitest 全绿
 - [ ] tsc exit 0
 - [ ] 非 admin 调用返回 403
+- [ ] 部分失败用例：成功行已落库且 failed[] 精确列出失败行 index
+- [ ] 重放用例：第二次调用不新增价格行且 replayed=true
 - [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
 
 ## 验证命令

@@ -27,6 +27,7 @@ resolveEffectivePrice 返回的 priceInput/priceOutput 一律为 CNY/百万 Toke
 - 新增/修改的文件路径：
   - `apps/web/lib/features/pricing/effective-price.ts`
   - `apps/web/lib/features/pricing/__tests__/effective-price-normalization.spec.ts`
+  - `apps/web/lib/features/gateway/service.ts（限定改动）`
   - `docs/任务规划V0.9.0/06_validation/evidence/EVD-048/`（取证：命令输出/截图/日志）
 
 ## Execution Steps
@@ -55,13 +56,13 @@ pnpm --filter web exec vitest run lib/features/pricing lib/features/gateway && p
 
 ## 允许修改
 - `apps/web/lib/features/pricing/**`
+- `apps/web/lib/features/gateway/service.ts（仅限：resolveRouteChain 把请求时刻 now 传给 repository 的 at 参数；无价/不可归一候选 skip-candidate。计费公式与加价率/倍率乘法不得改）`
 - `docs/任务规划V0.9.0/06_validation/evidence/EVD-048/**`
 
 ## 禁止修改
 - `packages/shared/**`
 - `apps/web/lib/features/billing/**`
 - `apps/web/prisma/**`
-- `apps/web/lib/features/gateway/service.ts`
 - `.example/history/**（铁律4 历史只读）`
 - `docs/任务规划V0.5.0/contracts/**（冻结契约；变更须先提 ADR 并经 opus/fable 券审批）`
 - `docs/任务规划V0.1.0/** … docs/任务规划V0.4.0/** · docs/任务规划V0.6.0/** · docs/任务规划V0.7.0/** · docs/任务规划V0.8.0/**（历代规划只读；V0.5.0 仅 TASK-087 可改文件名）`
@@ -71,7 +72,7 @@ pnpm --filter web exec vitest run lib/features/pricing lib/features/gateway && p
 - Depends on：TASK-047
 - 资源锁串行（同文件，须在其后执行）：无
 - Blocks：TASK-053, TASK-080
-- 阻塞条件：U-15 未裁决 → 不执行（条件卡）；需改 gateway/service.ts → 停止回报
+- 阻塞条件：U-15 未裁决 → 不执行（条件卡）；需改 gateway/service.ts 允许范围之外的逻辑（计费公式、加价率/倍率、预扣/结算流程）→ 停止回报
 
 ## 建议执行档位
 opus　理由：资金路径：改变实际扣费金额

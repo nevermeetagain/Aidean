@@ -39,6 +39,8 @@
 - [ ] vitest 全绿（≥5 用例）
 - [ ] tsc exit 0
 - [ ] 人工字段保持断言通过
+- [ ] U-24=A 时：mapped_entity_id 只存实体 id（非 code），写入非 uuid 值被拒的单测通过
+- [ ] 联表一律 `mapped_entity_id::text = <实体>.id`（原生 SQL 断言或 Prisma 查询单测）
 - [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
 
 ## 验证命令
@@ -65,7 +67,7 @@ pnpm --filter web exec vitest run lib/sync/writers/offering-sync.spec.ts && pnpm
 - Depends on：TASK-059
 - 资源锁串行（同文件，须在其后执行）：无
 - Blocks：无
-- 阻塞条件：U-M5 未裁决 → 不执行（条件卡）
+- 阻塞条件：U-M5 或 U-24 未裁决 → 不执行（条件卡）
 
 ## 建议执行档位
 opus　理由：实体映射（ModelProvider vs APIStation）与模型身份对齐，错误会污染人工数据

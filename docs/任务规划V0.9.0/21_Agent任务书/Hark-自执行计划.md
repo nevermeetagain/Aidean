@@ -31,14 +31,14 @@
 | 5 | TASK-047 | S4 | 计价口径归一契约：币种 CNY + 每百万 Token + 汇率配置键（EffectivePri | opus | 4h | — | U-15 |
 | 6 | TASK-048 | S4 | 生效价解析器接入币种/单位归一（网关扣费与读侧同口径） | opus | 8h | 047 | U-15 |
 | 7 | TASK-051 | S7 | 统一需求追溯矩阵入库 + 台账内部状态矛盾消解（#17/#36） | opus | 3h | ★041(P2) | — |
-| 8 | TASK-064 | S10 | 后台 UI：「模型源监控」页（源分级卡片 + 健康/最后运行 + 变更流 + 手动运行，五态齐全 | opus | 10h | ★063(P1) | — |
-| 9 | TASK-066 | S11 | 扩展既有 GET /api/v1/models/[id]/stations：追加各监控源上架状态 | opus | 4h | ★059(P2) | — |
-| 10 | TASK-067 | S11 | 前台 UI：模型详情页「在哪里可调用」区块（多源上架/价格对比/中转风险提示/来源署名） | opus | 8h | 066 | — |
-| 11 | TASK-068 | S11 | 上架同步：观测 → ProviderModelOffering（源↔平台实体映射，listedA | opus | 8h | ★059(P2) | U-M5 |
-| 12 | TASK-071 | S12 | 可用性与中转真实性探针：最小请求探测 → ReliabilityObservation + 身份 | opus | 10h | ★070(P1) | U-M3 |
-| 13 | TASK-074 | S11 | UI：模型详情页基准测试弹窗 + 历史测评示例（多模型回答并排）替换「即将上线」占位 | opus | 10h | 067 | — |
-| 14 | TASK-080 | S4 | 缓存命中 token 计价（priceCache / discountCache）接入网关扣费 | opus | 6h | 048 | U-15 |
-| 15 | TASK-043 | S8 | 生产部署实弹（条件方案 A：自有服务器 docker compose prod） | opus | 16h | ★042(P3)、★007(P3) | U-3 |
+| 8 | TASK-066 | S11 | 扩展既有 GET /api/v1/models/[id]/stations：追加各监控源上架状态 | opus | 4h | ★059(P2) | — |
+| 9 | TASK-067 | S11 | 前台 UI：模型详情页「在哪里可调用」区块（多源上架/价格对比/中转风险提示/来源署名） | opus | 8h | 066 | — |
+| 10 | TASK-068 | S11 | 上架同步：观测 → ProviderModelOffering（源↔平台实体映射，listedA | opus | 8h | ★059(P2) | U-M5 |
+| 11 | TASK-071 | S12 | 可用性与中转真实性探针：最小请求探测 → ReliabilityObservation + 身份 | opus | 10h | ★070(P1) | U-M3 |
+| 12 | TASK-074 | S11 | UI：模型详情页基准测试弹窗 + 历史测评示例（多模型回答并排）替换「即将上线」占位 | opus | 10h | 067 | — |
+| 13 | TASK-080 | S4 | 缓存命中 token 计价（priceCache / discountCache）接入网关扣费 | opus | 6h | 048 | U-15 |
+| 14 | TASK-043 | S8 | 生产部署实弹（条件方案 A：自有服务器 docker compose prod） | opus | 16h | ★042(P3)、★007(P3) | U-3 |
+| 15 | TASK-064 | S10 | 后台 UI：「模型源监控」页（源分级卡片 + 健康/最后运行 + 变更流 + 手动运行，五态齐全 | opus | 10h | ★063(P1) | — |
 | 16 | TASK-086 | S0 | 他线 S0–S3 落地独立复核：30 张卡逐卡跑验证命令并裁决 PASS/FAIL/UNKNOW | opus | 6h | ★091(P3) | — |
 | 17 | TASK-092 | S3 | UI 运行态验收：S2 功能开关页/入口隐藏/403 态 + S3 收藏按钮/控制台 Tab/筛 | opus | 4h | 086 | — |
 | 18 | TASK-029 | S4 | UI：后台优惠子表与创建对话框 + 前台优惠价徽标 | opus | 10h | ★028(P1)、★093(P1) | — |
@@ -503,6 +503,7 @@ resolveEffectivePrice 返回的 priceInput/priceOutput 一律为 CNY/百万 Toke
 - 新增/修改的文件路径：
   - `apps/web/lib/features/pricing/effective-price.ts`
   - `apps/web/lib/features/pricing/__tests__/effective-price-normalization.spec.ts`
+  - `apps/web/lib/features/gateway/service.ts（限定改动）`
   - `docs/任务规划V0.9.0/06_validation/evidence/EVD-048/`（取证：命令输出/截图/日志）
 
 ## Execution Steps
@@ -531,13 +532,13 @@ pnpm --filter web exec vitest run lib/features/pricing lib/features/gateway && p
 
 ## 允许修改
 - `apps/web/lib/features/pricing/**`
+- `apps/web/lib/features/gateway/service.ts（仅限：resolveRouteChain 把请求时刻 now 传给 repository 的 at 参数；无价/不可归一候选 skip-candidate。计费公式与加价率/倍率乘法不得改）`
 - `docs/任务规划V0.9.0/06_validation/evidence/EVD-048/**`
 
 ## 禁止修改
 - `packages/shared/**`
 - `apps/web/lib/features/billing/**`
 - `apps/web/prisma/**`
-- `apps/web/lib/features/gateway/service.ts`
 - `.example/history/**（铁律4 历史只读）`
 - `docs/任务规划V0.5.0/contracts/**（冻结契约；变更须先提 ADR 并经 opus/fable 券审批）`
 - `docs/任务规划V0.1.0/** … docs/任务规划V0.4.0/** · docs/任务规划V0.6.0/** · docs/任务规划V0.7.0/** · docs/任务规划V0.8.0/**（历代规划只读；V0.5.0 仅 TASK-087 可改文件名）`
@@ -547,7 +548,7 @@ pnpm --filter web exec vitest run lib/features/pricing lib/features/gateway && p
 - Depends on：TASK-047
 - 资源锁串行（同文件，须在其后执行）：无
 - Blocks：TASK-053, TASK-080
-- 阻塞条件：U-15 未裁决 → 不执行（条件卡）；需改 gateway/service.ts → 停止回报
+- 阻塞条件：U-15 未裁决 → 不执行（条件卡）；需改 gateway/service.ts 允许范围之外的逻辑（计费公式、加价率/倍率、预扣/结算流程）→ 停止回报
 
 ## 建议执行档位
 opus　理由：资金路径：改变实际扣费金额
@@ -646,92 +647,6 @@ opus　理由：需求追溯矩阵入库=需求口径裁决
 
 ## 预估规模
 中　约 3h　≥2h
-
-
----
-
-#### TASK-064：后台 UI：「模型源监控」页（源分级卡片 + 健康/最后运行 + 变更流 + 手动运行，五态齐全）
-
-> 版本: v0.9 | 更新: 2026-10-19 | 变更: 任务规划V0.9.0（V0.8.0 剩余部分；B-0' 已裁决 A'＝镜像 main 为开发线；Hark 完成 089/026/082/027/056/058/060/057 并经独立审查；已完成卡移出，仅保留未完成卡；契约唯一源仍为 docs/任务规划V0.5.0/contracts）
-
-> 执行者：**Hark(主Agent)** ｜ 所有权 Agent：**Agent-App** ｜ 建议档位：**opus**
-
-> V0.9.0 状态：**未开工（Hark 核心）**｜V0.9.0：B-0' 已裁决 A'（镜像 main 为开发线），无需再等 TASK-085 才开工；V0.9.0：058 的 nav 节点顺延（E9-10），因 admin-nav-default-tree.ts 属 Agent-Data，拆为 TASK-094 紧随本卡合入
-
-> 历史（V0.4.0→V0.5.0）：V0.5.0 修正：FIX-21 vitest include 仅 lib/**（vitest.config.ts:13），UI 验收以 e2e 为准
-
-## 归属
-- 所属切片：S10（模型源监控·步行骨架（公开源））
-- 来源需求：REQ-M-009/011/013
-- RTM 追溯（V0.9.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-M-009、REQ-M-011、REQ-M-013
-- 来源方案：DESIGN-004 / ADR-P007
-
-## 目标
-/admin/monitoring 展示源表（tier 徽章 S1/S2/A/B/C、kind、authRequired、enabled 开关、lastRunAt/lastStatus/lastCount）与变更流（4 类事件筛选、分页、证据链接），空/加载/错误/无权限/成功五态按 MONITORING_UX_STATES testid 实现
-
-## 输入
-- 文档：`docs/任务规划V0.9.0/03_solution/design/DESIGN-004-模型源监控体系.md`；`contracts/06-ux-states.contract.ts`；`contracts/07-monitoring.contract.ts`；`docs/product/design/UI设计文档.md`
-- 契约：`MONITORING_UX_STATES`；`AdminMonitoringSourceListResponse`；`AdminMonitoringChangeListResponse`
-- 前置任务：TASK-063
-- 前置状态：TASK-063 已合并
-
-## 输出
-- 新增/修改的文件路径：
-  - `apps/web/app/(admin)/admin/monitoring/page.tsx`
-  - `apps/web/components/admin/monitoring/SourceTable.tsx`
-  - `apps/web/components/admin/monitoring/ChangeFeed.tsx`
-  - `apps/web/components/admin/monitoring/TierBadge.tsx`
-  - `docs/任务规划V0.9.0/06_validation/evidence/EVD-064/`（取证：命令输出/截图/日志）
-
-## Execution Steps
-1. [ ] 沿用后台既有表格/卡片组件与 Tailwind 4 token（不引新 UI 库）
-2. [ ] 变更流事件卡：模型 ID、源、前后价格（USD/1M 原币，不做汇率换算，避免 U-15 依赖）、证据外链
-3. [ ] 手动运行按钮：202 后轮询 lastRunAt（5s×12 上限）
-4. [ ] 五态 testid：monitoring-empty/loading/error/forbidden/ready
-5. [ ] 运行「验证命令」并将完整输出存入证据目录
-
-## 验收标准
-- [ ] `pnpm --filter web exec tsc --noEmit` exit 0
-- [ ] `pnpm --filter web lint` 0 error
-- [ ] `next build` 路由表含 /admin/monitoring
-- [ ] 人工：1280/768 宽度截图存证，五态各一张（mock API）
-- [ ] UI 行为以 e2e 用例断言（`pnpm test:e2e -g` 对应用例全绿），不得以组件单测替代——vitest 不收集 components/**
-- [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
-
-## 验证命令
-```bash
-pnpm --filter web exec tsc --noEmit && pnpm --filter web lint && cd apps/web && npx next build
-```
-
-## 证据路径
-`docs/任务规划V0.9.0/06_validation/evidence/EVD-064/`
-
-## 允许修改
-- `apps/web/app/(admin)/admin/monitoring/`
-- `apps/web/components/admin/monitoring/`
-- `docs/任务规划V0.9.0/06_validation/evidence/EVD-064/**`
-
-## 禁止修改
-- `apps/web/prisma/migrations/2026*（既有迁移只读，M-002 仅 TASK-058 可新建）`
-- `.example/history/**（铁律4 历史只读）`
-- `docs/任务规划V0.5.0/contracts/**（冻结契约；变更须先提 ADR 并经 opus/fable 券审批）`
-- `docs/任务规划V0.1.0/** … docs/任务规划V0.4.0/** · docs/任务规划V0.6.0/** · docs/任务规划V0.7.0/** · docs/任务规划V0.8.0/**（历代规划只读；V0.5.0 仅 TASK-087 可改文件名）`
-- `AGENTS.md`
-
-## 依赖与阻塞
-- Depends on：TASK-063
-- 资源锁串行（同文件，须在其后执行）：无
-- Blocks：TASK-065, TASK-094
-- 阻塞条件：契约字段不足以渲染 → 停止回报（不得在前端猜字段）
-
-## 建议执行档位
-opus　理由：UI 设计与实现（用户指令：UI 由主 Agent 完成）；需新设计信息架构
-
-## 升级条件
-无；通用熔断：同一任务连续 2 次验收失败 → 停止改代码，改为重写任务书/升级档位/标记 blocked（禁止第 3 次硬撞）
-
-## 预估规模
-大　约 10h　≥2h
 
 
 ---
@@ -941,6 +856,8 @@ opus　理由：用户可见 UI 设计与实现（用户指令：UI 由主 Agent
 - [ ] vitest 全绿（≥5 用例）
 - [ ] tsc exit 0
 - [ ] 人工字段保持断言通过
+- [ ] U-24=A 时：mapped_entity_id 只存实体 id（非 code），写入非 uuid 值被拒的单测通过
+- [ ] 联表一律 `mapped_entity_id::text = <实体>.id`（原生 SQL 断言或 Prisma 查询单测）
 - [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
 
 ## 验证命令
@@ -967,7 +884,7 @@ pnpm --filter web exec vitest run lib/sync/writers/offering-sync.spec.ts && pnpm
 - Depends on：TASK-059
 - 资源锁串行（同文件，须在其后执行）：无
 - Blocks：无
-- 阻塞条件：U-M5 未裁决 → 不执行（条件卡）
+- 阻塞条件：U-M5 或 U-24 未裁决 → 不执行（条件卡）
 
 ## 建议执行档位
 opus　理由：实体映射（ModelProvider vs APIStation）与模型身份对齐，错误会污染人工数据
@@ -1312,6 +1229,92 @@ opus　理由：生产环境不可逆操作 + 密钥处理
 
 ---
 
+#### TASK-064：后台 UI：「模型源监控」页（源分级卡片 + 健康/最后运行 + 变更流 + 手动运行，五态齐全）
+
+> 版本: v0.9 | 更新: 2026-10-19 | 变更: 任务规划V0.9.0（V0.8.0 剩余部分；B-0' 已裁决 A'＝镜像 main 为开发线；Hark 完成 089/026/082/027/056/058/060/057 并经独立审查；已完成卡移出，仅保留未完成卡；契约唯一源仍为 docs/任务规划V0.5.0/contracts）
+
+> 执行者：**Hark(主Agent)** ｜ 所有权 Agent：**Agent-App** ｜ 建议档位：**opus**
+
+> V0.9.0 状态：**未开工（Hark 核心）**｜V0.9.0：B-0' 已裁决 A'（镜像 main 为开发线），无需再等 TASK-085 才开工；V0.9.0：058 的 nav 节点顺延（E9-10），因 admin-nav-default-tree.ts 属 Agent-Data，拆为 TASK-094 紧随本卡合入
+
+> 历史（V0.4.0→V0.5.0）：V0.5.0 修正：FIX-21 vitest include 仅 lib/**（vitest.config.ts:13），UI 验收以 e2e 为准
+
+## 归属
+- 所属切片：S10（模型源监控·步行骨架（公开源））
+- 来源需求：REQ-M-009/011/013
+- RTM 追溯（V0.9.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-M-009、REQ-M-011、REQ-M-013
+- 来源方案：DESIGN-004 / ADR-P007
+
+## 目标
+/admin/monitoring 展示源表（tier 徽章 S1/S2/A/B/C、kind、authRequired、enabled 开关、lastRunAt/lastStatus/lastCount）与变更流（4 类事件筛选、分页、证据链接），空/加载/错误/无权限/成功五态按 MONITORING_UX_STATES testid 实现
+
+## 输入
+- 文档：`docs/任务规划V0.9.0/03_solution/design/DESIGN-004-模型源监控体系.md`；`contracts/06-ux-states.contract.ts`；`contracts/07-monitoring.contract.ts`；`docs/product/design/UI设计文档.md`
+- 契约：`MONITORING_UX_STATES`；`AdminMonitoringSourceListResponse`；`AdminMonitoringChangeListResponse`
+- 前置任务：TASK-063
+- 前置状态：TASK-063 已合并
+
+## 输出
+- 新增/修改的文件路径：
+  - `apps/web/app/(admin)/admin/monitoring/page.tsx`
+  - `apps/web/components/admin/monitoring/SourceTable.tsx`
+  - `apps/web/components/admin/monitoring/ChangeFeed.tsx`
+  - `apps/web/components/admin/monitoring/TierBadge.tsx`
+  - `docs/任务规划V0.9.0/06_validation/evidence/EVD-064/`（取证：命令输出/截图/日志）
+
+## Execution Steps
+1. [ ] 沿用后台既有表格/卡片组件与 Tailwind 4 token（不引新 UI 库）
+2. [ ] 变更流事件卡：模型 ID、源、前后价格（USD/1M 原币，不做汇率换算，避免 U-15 依赖）、证据外链
+3. [ ] 手动运行按钮：202 后轮询 lastRunAt（5s×12 上限）
+4. [ ] 五态 testid：monitoring-empty/loading/error/forbidden/ready
+5. [ ] 运行「验证命令」并将完整输出存入证据目录
+
+## 验收标准
+- [ ] `pnpm --filter web exec tsc --noEmit` exit 0
+- [ ] `pnpm --filter web lint` 0 error
+- [ ] `next build` 路由表含 /admin/monitoring
+- [ ] 人工：1280/768 宽度截图存证，五态各一张（mock API）
+- [ ] UI 行为以 e2e 用例断言（`pnpm test:e2e -g` 对应用例全绿），不得以组件单测替代——vitest 不收集 components/**
+- [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
+
+## 验证命令
+```bash
+pnpm --filter web exec tsc --noEmit && pnpm --filter web lint && cd apps/web && npx next build
+```
+
+## 证据路径
+`docs/任务规划V0.9.0/06_validation/evidence/EVD-064/`
+
+## 允许修改
+- `apps/web/app/(admin)/admin/monitoring/`
+- `apps/web/components/admin/monitoring/`
+- `docs/任务规划V0.9.0/06_validation/evidence/EVD-064/**`
+
+## 禁止修改
+- `apps/web/prisma/migrations/2026*（既有迁移只读，M-002 仅 TASK-058 可新建）`
+- `.example/history/**（铁律4 历史只读）`
+- `docs/任务规划V0.5.0/contracts/**（冻结契约；变更须先提 ADR 并经 opus/fable 券审批）`
+- `docs/任务规划V0.1.0/** … docs/任务规划V0.4.0/** · docs/任务规划V0.6.0/** · docs/任务规划V0.7.0/** · docs/任务规划V0.8.0/**（历代规划只读；V0.5.0 仅 TASK-087 可改文件名）`
+- `AGENTS.md`
+
+## 依赖与阻塞
+- Depends on：TASK-063
+- 资源锁串行（同文件，须在其后执行）：无
+- Blocks：TASK-065, TASK-094
+- 阻塞条件：契约字段不足以渲染 → 停止回报（不得在前端猜字段）
+
+## 建议执行档位
+opus　理由：UI 设计与实现（用户指令：UI 由主 Agent 完成）；需新设计信息架构
+
+## 升级条件
+无；通用熔断：同一任务连续 2 次验收失败 → 停止改代码，改为重写任务书/升级档位/标记 blocked（禁止第 3 次硬撞）
+
+## 预估规模
+大　约 10h　≥2h
+
+
+---
+
 #### TASK-086：他线 S0–S3 落地独立复核：30 张卡逐卡跑验证命令并裁决 PASS/FAIL/UNKNOWN（单测已由规划期先行实测）
 
 > 版本: v0.9 | 更新: 2026-10-19 | 变更: 任务规划V0.9.0（V0.8.0 剩余部分；B-0' 已裁决 A'＝镜像 main 为开发线；Hark 完成 089/026/082/027/056/058/060/057 并经独立审查；已完成卡移出，仅保留未完成卡；契约唯一源仍为 docs/任务规划V0.5.0/contracts）
@@ -1329,10 +1332,10 @@ opus　理由：生产环境不可逆操作 + 密钥处理
 - 来源方案：ADR-P008
 
 ## 目标
-对 TASK-001…025、050、076–079 在镜像 main 上逐卡执行卡内「验证命令」，输出 PASS/FAIL/UNKNOWN 表；规划期已得单测 PASS 的卡，本卡补 e2e/真库/运行态三类证据
+对 V0.8.0 判「镜像已落地」并已移出卡集的 22 张卡（TASK-001–005、010–012、014–019、021–024、076–079；卡面原文见 docs/任务规划V0.8.0/05_execution/tasks/）在镜像 main 上逐卡执行原卡「验证命令」，输出 PASS/FAIL/UNKNOWN 表；单测已在规划/执行期复现，本卡补 e2e/真库/运行态三类证据；FAIL 卡重新立卡回到 V0.9.x
 
 ## 输入
-- 文档：`docs/任务规划V0.9.0/05_execution/task-index.md`；`docs/任务规划V0.5.0/06_validation/evidence/（他线证据，仅作对照）`
+- 文档：`docs/任务规划V0.9.0/07_原子任务卡全集.md（已移出卡清单）`；`docs/任务规划V0.8.0/05_execution/tasks/（22 张原卡面）`；`docs/任务规划V0.9.0/06_validation/evidence/EVD-058、EVD-089（Hark PG16 证据，可复用）`
 - 契约：`无（只读对照 docs/任务规划V0.5.0/contracts）`
 - 前置任务：TASK-091
 - 前置状态：TASK-089 已完成（V0.9.0）；TASK-091 已产出 PG16 证据（Hark 已在 PG16.14 实测 18 条迁移重放与 int spec，见 EVD-058/EVD-089，可复用）
@@ -1347,18 +1350,18 @@ opus　理由：生产环境不可逆操作 + 密钥处理
 2. [ ] docker 起 postgres:16 + redis:7，`prisma migrate deploy` 空库重放
 3. [ ] `pnpm --filter web build && PORT=3000 pnpm --filter web start` 后跑 `pnpm test:e2e -g 'walking-skeleton|feature-flags|favorites|ladder-filter-all'`
 4. [ ] 逐卡只记 PASS/FAIL/UNKNOWN + 退出码 + 证据文件名
-5. [ ] 回写 task-index 状态列（交 TASK-088）
+5. [ ] FAIL 卡在 V0.9.x task-index 重新立卡（交 TASK-088 回写）
 6. [ ] 运行「验证命令」并将完整输出存入证据目录
 
 ## 验收标准
-- [ ] verdicts.md 恰 30 行且每行含退出码与证据文件
+- [ ] verdicts.md 恰 22 行且每行含退出码与证据文件
 - [ ] 无 PASS 行缺证据文件
-- [ ] FAIL 卡已转回「未开工/返工」
+- [ ] FAIL 卡已在 task-index 重新立卡
 - [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
 
 ## 验证命令
 ```bash
-test $(grep -cE '^\| TASK-(0[0-2][0-9]|050|07[6-9]) ' docs/任务规划V0.9.0/06_validation/evidence/EVD-086/verdicts.md) -eq 30; echo rows_ok=$?
+test $(grep -cE '^\| TASK-(00[1-5]|01[0-24-9]|02[1-4]|07[6-9]) ' docs/任务规划V0.9.0/06_validation/evidence/EVD-086/verdicts.md) -eq 22; echo rows_ok=$?
 ```
 
 ## 证据路径
@@ -1380,7 +1383,7 @@ test $(grep -cE '^\| TASK-(0[0-2][0-9]|050|07[6-9]) ' docs/任务规划V0.9.0/06
 - Depends on：TASK-091
 - 资源锁串行（同文件，须在其后执行）：无
 - Blocks：TASK-088, TASK-092
-- 阻塞条件：089、091 未完成 → 不开工（089 依赖 085，故 086 实际随 085 → 089 链启动）；执行环境缺 PG16/Docker/浏览器 → 对应卡记 UNKNOWN，不得写 PASS
+- 阻塞条件：091 未完成 → 不开工；执行环境缺 PG16/Docker/浏览器 → 对应卡记 UNKNOWN，不得写 PASS
 
 ## 建议执行档位
 opus　理由：独立验证者角色（防自证循环：执行者为他线 Agent，判定者须不同）
