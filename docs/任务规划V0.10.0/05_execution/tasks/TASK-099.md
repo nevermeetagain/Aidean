@@ -15,7 +15,7 @@
 - 来源方案：review-ext12 D8/D12
 
 ## 目标
-llmtest-observations 映射：entityId 只用平台实体 id（站点 id），域名进 meta；窗口按 Asia/Shanghai 自然日；score/isAlive 字段语义与 ReliabilityObservation 契约逐字段对齐；落库幂等键缺失（无 (entityType, entityId, windowStart) 唯一约束）登记为 TASK-071 前置（迁移归 Hark）
+llmtest-observations 映射函数新增入参 stationIdByDomain: Map<string,string>（由调用方注入，模块内不引 prisma）；entityId 只用站点 id，无映射的域名跳过并计入返回值 skipped[]（ReliabilityObservation 无 meta 列，不落域名）；窗口按 Asia/Shanghai 自然日（UTC+8，无夏令时）；落库幂等键缺失登记为 TASK-071 前置
 
 ## 输入
 - 文档：`docs/任务规划V0.9.0/06_validation/evidence/EVD-073/`
@@ -30,9 +30,9 @@ llmtest-observations 映射：entityId 只用平台实体 id（站点 id），�
   - `docs/任务规划V0.10.0/06_validation/evidence/EVD-099/`（取证：命令输出/截图/日志）
 
 ## Execution Steps
-1. [ ] entityId 改用站点 id 映射（无映射 → 跳过并计数）
-2. [ ] 窗口改上海自然日
-3. [ ] 单测更新
+1. [ ] 映射签名加 stationIdByDomain 参数，无映射 → skipped[]
+2. [ ] windowStart = 上海自然日 00:00（UTC 前一日 16:00）
+3. [ ] 单测：有/无映射、跨 UTC 日边界的上海日
 4. [ ] 运行「验证命令」并将完整输出存入证据目录
 
 ## 验收标准
@@ -51,6 +51,7 @@ pnpm --filter web exec vitest run lib/discovery/llmtest && pnpm --filter web exe
 ## 允许修改
 - `apps/web/lib/discovery/llmtest-observations.ts`
 - `apps/web/lib/discovery/llmtest.spec.ts`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-099/**`
 
 ## 禁止修改

@@ -1230,3 +1230,80 @@ _t6["goal"] = ("085 已回补 ci.yml e2e-skeleton job（:130-236），但仓库 
 _t6["hours"] = 5
 _t6["v7"] = "V0.10.0：job 已存在未执行；Actions 是否启用待 U-25（用户在仓库 Settings → Actions 开启），本地实跑部分不受阻"
 COND_REASON["U-25"] = "nevermeetagain/Aidean 是否启用 GitHub Actions（当前运行记录 0）"
+
+# =====================================================================================
+# V0.10.0 层·补丁 2（2026-10-19 22:20 CST）：review-plan10 M1–M8 / S1–S6 + Hark 执行结果（095/096 完成并经独立审查）
+# =====================================================================================
+# ---- M1：R10-01 允许路径真正落地（共享例外，gen.py owner_of 对带「R10-01」标注的 facts 路径豁免所有权校验）
+for _t in T:
+    if _t["owner"] in ("Agent-API", "Agent-App", "Agent-Data", "Agent-Guard") and not _t.get("cond") and _FACTS_ALLOW not in _t["allow"]:
+        _t["allow"] = list(_t["allow"]) + [_FACTS_ALLOW]
+# ---- Hark 已完成：095（6464b92）、096（b377f9a + f473289 内 S1/S2/S4 跟进；review-096 PASS）
+DONE10_HARK = {"095": "PASS（6464b92；facts 14/14）",
+               "096": "PASS（b377f9a；review-096 无必改；PG16 并发探针 RC 5/8 → Serializable 1/8；E10-07 以 Serializable+P2034 抖动重试替代 advisory lock）"}
+for _i in DONE10_HARK:
+    REMOVED9_CARDS.append(copy.deepcopy(get(_i)))
+REMOVED10 |= set(DONE10_HARK); REMOVED9 |= set(DONE10_HARK)
+T[:] = [t for t in T if t["id"] not in DONE10_HARK]
+for _t in T:
+    _t["deps"] = [d for d in _t["deps"] if d not in DONE10_HARK]
+# ---- M3：097 允许范围补齐（价格写路由失效缓存、/models 页 ISR、facts）
+_t97 = get("097")
+_t97["allow"] = ["apps/web/lib/features/ladder/", "apps/web/app/api/v1/admin/prices/", "apps/web/app/(site)/models/page.tsx（仅 revalidate 常量；跨所有权 E10-08）",
+                 "apps/web/app/(site)/models/[slug]/page.tsx（仅 revalidate 常量；跨所有权 E10-08）", "apps/web/lib/features/auth/__tests__/admin-promotions.spec.ts", _FACTS_ALLOW]
+_t97["pre_state"] = "TASK-093、TASK-096 已合并"
+_t97["v7"] = "V0.10.0：Hark 已实现（f473289），待 review-097 判定；E10-08 允许范围补齐"
+_t97["st7"] = "已实现·待独立审查"
+# ---- M4：098 与表结构对齐
+_t98 = get("098")
+_t98["goal"] = ("persistCatalogSnapshot：items 为空时**不写快照、不下架**，直接返回 { skipped: true, reason: \"empty\", delisted: 0 }（CatalogSnapshot 无 status 列，不改表）；"
+                "upsert 按 200 条分批且 $transaction 显式 timeout=60000；同 (sourceId, rawSha256) 并发第二次捕获 P2002 后回读并返回既有快照（idempotent=true）")
+_t98["steps"] = ["空 items 守卫（早于任何写库）", "观测 upsert 分批 200 + 交互事务 timeout 60000/maxWait 10000", "create 快照 P2002 → findUnique({ sourceId_rawSha256 }) 回读", "单测 3 例：空目录不下架、分批调用次数、P2002 回读"]
+# ---- M5：099 与表结构/模块边界对齐
+_t99 = get("099")
+_t99["goal"] = ("llmtest-observations 映射函数新增入参 stationIdByDomain: Map<string,string>（由调用方注入，模块内不引 prisma）；entityId 只用站点 id，无映射的域名跳过并计入返回值 skipped[]（ReliabilityObservation 无 meta 列，不落域名）；"
+                "窗口按 Asia/Shanghai 自然日（UTC+8，无夏令时）；落库幂等键缺失登记为 TASK-071 前置")
+_t99["steps"] = ["映射签名加 stationIdByDomain 参数，无映射 → skipped[]", "windowStart = 上海自然日 00:00（UTC 前一日 16:00）", "单测：有/无映射、跨 UTC 日边界的上海日"]
+# ---- M6：050 只改 .gitignore + 证据，不再碰 ci.yml（去掉与 006 的资源锁）
+OWNERS["Agent-Guard"]["own"].append(".gitignore")
+_t50 = get("050")
+_t50["allow"] = [".gitignore"]; _t50["outputs"] = [".gitignore"]
+_t50["pre_state"] = "TASK-085 已合并（ci.yml 已含 lint / ui 单测，见 ci.yml:67-76）"
+_t50["verify"] = "grep -q 'apps/web/coverage' .gitignore && test -s docs/任务规划V0.10.0/06_validation/evidence/EVD-050/verify-job.txt && ! grep -E 'exit=[1-9]' docs/任务规划V0.10.0/06_validation/evidence/EVD-050/verify-job.txt; echo exit=$?"
+_t50["accept"] = ["EVD-050/verify-job.txt 逐步记录 `exit=<码>` 且全部为 0；非 0 步骤改记 `FAIL→TASK-xxx` 并不计入本卡通过", "跑完 `pnpm --filter web exec vitest run --coverage` 后 `git status --short` 不出现 apps/web/coverage", "diff 仅 .gitignore（与证据目录）"]
+# ---- M8：006 验收/验证与新目标一致
+_t6 = get("006")
+_t6["accept"] = ["本地按 ci.yml e2e-skeleton 步骤实跑（embedded PG16 + Redis7）：migrate deploy 应用 18 条迁移、seed、build、`next start -p 3000`、/api/v1/system/ready=200、smoke+walking-skeleton 通过，逐步 exit 码存 EVD-006/e2e-local.txt",
+                 "job 中不可在 GitHub runner 执行的步骤已修正（diff 限 ci.yml）", "U-25=A 后首轮 Actions run 结论写入 EVD-006/actions-run.txt（U-25 未裁决记 UNKNOWN，不阻塞本卡其余验收）", "端口恒为 3000"]
+_t6["verify"] = "grep -q 'migrations' docs/任务规划V0.10.0/06_validation/evidence/EVD-006/e2e-local.txt && ! grep -E 'exit=[1-9]' docs/任务规划V0.10.0/06_validation/evidence/EVD-006/e2e-local.txt; echo exit=$?"
+_t6["pre_state"] = "TASK-085 已合并（ci.yml:130-236 已有 e2e-skeleton job）"
+# ---- S1：049 脚本名与前置统一
+_t49 = get("049")
+_t49["outputs"] = ["scripts/audit/price-unit-census.mjs（新建）"]
+_t49["verify"] = "DATABASE_URL=$PG16_URL node scripts/audit/price-unit-census.mjs"
+_t49["pre_state"] = "本地 PG16 已 migrate deploy + pnpm db:seed（不再依赖 CI/006）"
+_t49["steps"] = [s.replace("在 CI seed 后库运行一次并存证", "在本地 seed 后 PG16 运行一次并存证 EVD-049/census.md") for s in _t49["steps"]]
+_t49["deps"] = [d for d in _t49["deps"] if d != "006"]
+# ---- S2：088 验证命令指向 V0.10.0
+_t88 = get("088")
+_t88["verify"] = _t88["verify"].replace("grep -q '任务规划V0.9.0'", "grep -q '任务规划V0.10.0'")
+# ---- S4：S0 标签
+SLICES["S0"] = ("步行骨架与守卫（V0.10.0：e2e 实跑、CI 收尾、独立复核）", "e2e-skeleton 本地实跑（006）→ verify job 复现（050）→ 已移出卡独立复核（086）", "U-25（Actions 启用）仅影响 006 的 Actions 首跑验收")
+
+# =====================================================================================
+# V0.10.0 层·补丁 3（2026-10-19 23:50 CST）：Hark 完成 097（f473289+04cd079；review-097 FAIL→M1/M2 修复，review-029 复核 PASS）
+#   与 029（648d93a+531fffa；review-029 必改 2 项已处置；运行态验收 7/7，PG16 + Playwright）
+# =====================================================================================
+DONE10_HARK.update({
+    "097": "PASS（f473289 + 04cd079；review-097 M1 详情页失效路径/(site)/models/[slug]、M2 同一 at → review-029 复核 PASS）",
+    "029": "PASS（648d93a + 531fffa；review-029 M1 限时免费判定、M2 E10-09 追认；运行态验收 7/7，EVD-029）"})
+for _i in ("097", "029"):
+    REMOVED9_CARDS.append(copy.deepcopy(get(_i)))
+    REMOVED10.add(_i); REMOVED9.add(_i)
+T[:] = [t for t in T if t["id"] not in ("097", "029")]
+for _t in T:
+    _t["deps"] = [d for d in _t["deps"] if d not in ("097", "029")]
+_t53 = get("053")
+_t53["accept"] = list(_t53["accept"]) + ["review-029 S4：详情页生效价解析失败时回落 isCurrent 当前价（而非已收敛的生效行）且不显示徽标", "review-029 S5：/pricing 优惠查询失败只降级为当前价表，不整体走空态"]
+_t30 = get("030")
+_t30["v7"] = str(_t30["v7"]) + "；029 已完成（EVD-029 运行态 7/7）；优惠自然起止页面最多 5 分钟滞后（097 ISR 300s），e2e 需按此等待或直接断言 API/计费"

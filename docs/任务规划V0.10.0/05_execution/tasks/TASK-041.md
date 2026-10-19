@@ -74,7 +74,7 @@ node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs
 
 ## 依赖与阻塞
 - Depends on：TASK-040
-- 资源锁串行（同文件，须在其后执行）：TASK-095
+- 资源锁串行（同文件，须在其后执行）：无
 - Blocks：TASK-051
 - 阻塞条件：check-docs-facts 硬引用台账路径 → 本卡同步脚本中的路径（Agent-Docs 所有）
 

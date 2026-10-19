@@ -9,7 +9,7 @@
 > 历史（V0.4.0→V0.5.0）：沿用（V0.5.0 重核：cd5b1a9 业务树=77c7952 无 delta）
 
 ## 归属
-- 所属切片：S0（步行骨架与契约守卫（V0.9.0：剩工件回补、CI 门禁与独立复核））
+- 所属切片：S0（步行骨架与守卫（V0.10.0：e2e 实跑、CI 收尾、独立复核））
 - 来源需求：REQ-NF-03 测试可复现 / §9.4 守卫（ci.yml 现无 lint 与 packages/ui 测试步骤）
 - RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-NF-006
 - 来源方案：SOL-S0
@@ -21,11 +21,11 @@
 - 文档：`.github/workflows/ci.yml:47-69`；`11_基线指标.md §11.2（lint 0 error/1 warning、ui 4 例）`
 - 契约：`无（CI 配置）`
 - 前置任务：无
-- 前置状态：TASK-006/007 已合并（同文件资源锁）
+- 前置状态：TASK-085 已合并（ci.yml 已含 lint / ui 单测，见 ci.yml:67-76）
 
 ## 输出
 - 新增/修改的文件路径：
-  - `.github/workflows/ci.yml`
+  - `.gitignore`
   - `docs/任务规划V0.10.0/06_validation/evidence/EVD-050/`（取证：命令输出/截图/日志）
 
 ## Execution Steps
@@ -35,20 +35,21 @@
 4. [ ] 运行「验证命令」并将完整输出存入证据目录
 
 ## 验收标准
-- [ ] EVD-050/verify-job.txt 含每步 exit 码且全部为 0（或 FAIL 已登记归属卡）
-- [ ] `git status` 在跑完 coverage 后不出现 apps/web/coverage
+- [ ] EVD-050/verify-job.txt 逐步记录 `exit=<码>` 且全部为 0；非 0 步骤改记 `FAIL→TASK-xxx` 并不计入本卡通过
+- [ ] 跑完 `pnpm --filter web exec vitest run --coverage` 后 `git status --short` 不出现 apps/web/coverage
+- [ ] diff 仅 .gitignore（与证据目录）
 - [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
 
 ## 验证命令
 ```bash
-grep -q 'apps/web/coverage' .gitignore && ! grep -E 'exit=[1-9]' docs/任务规划V0.10.0/06_validation/evidence/EVD-050/verify-job.txt; echo exit=$?
+grep -q 'apps/web/coverage' .gitignore && test -s docs/任务规划V0.10.0/06_validation/evidence/EVD-050/verify-job.txt && ! grep -E 'exit=[1-9]' docs/任务规划V0.10.0/06_validation/evidence/EVD-050/verify-job.txt; echo exit=$?
 ```
 
 ## 证据路径
 `docs/任务规划V0.10.0/06_validation/evidence/EVD-050/`
 
 ## 允许修改
-- `.github/workflows/ci.yml`
+- `.gitignore`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-050/**`
 
 ## 禁止修改
@@ -61,7 +62,7 @@ grep -q 'apps/web/coverage' .gitignore && ! grep -E 'exit=[1-9]' docs/任务规�
 
 ## 依赖与阻塞
 - Depends on：无
-- 资源锁串行（同文件，须在其后执行）：TASK-006
+- 资源锁串行（同文件，须在其后执行）：无
 - Blocks：无
 - 阻塞条件：lint 在 CI Node 20 下出现本地无的 error → 不改业务代码，登记并上报
 

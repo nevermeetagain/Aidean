@@ -2,7 +2,7 @@
 
 > 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
 
-> 本书自包含：22 张卡（其中条件卡 9 张），合计 145.5h。按「序」执行（全局拓扑序）。
+> 本书自包含：18 张卡（其中条件卡 9 张），合计 128h。按「序」执行（全局拓扑序）。
 
 ## 范围
 所有执行者为 Hark(主Agent) 的卡：契约语义、迁移、资金路径、真库 CI、需求口径、全部前台/后台 UI。
@@ -32,20 +32,16 @@
 | 6 | TASK-047 | S4 | 计价口径归一契约：币种 CNY + 每百万 Token + 汇率配置键（EffectivePri | opus | 4h | — | U-15 |
 | 7 | TASK-048 | S4 | 生效价解析器接入币种/单位归一（网关扣费与读侧同口径） | opus | 8h | 047 | U-15 |
 | 8 | TASK-051 | S7 | 统一需求追溯矩阵入库 + 台账内部状态矛盾消解（#17/#36） | opus | 3h | ★041(P2) | — |
-| 9 | TASK-064 | S10 | 后台 UI：「模型源监控」页（源分级卡片 + 健康/最后运行 + 变更流 + 手动运行，五态齐全 | opus | 10h | ★063(P1) | — |
-| 10 | TASK-066 | S11 | 扩展既有 GET /api/v1/models/[id]/stations：追加各监控源上架状态 | opus | 4h | — | — |
-| 11 | TASK-067 | S11 | 前台 UI：模型详情页「在哪里可调用」区块（多源上架/价格对比/中转风险提示/来源署名） | opus | 8h | 066 | — |
-| 12 | TASK-068 | S11 | 上架同步：观测 → ProviderModelOffering（源↔平台实体映射，listedA | opus | 8h | — | U-M5 |
-| 13 | TASK-071 | S12 | 可用性与中转真实性探针：最小请求探测 → ReliabilityObservation + 身份 | opus | 10h | ★070(P1) | U-M3 |
-| 14 | TASK-074 | S11 | UI：模型详情页基准测试弹窗 + 历史测评示例（多模型回答并排）替换「即将上线」占位 | opus | 10h | 067 | — |
-| 15 | TASK-080 | S4 | 缓存命中 token 计价（priceCache / discountCache）接入网关扣费 | opus | 6h | 048 | U-15 |
-| 16 | TASK-086 | S0 | 已移出卡独立复核：V0.8.0 判镜像落地的 22 张卡逐卡跑原验证命令并裁决 PASS/FAI | opus | 6h | — | — |
-| 17 | TASK-092 | S3 | UI 运行态验收：S2 功能开关页/入口隐藏/403 态 + S3 收藏按钮/控制台 Tab/筛 | opus | 4h | 086 | — |
-| 18 | TASK-095 | S0 | CI 回绿：check-docs-facts 计数同步（route 154→156、spec 1 | haiku | 0.5h | — | — |
-| 19 | TASK-096 | S4 | 限时优惠写侧加固：开放式窗口重叠、PATCH 强制 isCurrent=false 与计费口径复 | opus | 4h | 095 | — |
-| 20 | TASK-097 | S4 | 天梯生效价读侧加固 + 缓存失效：价格行排序/脏行排除、优惠写入后清天梯缓存 | opus | 3h | 096 | — |
-| 21 | TASK-029 | S4 | UI：后台优惠子表与创建对话框 + 前台优惠价徽标 | opus | 10h | 097 | — |
-| 22 | TASK-053 | S4 | UI：价格页/详情页统一 ¥/M 展示（附原币原价注记） | opus | 6h | 048、029 | U-15 |
+| 9 | TASK-053 | S4 | UI：价格页/详情页统一 ¥/M 展示（附原币原价注记） | opus | 6h | 048 | U-15 |
+| 10 | TASK-064 | S10 | 后台 UI：「模型源监控」页（源分级卡片 + 健康/最后运行 + 变更流 + 手动运行，五态齐全 | opus | 10h | ★063(P1) | — |
+| 11 | TASK-066 | S11 | 扩展既有 GET /api/v1/models/[id]/stations：追加各监控源上架状态 | opus | 4h | — | — |
+| 12 | TASK-067 | S11 | 前台 UI：模型详情页「在哪里可调用」区块（多源上架/价格对比/中转风险提示/来源署名） | opus | 8h | 066 | — |
+| 13 | TASK-068 | S11 | 上架同步：观测 → ProviderModelOffering（源↔平台实体映射，listedA | opus | 8h | — | U-M5 |
+| 14 | TASK-071 | S12 | 可用性与中转真实性探针：最小请求探测 → ReliabilityObservation + 身份 | opus | 10h | ★070(P1) | U-M3 |
+| 15 | TASK-074 | S11 | UI：模型详情页基准测试弹窗 + 历史测评示例（多模型回答并排）替换「即将上线」占位 | opus | 10h | 067 | — |
+| 16 | TASK-080 | S4 | 缓存命中 token 计价（priceCache / discountCache）接入网关扣费 | opus | 6h | 048 | U-15 |
+| 17 | TASK-086 | S0 | 已移出卡独立复核：V0.8.0 判镜像落地的 22 张卡逐卡跑原验证命令并裁决 PASS/FAI | opus | 6h | — | — |
+| 18 | TASK-092 | S3 | UI 运行态验收：S2 功能开关页/入口隐藏/403 态 + S3 收藏按钮/控制台 Tab/筛 | opus | 4h | 086 | — |
 
 ## 2. 跨线等待
 - 你要等待的他人卡：TASK-033(P1)、TASK-041(P2)、TASK-042(P3)、TASK-044(P1)、TASK-063(P1)、TASK-070(P1)
@@ -64,9 +60,9 @@
 > 历史（V0.4.0→V0.5.0）：V0.5.0 修正：FIX-22 收回 Hark：CI 真库骨架在关键路径上，是 35 张卡的上游
 
 ## 归属
-- 所属切片：S0（步行骨架与契约守卫（V0.9.0：剩工件回补、CI 门禁与独立复核））
+- 所属切片：S0（步行骨架与守卫（V0.10.0：e2e 实跑、CI 收尾、独立复核））
 - 来源需求：REQ-NF-03 测试可复现 / 未完成事项 #36
-- RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-NF-005
+- RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-NF-001、REQ-NF-005
 - 来源方案：SOL-S0
 
 ## 目标
@@ -76,7 +72,7 @@
 - 文档：`.github/workflows/ci.yml（现状：e2e 不进 CI 注释）`；`docs/engineering/开发环境搭建.md`
 - 契约：`SystemReadySchema`
 - 前置任务：无
-- 前置状态：TASK-005 已合并
+- 前置状态：TASK-085 已合并（ci.yml:130-236 已有 e2e-skeleton job）
 
 ## 输出
 - 新增/修改的文件路径：
@@ -90,15 +86,15 @@
 4. [ ] 运行「验证命令」并将完整输出存入证据目录
 
 ## 验收标准
-- [ ] GitHub Actions e2e-skeleton job 绿
-- [ ] job 日志可见 `migrate deploy` 应用 16 条迁移
-- [ ] 端口恒为 3000（与 playwright baseURL 一致）
-- [ ] `node scripts/check-docs-facts.mjs` exit 0（R10-01：本卡新增 route/page/spec 时同步期望值）
+- [ ] 本地按 ci.yml e2e-skeleton 步骤实跑（embedded PG16 + Redis7）：migrate deploy 应用 18 条迁移、seed、build、`next start -p 3000`、/api/v1/system/ready=200、smoke+walking-skeleton 通过，逐步 exit 码存 EVD-006/e2e-local.txt
+- [ ] job 中不可在 GitHub runner 执行的步骤已修正（diff 限 ci.yml）
+- [ ] U-25=A 后首轮 Actions run 结论写入 EVD-006/actions-run.txt（U-25 未裁决记 UNKNOWN，不阻塞本卡其余验收）
+- [ ] 端口恒为 3000
 - [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
 
 ## 验证命令
 ```bash
-gh run list --workflow CI --limit 1 （或在 Actions 页面查看 e2e-skeleton job 结论）
+grep -q 'migrations' docs/任务规划V0.10.0/06_validation/evidence/EVD-006/e2e-local.txt && ! grep -E 'exit=[1-9]' docs/任务规划V0.10.0/06_validation/evidence/EVD-006/e2e-local.txt; echo exit=$?
 ```
 
 ## 证据路径
@@ -106,6 +102,7 @@ gh run list --workflow CI --limit 1 （或在 Actions 页面查看 e2e-skeleton 
 
 ## 允许修改
 - `.github/workflows/ci.yml`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-006/**`
 
 ## 禁止修改
@@ -738,6 +735,91 @@ opus　理由：需求追溯矩阵入库=需求口径裁决
 
 ---
 
+#### TASK-053：UI：价格页/详情页统一 ¥/M 展示（附原币原价注记）
+
+> 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
+
+> 执行者：**Hark(主Agent)** ｜ 所有权 Agent：**Agent-App** ｜ 建议档位：**opus** ｜ **条件卡：待 U-15（汇率口径）裁决后下发**
+
+> V0.10.0 状态：**条件·待裁决**｜V0.10.0：条件卡，待 U-15 裁决
+
+> 历史（V0.4.0→V0.5.0）：沿用（V0.5.0 重核：cd5b1a9 业务树=77c7952 无 delta）
+
+## 归属
+- 所属切片：S4（生效价：限时优惠 + 计价口径归一（需求 §3.6/§3.2））
+- 来源需求：REQ-F-02b / REQ-C-03 价格透明（展示价与官方一致：原币原价须可见）
+- RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-F-011、REQ-F-063
+- 来源方案：DESIGN-003
+
+## 目标
+/pricing 网关单价表与 /models/[slug] 参数表的价格列统一显示「¥x.xx / M Tokens」，USD 官方价以次级文字「官方 $y / M」并列（不隐藏原价）；三套浅色主题对比度 ≥4.5:1
+
+## 输入
+- 文档：`contracts/06-ux-states.contract.ts PRICING_TABLE`；`docs/product/design/UI设计文档.md`
+- 契约：`EffectivePriceSchema（v0.2）`；`UX_STATES.pricingTable`
+- 前置任务：TASK-048
+- 前置状态：TASK-048、TASK-029 已合并（同页资源锁）
+
+## 输出
+- 新增/修改的文件路径：
+  - `apps/web/app/(site)/pricing/page.tsx`
+  - `apps/web/app/(site)/models/[slug]/page.tsx`
+  - `docs/任务规划V0.10.0/06_validation/evidence/EVD-053/`（取证：命令输出/截图/日志）
+
+## Execution Steps
+1. [ ] 价格单元格改读 EffectivePrice.priceInput/priceOutput（已归一）
+2. [ ] sourceCurrency≠CNY 时追加原币注记
+3. [ ] 空态/错误态沿用契约⑥
+4. [ ] 三主题截图存证
+5. [ ] 运行「验证命令」并将完整输出存入证据目录
+
+## 验收标准
+- [ ] `pnpm --filter web exec tsc --noEmit` 0 且 `pnpm --filter web lint` 0 error
+- [ ] 页面无 `$` 作为主价格符号（e2e/人工：主列均为 ¥）
+- [ ] 原币注记对 USD 行可见（人工截图）
+- [ ] review-029 S4：详情页生效价解析失败时回落 isCurrent 当前价（而非已收敛的生效行）且不显示徽标
+- [ ] review-029 S5：/pricing 优惠查询失败只降级为当前价表，不整体走空态
+- [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
+
+## 验证命令
+```bash
+pnpm --filter web exec tsc --noEmit && pnpm --filter web lint
+```
+
+## 证据路径
+`docs/任务规划V0.10.0/06_validation/evidence/EVD-053/`
+
+## 允许修改
+- `apps/web/app/(site)/pricing/**`
+- `apps/web/app/(site)/models/[slug]/**`
+- `docs/任务规划V0.10.0/06_validation/evidence/EVD-053/**`
+
+## 禁止修改
+- `apps/web/lib/**`
+- `packages/**`
+- `.example/history/**（铁律4 历史只读）`
+- `docs/任务规划V0.5.0/contracts/**（冻结契约；变更须先提 ADR 并经 opus/fable 券审批）`
+- `docs/任务规划V0.1.0/** … docs/任务规划V0.4.0/** · docs/任务规划V0.6.0/** … docs/任务规划V0.9.0/**（历代规划只读；V0.5.0 仅 TASK-087 可改文件名）`
+- `AGENTS.md`
+
+## 依赖与阻塞
+- Depends on：TASK-048
+- 资源锁串行（同文件，须在其后执行）：TASK-067, TASK-074
+- Blocks：TASK-054
+- 阻塞条件：U-15 未裁决 → 不执行（条件卡）
+
+## 建议执行档位
+opus　理由：全部 UI 设计实现由主 Agent 负责；展示口径直接面向用户
+
+## 升级条件
+设计与「展示价=官方价」约束冲突 → 升 opus 并回报用户；通用熔断：同一任务连续 2 次验收失败 → 停止改代码，改为重写任务书/升级档位/标记 blocked（禁止第 3 次硬撞）
+
+## 预估规模
+中　约 6h　≥2h
+
+
+---
+
 #### TASK-064：后台 UI：「模型源监控」页（源分级卡片 + 健康/最后运行 + 变更流 + 手动运行，五态齐全）
 
 > 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
@@ -798,6 +880,7 @@ pnpm --filter web exec tsc --noEmit && pnpm --filter web lint && cd apps/web && 
 ## 允许修改
 - `apps/web/app/(admin)/admin/monitoring/`
 - `apps/web/components/admin/monitoring/`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-064/**`
 
 ## 禁止修改
@@ -880,6 +963,7 @@ pnpm --filter web exec vitest run lib/monitoring/__tests__/offerings-route.spec.
 ## 允许修改
 - `apps/web/app/api/v1/models/[id]/stations/`
 - `apps/web/lib/monitoring/__tests__/offerings-route.spec.ts`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-066/**`
 
 ## 禁止修改
@@ -964,6 +1048,7 @@ pnpm --filter web exec tsc --noEmit && pnpm --filter web lint && cd apps/web && 
 ## 允许修改
 - `apps/web/components/models/ModelOfferings.tsx`
 - `apps/web/app/(site)/models/[slug]/page.tsx`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-067/**`
 
 ## 禁止修改
@@ -975,7 +1060,7 @@ pnpm --filter web exec tsc --noEmit && pnpm --filter web lint && cd apps/web && 
 
 ## 依赖与阻塞
 - Depends on：TASK-066
-- 资源锁串行（同文件，须在其后执行）：TASK-029
+- 资源锁串行（同文件，须在其后执行）：无
 - Blocks：TASK-074
 - 阻塞条件：无
 
@@ -1213,6 +1298,7 @@ pnpm --filter web exec tsc --noEmit && pnpm --filter web lint && ! grep -n '即�
 - `apps/web/components/models/BenchmarkDialog.tsx`
 - `apps/web/components/models/EvaluationExamples.tsx`
 - `apps/web/app/(site)/models/[slug]/page.tsx`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-074/**`
 
 ## 禁止修改
@@ -1334,7 +1420,7 @@ opus　理由：资金路径
 > 历史（V0.4.0→V0.5.0）：V0.7.0 新增
 
 ## 归属
-- 所属切片：S0（步行骨架与契约守卫（V0.9.0：剩工件回补、CI 门禁与独立复核））
+- 所属切片：S0（步行骨架与守卫（V0.10.0：e2e 实跑、CI 收尾、独立复核））
 - 来源需求：REQ-L-015 / §9.3 防自证
 - RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-F-015、REQ-F-021、REQ-F-041、REQ-F-052、REQ-NF-001、REQ-NF-002、REQ-NF-010、REQ-NF-011、REQ-L-001、REQ-L-002、REQ-L-003、REQ-L-004、REQ-L-012、REQ-F-054、REQ-F-055、REQ-L-015
 - 来源方案：ADR-P008
@@ -1377,6 +1463,7 @@ test $(grep -cE '^\| TASK-(00[1-5]|01[0-24-9]|02[1-4]|07[6-9]) ' docs/任务规�
 `docs/任务规划V0.10.0/06_validation/evidence/EVD-086/`
 
 ## 允许修改
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-086/**`
 
 ## 禁止修改
@@ -1457,6 +1544,7 @@ test $(ls docs/任务规划V0.10.0/06_validation/evidence/EVD-092/*.png | wc -l)
 `docs/任务规划V0.10.0/06_validation/evidence/EVD-092/`
 
 ## 允许修改
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-092/**`
 
 ## 禁止修改
@@ -1481,427 +1569,6 @@ opus　理由：UI 质量判断属核心验收，且为执行方以外的独立�
 
 ## 预估规模
 中　约 4h　≥2h
-
-
----
-
-#### TASK-095：CI 回绿：check-docs-facts 计数同步（route 154→156、spec 170→173）+ R10-01 规则落地
-
-> 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
-
-> 执行者：**Hark(主Agent)** ｜ 所有权 Agent：**Agent-Docs** ｜ 建议档位：**haiku**
-
-> V0.10.0 状态：**未开工（Hark 核心）**｜V0.10.0 新增
-
-> 历史（V0.4.0→V0.5.0）：V0.10.0 新增（review-ext12 D1）
-
-## 归属
-- 所属切片：S0（步行骨架与契约守卫（V0.9.0：剩工件回补、CI 门禁与独立复核））
-- 来源需求：REQ-NF-012（CI 硬门禁）
-- RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-NF-001
-- 来源方案：review-ext12 D1
-
-## 目标
-main 上 `node scripts/check-docs-facts.mjs` exit 0（route-count=156、spec-count=173 以执行时实测为准），CI docs-facts 步骤转绿
-
-## 输入
-- 文档：`docs/任务规划V0.10.0/25_执行记录.md`
-- 契约：`无`
-- 前置任务：无
-- 前置状态：main@ff08433
-
-## 输出
-- 新增/修改的文件路径：
-  - `scripts/check-docs-facts.mjs`
-  - `docs/任务规划V0.10.0/06_validation/evidence/EVD-095/`（取证：命令输出/截图/日志）
-
-## Execution Steps
-1. [ ] 实测 route.ts / *.spec.ts 计数
-2. [ ] 只改两项期望值与说明（注明 059/028/093 来源）
-3. [ ] 跑 rule/facts/guard
-4. [ ] 运行「验证命令」并将完整输出存入证据目录
-
-## 验收标准
-- [ ] `node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs` exit 0
-- [ ] diff 仅 scripts/check-docs-facts.mjs 两行数值与说明
-- [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
-
-## 验证命令
-```bash
-node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs; echo exit=$?
-```
-
-## 证据路径
-`docs/任务规划V0.10.0/06_validation/evidence/EVD-095/`
-
-## 允许修改
-- `scripts/check-docs-facts.mjs`
-- `docs/任务规划V0.10.0/06_validation/evidence/EVD-095/**`
-
-## 禁止修改
-- `apps/**`
-- `packages/**`
-- `.example/history/**（铁律4 历史只读）`
-- `docs/任务规划V0.5.0/contracts/**（冻结契约；变更须先提 ADR 并经 opus/fable 券审批）`
-- `docs/任务规划V0.1.0/** … docs/任务规划V0.4.0/** · docs/任务规划V0.6.0/** … docs/任务规划V0.9.0/**（历代规划只读；V0.5.0 仅 TASK-087 可改文件名）`
-- `AGENTS.md`
-
-## 依赖与阻塞
-- Depends on：无
-- 资源锁串行（同文件，须在其后执行）：无
-- Blocks：TASK-096
-- 阻塞条件：无
-
-## 建议执行档位
-haiku　理由：两处数值同步，阻断 main CI，Hark 立即处理
-
-## 升级条件
-无；通用熔断：同一任务连续 2 次验收失败 → 停止改代码，改为重写任务书/升级档位/标记 blocked（禁止第 3 次硬撞）
-
-## 预估规模
-小　约 0.5h　<2h
-
-
----
-
-#### TASK-096：限时优惠写侧加固：开放式窗口重叠、PATCH 强制 isCurrent=false 与计费口径复核、事务内校验+写入、整数位上限
-
-> 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
-
-> 执行者：**Hark(主Agent)** ｜ 所有权 Agent：**Agent-API** ｜ 建议档位：**opus**
-
-> V0.10.0 状态：**未开工（Hark 核心）**｜V0.10.0 新增
-
-> 历史（V0.4.0→V0.5.0）：V0.10.0 新增（review-ext12 D2/D3/D10/D11）
-
-## 归属
-- 所属切片：S4（生效价：限时优惠 + 计价口径归一（需求 §3.6/§3.2））
-- 来源需求：REQ-F-038 / REQ-F-063
-- RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-F-038
-- 来源方案：DESIGN-002；review-ext12 D2/D3/D10/D11
-
-## 目标
-POST/PATCH /api/v1/admin/prices/promotions[/:id] 对任何既有优惠（含 effectiveUntil=null）窗口重叠一律 40000；PATCH 写入恒 isCurrent=false、sourceType=PROMOTION，且计费三元组与当前价不一致时 40000；重叠检查与写入在同一事务（按 modelId 加 pg_advisory_xact_lock）；整数位 >13 → 40000 而非 500
-
-## 输入
-- 文档：`docs/任务规划V0.10.0/03_solution/design/DESIGN-002-限时优惠计费.md`；`docs/任务规划V0.9.0/06_validation/evidence/EVD-028/`
-- 契约：`PromotionPriceCreateSchema`；`PromotionPricePatchSchema`
-- 前置任务：TASK-095
-- 前置状态：TASK-028 已合并（V0.9.0 外部完成）
-
-## 输出
-- 新增/修改的文件路径：
-  - `apps/web/app/api/v1/admin/prices/promotions/route.ts`
-  - `apps/web/app/api/v1/admin/prices/promotions/[id]/route.ts`
-  - `apps/web/lib/features/auth/__tests__/admin-promotions.spec.ts`
-  - `docs/任务规划V0.10.0/06_validation/evidence/EVD-096/`（取证：命令输出/截图/日志）
-
-## Execution Steps
-1. [ ] 抽出共用校验：scale ≤6、整数位 ≤13、窗口 from<until
-2. [ ] 重叠条件改为 effectiveFrom < until AND (effectiveUntil IS NULL OR effectiveUntil > from)，PATCH 排除自身
-3. [ ] $transaction 内 advisory lock(modelId) → 重叠检查 → 写入
-4. [ ] PATCH data 恒带 isCurrent=false/sourceType=PROMOTION；复核计费三元组
-5. [ ] 单测：开放式窗口重叠、PATCH 修复脏行、整数位超限 40000、并发两写只成功一条（mock 事务顺序）
-6. [ ] 运行「验证命令」并将完整输出存入证据目录
-
-## 验收标准
-- [ ] admin-promotions 单测全绿且新增 ≥5 例
-- [ ] web tsc exit 0
-- [ ] `node scripts/check-docs-facts.mjs` exit 0
-- [ ] diff 仅落在允许范围
-- [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
-
-## 验证命令
-```bash
-pnpm --filter web exec vitest run lib/features/auth/__tests__/admin-promotions.spec.ts && pnpm --filter web exec tsc --noEmit
-```
-
-## 证据路径
-`docs/任务规划V0.10.0/06_validation/evidence/EVD-096/`
-
-## 允许修改
-- `apps/web/app/api/v1/admin/prices/promotions/`
-- `apps/web/lib/features/auth/__tests__/admin-promotions.spec.ts`
-- `docs/任务规划V0.10.0/06_validation/evidence/EVD-096/**`
-
-## 禁止修改
-- `packages/shared/**`
-- `apps/web/prisma/**`
-- `.example/history/**（铁律4 历史只读）`
-- `docs/任务规划V0.5.0/contracts/**（冻结契约；变更须先提 ADR 并经 opus/fable 券审批）`
-- `docs/任务规划V0.1.0/** … docs/任务规划V0.4.0/** · docs/任务规划V0.6.0/** … docs/任务规划V0.9.0/**（历代规划只读；V0.5.0 仅 TASK-087 可改文件名）`
-- `AGENTS.md`
-
-## 依赖与阻塞
-- Depends on：TASK-095
-- 资源锁串行（同文件，须在其后执行）：无
-- Blocks：TASK-097
-- 阻塞条件：需改契约或加 DB 排他约束（迁移）→ 停，提 ADR
-
-## 建议执行档位
-opus　理由：资金路径：优惠窗口与计费口径决定扣费
-
-## 升级条件
-并发语义需迁移级约束 → opus 券；通用熔断：同一任务连续 2 次验收失败 → 停止改代码，改为重写任务书/升级档位/标记 blocked（禁止第 3 次硬撞）
-
-## 预估规模
-中　约 4h　≥2h
-
-
----
-
-#### TASK-097：天梯生效价读侧加固 + 缓存失效：价格行排序/脏行排除、优惠写入后清天梯缓存
-
-> 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
-
-> 执行者：**Hark(主Agent)** ｜ 所有权 Agent：**Agent-API** ｜ 建议档位：**opus**
-
-> V0.10.0 状态：**未开工（Hark 核心）**｜V0.10.0 新增
-
-> 历史（V0.4.0→V0.5.0）：V0.10.0 新增（review-ext12 D4/D5）
-
-## 归属
-- 所属切片：S4（生效价：限时优惠 + 计价口径归一（需求 §3.6/§3.2））
-- 来源需求：REQ-F-038 / REQ-NF-003
-- RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-F-038、REQ-F-063
-- 来源方案：review-ext12 D4/D5
-
-## 目标
-ladder 价格读取只取 isCurrent=true 且 sourceType≠PROMOTION 的当前价 + 窗口内 PROMOTION 行并按 effectiveFrom desc 排序；优惠 POST/PATCH/DELETE 与价格写入后调用 invalidateLadderCache 并 revalidatePath 天梯页，优惠结束后至多 1 次 TTL（≤ 优惠截止时刻对齐的缓存期）不再显示优惠价
-
-## 输入
-- 文档：`docs/任务规划V0.9.0/06_validation/evidence/EVD-093/`
-- 契约：`EffectivePriceSchema`
-- 前置任务：TASK-096
-- 前置状态：TASK-093 已合并；TASK-096 已合并（同改 promotions 路由）
-
-## 输出
-- 新增/修改的文件路径：
-  - `apps/web/lib/features/ladder/repository.ts`
-  - `apps/web/lib/features/ladder/service.ts`
-  - `apps/web/app/api/v1/admin/prices/promotions/`
-  - `apps/web/lib/features/ladder/__tests__/ladder-effective-price.spec.ts`
-  - `docs/任务规划V0.10.0/06_validation/evidence/EVD-097/`（取证：命令输出/截图/日志）
-
-## Execution Steps
-1. [ ] repository 价格 where/orderBy 修正，脏行（PROMOTION 且 isCurrent=true）不得当当前价
-2. [ ] 缓存 TTL 取 min(LADDER_CACHE_TTL, 最近优惠起止时刻 - now)
-3. [ ] 写路由调用 invalidateLadderCache
-4. [ ] 单测：脏行不挤出正确价、窗口边界缓存过期
-5. [ ] 运行「验证命令」并将完整输出存入证据目录
-
-## 验收标准
-- [ ] ladder 单测全绿且新增 ≥3 例
-- [ ] web tsc exit 0
-- [ ] `node scripts/check-docs-facts.mjs` exit 0
-- [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
-
-## 验证命令
-```bash
-pnpm --filter web exec vitest run lib/features/ladder && pnpm --filter web exec tsc --noEmit
-```
-
-## 证据路径
-`docs/任务规划V0.10.0/06_validation/evidence/EVD-097/`
-
-## 允许修改
-- `apps/web/lib/features/ladder/`
-- `apps/web/app/api/v1/admin/prices/promotions/`
-- `docs/任务规划V0.10.0/06_validation/evidence/EVD-097/**`
-
-## 禁止修改
-- `packages/shared/**`
-- `apps/web/lib/features/pricing/**`
-- `.example/history/**（铁律4 历史只读）`
-- `docs/任务规划V0.5.0/contracts/**（冻结契约；变更须先提 ADR 并经 opus/fable 券审批）`
-- `docs/任务规划V0.1.0/** … docs/任务规划V0.4.0/** · docs/任务规划V0.6.0/** … docs/任务规划V0.9.0/**（历代规划只读；V0.5.0 仅 TASK-087 可改文件名）`
-- `AGENTS.md`
-
-## 依赖与阻塞
-- Depends on：TASK-096
-- 资源锁串行（同文件，须在其后执行）：无
-- Blocks：TASK-029
-- 阻塞条件：排名口径需改（价格排序以外）→ 停
-
-## 建议执行档位
-opus　理由：对外价格展示正确性 + 缓存一致性
-
-## 升级条件
-无；通用熔断：同一任务连续 2 次验收失败 → 停止改代码，改为重写任务书/升级档位/标记 blocked（禁止第 3 次硬撞）
-
-## 预估规模
-中　约 3h　≥2h
-
-
----
-
-#### TASK-029：UI：后台优惠子表与创建对话框 + 前台优惠价徽标
-
-> 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
-
-> 执行者：**Hark(主Agent)** ｜ 所有权 Agent：**Agent-App** ｜ 建议档位：**opus**
-
-> V0.10.0 状态：**未开工（Hark 核心）**｜V0.10.0：可开工条件见依赖；已完成依赖 TASK-028、TASK-093 移出卡集；028/093 已外部完成；优惠写侧/天梯缓存缺陷先由 096/097 收口再做 UI（避免 UI 建在会漏重叠的写侧上）
-
-> 历史（V0.4.0→V0.5.0）：沿用（V0.5.0 重核：cd5b1a9 业务树=77c7952 无 delta）
-
-## 归属
-- 所属切片：S4（生效价：限时优惠 + 计价口径归一（需求 §3.6/§3.2））
-- 来源需求：REQ-F-12 / REQ-C-03
-- RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-F-038、REQ-F-063
-- 来源方案：DESIGN-002
-
-## 目标
-/admin/prices 可增改删优惠；/pricing 与 /models/[slug] 显示「限时优惠/限时免费」徽标与原价划线；五态符合契约⑥；/pricing、/models/[slug]、天梯矩阵与详情（ladder/repository 读 isCurrent 价）统一改读生效价（resolveEffectivePrice / /api/v1/models/[id].effectivePrice），优惠中展示划线原价与截止时间
-
-## 输入
-- 文档：`contracts/06-ux-states.contract.ts 后台限时优惠/前台价格徽标`
-- 契约：`EffectivePriceSchema`
-- 前置任务：TASK-097
-- 前置状态：TASK-027、TASK-028 已合并
-
-## 输出
-- 新增/修改的文件路径：
-  - `apps/web/components/admin/PromotionsPanel.tsx`
-  - `apps/web/components/admin/PricesManager.tsx`
-  - `apps/web/components/common/PriceTag.tsx`
-  - `apps/web/app/(site)/pricing/page.tsx`
-  - `apps/web/app/(site)/models/[slug]/page.tsx`
-  - `docs/任务规划V0.10.0/06_validation/evidence/EVD-029/`（取证：命令输出/截图/日志）
-
-## Execution Steps
-1. [ ] Dialog + 日期时间输入（Asia/Shanghai 展示，提交 ISO UTC）
-2. [ ] PriceTag 统一价格渲染
-3. [ ] 无写权限只读
-4. [ ] 运行「验证命令」并将完整输出存入证据目录
-
-## 验收标准
-- [ ] web tsc/lint 0 error
-- [ ] TASK-030 通过（独立验证者判定）
-- [ ] `node scripts/check-docs-facts.mjs` exit 0（R10-01：本卡新增 route/page/spec 时同步期望值）
-- [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
-
-## 验证命令
-```bash
-pnpm --filter web exec tsc --noEmit && pnpm --filter web lint
-```
-
-## 证据路径
-`docs/任务规划V0.10.0/06_validation/evidence/EVD-029/`
-
-## 允许修改
-- `apps/web/components/admin/PromotionsPanel.tsx`
-- `apps/web/components/admin/PricesManager.tsx`
-- `apps/web/components/common/PriceTag.tsx`
-- `apps/web/app/(site)/pricing/**`
-- `apps/web/app/(site)/models/[slug]/**`
-- `docs/任务规划V0.10.0/06_validation/evidence/EVD-029/**`
-
-## 禁止修改
-- `apps/web/app/api/**`
-- `packages/shared/**`
-- `.example/history/**（铁律4 历史只读）`
-- `docs/任务规划V0.5.0/contracts/**（冻结契约；变更须先提 ADR 并经 opus/fable 券审批）`
-- `docs/任务规划V0.1.0/** … docs/任务规划V0.4.0/** · docs/任务规划V0.6.0/** … docs/任务规划V0.9.0/**（历代规划只读；V0.5.0 仅 TASK-087 可改文件名）`
-- `AGENTS.md`
-
-## 依赖与阻塞
-- Depends on：TASK-097
-- 资源锁串行（同文件，须在其后执行）：无
-- Blocks：TASK-030, TASK-053
-- 阻塞条件：与 TASK-023 同改 models/[slug]/page.tsx → 必须在 TASK-023 合并后开始（已列依赖）
-
-## 建议执行档位
-opus　理由：UI 设计（价格透明呈现），主 Agent 亲自完成
-
-## 升级条件
-连续 2 次验收失败 → 重写任务书；通用熔断：同一任务连续 2 次验收失败 → 停止改代码，改为重写任务书/升级档位/标记 blocked（禁止第 3 次硬撞）
-
-## 预估规模
-大　约 10h　≥2h
-
-
----
-
-#### TASK-053：UI：价格页/详情页统一 ¥/M 展示（附原币原价注记）
-
-> 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
-
-> 执行者：**Hark(主Agent)** ｜ 所有权 Agent：**Agent-App** ｜ 建议档位：**opus** ｜ **条件卡：待 U-15（汇率口径）裁决后下发**
-
-> V0.10.0 状态：**条件·待裁决**｜V0.10.0：条件卡，待 U-15 裁决
-
-> 历史（V0.4.0→V0.5.0）：沿用（V0.5.0 重核：cd5b1a9 业务树=77c7952 无 delta）
-
-## 归属
-- 所属切片：S4（生效价：限时优惠 + 计价口径归一（需求 §3.6/§3.2））
-- 来源需求：REQ-F-02b / REQ-C-03 价格透明（展示价与官方一致：原币原价须可见）
-- RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-F-011
-- 来源方案：DESIGN-003
-
-## 目标
-/pricing 网关单价表与 /models/[slug] 参数表的价格列统一显示「¥x.xx / M Tokens」，USD 官方价以次级文字「官方 $y / M」并列（不隐藏原价）；三套浅色主题对比度 ≥4.5:1
-
-## 输入
-- 文档：`contracts/06-ux-states.contract.ts PRICING_TABLE`；`docs/product/design/UI设计文档.md`
-- 契约：`EffectivePriceSchema（v0.2）`；`UX_STATES.pricingTable`
-- 前置任务：TASK-048, TASK-029
-- 前置状态：TASK-048、TASK-029 已合并（同页资源锁）
-
-## 输出
-- 新增/修改的文件路径：
-  - `apps/web/app/(site)/pricing/page.tsx`
-  - `apps/web/app/(site)/models/[slug]/page.tsx`
-  - `docs/任务规划V0.10.0/06_validation/evidence/EVD-053/`（取证：命令输出/截图/日志）
-
-## Execution Steps
-1. [ ] 价格单元格改读 EffectivePrice.priceInput/priceOutput（已归一）
-2. [ ] sourceCurrency≠CNY 时追加原币注记
-3. [ ] 空态/错误态沿用契约⑥
-4. [ ] 三主题截图存证
-5. [ ] 运行「验证命令」并将完整输出存入证据目录
-
-## 验收标准
-- [ ] `pnpm --filter web exec tsc --noEmit` 0 且 `pnpm --filter web lint` 0 error
-- [ ] 页面无 `$` 作为主价格符号（e2e/人工：主列均为 ¥）
-- [ ] 原币注记对 USD 行可见（人工截图）
-- [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
-
-## 验证命令
-```bash
-pnpm --filter web exec tsc --noEmit && pnpm --filter web lint
-```
-
-## 证据路径
-`docs/任务规划V0.10.0/06_validation/evidence/EVD-053/`
-
-## 允许修改
-- `apps/web/app/(site)/pricing/**`
-- `apps/web/app/(site)/models/[slug]/**`
-- `docs/任务规划V0.10.0/06_validation/evidence/EVD-053/**`
-
-## 禁止修改
-- `apps/web/lib/**`
-- `packages/**`
-- `.example/history/**（铁律4 历史只读）`
-- `docs/任务规划V0.5.0/contracts/**（冻结契约；变更须先提 ADR 并经 opus/fable 券审批）`
-- `docs/任务规划V0.1.0/** … docs/任务规划V0.4.0/** · docs/任务规划V0.6.0/** … docs/任务规划V0.9.0/**（历代规划只读；V0.5.0 仅 TASK-087 可改文件名）`
-- `AGENTS.md`
-
-## 依赖与阻塞
-- Depends on：TASK-048, TASK-029
-- 资源锁串行（同文件，须在其后执行）：TASK-067, TASK-074
-- Blocks：TASK-054
-- 阻塞条件：U-15 未裁决 → 不执行（条件卡）
-
-## 建议执行档位
-opus　理由：全部 UI 设计实现由主 Agent 负责；展示口径直接面向用户
-
-## 升级条件
-设计与「展示价=官方价」约束冲突 → 升 opus 并回报用户；通用熔断：同一任务连续 2 次验收失败 → 停止改代码，改为重写任务书/升级档位/标记 blocked（禁止第 3 次硬撞）
-
-## 预估规模
-中　约 6h　≥2h
 
 
 ---

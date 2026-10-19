@@ -71,7 +71,7 @@ node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs
 
 ## 依赖与阻塞
 - Depends on：TASK-035
-- 资源锁串行（同文件，须在其后执行）：TASK-031, TASK-040, TASK-041, TASK-051, TASK-054, TASK-088, TASK-095
+- 资源锁串行（同文件，须在其后执行）：TASK-031, TASK-040, TASK-041, TASK-051, TASK-054, TASK-088
 - Blocks：无
 - 阻塞条件：无
 

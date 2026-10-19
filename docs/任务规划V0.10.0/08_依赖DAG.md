@@ -10,51 +10,52 @@
 
 ## 8.2 校验结果
 
-- ① 环检测：✅ 无环（Kahn 拓扑排序 56/56 节点全部出队）
-- ② 功能依赖边 45 条；资源锁串行边 29 条（两任务允许路径重叠且原本无先后关系时，按编号小者先）
+- ① 环检测：✅ 无环（Kahn 拓扑排序 52/52 节点全部出队）
+- ② 功能依赖边 40 条；资源锁串行边 22 条（两任务允许路径重叠且原本无先后关系时，按编号小者先）
 - ③ 契约冻结前置校验：✅ 全部满足
 - ④ 迁移版本号：全规划两个迁移版本号：M-001（TASK-011）、M-002（TASK-058，依赖 TASK-011，串行），无并发迁移
 - ⑥ 依赖合法性（非条件卡不得依赖条件卡，含资源锁边）：✅ 满足
-- ⑤ 层级数（最长路径层）：L0–L11；批次总数 18，其中可并行组 9 个
+- ⑤ 层级数（最长路径层）：L0–L8；批次总数 24，其中可并行组 4 个
 
 ## 8.3 关键路径
 
-- **全量（含条件切片 S5/S8/S9）**：TASK-095 → TASK-096 → TASK-097 → TASK-029 → TASK-067 → TASK-074 → TASK-053 → TASK-054 → TASK-036 → TASK-052 → TASK-046（累计 50.5h）
-- **当前可执行范围（剔除全部条件卡：U-5/U-3/U-4/U-15/P-2/U-M1/U-M2/U-M3/U-M5）**：TASK-095 → TASK-096 → TASK-097 → TASK-029 → TASK-067 → TASK-074 → TASK-075（累计 38.5h）
+- **全量（含条件切片 S5/S8/S9）**：TASK-066 → TASK-067 → TASK-074 → TASK-053 → TASK-054 → TASK-036 → TASK-052 → TASK-046（累计 37h）
+- **当前可执行范围（剔除全部条件卡：U-5/U-3/U-4/U-15/P-2/U-M1/U-M2/U-M3/U-M5）**：TASK-061 → TASK-063 → TASK-064 → TASK-065（累计 26h）
 
 关键路径解读：S0 契约骨架 → S1 迁移 M-001 → S4 生效价（资金路径）→ S4 UI → 计费 e2e → 文档登记，决定整体工期；S2/S3/S5 可在 S0 完成后与 S1 交错推进。
 
 ## 8.4 批次计划（按层级，同层内按规则装批）
 
-- L0 · **可并行组**：TASK-006（Agent-Guard） ∥ TASK-049（Agent-Guard） ∥ TASK-086（Agent-Guard）
+- L0 · **可并行组**：TASK-006（Agent-Guard） ∥ TASK-050（Agent-Guard）
   - 机械依据：✅无共享可变状态（非同一 e2e 全局库批次、非同表写）；✅依赖契约已冻结（同切片契约卡为祖先，见校验③）；✅文件所有权不相交（允许路径两两无前缀重叠，脚本校验）；✅不共用迁移版本号（迁移版本号：TASK-011 持 M-001、TASK-058 持 M-002，二者不同批）
-- L0 · **可并行组**：TASK-061（Agent-API） ∥ TASK-066（Agent-API） ∥ TASK-081（Agent-API）
+- L0 · 单任务：TASK-049（Agent-Guard）
+- L0 · **可并行组**：TASK-061（Agent-API） ∥ TASK-087（Agent-Docs）
   - 机械依据：✅无共享可变状态（非同一 e2e 全局库批次、非同表写）；✅依赖契约已冻结（同切片契约卡为祖先，见校验③）；✅文件所有权不相交（允许路径两两无前缀重叠，脚本校验）；✅不共用迁移版本号（迁移版本号：TASK-011 持 M-001、TASK-058 持 M-002，二者不同批）
-- L0 · **可并行组**：TASK-087（Agent-Docs） ∥ TASK-095（Agent-Docs） ∥ TASK-098（Agent-Data）
-  - 机械依据：✅无共享可变状态（非同一 e2e 全局库批次、非同表写）；✅依赖契约已冻结（同切片契约卡为祖先，见校验③）；✅文件所有权不相交（允许路径两两无前缀重叠，脚本校验）；✅不共用迁移版本号（迁移版本号：TASK-011 持 M-001、TASK-058 持 M-002，二者不同批）
+- L0 · 单任务：TASK-066（Agent-API）
+- L0 · 单任务：TASK-081（Agent-API）
+- L0 · 单任务：TASK-086（Agent-Guard）
+- L0 · 单任务：TASK-098（Agent-Data）
 - L0 · 单任务：TASK-099（Agent-API）
-- L1 · **可并行组**：TASK-039（Agent-Guard） ∥ TASK-050（Agent-Guard） ∥ TASK-062（Agent-Guard）
+- L1 · 单任务：TASK-030（Agent-Guard）
+- L1 · 单任务：TASK-037（Agent-Guard）
+- L1 · 单任务：TASK-039（Agent-Guard）
+- L1 · 单任务：TASK-062（Agent-Guard）
+- L1 · **可并行组**：TASK-063（Agent-API） ∥ TASK-088（Agent-Docs）
   - 机械依据：✅无共享可变状态（非同一 e2e 全局库批次、非同表写）；✅依赖契约已冻结（同切片契约卡为祖先，见校验③）；✅文件所有权不相交（允许路径两两无前缀重叠，脚本校验）；✅不共用迁移版本号（迁移版本号：TASK-011 持 M-001、TASK-058 持 M-002，二者不同批）
-- L1 · **可并行组**：TASK-063（Agent-API） ∥ TASK-088（Agent-Docs） ∥ TASK-096（Agent-API）
-  - 机械依据：✅无共享可变状态（非同一 e2e 全局库批次、非同表写）；✅依赖契约已冻结（同切片契约卡为祖先，见校验③）；✅文件所有权不相交（允许路径两两无前缀重叠，脚本校验）；✅不共用迁移版本号（迁移版本号：TASK-011 持 M-001、TASK-058 持 M-002，二者不同批）
-- L1 · **可并行组**：TASK-084（Agent-Guard） ∥ TASK-092（Agent-Guard）
-  - 机械依据：✅无共享可变状态（非同一 e2e 全局库批次、非同表写）；✅依赖契约已冻结（同切片契约卡为祖先，见校验③）；✅文件所有权不相交（允许路径两两无前缀重叠，脚本校验）；✅不共用迁移版本号（迁移版本号：TASK-011 持 M-001、TASK-058 持 M-002，二者不同批）
-- L2 · 单任务：TASK-037（Agent-Guard）
-- L2 · **可并行组**：TASK-064（Agent-App） ∥ TASK-097（Agent-API）
-  - 机械依据：✅无共享可变状态（非同一 e2e 全局库批次、非同表写）；✅依赖契约已冻结（同切片契约卡为祖先，见校验③）；✅文件所有权不相交（允许路径两两无前缀重叠，脚本校验）；✅不共用迁移版本号（迁移版本号：TASK-011 持 M-001、TASK-058 持 M-002，二者不同批）
-- L3 · **可并行组**：TASK-029（Agent-App） ∥ TASK-094（Agent-Data）
+- L1 · 单任务：TASK-067（Agent-App）
+- L1 · 单任务：TASK-084（Agent-Guard）
+- L1 · 单任务：TASK-092（Agent-Guard）
+- L2 · 单任务：TASK-031（Agent-Docs）
+- L2 · 单任务：TASK-064（Agent-App）
+- L2 · 单任务：TASK-074（Agent-App）
+- L3 · **可并行组**：TASK-040（Agent-Docs） ∥ TASK-094（Agent-Data）
   - 机械依据：✅无共享可变状态（非同一 e2e 全局库批次、非同表写）；✅依赖契约已冻结（同切片契约卡为祖先，见校验③）；✅文件所有权不相交（允许路径两两无前缀重叠，脚本校验）；✅不共用迁移版本号（迁移版本号：TASK-011 持 M-001、TASK-058 持 M-002，二者不同批）
 - L3 · 单任务：TASK-065（Agent-Guard）
-- L4 · 单任务：TASK-030（Agent-Guard）
-- L4 · 单任务：TASK-067（Agent-App）
-- L5 · **可并行组**：TASK-031（Agent-Docs） ∥ TASK-074（Agent-App）
-  - 机械依据：✅无共享可变状态（非同一 e2e 全局库批次、非同表写）；✅依赖契约已冻结（同切片契约卡为祖先，见校验③）；✅文件所有权不相交（允许路径两两无前缀重叠，脚本校验）；✅不共用迁移版本号（迁移版本号：TASK-011 持 M-001、TASK-058 持 M-002，二者不同批）
-- L6 · 单任务：TASK-040（Agent-Docs）
-- L6 · 单任务：TASK-075（Agent-Guard）
-- L7 · 单任务：TASK-041（Agent-Docs）
-- L8 · 单任务：TASK-051（Agent-Docs）
+- L3 · 单任务：TASK-075（Agent-Guard）
+- L4 · 单任务：TASK-041（Agent-Docs）
+- L5 · 单任务：TASK-051（Agent-Docs）
 
-**条件批次（BLOCKING 裁决后才下发，不计入上表）**：TASK-008（S0，P-2，L0）；TASK-047（S4，U-15，L0）；TASK-044（S9，U-4，L0）；TASK-068（S11，U-M5，L0）；TASK-070（S12，U-M1，L0）；TASK-072（S12，U-M2，L0）；TASK-032（S5，U-5，L1）；TASK-048（S4，U-15，L1）；TASK-055（S4，U-15，L1）；TASK-045（S9，U-4，L1）；TASK-071（S12，U-M3，L1）；TASK-033（S5，U-5，L2）；TASK-080（S4，U-15，L2）；TASK-069（S11，U-15，L2）；TASK-042（S8，U-3，L3）；TASK-034（S5，U-5，L3）；TASK-043（S8，U-3，L4）；TASK-083（S8，U-3，L4）；TASK-035（S5，U-5，L4）；TASK-053（S4，U-15，L6）；TASK-054（S4，U-15，L7）；TASK-036（S5，U-5，L9）；TASK-052（S8，U-3，L10）；TASK-046（S9，U-4，L11）。裁决后按依赖与同样规则装批；若条件卡被取消，其资源锁串行边随之失效。
+**条件批次（BLOCKING 裁决后才下发，不计入上表）**：TASK-008（S0，P-2，L0）；TASK-047（S4，U-15，L0）；TASK-044（S9，U-4，L0）；TASK-068（S11，U-M5，L0）；TASK-070（S12，U-M1，L0）；TASK-072（S12，U-M2，L0）；TASK-032（S5，U-5，L1）；TASK-048（S4，U-15，L1）；TASK-055（S4，U-15，L1）；TASK-045（S9，U-4，L1）；TASK-071（S12，U-M3，L1）；TASK-042（S8，U-3，L2）；TASK-033（S5，U-5，L2）；TASK-080（S4，U-15，L2）；TASK-069（S11，U-15，L2）；TASK-043（S8，U-3，L3）；TASK-083（S8，U-3，L3）；TASK-034（S5，U-5，L3）；TASK-053（S4，U-15，L3）；TASK-035（S5，U-5，L4）；TASK-054（S4，U-15，L4）；TASK-036（S5，U-5，L6）；TASK-052（S8，U-3，L7）；TASK-046（S9，U-4，L8）。裁决后按依赖与同样规则装批；若条件卡被取消，其资源锁串行边随之失效。
 
 ## 8.5 功能依赖边
 
@@ -66,8 +67,6 @@
 - TASK-006 → TASK-065
 - TASK-006 → TASK-075
 - TASK-006 → TASK-084
-- TASK-029 → TASK-030
-- TASK-029 → TASK-053
 - TASK-030 → TASK-031
 - TASK-031 → TASK-054
 - TASK-032 → TASK-033
@@ -100,15 +99,10 @@
 - TASK-074 → TASK-075
 - TASK-086 → TASK-088
 - TASK-086 → TASK-092
-- TASK-095 → TASK-096
-- TASK-096 → TASK-097
-- TASK-097 → TASK-029
 
 ## 8.6 资源锁串行边（同文件 → 必须串行）
 
-- TASK-006 → TASK-050
 - TASK-008 → TASK-055
-- TASK-029 → TASK-067
 - TASK-031 → TASK-036
 - TASK-031 → TASK-040
 - TASK-031 → TASK-046
@@ -119,8 +113,6 @@
 - TASK-040 → TASK-036
 - TASK-041 → TASK-036
 - TASK-047 → TASK-032
-- TASK-050 → TASK-037
-- TASK-050 → TASK-042
 - TASK-051 → TASK-036
 - TASK-052 → TASK-046
 - TASK-054 → TASK-036
@@ -132,9 +124,6 @@
 - TASK-088 → TASK-040
 - TASK-088 → TASK-046
 - TASK-088 → TASK-052
-- TASK-095 → TASK-036
-- TASK-095 → TASK-041
-- TASK-095 → TASK-046
 
 ## 8.7 必须串行的链（摘要）
 

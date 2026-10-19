@@ -66,7 +66,7 @@ node scripts/ops/pg-drill.mjs --source $DATABASE_URL
 
 ## 依赖与阻塞
 - Depends on：TASK-006
-- 资源锁串行（同文件，须在其后执行）：TASK-037, TASK-050
+- 资源锁串行（同文件，须在其后执行）：TASK-037
 - Blocks：TASK-043, TASK-052, TASK-083
 - 阻塞条件：CI 镜像无 pg_dump 客户端 → 使用 postgres:16 容器内执行
 

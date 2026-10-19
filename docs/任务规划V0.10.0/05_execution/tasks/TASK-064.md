@@ -58,6 +58,7 @@ pnpm --filter web exec tsc --noEmit && pnpm --filter web lint && cd apps/web && 
 ## 允许修改
 - `apps/web/app/(admin)/admin/monitoring/`
 - `apps/web/components/admin/monitoring/`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-064/**`
 
 ## 禁止修改

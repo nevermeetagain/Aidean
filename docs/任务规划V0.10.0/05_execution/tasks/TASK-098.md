@@ -15,7 +15,7 @@
 - 来源方案：review-ext12 D6/D7/D10
 
 ## 目标
-persistCatalogSnapshot：items 为空时不执行下架（记 snapshot status=empty 并返回 delisted=0）；upsert 按 200 条分批且事务 timeout 显式设为 60s；同 (sourceId, contentHash) 并发第二次捕获 P2002 后返回既有快照（idempotent=true）
+persistCatalogSnapshot：items 为空时**不写快照、不下架**，直接返回 { skipped: true, reason: "empty", delisted: 0 }（CatalogSnapshot 无 status 列，不改表）；upsert 按 200 条分批且 $transaction 显式 timeout=60000；同 (sourceId, rawSha256) 并发第二次捕获 P2002 后回读并返回既有快照（idempotent=true）
 
 ## 输入
 - 文档：`docs/任务规划V0.9.0/06_validation/evidence/EVD-059/`；`docs/任务规划V0.10.0/03_solution/design/DESIGN-004-模型源监控体系.md`
@@ -30,10 +30,10 @@ persistCatalogSnapshot：items 为空时不执行下架（记 snapshot status=em
   - `docs/任务规划V0.10.0/06_validation/evidence/EVD-098/`（取证：命令输出/截图/日志）
 
 ## Execution Steps
-1. [ ] 空 items 守卫
-2. [ ] 分批 + timeout
-3. [ ] P2002 回读
-4. [ ] 单测 3 例
+1. [ ] 空 items 守卫（早于任何写库）
+2. [ ] 观测 upsert 分批 200 + 交互事务 timeout 60000/maxWait 10000
+3. [ ] create 快照 P2002 → findUnique({ sourceId_rawSha256 }) 回读
+4. [ ] 单测 3 例：空目录不下架、分批调用次数、P2002 回读
 5. [ ] 运行「验证命令」并将完整输出存入证据目录
 
 ## 验收标准
@@ -53,6 +53,7 @@ pnpm --filter web exec vitest run lib/sync/writers && pnpm --filter web exec tsc
 ## 允许修改
 - `apps/web/lib/sync/writers/catalog-snapshot.ts`
 - `apps/web/lib/sync/writers/catalog-snapshot.spec.ts`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-098/**`
 
 ## 禁止修改

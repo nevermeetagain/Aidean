@@ -21,17 +21,17 @@
 - 文档：`03_solution/decisions/ADR-P005-计价口径归一.md`
 - 契约：`无（只读盘点）`
 - 前置任务：无
-- 前置状态：TASK-006 已合并（CI 有 seed 后的 PG16）
+- 前置状态：本地 PG16 已 migrate deploy + pnpm db:seed（不再依赖 CI/006）
 
 ## 输出
 - 新增/修改的文件路径：
-  - `scripts/audit/price-normalization-audit.mjs（新建）`
+  - `scripts/audit/price-unit-census.mjs（新建）`
   - `docs/任务规划V0.10.0/06_validation/evidence/EVD-049/`（取证：命令输出/截图/日志）
 
 ## Execution Steps
 1. [ ] 用 @prisma/client 只读查询（无写语句；脚本内 grep 自检无 create/update/delete）
 2. [ ] 输出 markdown 表到 stdout
-3. [ ] 在 CI seed 后库运行一次并存证
+3. [ ] 在本地 seed 后 PG16 运行一次并存证 EVD-049/census.md
 4. [ ] 运行「验证命令」并将完整输出存入证据目录
 
 ## 验收标准
@@ -43,7 +43,7 @@
 
 ## 验证命令
 ```bash
-node scripts/audit/price-normalization-audit.mjs
+DATABASE_URL=$PG16_URL node scripts/audit/price-unit-census.mjs
 ```
 
 ## 证据路径
@@ -51,6 +51,7 @@ node scripts/audit/price-normalization-audit.mjs
 
 ## 允许修改
 - `scripts/audit/**`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-049/**`
 
 ## 禁止修改

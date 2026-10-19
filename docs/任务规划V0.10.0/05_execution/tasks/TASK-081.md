@@ -56,6 +56,7 @@ pnpm --filter web exec vitest run lib/features/auth/__tests__/admin-prices-batch
 ## 允许修改
 - `apps/web/app/api/v1/admin/prices/batch-upsert/`
 - `apps/web/lib/features/auth/__tests__/admin-prices-batch.spec.ts`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-081/**`
 
 ## 禁止修改

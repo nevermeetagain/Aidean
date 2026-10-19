@@ -44,7 +44,7 @@
 
 ## 验证命令
 ```bash
-node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs && test ! -f docs/执行过程.md && grep -q '任务规划V0.9.0' docs/governance/目录结构文档.md; echo exit=$?
+node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs && test ! -f docs/执行过程.md && grep -q '任务规划V0.10.0' docs/governance/目录结构文档.md; echo exit=$?
 ```
 
 ## 证据路径

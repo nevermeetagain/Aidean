@@ -57,6 +57,7 @@ pnpm exec playwright test --list --config playwright.config.ts
 - `e2e/playwright.config.ts`
 - `package.json`
 - `.github/workflows/ci.yml`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-037/**`
 
 ## 禁止修改
@@ -70,7 +71,7 @@ pnpm exec playwright test --list --config playwright.config.ts
 
 ## 依赖与阻塞
 - Depends on：TASK-006
-- 资源锁串行（同文件，须在其后执行）：TASK-050
+- 资源锁串行（同文件，须在其后执行）：无
 - Blocks：TASK-065
 - 阻塞条件：合并后 smoke 重复执行导致登录限流 → 保留 workers=1 并登记
 

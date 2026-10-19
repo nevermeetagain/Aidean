@@ -13,7 +13,7 @@
 |---|---|---|---|---|
 | L0 | [TASK-044](../../05_execution/tasks/TASK-044.md) Product.intro 契约扩展：screenshots（≤6，url/alt/caption） | 外部Agent | Agent-Contract | — |
 | L1 | [TASK-045](../../05_execution/tasks/TASK-045.md) UI：介绍页截图画廊区块 + 后台 intro 编辑器截图条目 | Hark(主Agent) | Agent-App | TASK-044 |
-| L11 | [TASK-046](../../05_execution/tasks/TASK-046.md) S9 文档同步：合作产品内容配置 / 子平台介绍页 intro 字段登记 | 外部Agent | Agent-Docs | TASK-045 |
+| L8 | [TASK-046](../../05_execution/tasks/TASK-046.md) S9 文档同步：合作产品内容配置 / 子平台介绍页 intro 字段登记 | 外部Agent | Agent-Docs | TASK-045 |
 
 ## 切片验收（独立验证者只看 diff + 运行结果，输出 PASS / FAIL / UNKNOWN）
 

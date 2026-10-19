@@ -11,7 +11,7 @@
 ## 归属
 - 所属切片：S4（生效价：限时优惠 + 计价口径归一（需求 §3.6/§3.2））
 - 来源需求：REQ-F-02b / REQ-C-03 价格透明（展示价与官方一致：原币原价须可见）
-- RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-F-011
+- RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-F-011、REQ-F-063
 - 来源方案：DESIGN-003
 
 ## 目标
@@ -20,7 +20,7 @@
 ## 输入
 - 文档：`contracts/06-ux-states.contract.ts PRICING_TABLE`；`docs/product/design/UI设计文档.md`
 - 契约：`EffectivePriceSchema（v0.2）`；`UX_STATES.pricingTable`
-- 前置任务：TASK-048, TASK-029
+- 前置任务：TASK-048
 - 前置状态：TASK-048、TASK-029 已合并（同页资源锁）
 
 ## 输出
@@ -40,6 +40,8 @@
 - [ ] `pnpm --filter web exec tsc --noEmit` 0 且 `pnpm --filter web lint` 0 error
 - [ ] 页面无 `$` 作为主价格符号（e2e/人工：主列均为 ¥）
 - [ ] 原币注记对 USD 行可见（人工截图）
+- [ ] review-029 S4：详情页生效价解析失败时回落 isCurrent 当前价（而非已收敛的生效行）且不显示徽标
+- [ ] review-029 S5：/pricing 优惠查询失败只降级为当前价表，不整体走空态
 - [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
 
 ## 验证命令
@@ -64,7 +66,7 @@ pnpm --filter web exec tsc --noEmit && pnpm --filter web lint
 - `AGENTS.md`
 
 ## 依赖与阻塞
-- Depends on：TASK-048, TASK-029
+- Depends on：TASK-048
 - 资源锁串行（同文件，须在其后执行）：TASK-067, TASK-074
 - Blocks：TASK-054
 - 阻塞条件：U-15 未裁决 → 不执行（条件卡）

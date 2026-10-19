@@ -56,6 +56,7 @@ pnpm --filter web exec vitest run lib/monitoring/__tests__/admin-routes.spec.ts 
 ## 允许修改
 - `apps/web/app/api/v1/admin/monitoring/`
 - `apps/web/lib/monitoring/__tests__/admin-routes.spec.ts`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-063/**`
 
 ## 禁止修改

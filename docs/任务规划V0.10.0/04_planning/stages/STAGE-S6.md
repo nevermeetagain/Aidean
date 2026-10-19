@@ -11,15 +11,15 @@
 
 | 层级 | 任务 | 执行者 | 所有权 | 依赖 |
 |---|---|---|---|---|
+| L1 | [TASK-037](../../05_execution/tasks/TASK-037.md) e2e 配置口径收敛：根 playwright.config.ts 唯一（138+64 例并表） | 外部Agent | Agent-Guard | TASK-006 |
 | L1 | [TASK-039](../../05_execution/tasks/TASK-039.md) 千级模型天梯量级基线（只测量，不优化） | 外部Agent | Agent-Guard | TASK-006 |
 | L1 | [TASK-084](../../05_execution/tasks/TASK-084.md) 核验：天梯页无页脚 + 台账 #19 admin 配置治理收口状态 | 外部Agent | Agent-Guard | TASK-006 |
-| L2 | [TASK-037](../../05_execution/tasks/TASK-037.md) e2e 配置口径收敛：根 playwright.config.ts 唯一（138+64 例并表） | 外部Agent | Agent-Guard | TASK-006 |
 
 ## 切片验收（独立验证者只看 diff + 运行结果，输出 PASS / FAIL / UNKNOWN）
 
+- [ ] TASK-037：`pnpm exec playwright test --list --config playwright.config.ts`
 - [ ] TASK-039：`node scripts/test/benchmark/ladder-1k.mjs --dry-run`
 - [ ] TASK-084：`pnpm test:e2e -g ladder-no-footer`
-- [ ] TASK-037：`pnpm exec playwright test --list --config playwright.config.ts`
 - [ ] `node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs` 全 PASS
 - [ ] `pnpm --filter @aidean/shared exec tsc --noEmit && pnpm --filter web exec tsc --noEmit && pnpm --filter @aidean/shared test && pnpm --filter web test` 全绿（不得低于基线 118 / 1081 例）
 

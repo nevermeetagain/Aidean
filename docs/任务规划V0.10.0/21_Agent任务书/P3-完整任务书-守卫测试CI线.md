@@ -24,24 +24,105 @@
 
 | 序 | 任务 | 切片 | 名称 | 档位 | 工时 | 依赖（★=他人卡，须等待） | 条件 |
 |---|---|---|---|---|---|---|---|
-| 1 | TASK-035 | S5 | e2e：搜索（命中/无结果/键盘跳转/移动端） | sonnect | 3h | ★034(Hark)、★006(Hark) | U-5 |
-| 2 | TASK-037 | S6 | e2e 配置口径收敛：根 playwright.config.ts 唯一（138+64 例并表） | sonnect | 5h | ★006(Hark) | — |
-| 3 | TASK-039 | S6 | 千级模型天梯量级基线（只测量，不优化） | sonnect | 6h | ★006(Hark) | — |
-| 4 | TASK-042 | S8 | 备份/恢复演练脚本（pg_dump→restore→逐表行数比对） | sonnect | 5h | ★006(Hark) | U-3 |
-| 5 | TASK-049 | S4 | 存量价格行口径盘点脚本（只读：币种×计价单位×来源） | sonnect | 3h | — | — |
-| 6 | TASK-050 | S0 | CI verify 收尾：本地按 ci.yml 顺序复现 verify job 全部步骤 + c | sonnect | 1h | — | — |
-| 7 | TASK-062 | S10 | 调度脚本 monitor_catalogs.ts（按源 cron 运行 collector→wr | sonnect | 3h | ★061(P1) | — |
-| 8 | TASK-065 | S10 | E2E：后台监控页五态 + 手动运行后变更流出现新事件（fixture 源） | sonnect | 4h | 062、★064(Hark)、037、★006(Hark) | — |
-| 9 | TASK-075 | S11 | e2e：模型详情页基准弹窗与测评示例 | sonnect | 3h | ★074(Hark)、★006(Hark) | — |
-| 10 | TASK-083 | S8 | 上线前 seed 演示数据人工审核门禁（清单生成 + 审核记录校验） | sonnect | 3h | 042 | U-3 |
-| 11 | TASK-084 | S6 | 核验：天梯页无页脚 + 台账 #19 admin 配置治理收口状态 | haiku | 2h | ★006(Hark) | — |
-| 12 | TASK-030 | S4 | 计费集成 e2e：优惠窗口内按优惠价扣费、窗外按原价 | sonnect | 6h | ★029(Hark)、★006(Hark) | — |
+| 1 | TASK-030 | S4 | 计费集成 e2e：优惠窗口内按优惠价扣费、窗外按原价 | sonnect | 6h | ★006(Hark) | — |
+| 2 | TASK-035 | S5 | e2e：搜索（命中/无结果/键盘跳转/移动端） | sonnect | 3h | ★034(Hark)、★006(Hark) | U-5 |
+| 3 | TASK-037 | S6 | e2e 配置口径收敛：根 playwright.config.ts 唯一（138+64 例并表） | sonnect | 5h | ★006(Hark) | — |
+| 4 | TASK-039 | S6 | 千级模型天梯量级基线（只测量，不优化） | sonnect | 6h | ★006(Hark) | — |
+| 5 | TASK-042 | S8 | 备份/恢复演练脚本（pg_dump→restore→逐表行数比对） | sonnect | 5h | ★006(Hark) | U-3 |
+| 6 | TASK-049 | S4 | 存量价格行口径盘点脚本（只读：币种×计价单位×来源） | sonnect | 3h | — | — |
+| 7 | TASK-050 | S0 | CI verify 收尾：本地按 ci.yml 顺序复现 verify job 全部步骤 + c | sonnect | 1h | — | — |
+| 8 | TASK-062 | S10 | 调度脚本 monitor_catalogs.ts（按源 cron 运行 collector→wr | sonnect | 3h | ★061(P1) | — |
+| 9 | TASK-065 | S10 | E2E：后台监控页五态 + 手动运行后变更流出现新事件（fixture 源） | sonnect | 4h | 062、★064(Hark)、037、★006(Hark) | — |
+| 10 | TASK-075 | S11 | e2e：模型详情页基准弹窗与测评示例 | sonnect | 3h | ★074(Hark)、★006(Hark) | — |
+| 11 | TASK-083 | S8 | 上线前 seed 演示数据人工审核门禁（清单生成 + 审核记录校验） | sonnect | 3h | 042 | U-3 |
+| 12 | TASK-084 | S6 | 核验：天梯页无页脚 + 台账 #19 admin 配置治理收口状态 | haiku | 2h | ★006(Hark) | — |
 
 ## 2. 跨线等待
-- 你要等待的他人卡：TASK-006(Hark)、TASK-029(Hark)、TASK-034(Hark)、TASK-061(P1)、TASK-064(Hark)、TASK-074(Hark)
+- 你要等待的他人卡：TASK-006(Hark)、TASK-034(Hark)、TASK-061(P1)、TASK-064(Hark)、TASK-074(Hark)
 - 等你完成才能开工的他人卡：TASK-031(P2)、TASK-036(P2)、TASK-043(Hark)、TASK-052(P2)
 
 ## 3. 任务卡全文（与 05_execution/tasks/ 一致，以该目录为准）
+
+#### TASK-030：计费集成 e2e：优惠窗口内按优惠价扣费、窗外按原价
+
+> 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
+
+> 执行者：**外部Agent** ｜ 所有权 Agent：**Agent-Guard** ｜ 建议档位：**sonnect**
+
+> V0.10.0 状态：**未开工**｜V0.10.0：可开工条件见依赖；029 已完成（EVD-029 运行态 7/7）；优惠自然起止页面最多 5 分钟滞后（097 ISR 300s），e2e 需按此等待或直接断言 API/计费
+
+> 历史（V0.4.0→V0.5.0）：沿用（V0.5.0 重核：cd5b1a9 业务树=77c7952 无 delta）
+
+## 归属
+- 所属切片：S4（生效价：限时优惠 + 计价口径归一（需求 §3.6/§3.2））
+- 来源需求：REQ-F-12 / REQ-F-07
+- RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-F-038
+- 来源方案：DESIGN-002
+
+## 目标
+e2e/tests/promotion-billing.spec.ts：建优惠（priceInput=0）→ 网关调用 → 用户余额不变且 usage_log quotaMinor=0 → 删除优惠 → 再调用 → 按原价扣费（逐分断言）
+
+## 输入
+- 文档：`e2e/tests/gateway-flow.spec.ts（参照）`
+- 契约：`EffectivePriceSchema`；`PromotionPriceCreateSchema`
+- 前置任务：TASK-006
+- 前置状态：TASK-029 已合并；CI 注入 AIDEAN_ENABLE_MOCK_UPSTREAM=1
+
+## 输出
+- 新增/修改的文件路径：
+  - `e2e/tests/promotion-billing.spec.ts`
+  - `docs/任务规划V0.10.0/06_validation/evidence/EVD-030/`（取证：命令输出/截图/日志）
+
+## Execution Steps
+1. [ ] admin 建优惠
+2. [ ] 用户调网关
+3. [ ] 查余额/流水
+4. [ ] 清理
+5. [ ] 运行「验证命令」并将完整输出存入证据目录
+
+## 验收标准
+- [ ] `pnpm exec playwright test e2e/tests/promotion-billing.spec.ts --config e2e/playwright.config.ts --workers=1` 通过（TASK-037 收敛后改为根配置）
+- [ ] `node scripts/check-docs-facts.mjs` exit 0（R10-01：本卡新增 route/page/spec 时同步期望值）
+- [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
+
+## 验证命令
+```bash
+pnpm exec playwright test e2e/tests/promotion-billing.spec.ts --config e2e/playwright.config.ts --workers=1
+```
+
+## 证据路径
+`docs/任务规划V0.10.0/06_validation/evidence/EVD-030/`
+
+## 允许修改
+- `e2e/tests/promotion-billing.spec.ts`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
+- `docs/任务规划V0.10.0/06_validation/evidence/EVD-030/**`
+
+## 禁止修改
+- `apps/**`
+- `packages/**`
+- `.example/history/**（铁律4 历史只读）`
+- `docs/任务规划V0.5.0/contracts/**（冻结契约；变更须先提 ADR 并经 opus/fable 券审批）`
+- `docs/任务规划V0.1.0/** … docs/任务规划V0.4.0/** · docs/任务规划V0.6.0/** … docs/任务规划V0.9.0/**（历代规划只读；V0.5.0 仅 TASK-087 可改文件名）`
+- `AGENTS.md`
+
+## 依赖与阻塞
+- Depends on：TASK-006
+- 资源锁串行（同文件，须在其后执行）：无
+- Blocks：TASK-031
+- 阻塞条件：mock-upstream 未在 CI 启用 → 停止交 TASK-006 补 env
+
+## 建议执行档位
+sonnect　理由：E2E 脚本（mock-upstream 已有）
+
+## 升级条件
+2 次失败 → 升 opus；通用熔断：同一任务连续 2 次验收失败 → 停止改代码，改为重写任务书/升级档位/标记 blocked（禁止第 3 次硬撞）
+
+## 预估规模
+中　约 6h　≥2h
+
+
+---
 
 #### TASK-035：e2e：搜索（命中/无结果/键盘跳转/移动端）
 
@@ -180,6 +261,7 @@ pnpm exec playwright test --list --config playwright.config.ts
 - `e2e/playwright.config.ts`
 - `package.json`
 - `.github/workflows/ci.yml`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-037/**`
 
 ## 禁止修改
@@ -193,7 +275,7 @@ pnpm exec playwright test --list --config playwright.config.ts
 
 ## 依赖与阻塞
 - Depends on：TASK-006
-- 资源锁串行（同文件，须在其后执行）：TASK-050
+- 资源锁串行（同文件，须在其后执行）：无
 - Blocks：TASK-065
 - 阻塞条件：合并后 smoke 重复执行导致登录限流 → 保留 workers=1 并登记
 
@@ -262,6 +344,7 @@ node scripts/test/benchmark/ladder-1k.mjs --dry-run
 
 ## 允许修改
 - `scripts/test/benchmark/**`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-039/**`
 
 ## 禁止修改
@@ -359,7 +442,7 @@ node scripts/ops/pg-drill.mjs --source $DATABASE_URL
 
 ## 依赖与阻塞
 - Depends on：TASK-006
-- 资源锁串行（同文件，须在其后执行）：TASK-037, TASK-050
+- 资源锁串行（同文件，须在其后执行）：TASK-037
 - Blocks：TASK-043, TASK-052, TASK-083
 - 阻塞条件：CI 镜像无 pg_dump 客户端 → 使用 postgres:16 容器内执行
 
@@ -398,17 +481,17 @@ sonnect　理由：运维脚本
 - 文档：`03_solution/decisions/ADR-P005-计价口径归一.md`
 - 契约：`无（只读盘点）`
 - 前置任务：无
-- 前置状态：TASK-006 已合并（CI 有 seed 后的 PG16）
+- 前置状态：本地 PG16 已 migrate deploy + pnpm db:seed（不再依赖 CI/006）
 
 ## 输出
 - 新增/修改的文件路径：
-  - `scripts/audit/price-normalization-audit.mjs（新建）`
+  - `scripts/audit/price-unit-census.mjs（新建）`
   - `docs/任务规划V0.10.0/06_validation/evidence/EVD-049/`（取证：命令输出/截图/日志）
 
 ## Execution Steps
 1. [ ] 用 @prisma/client 只读查询（无写语句；脚本内 grep 自检无 create/update/delete）
 2. [ ] 输出 markdown 表到 stdout
-3. [ ] 在 CI seed 后库运行一次并存证
+3. [ ] 在本地 seed 后 PG16 运行一次并存证 EVD-049/census.md
 4. [ ] 运行「验证命令」并将完整输出存入证据目录
 
 ## 验收标准
@@ -420,7 +503,7 @@ sonnect　理由：运维脚本
 
 ## 验证命令
 ```bash
-node scripts/audit/price-normalization-audit.mjs
+DATABASE_URL=$PG16_URL node scripts/audit/price-unit-census.mjs
 ```
 
 ## 证据路径
@@ -428,6 +511,7 @@ node scripts/audit/price-normalization-audit.mjs
 
 ## 允许修改
 - `scripts/audit/**`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-049/**`
 
 ## 禁止修改
@@ -467,7 +551,7 @@ sonnect　理由：只读统计脚本
 > 历史（V0.4.0→V0.5.0）：沿用（V0.5.0 重核：cd5b1a9 业务树=77c7952 无 delta）
 
 ## 归属
-- 所属切片：S0（步行骨架与契约守卫（V0.9.0：剩工件回补、CI 门禁与独立复核））
+- 所属切片：S0（步行骨架与守卫（V0.10.0：e2e 实跑、CI 收尾、独立复核））
 - 来源需求：REQ-NF-03 测试可复现 / §9.4 守卫（ci.yml 现无 lint 与 packages/ui 测试步骤）
 - RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-NF-006
 - 来源方案：SOL-S0
@@ -479,11 +563,11 @@ sonnect　理由：只读统计脚本
 - 文档：`.github/workflows/ci.yml:47-69`；`11_基线指标.md §11.2（lint 0 error/1 warning、ui 4 例）`
 - 契约：`无（CI 配置）`
 - 前置任务：无
-- 前置状态：TASK-006/007 已合并（同文件资源锁）
+- 前置状态：TASK-085 已合并（ci.yml 已含 lint / ui 单测，见 ci.yml:67-76）
 
 ## 输出
 - 新增/修改的文件路径：
-  - `.github/workflows/ci.yml`
+  - `.gitignore`
   - `docs/任务规划V0.10.0/06_validation/evidence/EVD-050/`（取证：命令输出/截图/日志）
 
 ## Execution Steps
@@ -493,20 +577,21 @@ sonnect　理由：只读统计脚本
 4. [ ] 运行「验证命令」并将完整输出存入证据目录
 
 ## 验收标准
-- [ ] EVD-050/verify-job.txt 含每步 exit 码且全部为 0（或 FAIL 已登记归属卡）
-- [ ] `git status` 在跑完 coverage 后不出现 apps/web/coverage
+- [ ] EVD-050/verify-job.txt 逐步记录 `exit=<码>` 且全部为 0；非 0 步骤改记 `FAIL→TASK-xxx` 并不计入本卡通过
+- [ ] 跑完 `pnpm --filter web exec vitest run --coverage` 后 `git status --short` 不出现 apps/web/coverage
+- [ ] diff 仅 .gitignore（与证据目录）
 - [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
 
 ## 验证命令
 ```bash
-grep -q 'apps/web/coverage' .gitignore && ! grep -E 'exit=[1-9]' docs/任务规划V0.10.0/06_validation/evidence/EVD-050/verify-job.txt; echo exit=$?
+grep -q 'apps/web/coverage' .gitignore && test -s docs/任务规划V0.10.0/06_validation/evidence/EVD-050/verify-job.txt && ! grep -E 'exit=[1-9]' docs/任务规划V0.10.0/06_validation/evidence/EVD-050/verify-job.txt; echo exit=$?
 ```
 
 ## 证据路径
 `docs/任务规划V0.10.0/06_validation/evidence/EVD-050/`
 
 ## 允许修改
-- `.github/workflows/ci.yml`
+- `.gitignore`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-050/**`
 
 ## 禁止修改
@@ -519,7 +604,7 @@ grep -q 'apps/web/coverage' .gitignore && ! grep -E 'exit=[1-9]' docs/任务规�
 
 ## 依赖与阻塞
 - Depends on：无
-- 资源锁串行（同文件，须在其后执行）：TASK-006
+- 资源锁串行（同文件，须在其后执行）：无
 - Blocks：无
 - 阻塞条件：lint 在 CI Node 20 下出现本地无的 error → 不改业务代码，登记并上报
 
@@ -588,6 +673,7 @@ npx tsx scripts/crawl/monitor_catalogs.ts --help && MONITOR_FIXTURE_DIR=apps/web
 
 ## 允许修改
 - `scripts/crawl/monitor_catalogs.ts`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-062/**`
 
 ## 禁止修改
@@ -667,6 +753,7 @@ npx playwright test e2e/admin/monitoring.spec.ts --config playwright.config.ts
 
 ## 允许修改
 - `e2e/admin/monitoring.spec.ts`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-065/**`
 
 ## 禁止修改
@@ -744,6 +831,7 @@ pnpm test:e2e -g model-detail-benchmark
 
 ## 允许修改
 - `e2e/model-detail-benchmark.spec.ts`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-075/**`
 
 ## 禁止修改
@@ -900,6 +988,7 @@ pnpm test:e2e -g ladder-no-footer
 
 ## 允许修改
 - `e2e/ladder-no-footer.spec.ts`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-084/**`
 
 ## 禁止修改
@@ -923,86 +1012,6 @@ haiku　理由：取证型 e2e 断言 + 台账核对
 
 ## 预估规模
 小　约 2h　≥2h
-
-
----
-
-#### TASK-030：计费集成 e2e：优惠窗口内按优惠价扣费、窗外按原价
-
-> 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
-
-> 执行者：**外部Agent** ｜ 所有权 Agent：**Agent-Guard** ｜ 建议档位：**sonnect**
-
-> V0.10.0 状态：**未开工**｜V0.10.0：可开工条件见依赖
-
-> 历史（V0.4.0→V0.5.0）：沿用（V0.5.0 重核：cd5b1a9 业务树=77c7952 无 delta）
-
-## 归属
-- 所属切片：S4（生效价：限时优惠 + 计价口径归一（需求 §3.6/§3.2））
-- 来源需求：REQ-F-12 / REQ-F-07
-- RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-F-038
-- 来源方案：DESIGN-002
-
-## 目标
-e2e/tests/promotion-billing.spec.ts：建优惠（priceInput=0）→ 网关调用 → 用户余额不变且 usage_log quotaMinor=0 → 删除优惠 → 再调用 → 按原价扣费（逐分断言）
-
-## 输入
-- 文档：`e2e/tests/gateway-flow.spec.ts（参照）`
-- 契约：`EffectivePriceSchema`；`PromotionPriceCreateSchema`
-- 前置任务：TASK-029, TASK-006
-- 前置状态：TASK-029 已合并；CI 注入 AIDEAN_ENABLE_MOCK_UPSTREAM=1
-
-## 输出
-- 新增/修改的文件路径：
-  - `e2e/tests/promotion-billing.spec.ts`
-  - `docs/任务规划V0.10.0/06_validation/evidence/EVD-030/`（取证：命令输出/截图/日志）
-
-## Execution Steps
-1. [ ] admin 建优惠
-2. [ ] 用户调网关
-3. [ ] 查余额/流水
-4. [ ] 清理
-5. [ ] 运行「验证命令」并将完整输出存入证据目录
-
-## 验收标准
-- [ ] `pnpm exec playwright test e2e/tests/promotion-billing.spec.ts --config e2e/playwright.config.ts --workers=1` 通过（TASK-037 收敛后改为根配置）
-- [ ] `node scripts/check-docs-facts.mjs` exit 0（R10-01：本卡新增 route/page/spec 时同步期望值）
-- [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
-
-## 验证命令
-```bash
-pnpm exec playwright test e2e/tests/promotion-billing.spec.ts --config e2e/playwright.config.ts --workers=1
-```
-
-## 证据路径
-`docs/任务规划V0.10.0/06_validation/evidence/EVD-030/`
-
-## 允许修改
-- `e2e/tests/promotion-billing.spec.ts`
-- `docs/任务规划V0.10.0/06_validation/evidence/EVD-030/**`
-
-## 禁止修改
-- `apps/**`
-- `packages/**`
-- `.example/history/**（铁律4 历史只读）`
-- `docs/任务规划V0.5.0/contracts/**（冻结契约；变更须先提 ADR 并经 opus/fable 券审批）`
-- `docs/任务规划V0.1.0/** … docs/任务规划V0.4.0/** · docs/任务规划V0.6.0/** … docs/任务规划V0.9.0/**（历代规划只读；V0.5.0 仅 TASK-087 可改文件名）`
-- `AGENTS.md`
-
-## 依赖与阻塞
-- Depends on：TASK-029, TASK-006
-- 资源锁串行（同文件，须在其后执行）：无
-- Blocks：TASK-031
-- 阻塞条件：mock-upstream 未在 CI 启用 → 停止交 TASK-006 补 env
-
-## 建议执行档位
-sonnect　理由：E2E 脚本（mock-upstream 已有）
-
-## 升级条件
-2 次失败 → 升 opus；通用熔断：同一任务连续 2 次验收失败 → 停止改代码，改为重写任务书/升级档位/标记 blocked（禁止第 3 次硬撞）
-
-## 预估规模
-中　约 6h　≥2h
 
 
 ---

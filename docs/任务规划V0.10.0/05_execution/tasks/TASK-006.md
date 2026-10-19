@@ -9,9 +9,9 @@
 > 历史（V0.4.0→V0.5.0）：V0.5.0 修正：FIX-22 收回 Hark：CI 真库骨架在关键路径上，是 35 张卡的上游
 
 ## 归属
-- 所属切片：S0（步行骨架与契约守卫（V0.9.0：剩工件回补、CI 门禁与独立复核））
+- 所属切片：S0（步行骨架与守卫（V0.10.0：e2e 实跑、CI 收尾、独立复核））
 - 来源需求：REQ-NF-03 测试可复现 / 未完成事项 #36
-- RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-NF-005
+- RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-NF-001、REQ-NF-005
 - 来源方案：SOL-S0
 
 ## 目标
@@ -21,7 +21,7 @@
 - 文档：`.github/workflows/ci.yml（现状：e2e 不进 CI 注释）`；`docs/engineering/开发环境搭建.md`
 - 契约：`SystemReadySchema`
 - 前置任务：无
-- 前置状态：TASK-005 已合并
+- 前置状态：TASK-085 已合并（ci.yml:130-236 已有 e2e-skeleton job）
 
 ## 输出
 - 新增/修改的文件路径：
@@ -35,15 +35,15 @@
 4. [ ] 运行「验证命令」并将完整输出存入证据目录
 
 ## 验收标准
-- [ ] GitHub Actions e2e-skeleton job 绿
-- [ ] job 日志可见 `migrate deploy` 应用 16 条迁移
-- [ ] 端口恒为 3000（与 playwright baseURL 一致）
-- [ ] `node scripts/check-docs-facts.mjs` exit 0（R10-01：本卡新增 route/page/spec 时同步期望值）
+- [ ] 本地按 ci.yml e2e-skeleton 步骤实跑（embedded PG16 + Redis7）：migrate deploy 应用 18 条迁移、seed、build、`next start -p 3000`、/api/v1/system/ready=200、smoke+walking-skeleton 通过，逐步 exit 码存 EVD-006/e2e-local.txt
+- [ ] job 中不可在 GitHub runner 执行的步骤已修正（diff 限 ci.yml）
+- [ ] U-25=A 后首轮 Actions run 结论写入 EVD-006/actions-run.txt（U-25 未裁决记 UNKNOWN，不阻塞本卡其余验收）
+- [ ] 端口恒为 3000
 - [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
 
 ## 验证命令
 ```bash
-gh run list --workflow CI --limit 1 （或在 Actions 页面查看 e2e-skeleton job 结论）
+grep -q 'migrations' docs/任务规划V0.10.0/06_validation/evidence/EVD-006/e2e-local.txt && ! grep -E 'exit=[1-9]' docs/任务规划V0.10.0/06_validation/evidence/EVD-006/e2e-local.txt; echo exit=$?
 ```
 
 ## 证据路径
@@ -51,6 +51,7 @@ gh run list --workflow CI --limit 1 （或在 Actions 页面查看 e2e-skeleton 
 
 ## 允许修改
 - `.github/workflows/ci.yml`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-006/**`
 
 ## 禁止修改

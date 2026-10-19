@@ -1,0 +1,55 @@
+# EVD-007：守卫由 TASK-085 回补满足（E10-04）
+HEAD=f473289
+## node scripts/guard/run-all.mjs
+
+=== root-pollution（根目录污染） ===
+  [PASS] 根级 tracked 文件（14 个）全部 ∈ 基线（14 项），无提交型污染。
+  [PASS] 未发现新增/游离的根级文件（未跟踪非忽略集合为空）。
+
+=== root-pollution: SUMMARY ===
+  failures=0 warnings=0
+RESULT: PASS (root-pollution)
+
+=== secret-scan（密钥/凭据明文扫描） ===
+  [PASS] 扫描源码/配置文本文件 694 个；按作用域豁免 7611 个（文档/底稿/示例/测试/lock/守卫自身）。
+  [PASS] 在作用域内未发现私钥头 / AKIA / sk- 令牌 / password= 明文凭据。
+
+=== secret-scan: SUMMARY ===
+  failures=0 warnings=0
+RESULT: PASS (secret-scan)
+
+=== module-boundary（模块边界） ===
+  [PASS] A) packages/** 扫描 78 个源文件，反向依赖 apps/** 违规 0 处。
+  [WARN] 例外(components→db) @ apps/web/components/home/ProductSection.tsx 引用 "../../lib/db/prisma"：既存 Server Component 直读 DB（过渡实现），登记例外并上报
+  [PASS] B) apps/web/components/** 扫描 104 个组件文件：新增越界 0 处，既存例外 1 处。
+  [PASS] 模块边界成立：无新增越界（另有 1 处既存例外已上报）。
+
+=== module-boundary: SUMMARY ===
+  failures=0 warnings=1
+RESULT: PASS (with 1 warning(s)) (module-boundary)
+
+=== port-consistency（端口区间一致性） ===
+  [PASS] 入口 apps/web dev/start 显式端口：合规（未显式指定端口→Next 默认 3000）。
+  [PASS] 入口 e2e/playwright baseURL/webServer 端口：端口 3000 全部 ∈ [3000,3100]。
+  [PASS] 入口 根 playwright baseURL/webServer 端口：端口 3000 全部 ∈ [3000,3100]。
+  [PASS] 入口 Dockerfile PORT/EXPOSE：端口 3000 全部 ∈ [3000,3100]。
+  [PASS] 入口 auth AUTH_ISSUER / AUTH_ISSUER_CONTAINER：端口 3000 全部 ∈ [3000,3100]。
+  [PASS] seed 回调端口 3200 ∈ aideanFleet [3100,3200]（已裁决）。
+  [PASS] seed 回调端口 3000 ∈ aidean [3000,3100]（已裁决）。
+  [PASS] 区间登记表 aideanSelf = [3000,3100]，与端口铁律一致。
+
+=== port-consistency: SUMMARY ===
+  failures=0 warnings=0
+RESULT: PASS (port-consistency)
+
+=== run-all: AGGREGATE ===
+  PASS root-pollution.mjs (exit 0)
+  PASS secret-scan.mjs (exit 0)
+  PASS module-boundary.mjs (exit 0)
+  PASS port-consistency.mjs (exit 0)
+RESULT: PASS (4/4 守卫通过)
+exit=0
+## ci.yml 接入行
+48:        run: node scripts/guard/run-all.mjs
+## 反例：根目录放入未登记文件 → root-pollution 应 exit 1
+exit=1

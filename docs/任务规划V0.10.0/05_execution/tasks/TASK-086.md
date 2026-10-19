@@ -9,7 +9,7 @@
 > 历史（V0.4.0→V0.5.0）：V0.7.0 新增
 
 ## 归属
-- 所属切片：S0（步行骨架与契约守卫（V0.9.0：剩工件回补、CI 门禁与独立复核））
+- 所属切片：S0（步行骨架与守卫（V0.10.0：e2e 实跑、CI 收尾、独立复核））
 - 来源需求：REQ-L-015 / §9.3 防自证
 - RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-F-015、REQ-F-021、REQ-F-041、REQ-F-052、REQ-NF-001、REQ-NF-002、REQ-NF-010、REQ-NF-011、REQ-L-001、REQ-L-002、REQ-L-003、REQ-L-004、REQ-L-012、REQ-F-054、REQ-F-055、REQ-L-015
 - 来源方案：ADR-P008
@@ -52,6 +52,7 @@ test $(grep -cE '^\| TASK-(00[1-5]|01[0-24-9]|02[1-4]|07[6-9]) ' docs/任务规�
 `docs/任务规划V0.10.0/06_validation/evidence/EVD-086/`
 
 ## 允许修改
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-086/**`
 
 ## 禁止修改

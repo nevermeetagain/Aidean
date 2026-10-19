@@ -11,10 +11,10 @@
 
 | 层级 | 任务 | 执行者 | 所有权 | 依赖 |
 |---|---|---|---|---|
-| L3 | [TASK-042](../../05_execution/tasks/TASK-042.md) 备份/恢复演练脚本（pg_dump→restore→逐表行数比对） | 外部Agent | Agent-Guard | TASK-006 |
-| L4 | [TASK-043](../../05_execution/tasks/TASK-043.md) 生产部署实弹（条件方案 A：自有服务器 docker compose prod） | Hark(主Agent) | Agent-Guard | TASK-042 |
-| L4 | [TASK-083](../../05_execution/tasks/TASK-083.md) 上线前 seed 演示数据人工审核门禁（清单生成 + 审核记录校验） | 外部Agent | Agent-Guard | TASK-042 |
-| L10 | [TASK-052](../../05_execution/tasks/TASK-052.md) RC-02 遗留文档闭环：发布环境契约 + 发布回滚与恢复验收 | 外部Agent | Agent-Docs | TASK-042 |
+| L2 | [TASK-042](../../05_execution/tasks/TASK-042.md) 备份/恢复演练脚本（pg_dump→restore→逐表行数比对） | 外部Agent | Agent-Guard | TASK-006 |
+| L3 | [TASK-043](../../05_execution/tasks/TASK-043.md) 生产部署实弹（条件方案 A：自有服务器 docker compose prod） | Hark(主Agent) | Agent-Guard | TASK-042 |
+| L3 | [TASK-083](../../05_execution/tasks/TASK-083.md) 上线前 seed 演示数据人工审核门禁（清单生成 + 审核记录校验） | 外部Agent | Agent-Guard | TASK-042 |
+| L7 | [TASK-052](../../05_execution/tasks/TASK-052.md) RC-02 遗留文档闭环：发布环境契约 + 发布回滚与恢复验收 | 外部Agent | Agent-Docs | TASK-042 |
 
 ## 切片验收（独立验证者只看 diff + 运行结果，输出 PASS / FAIL / UNKNOWN）
 

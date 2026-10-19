@@ -13,17 +13,17 @@
 |---|---|---|---|---|
 | L0 | [TASK-066](../../05_execution/tasks/TASK-066.md) 扩展既有 GET /api/v1/models/[id]/stations：追加各监控源上架状态与原币价格（向后兼容，不新建 offerings 端点） | Hark(主Agent) | Agent-API | — |
 | L0 | [TASK-068](../../05_execution/tasks/TASK-068.md) 上架同步：观测 → ProviderModelOffering（源↔平台实体映射，listedAt=firstSeenAt，isActive=isListed） | Hark(主Agent) | Agent-Data | — |
+| L1 | [TASK-067](../../05_execution/tasks/TASK-067.md) 前台 UI：模型详情页「在哪里可调用」区块（多源上架/价格对比/中转风险提示/来源署名） | Hark(主Agent) | Agent-App | TASK-066 |
 | L2 | [TASK-069](../../05_execution/tasks/TASK-069.md) 发现引擎汇率统一：pricing-extraction.ts 硬编码 7.2 → 读 system_configs pricing.fxUsdCny | 外部Agent | Agent-API | TASK-055 |
-| L4 | [TASK-067](../../05_execution/tasks/TASK-067.md) 前台 UI：模型详情页「在哪里可调用」区块（多源上架/价格对比/中转风险提示/来源署名） | Hark(主Agent) | Agent-App | TASK-066 |
-| L5 | [TASK-074](../../05_execution/tasks/TASK-074.md) UI：模型详情页基准测试弹窗 + 历史测评示例（多模型回答并排）替换「即将上线」占位 | Hark(主Agent) | Agent-App | TASK-067 |
-| L6 | [TASK-075](../../05_execution/tasks/TASK-075.md) e2e：模型详情页基准弹窗与测评示例 | 外部Agent | Agent-Guard | TASK-074, TASK-006 |
+| L2 | [TASK-074](../../05_execution/tasks/TASK-074.md) UI：模型详情页基准测试弹窗 + 历史测评示例（多模型回答并排）替换「即将上线」占位 | Hark(主Agent) | Agent-App | TASK-067 |
+| L3 | [TASK-075](../../05_execution/tasks/TASK-075.md) e2e：模型详情页基准弹窗与测评示例 | 外部Agent | Agent-Guard | TASK-074, TASK-006 |
 
 ## 切片验收（独立验证者只看 diff + 运行结果，输出 PASS / FAIL / UNKNOWN）
 
 - [ ] TASK-066：`pnpm --filter web exec vitest run lib/monitoring/__tests__/offerings-route.spec.ts && pnpm --filter web exec tsc --noEmit`
 - [ ] TASK-068：`pnpm --filter web exec vitest run lib/sync/writers/offering-sync.spec.ts && pnpm --filter web exec tsc --noEmit`
-- [ ] TASK-069：`! grep -n '7\.2' apps/web/lib/discovery/pricing-extraction.ts && pnpm --filter web exec vitest run lib/discovery && pnpm --filter web exec tsc --noEmit`
 - [ ] TASK-067：`pnpm --filter web exec tsc --noEmit && pnpm --filter web lint && cd apps/web && npx next build`
+- [ ] TASK-069：`! grep -n '7\.2' apps/web/lib/discovery/pricing-extraction.ts && pnpm --filter web exec vitest run lib/discovery && pnpm --filter web exec tsc --noEmit`
 - [ ] TASK-074：`pnpm --filter web exec tsc --noEmit && pnpm --filter web lint && ! grep -n '即将上线' 'apps/web/app/(site)/models/[slug]/page.tsx'`
 - [ ] TASK-075：`pnpm test:e2e -g model-detail-benchmark`
 - [ ] `node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs` 全 PASS

@@ -49,6 +49,7 @@ pnpm test:e2e -g ladder-no-footer
 
 ## 允许修改
 - `e2e/ladder-no-footer.spec.ts`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-084/**`
 
 ## 禁止修改

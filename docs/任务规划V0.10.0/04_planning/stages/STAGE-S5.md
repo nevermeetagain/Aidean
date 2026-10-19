@@ -15,7 +15,7 @@
 | L2 | [TASK-033](../../05_execution/tasks/TASK-033.md) 搜索 API GET /api/v1/search（模型/产品/资讯，仅已发布） | 外部Agent | Agent-API | TASK-032 |
 | L3 | [TASK-034](../../05_execution/tasks/TASK-034.md) UI：顶栏搜索（桌面框 + 移动端展开 + 键盘导航） | Hark(主Agent) | Agent-App | TASK-033 |
 | L4 | [TASK-035](../../05_execution/tasks/TASK-035.md) e2e：搜索（命中/无结果/键盘跳转/移动端） | 外部Agent | Agent-Guard | TASK-034, TASK-006 |
-| L9 | [TASK-036](../../05_execution/tasks/TASK-036.md) S5 文档同步：API 文档登记搜索端点 + UI/界面交互文档补搜索 | 外部Agent | Agent-Docs | TASK-035 |
+| L6 | [TASK-036](../../05_execution/tasks/TASK-036.md) S5 文档同步：API 文档登记搜索端点 + UI/界面交互文档补搜索 | 外部Agent | Agent-Docs | TASK-035 |
 
 ## 切片验收（独立验证者只看 diff + 运行结果，输出 PASS / FAIL / UNKNOWN）
 

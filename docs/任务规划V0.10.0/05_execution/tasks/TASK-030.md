@@ -4,7 +4,7 @@
 
 > 执行者：**外部Agent** ｜ 所有权 Agent：**Agent-Guard** ｜ 建议档位：**sonnect**
 
-> V0.10.0 状态：**未开工**｜V0.10.0：可开工条件见依赖
+> V0.10.0 状态：**未开工**｜V0.10.0：可开工条件见依赖；029 已完成（EVD-029 运行态 7/7）；优惠自然起止页面最多 5 分钟滞后（097 ISR 300s），e2e 需按此等待或直接断言 API/计费
 
 > 历史（V0.4.0→V0.5.0）：沿用（V0.5.0 重核：cd5b1a9 业务树=77c7952 无 delta）
 
@@ -20,7 +20,7 @@ e2e/tests/promotion-billing.spec.ts：建优惠（priceInput=0）→ 网关调�
 ## 输入
 - 文档：`e2e/tests/gateway-flow.spec.ts（参照）`
 - 契约：`EffectivePriceSchema`；`PromotionPriceCreateSchema`
-- 前置任务：TASK-029, TASK-006
+- 前置任务：TASK-006
 - 前置状态：TASK-029 已合并；CI 注入 AIDEAN_ENABLE_MOCK_UPSTREAM=1
 
 ## 输出
@@ -50,6 +50,7 @@ pnpm exec playwright test e2e/tests/promotion-billing.spec.ts --config e2e/playw
 
 ## 允许修改
 - `e2e/tests/promotion-billing.spec.ts`
+- `scripts/check-docs-facts.mjs（仅限 R10-01：同步本卡引起的 route/page/spec/lib-features 计数期望值，不改逻辑）`
 - `docs/任务规划V0.10.0/06_validation/evidence/EVD-030/**`
 
 ## 禁止修改
@@ -61,7 +62,7 @@ pnpm exec playwright test e2e/tests/promotion-billing.spec.ts --config e2e/playw
 - `AGENTS.md`
 
 ## 依赖与阻塞
-- Depends on：TASK-029, TASK-006
+- Depends on：TASK-006
 - 资源锁串行（同文件，须在其后执行）：无
 - Blocks：TASK-031
 - 阻塞条件：mock-upstream 未在 CI 启用 → 停止交 TASK-006 补 env

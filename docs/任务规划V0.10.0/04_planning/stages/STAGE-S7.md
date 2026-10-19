@@ -13,14 +13,14 @@
 |---|---|---|---|---|
 | L0 | [TASK-087](../../05_execution/tasks/TASK-087.md) V0.5.0 规划树文件名 mojibake 修复（24 个双编码文件名 git mv 为正字 + 引用修正） | 外部Agent | Agent-Docs | — |
 | L1 | [TASK-088](../../05_execution/tasks/TASK-088.md) 治理登记：目录结构文档登记 V0.8.0 树 + task-index 状态回写（依 EVD-086/091/092） + docs/执行过程.md 归档拆分 | 外部Agent | Agent-Docs | TASK-086 |
-| L6 | [TASK-040](../../05_execution/tasks/TASK-040.md) 需求文档 v1.15 对齐代码事实与用户裁决 | Hark(主Agent) | Agent-Docs | — |
-| L7 | [TASK-041](../../05_execution/tasks/TASK-041.md) 台账拆分 + 勾选滞后补录 + CHANGELOG 补录 finalize 里程碑 | 外部Agent | Agent-Docs | TASK-040 |
-| L8 | [TASK-051](../../05_execution/tasks/TASK-051.md) 统一需求追溯矩阵入库 + 台账内部状态矛盾消解（#17/#36） | Hark(主Agent) | Agent-Docs | TASK-041 |
+| L3 | [TASK-040](../../05_execution/tasks/TASK-040.md) 需求文档 v1.15 对齐代码事实与用户裁决 | Hark(主Agent) | Agent-Docs | — |
+| L4 | [TASK-041](../../05_execution/tasks/TASK-041.md) 台账拆分 + 勾选滞后补录 + CHANGELOG 补录 finalize 里程碑 | 外部Agent | Agent-Docs | TASK-040 |
+| L5 | [TASK-051](../../05_execution/tasks/TASK-051.md) 统一需求追溯矩阵入库 + 台账内部状态矛盾消解（#17/#36） | Hark(主Agent) | Agent-Docs | TASK-041 |
 
 ## 切片验收（独立验证者只看 diff + 运行结果，输出 PASS / FAIL / UNKNOWN）
 
 - [ ] TASK-087：`git ls-files docs/任务规划V0.5.0 | grep -cP '[鍔娣瑙浜鏁鍨渚鎵椋钀鑷宸澶閲绔绗闇浠]'; node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs`
-- [ ] TASK-088：`node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs && test ! -f docs/执行过程.md && grep -q '任务规划V0.9.0' docs/governance/目录结构文档.md; echo exit=$?`
+- [ ] TASK-088：`node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs && test ! -f docs/执行过程.md && grep -q '任务规划V0.10.0' docs/governance/目录结构文档.md; echo exit=$?`
 - [ ] TASK-040：`node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs`
 - [ ] TASK-041：`node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs`
 - [ ] TASK-051：`node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs`

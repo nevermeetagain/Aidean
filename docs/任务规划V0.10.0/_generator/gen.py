@@ -36,6 +36,10 @@ def overlap(a, b):
     return False
 
 def owner_of(path):
+    if "R10-01" in path and path.startswith("scripts/check-docs-facts.mjs"):
+        return "TASK-EVIDENCE"  # V0.10.0 R10-01：计数期望值为共享例外（任意代码卡同步本卡引起的计数）
+    if "跨所有权 E10-08" in path:
+        return "TASK-EVIDENCE"  # V0.10.0 E10-08：规划方授权的单常量跨所有权改动（25_执行记录 §0.2）
     path = norm(path)
     if path.startswith(D.P + "/06_validation/evidence/"):
         return "TASK-EVIDENCE"
@@ -90,7 +94,8 @@ def reach(graph_edges):
 lock_edges = []
 for a, b in itertools.combinations(order, 2):
     ta, tb = tasks[a], tasks[b]
-    shared = [(pa, pb) for pa in ta["allow"] for pb in tb["allow"] if overlap(pa, pb)]
+    # V0.10.0 R10-01：facts 计数期望值是共享例外，不构成资源锁（冲突时 rebase 后以实测重写，见 16_ §写入并发）
+    shared = [(pa, pb) for pa in ta["allow"] for pb in tb["allow"] if overlap(pa, pb) and "R10-01" not in pa and "R10-01" not in pb]
     if not shared: continue
     R = reach(edges | set(lock_edges))
     if b in R[a] or a in R[b]:

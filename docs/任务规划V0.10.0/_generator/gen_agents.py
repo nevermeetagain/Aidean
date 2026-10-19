@@ -65,8 +65,15 @@ print(summary, "cover", cov)
 
 # ---- V0.10.0：用户只有 1 个外部助手 → 合并 P1+P2+P3 为单人任务书（全局拓扑序）
 ext_ids = [i for i in topo if grp(T[i]) != "Hark"]
+import re as _re2
+def _locks(i):
+    txt = card_text(i)
+    m = _re2.search(r"资源锁串行（同文件，须在其后执行）：([^\n]*)", txt)
+    return _re2.findall(r"TASK-(\d{3})", m.group(1)) if m else []
 def _hark_anc(i, seen=None):
     seen = seen or set()
+    if any(d in T and grp(T[d]) == "Hark" for d in _locks(i)):
+        return True  # M7：资源锁指向 Hark 卡 → 须等待
     for d in T[i]["deps"]:
         if d in T and d not in seen:
             seen.add(d)
