@@ -95,7 +95,7 @@ const assertions = [
   },
   {
     id: "aidean-ui-refs",
-    desc: "@aidean/ui 在 apps/web/components 的 import 数 = 65（TASK-090 收口以代码实测同步 62→65）",
+    desc: "@aidean/ui 在 apps/web/components 的 import 数 = 67（TASK-029 新增 PriceTag/PromotionsPanel 65→67，R10-01；前次 TASK-090 62→65）",
     check: () =>
       String(
         walk("apps/web/components", () => true).filter((f) => {
@@ -106,7 +106,7 @@ const assertions = [
           }
         }).length
       ),
-    expect: "65",
+    expect: "67",
   },
   {
     id: "route-count",
@@ -132,10 +132,10 @@ const assertions = [
   },
   {
     id: "spec-count",
-    desc: "spec 文件总数 = 174（TASK-097 新增 ladder/price-views.spec 173→174，R10-01；前次 TASK-095 170→173）",
+    desc: "spec 文件总数 = 175（TASK-029 新增 lib/admin/promotions-ui.spec 174→175，R10-01；前次 TASK-097 173→174）",
     check: () =>
       String(walk("e2e", (n) => n.endsWith(".spec.ts")).length + walk("apps/web", (n) => n.endsWith(".spec.ts")).length),
-    expect: "174",
+    expect: "175",
   },
   {
     id: "queryraw-biz",

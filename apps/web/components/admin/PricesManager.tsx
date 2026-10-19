@@ -4,12 +4,14 @@
  * 模型定价管理（S7.1 定价孤岛激活）：
  * ModelPrice 当前价列表（元/千 token 口径直接展示 Decimal）+ 搜索 + 编辑 + 为无当前价模型新建。
  * 只读口径下（canWrite=false）隐藏编辑/新建。金额非分单位（Decimal 19,6），按原值展示。
+ * TASK-029：新增「限时优惠」子表 Tab（PromotionsPanel）；当前价行「添加优惠」直达新建对话框（预选模型）。
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
-import { Dialog, Button, Input } from "@aidean/ui";
+import { Dialog, Button, Input, Tabs } from "@aidean/ui";
+import { PromotionsPanel, type PromotionModelOption } from "./PromotionsPanel";
 
 interface PriceRow {
   id: string;
@@ -75,6 +77,8 @@ export function PricesManager({ canWrite = false }: { canWrite?: boolean }) {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<PriceForm>(emptyForm);
   const [models, setModels] = useState<ModelOption[]>([]);
+  const [tab, setTab] = useState<"current" | "promotions">("current");
+  const [promoCreateFor, setPromoCreateFor] = useState<{ modelId: string; nonce: number } | null>(null);
 
   const load = useCallback(async (q: string) => {
     setLoading(true);
@@ -123,6 +127,26 @@ export function PricesManager({ canWrite = false }: { canWrite?: boolean }) {
   }
 
   const pricedModelIds = useMemo(() => new Set(rows.map((r) => r.modelId)), [rows]);
+
+  /** 优惠子表可选模型 = 已有当前价的模型（服务端写侧约束②：无当前价不可建优惠） */
+  const promoModels = useMemo<PromotionModelOption[]>(
+    () =>
+      rows.map((r) => ({
+        id: r.modelId,
+        name: r.modelName,
+        code: r.modelCode,
+        currentInput: r.priceInput,
+        currentOutput: r.priceOutput,
+        currency: r.billingCurrency,
+        unit: r.billingUnit,
+      })),
+    [rows],
+  );
+
+  function openPromoFor(p: PriceRow) {
+    setTab("promotions");
+    setPromoCreateFor({ modelId: p.modelId, nonce: Date.now() });
+  }
 
   async function submitForm() {
     const inVal = numOrNull(form.priceInput);
@@ -191,7 +215,10 @@ export function PricesManager({ canWrite = false }: { canWrite?: boolean }) {
           header: "操作",
           className: "px-3 py-2",
           render: (p: PriceRow) => (
-            <Button variant="outline" size="sm" onClick={() => openEdit(p)}>编辑</Button>
+            <div className="flex gap-1.5">
+              <Button variant="outline" size="sm" onClick={() => openEdit(p)}>编辑</Button>
+              <Button variant="outline" size="sm" onClick={() => openPromoFor(p)}>添加优惠</Button>
+            </div>
           ),
         } as Column<PriceRow>]
       : []),
@@ -199,6 +226,19 @@ export function PricesManager({ canWrite = false }: { canWrite?: boolean }) {
 
   return (
     <div className="space-y-3">
+      <Tabs
+        items={[
+          { value: "current", label: "当前价" },
+          { value: "promotions", label: "限时优惠" },
+        ]}
+        value={tab}
+        onChange={(v) => setTab(v as "current" | "promotions")}
+      />
+
+      {tab === "promotions" ? (
+        <PromotionsPanel canWrite={canWrite} models={promoModels} createFor={promoCreateFor} />
+      ) : (
+      <>
       {message ? (
         <p role="status" className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           {message}
@@ -292,6 +332,8 @@ export function PricesManager({ canWrite = false }: { canWrite?: boolean }) {
           </label>
         </div>
       </Dialog>
+      </>
+      )}
     </div>
   );
 }

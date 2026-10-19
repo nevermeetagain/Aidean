@@ -1,0 +1,16 @@
+const { chromium } = require("/workspace/work/Aidean/node_modules/.pnpm/playwright@1.62.1/node_modules/playwright");
+(async () => {
+  require("fs").mkdirSync("/tmp/shots",{recursive:true});
+  const browser = await chromium.launch();
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const go = async (url, file, sel) => {
+    await page.goto("http://localhost:3000" + url, { waitUntil: "networkidle", timeout: 110000 });
+    if (sel) { const el = await page.$(sel); if (el) { await el.scrollIntoViewIfNeeded(); await el.screenshot({ path: file }); return; } }
+    await page.screenshot({ path: file, fullPage: false });
+  };
+  await go("/pricing", "/tmp/shots/pricing.png", "#gateway-pricing");
+  await go("/models/claude-3-5-haiku", "/tmp/shots/detail-promo.png", "[data-testid=model-price-block]");
+  await go("/models/mistral-medium", "/tmp/shots/detail-free.png", "[data-testid=model-price-block]");
+  console.log("badges on pricing:", await (await page.goto("http://localhost:3000/pricing")) && await page.locator("[data-testid=price-promo-badge]").count());
+  await browser.close();
+})().catch((e) => { console.error(e.message.slice(0, 500)); process.exit(1); });

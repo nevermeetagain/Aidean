@@ -1,0 +1,27 @@
+#!/bin/bash
+# UI 运行态验收环境（沙箱重启后可一键重建）：embedded PG16 + seed + 演示优惠 + next dev :3000 + chromium（用户态补库/字体）
+set -x
+U=/workspace/work/uienv; A=/workspace/work/Aidean; W=$A/apps/web
+export PLAYWRIGHT_BROWSERS_PATH=/tmp/pwbrowsers LD_LIBRARY_PATH=/tmp/uilibs/usr/lib/aarch64-linux-gnu PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1
+B=$(ls -d /workspace/work/pg16/node_modules/@embedded-postgres/*/native/bin)
+if ! (echo > /dev/tcp/127.0.0.1/55432) 2>/dev/null; then rm -rf /tmp/pg16data; $B/initdb -D /tmp/pg16data -U postgres --auth=trust >/dev/null; $B/pg_ctl -D /tmp/pg16data -o "-p 55432 -k /tmp" -l /tmp/pg.log start; sleep 3; fi
+export DATABASE_URL="postgresql://postgres@127.0.0.1:55432/aidean_ui?schema=public"
+cd $W
+pnpm exec prisma db execute --url "postgresql://postgres@127.0.0.1:55432/postgres" --stdin <<< "CREATE DATABASE aidean_ui;" || true
+pnpm exec prisma migrate deploy | tail -1
+pnpm db:seed > /tmp/seed.log 2>&1; echo seed=$?
+pnpm exec tsx prisma/seed-navigation-menu.ts >/dev/null 2>&1; pnpm exec tsx prisma/seed-rbac.ts >/dev/null 2>&1
+cp $U/ui-seed.ts $W/zz-ui-seed.ts && pnpm exec tsx zz-ui-seed.ts; rm -f $W/zz-ui-seed.ts
+# 用户态补齐 chromium 依赖库与中文字体
+if [ ! -d /tmp/uilibs ]; then mkdir -p /tmp/uidebs && cd /tmp/uidebs
+  for spec in libx/libxcomposite/libxcomposite1_ libx/libxdamage/libxdamage1_ a/at-spi2-core/libatk1.0-0t64_ a/at-spi2-core/libatspi2.0-0t64_ libx/libxres/libxres1_; do d=$(dirname $spec); p=$(basename $spec); f=$(curl -s "http://deb.debian.org/debian/pool/main/$d/" | grep -o "${p}[^\"]*_arm64.deb" | sort -V | tail -1); curl -s -O "http://deb.debian.org/debian/pool/main/$d/$f"; done
+  f=$(curl -s "http://deb.debian.org/debian/pool/main/f/fonts-wqy-microhei/" | grep -o "fonts-wqy-microhei_[^\"]*_all.deb" | sort -V | tail -1); curl -s -O "http://deb.debian.org/debian/pool/main/f/fonts-wqy-microhei/$f"
+  for x in *.deb; do dpkg-deb -x $x /tmp/uilibs; done; fi
+mkdir -p ~/.fonts && find /tmp/uilibs -name "*.ttc" -exec cp {} ~/.fonts/ \; ; fc-cache -f >/dev/null 2>&1
+cd $A && [ -d /tmp/pwbrowsers ] || pnpm exec playwright install chromium > /tmp/pwi.log 2>&1
+# dev server
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /tmp/jwt.pem 2>/dev/null
+cd $W && JWT_PRIVATE_KEY="$(cat /tmp/jwt.pem)" JWT_SECRET=dev-secret-0123456789abcdef0123456789 NEXT_PUBLIC_SITE_URL=http://localhost:3000 AIDEAN_BYPASS_LOGIN_RATE_LIMIT=1 setsid nohup pnpm exec next dev -p 3000 > /tmp/next-dev.log 2>&1 < /dev/null &
+for i in $(seq 1 60); do c=$(curl -s -m 60 -o /dev/null -w "%{http_code}" localhost:3000/pricing); [ "$c" = 200 ] && break; sleep 3; done; echo pricing=$c
+cd $A && node $U/zz-shot.cjs; node $U/zz-shot2.cjs
+ls -la /tmp/shots

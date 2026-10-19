@@ -3,16 +3,18 @@
 // 读侧契约（B-N9）：Server Component 直读 system_configs 的 pricing.* 两键（复用 GET /admin/configs
 // 「缺行回退默认值」投影口径），经 parsePricingConfig 强类型化后渲染；任何异常/缺行回退 seed 真源默认（¥2 / CNY）。
 // 2026-09-23 补齐：原「网关 Token 单价」表为硬编码占位骨架（全 ————），现改为读 model_prices（isCurrent）
+// TASK-029（2026-10-19）：改读生效价（窗口内限时优惠优先），优惠行显示徽标 + 原价划线（契约⑥前台价格徽标）
 // 真实上游官方单价；单价按行内 billing_currency 标注符号（CNY→¥ / USD→$），单位为每百万 Tokens。
 import { PagePlaceholder } from "../../../components/common/PagePlaceholder";
 import { prisma } from "../../../lib/db/prisma";
+import { pickEffectivePrice } from "../../../lib/features/pricing/effective-price";
+import { PriceTag, PromoBadge } from "../../../components/common/PriceTag";
 import {
   CURRENCY_SYMBOLS,
   PRICING_CONFIG_KEYS,
   RECHARGE_TIERS,
   formatEvalPrice,
   parsePricingConfig,
-  type PricingCurrency,
 } from "@aidean/shared";
 
 // 缓存策略（2026-09-23 性能改造）：原 force-dynamic 每次进入都完整 SSR 且无法被 Link 预取。
@@ -43,43 +45,88 @@ interface GatewayPriceRow {
   priceInput: number;
   priceOutput: number;
   currency: string;
+  /** TASK-029：生效价为窗口内优惠时为 true，并携带原价（划线）与截止时间 */
+  isPromotion: boolean;
+  basePriceInput: number | null;
+  basePriceOutput: number | null;
+  promotionEndsAt: string | null;
 }
 
-/** 上游官方单价：取 model_prices 当前价（isCurrent），仅按 Token 计费（PER_TOKEN）的行 */
-async function loadGatewayPrices(): Promise<GatewayPriceRow[]> {
+/**
+ * 网关单价：当前价（isCurrent、非 PROMOTION、PER_TOKEN）+ 同批模型窗口内的限时优惠 → pickEffectivePrice 收敛为生效价
+ * （TASK-029：与网关扣费、天梯读侧同一口径）。窗口内优惠模型保证上表；4 次固定查询，不随模型数 N+1。
+ */
+async function loadGatewayPrices(at: Date = new Date()): Promise<GatewayPriceRow[]> {
   try {
-    const rows = await prisma.modelPrice.findMany({
-      where: { isCurrent: true, billingMode: "PER_TOKEN" },
-      select: {
-        priceInput: true,
-        priceOutput: true,
-        billingCurrency: true,
-        model: { select: { nameDisplay: true, slug: true, vendor: { select: { name: true } } } },
-      },
+    // 窗口内优惠的模型必须上表（否则「按输入价取前 N 条」会把优惠模型挤出，徽标无处展示）
+    const activePromoModelIds = (
+      await prisma.modelPrice.findMany({
+        where: { sourceType: "PROMOTION", effectiveFrom: { lte: at }, effectiveUntil: { gt: at } },
+        select: { modelId: true },
+        distinct: ["modelId"],
+      })
+    ).map((r) => r.modelId);
+    const currentSelect = {
+      modelId: true,
+      priceInput: true,
+      priceOutput: true,
+      billingCurrency: true,
+      isCurrent: true,
+      sourceType: true,
+      effectiveFrom: true,
+      effectiveUntil: true,
+      model: { select: { nameDisplay: true, slug: true, vendor: { select: { name: true } } } },
+    } as const;
+    const promoCurrent = activePromoModelIds.length
+      ? await prisma.modelPrice.findMany({
+          where: { isCurrent: true, billingMode: "PER_TOKEN", sourceType: { not: "PROMOTION" }, modelId: { in: activePromoModelIds } },
+          select: currentSelect,
+        })
+      : [];
+    const topCurrent = await prisma.modelPrice.findMany({
+      where: { isCurrent: true, billingMode: "PER_TOKEN", sourceType: { not: "PROMOTION" }, modelId: { notIn: activePromoModelIds } },
+      select: currentSelect,
       orderBy: [{ priceInput: "asc" }, { priceOutput: "asc" }],
-      take: PRICE_ROW_LIMIT,
+      take: Math.max(0, PRICE_ROW_LIMIT - promoCurrent.length),
     });
-    return rows.map((r) => ({
-      key: `${r.model.slug}:${r.billingCurrency}`,
-      name: r.model.nameDisplay,
-      slug: r.model.slug,
-      vendor: r.model.vendor?.name ?? "—",
-      priceInput: Number(r.priceInput),
-      priceOutput: Number(r.priceOutput),
-      currency: r.billingCurrency,
-    }));
+    const current = [...promoCurrent, ...topCurrent];
+    if (current.length === 0) return [];
+    const promos = await prisma.modelPrice.findMany({
+      where: {
+        modelId: { in: current.map((r) => r.modelId) },
+        sourceType: "PROMOTION",
+        effectiveFrom: { lte: at },
+        effectiveUntil: { gt: at },
+      },
+      select: { modelId: true, priceInput: true, priceOutput: true, isCurrent: true, sourceType: true, effectiveFrom: true, effectiveUntil: true },
+    });
+    const promosByModel = new Map<string, typeof promos>();
+    for (const p of promos) promosByModel.set(p.modelId, [...(promosByModel.get(p.modelId) ?? []), p]);
+
+    const rows = current.map((r) => {
+      const picked = pickEffectivePrice([r, ...(promosByModel.get(r.modelId) ?? [])], at);
+      const eff = picked?.effective ?? r;
+      const isPromotion = picked?.isPromotion ?? false;
+      return {
+        key: `${r.model.slug}:${r.billingCurrency}`,
+        name: r.model.nameDisplay,
+        slug: r.model.slug,
+        vendor: r.model.vendor?.name ?? "—",
+        priceInput: Number(eff.priceInput),
+        priceOutput: Number(eff.priceOutput),
+        currency: r.billingCurrency,
+        isPromotion,
+        basePriceInput: isPromotion ? Number(r.priceInput) : null,
+        basePriceOutput: isPromotion ? Number(r.priceOutput) : null,
+        promotionEndsAt: isPromotion && eff.effectiveUntil ? eff.effectiveUntil.toISOString() : null,
+      };
+    });
+    // 优惠中的模型置顶（运营可见性），其余保持原「输入价升序」
+    return rows.sort((a, b) => Number(b.isPromotion) - Number(a.isPromotion) || a.priceInput - b.priceInput || a.priceOutput - b.priceOutput);
   } catch {
     // 读库异常不阻首屏：表格转为「数据整理中」空态，不编造价格
     return [];
   }
-}
-
-/** 单价展示：0 显示「免费」，否则按量级取 2~4 位小数并前置行内币种符号（非换算） */
-function formatUnitPrice(value: number, currency: string): string {
-  if (!Number.isFinite(value) || value <= 0) return "免费";
-  const symbol = CURRENCY_SYMBOLS[currency as PricingCurrency] ?? "";
-  const digits = value >= 1 ? 2 : value >= 0.01 ? 3 : 4;
-  return `${symbol}${value.toFixed(digits)}`;
 }
 
 /** 读 system_configs 的 pricing.* 两键（与 GET /admin/configs 同口径：缺行/异常回退默认） */
@@ -145,16 +192,21 @@ export default async function PricingPage() {
                     {gatewayPrices.map((row) => (
                       <tr key={row.key} className="border-b border-[var(--border)] last:border-0">
                         <td className="px-4 py-2.5 font-medium text-foreground">
-                          <a href={`/models/${row.slug}`} className="transition-colors hover:text-primary">
-                            {row.name}
-                          </a>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <a href={`/models/${row.slug}`} className="transition-colors hover:text-primary">
+                              {row.name}
+                            </a>
+                            {row.isPromotion ? (
+                              <PromoBadge free={row.priceInput <= 0 && row.priceOutput <= 0} endsAt={row.promotionEndsAt} />
+                            ) : null}
+                          </div>
                         </td>
                         <td className="px-4 py-2.5 text-slate-500">{row.vendor}</td>
-                        <td className="px-4 py-2.5 text-right tabular-nums text-slate-600">
-                          {formatUnitPrice(row.priceInput, row.currency)}
+                        <td className="px-4 py-2.5 text-right text-slate-600">
+                          <PriceTag value={row.priceInput} currency={row.currency} isPromotion={row.isPromotion} basePrice={row.basePriceInput} showBadge={false} align="end" />
                         </td>
-                        <td className="px-4 py-2.5 text-right tabular-nums text-slate-600">
-                          {formatUnitPrice(row.priceOutput, row.currency)}
+                        <td className="px-4 py-2.5 text-right text-slate-600">
+                          <PriceTag value={row.priceOutput} currency={row.currency} isPromotion={row.isPromotion} basePrice={row.basePriceOutput} showBadge={false} align="end" />
                         </td>
                       </tr>
                     ))}

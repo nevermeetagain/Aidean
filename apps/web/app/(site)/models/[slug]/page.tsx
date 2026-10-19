@@ -1,7 +1,7 @@
 // /models/[slug] —— 模型详情页（Task L.5.1 / M-PERF B1+B2 重构）。
 // Server 按 slug 直查 ai_models（复用 repository.findModelByIdentifier，与 /api/v1/models/[id] 同源）；
 // 未收录/取数失败降级内联空态卡（不调 notFound() 以保持布局壳），文案「该模型暂未收录」。
-// B2：revalidate=3600 ISR 化（页面级缓存，revalidate 周期内命中免现算）——
+// B2：ISR 化（TASK-097 起 revalidate=300，原 3600）（页面级缓存，revalidate 周期内命中免现算）——
 //   空 generateStaticParams 在 build 期只登记不取数，CI 无 DB 不阻断；
 //   原注释所称「build 期查库失败」由 loadModel 的 try/catch 降级兜底（沿用列表页范式）。
 // B1：loadModel 经 React cache() 包装——generateMetadata 与 page 同请求共享一次查询。
@@ -15,6 +15,8 @@ import { CompareAddButton } from "../../../../components/site/CompareAddButton";
 import { FavoriteButton } from "../../../../components/site/FavoriteButton";
 import { prisma } from "../../../../lib/db/prisma";
 import { ladderRepository } from "../../../../lib/features/ladder/repository";
+import { resolveEffectivePrice } from "../../../../lib/features/pricing/effective-price";
+import { PriceTag } from "../../../../components/common/PriceTag";
 
 /** 页面缓存窗口（秒）：模型价格/评分按天级更新，3600s 新鲜度可接受 */
 export const revalidate = 300; // TASK-097：优惠起止无写事件触发，页缓存上限压到 5 分钟（Redis 已按价格边界对齐）
@@ -39,6 +41,16 @@ const loadModel = cache(async (slug: string) => {
     return null;
   }
 });
+
+/** TASK-029：生效价 DTO（含优惠标记/原价/截止）；解析失败 → null，页面回落 prices[0] 且不显示徽标（契约⑥ error 态） */
+async function loadEffectivePrice(modelId: string) {
+  try {
+    return await resolveEffectivePrice(modelId);
+  } catch (error) {
+    console.error(`[models] 生效价解析失败，回落当前价：`, error);
+    return null;
+  }
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -81,11 +93,6 @@ const SOURCE_LABELS: Record<string, string> = {
 
 function fmtTokens(value: number | null | undefined): string {
   return value === null || value === undefined ? "—" : value.toLocaleString("zh-CN");
-}
-
-/** 价格本就是 ¥/M Tokens 计价，直接保留两位小数（不经 fenToYuan 分转元） */
-function fmtPrice(value: number | null | undefined): string {
-  return value === null || value === undefined ? "未公开" : `¥${value.toFixed(2)}/M Tokens`;
 }
 
 /** Benchmark.scores JSON → [指标名, 展示值] 列表；非对象形态容忍为空表 */
@@ -142,6 +149,10 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
   }
 
   const price = model.prices[0];
+  const effective = price ? await loadEffectivePrice(model.id) : null;
+  const priceCurrency = price?.billingCurrency ?? "CNY";
+  // 单位随价格行 billingUnit 展示（原硬编码「¥/M Tokens」与 per_1k_tokens 存量行不符；统一 ¥/M 归一属 TASK-053/U-15）
+  const priceUnit = price?.billingUnit === "per_1k_tokens" ? "/K Tokens" : price?.billingUnit === "per_1m_tokens" ? "/M Tokens" : price?.billingUnit ? `/${price.billingUnit}` : undefined;
   const score = model.scores[0];
   const protocolLabel = PROTOCOL_LABELS[String(model.protocol)] ?? String(model.protocol);
 
@@ -239,10 +250,48 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
                   </div>
                 ))}
               </dl>
-              <div className="mt-4 space-y-1 text-xs text-slate-500">
-                <p>缓存价格：{price ? fmtPrice(Number(price.priceCache)) : "未公开"}</p>
-                <p>输入价格：{price ? fmtPrice(Number(price.priceInput)) : "未公开"}</p>
-                <p>输出价格：{price ? fmtPrice(Number(price.priceOutput)) : "未公开"}</p>
+              <div data-testid="model-price-block" className="mt-4 space-y-1.5 text-xs text-slate-500">
+                {effective?.isPromotion ? (
+                  <p className="text-[11px] text-slate-400">以下为当前生效价，原价划线展示；优惠到期后自动恢复原价。</p>
+                ) : null}
+                <p className="flex flex-wrap items-baseline gap-1.5">
+                  <span>输入价格：</span>
+                  {price ? (
+                    <PriceTag
+                      value={effective?.priceInput ?? String(price.priceInput)}
+                      currency={priceCurrency}
+                      unit={priceUnit}
+                      isPromotion={effective?.isPromotion ?? false}
+                      basePrice={effective?.basePriceInput ?? null}
+                      promotionEndsAt={effective?.promotionEndsAt ?? null}
+                    />
+                  ) : (
+                    "未公开"
+                  )}
+                </p>
+                <p className="flex flex-wrap items-baseline gap-1.5">
+                  <span>输出价格：</span>
+                  {price ? (
+                    <PriceTag
+                      value={effective?.priceOutput ?? String(price.priceOutput)}
+                      currency={priceCurrency}
+                      unit={priceUnit}
+                      isPromotion={effective?.isPromotion ?? false}
+                      basePrice={effective?.basePriceOutput ?? null}
+                      showBadge={false}
+                    />
+                  ) : (
+                    "未公开"
+                  )}
+                </p>
+                <p className="flex flex-wrap items-baseline gap-1.5">
+                  <span>缓存价格：</span>
+                  {price && price.priceCache !== null ? (
+                    <PriceTag value={effective?.priceCache ?? String(price.priceCache)} currency={priceCurrency} unit={priceUnit} />
+                  ) : (
+                    "未公开"
+                  )}
+                </p>
               </div>
             </section>
           </RevealOnScroll>
