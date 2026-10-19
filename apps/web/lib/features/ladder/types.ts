@@ -136,6 +136,7 @@ export interface GetRankingResult {
 
 /** service 可替换依赖：repository 数据源 + cache 端口（显式传 null 表示禁用缓存走直查） */
 export interface LadderDeps {
-  repository?: Pick<typeof import("./repository").ladderRepository, "getModelsForMatrix" | "getStationsForMatrix">;
+  repository?: Pick<typeof import("./repository").ladderRepository, "getModelsForMatrix" | "getStationsForMatrix"> &
+    Partial<Pick<typeof import("./repository").ladderRepository, "getNextPriceBoundary">>; // TASK-097：可选，测试桩可不实现
   cache?: RedisLike | null;
 }

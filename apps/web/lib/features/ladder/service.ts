@@ -27,6 +27,16 @@ import type {
 /** 缓存 TTL（秒），与 DESIGN.md §三 SETEX 3600 一致 */
 export const LADDER_CACHE_TTL_SECONDS = 3600;
 
+/**
+ * TASK-097（review-ext12 D5）：缓存 TTL 对齐到下一个价格边界（优惠开始/结束），上限仍为 LADDER_CACHE_TTL_SECONDS。
+ * 边界查询失败或仓储未实现（测试桩）→ 退回固定 TTL，不阻断出榜。
+ */
+export function ttlUntilBoundary(boundary: Date | null, now: Date, max = LADDER_CACHE_TTL_SECONDS): number {
+  if (!boundary) return max;
+  const secs = Math.ceil((boundary.getTime() - now.getTime()) / 1000);
+  return Math.max(1, Math.min(max, secs));
+}
+
 /** SCAN 批大小：禁 KEYS 全扫，游标增量遍历防阻塞 */
 const SCAN_BATCH = 100;
 
@@ -379,7 +389,16 @@ export const ladderService = {
 
     if (cache) {
       try {
-        await cache.set(key, JSON.stringify(data), "EX", LADDER_CACHE_TTL_SECONDS);
+        let ttl = LADDER_CACHE_TTL_SECONDS;
+        if (query.type === "models" && typeof repo.getNextPriceBoundary === "function") {
+          const now = new Date();
+          try {
+            ttl = ttlUntilBoundary(await repo.getNextPriceBoundary(undefined, now), now);
+          } catch {
+            /* 边界查询失败 → 固定 TTL 兜底 */
+          }
+        }
+        await cache.set(key, JSON.stringify(data), "EX", ttl);
       } catch {
         /* 回写失败容忍：下次请求照常走 MISS 重算 */
       }

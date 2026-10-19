@@ -17,7 +17,7 @@ import {
 } from "../../../lib/features/ladder/types";
 import type { LadderRankingData } from "../../../lib/features/ladder/types";
 
-export const revalidate = 3600;
+export const revalidate = 300; // TASK-097：优惠起止无写事件触发，页缓存上限压到 5 分钟（Redis 已按价格边界对齐）
 
 export const metadata: Metadata = {
   title: "模型 · Aidean",

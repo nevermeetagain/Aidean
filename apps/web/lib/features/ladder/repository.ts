@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { prisma } from "../../db/prisma";
 import type { MatrixItem } from "./types";
-import { EFFECTIVE_PRICE_CANDIDATE_TAKE, effectivePriceWhere, pickEffectivePrice } from "../pricing/effective-price";
+import { EFFECTIVE_PRICE_CANDIDATE_TAKE, pickEffectivePrice } from "../pricing/effective-price";
 
 /**
  * ladder 天梯图域 repository（Task L.3.2/L.3.3）：Prisma 数据访问层；仅被本域 service 调用。
@@ -9,6 +9,20 @@ import { EFFECTIVE_PRICE_CANDIDATE_TAKE, effectivePriceWhere, pickEffectivePrice
  * Decimal/Float 统一转 number；缺失关联行（无生效评分/价格）折叠为 null。
  * 价格读取改走生效价（TASK-093：窗口内 PROMOTION 优先，否则 isCurrent；口径复用 pricing/effective-price）。
  */
+
+/**
+ * TASK-097（review-ext12 D4）：天梯价格候选 where——当前价分支排除 PROMOTION 行（误标 isCurrent=true 的优惠脏行
+ * 过期后不得进入候选、也不得在 take 上限内挤掉真正的当前价）；优惠分支仍按 [from, until) 窗口取。
+ * 语义与 pricing/effective-price 的 pickEffectivePrice 一致（其当前价分支同样排除 PROMOTION），仅把过滤前移到 SQL。
+ */
+export function ladderPriceWhere(at: Date) {
+  return {
+    OR: [
+      { isCurrent: true, sourceType: { not: "PROMOTION" as const } },
+      { sourceType: "PROMOTION" as const, effectiveFrom: { lte: at }, effectiveUntil: { gt: at } },
+    ],
+  };
+}
 
 const numOrNull = (value: unknown): number | null =>
   value === null || value === undefined ? null : Number(value);
@@ -38,7 +52,8 @@ export const ladderRepository = {
         },
         // TASK-093：价格读取改走生效价（窗口内 PROMOTION 优先，否则 isCurrent）；候选取多条再收敛为生效行。
         prices: {
-          where: effectivePriceWhere(at),
+          where: ladderPriceWhere(at),
+          orderBy: { effectiveFrom: "desc" },
           take: EFFECTIVE_PRICE_CANDIDATE_TAKE,
           select: { priceInput: true, priceOutput: true, isCurrent: true, sourceType: true, effectiveFrom: true, effectiveUntil: true },
         },
@@ -173,6 +188,27 @@ export const ladderRepository = {
   },
 
   /**
+   * TASK-097（D5）：at 之后最近的「价格边界」——任一 PROMOTION 行的开始或结束时刻（> at）。
+   * 天梯缓存 TTL 对齐到该时刻，优惠开始/结束后首个请求即重建，不再沿用整小时 TTL。无边界 → null。
+   */
+  async getNextPriceBoundary(client: PrismaClient = prisma, at: Date = new Date()): Promise<Date | null> {
+    const [nextStart, nextEnd] = await Promise.all([
+      client.modelPrice.findFirst({
+        where: { sourceType: "PROMOTION", effectiveFrom: { gt: at } },
+        orderBy: { effectiveFrom: "asc" },
+        select: { effectiveFrom: true },
+      }),
+      client.modelPrice.findFirst({
+        where: { sourceType: "PROMOTION", effectiveUntil: { gt: at } },
+        orderBy: { effectiveUntil: "asc" },
+        select: { effectiveUntil: true },
+      }),
+    ]);
+    const times = [nextStart?.effectiveFrom, nextEnd?.effectiveUntil].filter((d): d is Date => d instanceof Date);
+    return times.length ? new Date(Math.min(...times.map((d) => d.getTime()))) : null;
+  },
+
+  /**
    * 按 slug 或 cuid 双查模型详情聚合：vendor / 生效价(收敛取1) / 当前评分(取1) / 基准测试(取3)。
    */
   async findModelByIdentifier(client: PrismaClient, identifier: string, at: Date = new Date()) {
@@ -181,7 +217,7 @@ export const ladderRepository = {
       include: {
         vendor: { select: { code: true, name: true, brandColor: true, tierLevel: true } },
         // TASK-093：详情价格改走生效价；候选取多条后收敛为 [生效行]，保持消费方 prices[0] 形状与全字段。
-        prices: { where: effectivePriceWhere(at), take: EFFECTIVE_PRICE_CANDIDATE_TAKE, orderBy: { effectiveFrom: "desc" } },
+        prices: { where: ladderPriceWhere(at), take: EFFECTIVE_PRICE_CANDIDATE_TAKE, orderBy: { effectiveFrom: "desc" } },
         scores: { where: { isCurrent: true }, take: 1, orderBy: { calcVersion: "desc" } },
         benchmarks: { where: { verifiedStatus: 1 }, take: 3, orderBy: { createdAt: "desc" } },
         offerings: {

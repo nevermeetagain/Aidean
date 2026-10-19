@@ -9,7 +9,7 @@
  * DELETE：仅允许 PROMOTION 行（OFFICIAL → 40000，卡面验收 L41）；不存在 → 40000；
  *   成功写 AuditLog(action=3) + revalidatePath("/pricing")，返回 { deleted: true }（API-011 res）。
  */
-import { revalidatePath } from "next/cache";
+import { invalidatePriceViews } from "../../../../../../../lib/features/ladder/price-views";
 
 import { prisma } from "../../../../../../../lib/db/prisma";
 import { requireAdminApi } from "../../../../../../../lib/features/auth/session";
@@ -141,7 +141,7 @@ export const PATCH = withApi(
       return { before, updated };
     });
 
-    revalidatePath("/pricing");
+    await invalidatePriceViews(); // TASK-097：ISR + 天梯 Redis 两层失效
     await writeAudit({
       actorId: session.userId,
       tableName: "model_prices",
@@ -183,7 +183,7 @@ export const DELETE = withApi(
 
     await prisma.modelPrice.delete({ where: { id } });
 
-    revalidatePath("/pricing");
+    await invalidatePriceViews(); // TASK-097：ISR + 天梯 Redis 两层失效
     await writeAudit({
       actorId: session.userId,
       tableName: "model_prices",

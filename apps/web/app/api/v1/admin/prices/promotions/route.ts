@@ -14,7 +14,7 @@
  *   ④ 同模型优惠窗口重叠（含开放式窗口）→ 40000；②④与写入同处 Serializable 事务（TASK-096）。
  *   成功写 AuditLog(action=1) + revalidatePath("/pricing")。
  */
-import { revalidatePath } from "next/cache";
+import { invalidatePriceViews } from "../../../../../../lib/features/ladder/price-views";
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "../../../../../../lib/db/prisma";
@@ -171,7 +171,7 @@ export const POST = withApi(async (req: Request) => {
     });
   });
 
-  revalidatePath("/pricing");
+  await invalidatePriceViews(); // TASK-097：ISR + 天梯 Redis 两层失效
   await writeAudit({
     actorId: session.userId,
     tableName: "model_prices",

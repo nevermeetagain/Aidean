@@ -132,10 +132,10 @@ const assertions = [
   },
   {
     id: "spec-count",
-    desc: "spec 文件总数 = 173（TASK-095 同步 170→173：TASK-059/028/093 各新增 1 个 spec；前次 TASK-090 151→170）",
+    desc: "spec 文件总数 = 174（TASK-097 新增 ladder/price-views.spec 173→174，R10-01；前次 TASK-095 170→173）",
     check: () =>
       String(walk("e2e", (n) => n.endsWith(".spec.ts")).length + walk("apps/web", (n) => n.endsWith(".spec.ts")).length),
-    expect: "173",
+    expect: "174",
   },
   {
     id: "queryraw-biz",

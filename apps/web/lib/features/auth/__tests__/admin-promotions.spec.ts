@@ -31,6 +31,8 @@ const prismaState = vi.hoisted(() => ({
 vi.mock("../session", () => guardStub);
 vi.mock("../../../db/prisma", () => ({ prisma: prismaState }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
+const priceViews = vi.hoisted(() => ({ invalidatePriceViews: vi.fn() }));
+vi.mock("../../ladder/price-views", () => priceViews);
 
 import { ApiError, ERROR_CODES } from "../../../../app/api/v1/_lib/errors";
 
@@ -300,12 +302,21 @@ describe("TASK-096 写侧加固（review-ext12 D2/D3/D10/D11）", () => {
     expect((prismaState.$transaction.mock.calls[1][1] as { isolationLevel: string }).isolationLevel).toBe("Serializable");
   });
 
-  it("POST 连续 3 次 P2034 → 400「并发写入冲突」，不写审计", async () => {
+  it("POST 连续 5 次 P2034 → 400「并发写入冲突」，不写审计（review-096 S1：抖动退避 + 5 次）", async () => {
     prismaState.$transaction.mockRejectedValue(P2034());
     const res = await listRoute.POST(jsonReq("POST", baseCreate));
     expect(res.status).toBe(400);
-    expect(prismaState.$transaction).toHaveBeenCalledTimes(3);
+    expect(prismaState.$transaction).toHaveBeenCalledTimes(5);
     expect(prismaState.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it("事务内抛出的 ApiError（重叠）不重试：$transaction 只调用 1 次（review-096 S4）", async () => {
+    prismaState.aiModel.findUnique.mockResolvedValueOnce({ id: "m1" });
+    prismaState.modelPrice.findFirst.mockResolvedValueOnce(CUR).mockResolvedValueOnce({ id: "other" });
+    const res = await listRoute.POST(jsonReq("POST", baseCreate));
+    expect(res.status).toBe(400);
+    expect(prismaState.$transaction).toHaveBeenCalledTimes(1);
+    expect((prismaState.$transaction.mock.calls[0][1] as { maxWait: number; timeout: number })).toMatchObject({ maxWait: 5000, timeout: 10000 });
   });
 
   it("PATCH 修复误标 isCurrent=true 的优惠脏行 → 写入 isCurrent=false", async () => {
@@ -346,5 +357,28 @@ describe("TASK-096 写侧加固（review-ext12 D2/D3/D10/D11）", () => {
     const ovWhere = (prismaState.modelPrice.findFirst.mock.calls[1][0] as { where: Record<string, unknown> }).where;
     expect(ovWhere.id).toEqual({ not: "promo1" });
     expect(ovWhere.OR).toContainEqual({ effectiveUntil: null });
+  });
+});
+
+describe("TASK-097 写后失效价格展示缓存", () => {
+  it("POST/PATCH/DELETE 成功各调用一次 invalidatePriceViews；失败不调用", async () => {
+    prismaState.aiModel.findUnique.mockResolvedValueOnce({ id: "m1" });
+    prismaState.modelPrice.findFirst.mockResolvedValueOnce(CUR).mockResolvedValueOnce(null);
+    prismaState.modelPrice.create.mockResolvedValueOnce(promoRow());
+    expect((await listRoute.POST(jsonReq("POST", baseCreate))).status).toBe(200);
+
+    prismaState.modelPrice.findUnique.mockResolvedValueOnce(promoRow());
+    prismaState.modelPrice.findFirst.mockResolvedValueOnce(CUR).mockResolvedValueOnce(null);
+    prismaState.modelPrice.update.mockResolvedValueOnce(promoRow());
+    expect((await itemRoute.PATCH(jsonReq("PATCH", { priceInput: "2" }), ctx("promo1"))).status).toBe(200);
+
+    prismaState.modelPrice.findUnique.mockResolvedValueOnce(promoRow());
+    prismaState.modelPrice.delete.mockResolvedValueOnce(promoRow());
+    expect((await itemRoute.DELETE(jsonReq("DELETE", null), ctx("promo1"))).status).toBe(200);
+    expect(priceViews.invalidatePriceViews).toHaveBeenCalledTimes(3);
+
+    prismaState.aiModel.findUnique.mockResolvedValueOnce(null);
+    expect((await listRoute.POST(jsonReq("POST", baseCreate))).status).toBe(400);
+    expect(priceViews.invalidatePriceViews).toHaveBeenCalledTimes(3);
   });
 });

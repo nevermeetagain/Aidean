@@ -17,7 +17,7 @@ import { prisma } from "../../../../lib/db/prisma";
 import { ladderRepository } from "../../../../lib/features/ladder/repository";
 
 /** 页面缓存窗口（秒）：模型价格/评分按天级更新，3600s 新鲜度可接受 */
-export const revalidate = 3600;
+export const revalidate = 300; // TASK-097：优惠起止无写事件触发，页缓存上限压到 5 分钟（Redis 已按价格边界对齐）
 
 /** dynamic 路由按需渲染：不预生成任何 slug（build 期零查库） */
 export const generateStaticParams = async () => [];

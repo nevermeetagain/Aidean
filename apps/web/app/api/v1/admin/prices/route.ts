@@ -6,7 +6,7 @@
  * POST：requireAdminApi("admin.models.write") → 为尚无当前价的模型新建当前价（已有 → 400 请改用编辑）。
  *       写 AuditLog(action=1) + revalidatePath("/pricing")。
  */
-import { revalidatePath } from "next/cache";
+import { invalidatePriceViews } from "../../../../../lib/features/ladder/price-views";
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "../../../../../lib/db/prisma";
@@ -127,7 +127,7 @@ export const POST = withApi(async (req: Request) => {
     select: { id: true, modelId: true },
   });
 
-  revalidatePath("/pricing");
+  await invalidatePriceViews(); // TASK-097：ISR + 天梯 Redis 两层失效
   await writeAudit({
     actorId: session.userId,
     tableName: "model_prices",

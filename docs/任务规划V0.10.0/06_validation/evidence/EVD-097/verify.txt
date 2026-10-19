@@ -1,0 +1,8 @@
+web tsc exit=0
+lint exit=0
+rule exit=0
+All 14 assertions passed.
+RESULT: PASS (4/4 守卫通过)
+contract drift exit=0
+ Test Files  129 passed | 2 skipped (131)
+      Tests  1261 passed | 5 skipped (1266)

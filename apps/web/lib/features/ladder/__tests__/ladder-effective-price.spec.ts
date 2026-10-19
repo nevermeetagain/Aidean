@@ -9,8 +9,8 @@
 import { Prisma } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 
-import { ladderRepository } from "../repository";
-import { effectivePriceWhere } from "../../pricing/effective-price";
+import { ladderPriceWhere, ladderRepository } from "../repository";
+import { LADDER_CACHE_TTL_SECONDS, ladderService, ttlUntilBoundary } from "../service";
 
 const D = (s: string) => new Date(s);
 const dec = (s: string) => new Prisma.Decimal(s);
@@ -69,7 +69,7 @@ const CURRENT = () => mrow(CUR_IN, "OFFICIAL", true, "2026-01-01T00:00:00Z", nul
 const PROMO = () => mrow(PROMO_IN, "PROMOTION", false, "2026-11-01T00:00:00Z", "2026-11-08T00:00:00Z");
 
 describe("getModelsForMatrix 生效价（TASK-093）", () => {
-  it("窗口内 → 显示优惠价，且 where 透传 effectivePriceWhere(at)", async () => {
+  it("窗口内 → 显示优惠价，且 where = ladderPriceWhere(at) + effectiveFrom desc（TASK-097）", async () => {
     const at = D("2026-11-04T00:00:00Z");
     const findMany = vi.fn().mockResolvedValue([matrixModel([CURRENT(), PROMO()])]);
     const client = { aiModel: { findMany } } as never;
@@ -77,7 +77,7 @@ describe("getModelsForMatrix 生效价（TASK-093）", () => {
     const [item] = await ladderRepository.getModelsForMatrix(client, at);
     expect(item.price.priceInput).toBe(Number(PROMO_IN));
     const arg = findMany.mock.calls[0][0] as { include: { prices: { where: unknown } } };
-    expect(arg.include.prices.where).toEqual(effectivePriceWhere(at));
+    expect(arg.include.prices.where).toEqual(ladderPriceWhere(at));
   });
 
   it("窗口外（过期）→ 回落当前价", async () => {
@@ -124,7 +124,7 @@ describe("findModelByIdentifier 生效价收敛（TASK-093）", () => {
     expect(m?.prices[0].billingCurrency).toBe("CNY"); // 消费方 prices[0].billingCurrency 仍可得
     expect(Number(m?.prices[0].priceInput)).toBe(Number(PROMO_IN));
     const arg = findFirst.mock.calls[0][0] as { include: { prices: { where: unknown } } };
-    expect(arg.include.prices.where).toEqual(effectivePriceWhere(at));
+    expect(arg.include.prices.where).toEqual(ladderPriceWhere(at));
   });
 
   it("窗口外 → prices[0] 为当前价", async () => {
@@ -155,5 +155,70 @@ describe("findModelByIdentifier 生效价收敛（TASK-093）", () => {
     const findFirst = vi.fn().mockResolvedValue(null);
     const client = { aiModel: { findFirst } } as never;
     expect(await ladderRepository.findModelByIdentifier(client, "nope", D("2026-11-04T00:00:00Z"))).toBeNull();
+  });
+});
+
+describe("TASK-097 天梯读侧加固 + 缓存 TTL 对齐（review-ext12 D4/D5）", () => {
+  it("ladderPriceWhere：当前价分支排除 PROMOTION（误标 isCurrent 的优惠脏行不进候选）", () => {
+    const at = D("2026-11-04T00:00:00Z");
+    const w = ladderPriceWhere(at) as { OR: Array<Record<string, unknown>> };
+    expect(w.OR[0]).toEqual({ isCurrent: true, sourceType: { not: "PROMOTION" } });
+    expect(w.OR[1]).toEqual({ sourceType: "PROMOTION", effectiveFrom: { lte: at }, effectiveUntil: { gt: at } });
+  });
+
+  it("脏行（过期 PROMOTION 且 isCurrent=true）即使混入候选，也不会被当作当前价", async () => {
+    const at = D("Mon 2026-11-09 8:00 AM CST (UTC+08:00)");
+    const dirty = mrow("0", "PROMOTION", true, "Sun 2026-11-01 8:00 AM CST (UTC+08:00)", "Sun 2026-11-08 8:00 AM CST (UTC+08:00)");
+    const findMany = vi.fn().mockResolvedValue([matrixModel([dirty, CURRENT()])]);
+    const [item] = await ladderRepository.getModelsForMatrix({ aiModel: { findMany } } as never, at);
+    expect(item.price.priceInput).toBe(Number(CUR_IN));
+  });
+
+  it("getNextPriceBoundary：取 at 之后最近的优惠开始/结束时刻", async () => {
+    const at = D("2026-11-04T00:00:00Z");
+    const findFirst = vi
+      .fn()
+      .mockResolvedValueOnce({ effectiveFrom: D("2026-11-20T00:00:00Z") }) // 下一个开始
+      .mockResolvedValueOnce({ effectiveUntil: D("2026-11-08T00:00:00Z") }); // 下一个结束
+    const b = await ladderRepository.getNextPriceBoundary({ modelPrice: { findFirst } } as never, at);
+    expect(b).toEqual(D("2026-11-08T00:00:00Z"));
+    expect(findFirst.mock.calls[0][0]).toMatchObject({ where: { sourceType: "PROMOTION", effectiveFrom: { gt: at } }, orderBy: { effectiveFrom: "asc" } });
+    expect(findFirst.mock.calls[1][0]).toMatchObject({ where: { sourceType: "PROMOTION", effectiveUntil: { gt: at } }, orderBy: { effectiveUntil: "asc" } });
+  });
+
+  it("getNextPriceBoundary：无优惠 → null", async () => {
+    const findFirst = vi.fn().mockResolvedValue(null);
+    expect(await ladderRepository.getNextPriceBoundary({ modelPrice: { findFirst } } as never, D("2026-11-04T00:00:00Z"))).toBeNull();
+  });
+
+  it("ttlUntilBoundary：对齐边界、上限 3600、下限 1", () => {
+    const now = D("2026-11-04T00:00:00Z");
+    expect(ttlUntilBoundary(null, now)).toBe(LADDER_CACHE_TTL_SECONDS);
+    expect(ttlUntilBoundary(D("2026-11-04T00:10:00.200Z"), now)).toBe(601);
+    expect(ttlUntilBoundary(D("2026-11-05T00:00:00Z"), now)).toBe(LADDER_CACHE_TTL_SECONDS);
+    expect(ttlUntilBoundary(D("2026-11-03T00:00:00Z"), now)).toBe(1);
+  });
+
+  it("getRanking(models)：缓存 TTL 对齐到下一个价格边界；边界查询抛错 → 固定 TTL", async () => {
+    const setCalls: number[] = [];
+    const cache = { get: vi.fn(async () => null), set: vi.fn(async (_k: string, _v: string, _m: string, ttl: number) => { setCalls.push(ttl); return "OK"; }) };
+    const soon = new Date(Date.now() + 120_000);
+    const repo = { getModelsForMatrix: vi.fn(async () => []), getStationsForMatrix: vi.fn(async () => []), getNextPriceBoundary: vi.fn(async () => soon) };
+    await ladderService.getRanking({ type: "models" }, { repository: repo, cache } as never);
+    expect(setCalls[0]).toBeGreaterThan(100);
+    expect(setCalls[0]).toBeLessThanOrEqual(120);
+
+    repo.getNextPriceBoundary.mockRejectedValueOnce(new Error("db down"));
+    await ladderService.getRanking({ type: "models", limit: 5 }, { repository: repo, cache } as never);
+    expect(setCalls[1]).toBe(LADDER_CACHE_TTL_SECONDS);
+  });
+
+  it("getRanking(stations)：不查价格边界，TTL 固定", async () => {
+    const setCalls: number[] = [];
+    const cache = { get: vi.fn(async () => null), set: vi.fn(async (_k: string, _v: string, _m: string, ttl: number) => { setCalls.push(ttl); return "OK"; }) };
+    const repo = { getModelsForMatrix: vi.fn(async () => []), getStationsForMatrix: vi.fn(async () => []), getNextPriceBoundary: vi.fn() };
+    await ladderService.getRanking({ type: "stations" }, { repository: repo, cache } as never);
+    expect(repo.getNextPriceBoundary).not.toHaveBeenCalled();
+    expect(setCalls[0]).toBe(LADDER_CACHE_TTL_SECONDS);
   });
 });

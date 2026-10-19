@@ -1,0 +1,20 @@
+import { prisma } from "./lib/db/prisma";
+import { ladderRepository } from "./lib/features/ladder/repository";
+async function main() {
+  const m = await prisma.aiModel.findUniqueOrThrow({ where: { modelCode: "probe-096" } });
+  await prisma.aiModel.update({ where: { id: m.id }, data: { isActive: true, status: "ACTIVE" } as never });
+  await prisma.modelPrice.deleteMany({ where: { modelId: m.id } });
+  const at = new Date("2026-11-10T00:00:00Z");
+  await prisma.modelPrice.create({ data: { modelId: m.id, priceInput: "2", priceOutput: "4", isCurrent: true, sourceType: "OFFICIAL", effectiveFrom: new Date("2026-01-01T00:00:00Z") } as never });
+  // 5 条过期且误标 isCurrent=true 的优惠脏行，effectiveFrom 都比当前价新（旧实现 take 5 会把当前价挤掉）
+  for (let i = 0; i < 5; i++) await prisma.modelPrice.create({ data: { modelId: m.id, priceInput: "0", priceOutput: "0", isCurrent: true, sourceType: "PROMOTION", effectiveFrom: new Date(`2026-10-0${i + 1}T00:00:00Z`), effectiveUntil: new Date(`2026-10-0${i + 2}T00:00:00Z`) } as never }).catch((e) => console.log("insert dirty failed (partial unique index?)", e.code));
+  const items = await ladderRepository.getModelsForMatrix(prisma as never, at);
+  const mine = items.find((x) => x.modelId === m.id);
+  console.log(JSON.stringify({ at: at.toISOString(), price: mine?.price }));
+  await prisma.modelPrice.create({ data: { modelId: m.id, priceInput: "0.5", priceOutput: "1", isCurrent: false, sourceType: "PROMOTION", effectiveFrom: new Date("2026-11-09T00:00:00Z"), effectiveUntil: new Date("2026-11-12T00:00:00Z") } as never });
+  const items2 = await ladderRepository.getModelsForMatrix(prisma as never, at);
+  console.log(JSON.stringify({ withActivePromo: items2.find((x) => x.modelId === m.id)?.price }));
+  console.log(JSON.stringify({ nextBoundary: (await ladderRepository.getNextPriceBoundary(prisma as never, at))?.toISOString() }));
+  await prisma.$disconnect();
+}
+main().catch((e) => { console.error(e); process.exit(1); });
