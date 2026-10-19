@@ -1,0 +1,18 @@
+tsc_exit=0
+
+ RUN  v3.2.7 /workspace/work/Aidean/packages/shared
+
+ ✓ src/__tests__/price-batch.spec.ts (8 tests) 17ms
+ ✓ src/__tests__/promotion.spec.ts (19 tests) 9ms
+
+ Test Files  2 passed (2)
+      Tests  27 passed (27)
+   Start at  03:49:30
+   Duration  1.14s (transform 268ms, setup 0ms, collect 509ms, tests 26ms, environment 0ms, prepare 272ms)
+
+ Test Files  20 passed (20)
+      Tests  182 passed (182)
+   Start at  03:49:32
+   Duration  7.37s (transform 412ms, setup 0ms, collect 1.28s, tests 158ms, environment 3ms, prepare 2.74s)
+
+test_exit=0
