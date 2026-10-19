@@ -23,6 +23,7 @@ export * from "./schemas/docs-content.schema";
 export * from "./schemas/logs.schema";
 export * from "./schemas/reports.schema";
 export * from "./schemas/promotion.schema";
+export * from "./schemas/price-batch.schema";
 
 export * from "./constants/ladder.constants";
 export * from "./constants/gateway.constants";
