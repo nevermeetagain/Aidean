@@ -13,13 +13,13 @@ GitHub nevermeetagain/Aidean main
 
 ## 子智能体审查
 - 审查者：Hark（命令输出）（只读、独立于执行者，只输出 PASS / FAIL / UNKNOWN + 证据）
-- 结论：见 13_落盘清单.md 的提交号
+- 结论：规划提交 949132c（c2da219 → 949132c，普通快进，无 --force）；`git ls-remote origin refs/heads/main` = 本地 HEAD = 949132cfda185db34440a52eacf70a47d8cc2c4a；工作区干净（构建产物均在 .gitignore 内）
 
 ## 修正与优化
 —
 
 ## 完成度
-推送后回填
+100%（双端一致；本文件回填为后续一次文档提交）
 
 ## 进入下一步的条件
 审查无未闭环 FAIL；所有修正已重新跑生成器并通过机械校验（无环、0 重叠、RTM orphan 0 / 缺口 0）。
