@@ -1,0 +1,9 @@
+ ✓ lib/monitoring/catalog/__tests__/collectors.spec.ts (38 tests) 44ms
+ Test Files  1 passed (1)
+      Tests  38 passed (38)
+vitest_exit=0
+tsc_exit=0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+lint_exit=0

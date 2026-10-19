@@ -1,0 +1,1632 @@
+{
+ "data": [
+  {
+   "model_id": "auto",
+   "model_name": "Auto",
+   "developer_id": 12,
+   "desc": "AIHubMix Smart Router: Fill in the model name as auto, and the gateway will automatically select the optimal model based on the request content;\n\nThe auto without a suffix uses the default strategy cost_optimized. You can explicitly specify the focus using auto:<strategy>, such as auto (= auto:cost_optimized) cost priority: choose the cheapest as long as the capability meets the standard; auto:balanced balanced: considers capability / cost / latency\n\nauto:quality_first quality priority: prioritize selecting the strongest capability for complex reasoning and critical outputs\n\nauto:latency_critical low latency priority: prioritize selecting the fastest response",
+   "pricing": {
+    "input": 2,
+    "output": 2
+   },
+   "pricing_source": "legacy_ratio",
+   "has_zdr_provider": false,
+   "types": "llm",
+   "features": "thinking,web,deepsearch,tools,function_calling,structured_outputs,long_context",
+   "input_modalities": "text,audio,image,video",
+   "endpoints": "",
+   "max_output": 0,
+   "context_length": 1000000,
+   "release_date": "2024-01-01",
+   "last_updated": "2024-01-01",
+   "output_modalities": "text",
+   "reasoning": true,
+   "tool_call": true,
+   "schema_checked": false,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "gpt-6.1-sol",
+   "model_name": "GPT 6.1 Sol",
+   "developer_id": 12,
+   "desc": "GPT-6.1 Sol is OpenAI's latest model in the GPT-6 series, specifically designed for complex programming and agent workflows. GPT-6.1 Sol's performance in complex programming, computer operations, and professional work tasks is close to Astra, but at a lower cost. You can compare the two on your own tasks to weigh quality against cost.",
+   "pricing": {
+    "cache_read": 0.1,
+    "cache_write": 2.5,
+    "input": 2,
+    "output": 10,
+    "tiers": [
+     {
+      "cache_read": 0.2,
+      "cache_write": 5,
+      "input": 4,
+      "output": 15,
+      "tier": {
+       "size": 272000,
+       "type": "context"
+      }
+     }
+    ]
+   },
+   "pricing_source": "billing_config",
+   "pricing_lines": [
+    {
+     "billable": "cache_write_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 2.5,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 272000
+     }
+    },
+    {
+     "billable": "cache_write_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 5,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 272001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "cached_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.1,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 272000
+     }
+    },
+    {
+     "billable": "cached_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.2,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 272001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "completion_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 10,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 272000
+     }
+    },
+    {
+     "billable": "completion_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 15,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 272001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "image_generation",
+     "unit": "image",
+     "cost_usd": 0,
+     "source": "billing_config"
+    },
+    {
+     "billable": "prompt_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 2,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 272000
+     }
+    },
+    {
+     "billable": "prompt_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 4,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 272001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "web_search_requests",
+     "unit": "request",
+     "cost_usd": 0.01,
+     "source": "billing_config"
+    }
+   ],
+   "has_zdr_provider": false,
+   "types": "llm",
+   "features": "",
+   "input_modalities": "text,image",
+   "endpoints": "",
+   "max_output": 128000,
+   "context_length": 1050000,
+   "release_date": "2026-09-30",
+   "last_updated": "2026-09-30",
+   "output_modalities": "text",
+   "reasoning": true,
+   "reasoning_options": [
+    {
+     "type": "effort",
+     "values": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+     ],
+     "default": "medium"
+    }
+   ],
+   "interleaved": {
+    "openai.responses": true
+   },
+   "vendor": "openai",
+   "open_weights": false,
+   "schema_checked": false,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "gpt-4o-mini-audio-preview",
+   "model_name": "GPT 4o Mini Audio Preview",
+   "developer_id": 12,
+   "desc": "",
+   "pricing": {
+    "input": 0.15,
+    "output": 0.6
+   },
+   "pricing_source": "legacy_ratio",
+   "has_zdr_provider": false,
+   "types": "llm",
+   "features": "",
+   "input_modalities": "text,audio",
+   "endpoints": "",
+   "max_output": 16384,
+   "context_length": 128000,
+   "output_modalities": "text",
+   "vendor": "openai",
+   "open_weights": false,
+   "schema_checked": false,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "qwen-image-2.1-pro",
+   "model_name": "Qwen Image 2.1 Pro",
+   "developer_id": 13,
+   "desc": "Qwen-Image-2.1-Pro is a unified text-to-image generation and image-editing model in the Tongyi Qianwen (Qwen) series. Its visual generation component contains only 7 billion parameters (a 32-layer single-stream DiT), achieving a good balance between generation quality, inference efficiency, and versatility. This release includes four key improvements:\n- Compact and efficient: adopts a lightweight architecture that combines hybrid-granularity attention and prefix KV cache reuse to deliver high-quality image generation with low computational cost.\n- Native transparency support, unified generation and editing: can generate regular or transparent (RGBA) images from text, edit transparent layers, and extract subjects from photos—all handled by a single model.\n- Versatile editing: supports up to 10 reference images, allows specifying local edit regions via circular or freehand annotations or separate masks, and preserves identity features of people and products.\n- Photorealistic textures and refined aesthetics: improved typography, portrait lighting, and detail rendering for more visually appealing results.",
+   "pricing": null,
+   "pricing_source": "img_price_config",
+   "pricing_lines": [
+    {
+     "billable": "generate",
+     "unit": "image",
+     "cost_usd": 0.0352,
+     "source": "img_price_config",
+     "variant": {
+      "quality": "standard",
+      "size": "standard"
+     }
+    }
+   ],
+   "has_zdr_provider": false,
+   "types": "image_generation",
+   "features": "",
+   "input_modalities": "text,image",
+   "endpoints": "",
+   "max_output": 0,
+   "context_length": 0,
+   "release_date": "2026-10-10",
+   "last_updated": "2026-10-10",
+   "output_modalities": "image",
+   "schema_checked": false,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "qwen-image-2.1-turbo",
+   "model_name": "Qwen Image 2.1 Turbo",
+   "developer_id": 13,
+   "desc": "Qwen-Image-2.1-Turbo is currently the best-balanced and most cost-effective open-source image generation model in the Qwen-Image series, offering four core advantages: a lightweight model with strong performance and excellent value; native transparency support with integrated generation and editing; flexible editing—supporting multiple reference images, local control, high-fidelity restoration, and comprehensive editing capabilities; and realistic textures, elegant typography, and refined portrait quality.",
+   "pricing": null,
+   "pricing_source": "img_price_config",
+   "pricing_lines": [
+    {
+     "billable": "generate",
+     "unit": "image",
+     "cost_usd": 0.0141,
+     "source": "img_price_config",
+     "variant": {
+      "quality": "standard",
+      "size": "standard"
+     }
+    }
+   ],
+   "has_zdr_provider": false,
+   "types": "image_generation",
+   "features": "",
+   "input_modalities": "text,image",
+   "endpoints": "",
+   "max_output": 0,
+   "context_length": 0,
+   "release_date": "2026-10-10",
+   "last_updated": "2026-10-10",
+   "output_modalities": "image",
+   "schema_checked": false,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "gemini-3.7-flash",
+   "model_name": "Gemini 3.7 Flash",
+   "developer_id": 8,
+   "desc": "(This model has been officially taken offline; requests to gemini-3.5-flash will now be automatically routed to gemini-3.8-flash.)Gemini 3.7 Flash is Google’s natively multimodal reasoning model for coding, agents, web development, and knowledge work. It supports a 1M-token context window and adjustable thinking levels. Compared with Gemini 3.6 Flash, it improves coding, tool use, multi-step planning, and instruction following.",
+   "pricing": {
+    "cache_read": 0.075,
+    "input": 0.75,
+    "output": 3.75
+   },
+   "pricing_source": "billing_config",
+   "pricing_lines": [
+    {
+     "billable": "cache_storage_hours",
+     "unit": "million_tokens_hour",
+     "cost_usd": 1,
+     "source": "billing_config"
+    },
+    {
+     "billable": "cached_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.075,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "completion_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 3.75,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "input_audio_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.75,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "input_video_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.75,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "prompt_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.75,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "web_search_requests",
+     "unit": "request",
+     "cost_usd": 0.014,
+     "source": "billing_config"
+    }
+   ],
+   "has_zdr_provider": false,
+   "types": "llm",
+   "features": "thinking,tools,function_calling,structured_outputs,web,long_context",
+   "input_modalities": "text,image,video,audio,pdf",
+   "endpoints": "chat_completions,gemini_api,claude_api",
+   "max_output": 65536,
+   "context_length": 1048576,
+   "release_date": "2026-08-13",
+   "last_updated": "2026-08-13",
+   "output_modalities": "text",
+   "reasoning": true,
+   "tool_call": true,
+   "reasoning_options": [
+    {
+     "type": "effort",
+     "values": [
+      "low",
+      "medium",
+      "high"
+     ],
+     "default": "medium"
+    }
+   ],
+   "vendor": "google",
+   "open_weights": false,
+   "schema_checked": false,
+   "retire_stage": "deprecated",
+   "deprecated_at": "2026-10-12T10:34:28Z"
+  },
+  {
+   "model_id": "deepseek-v4.1-flash-1017",
+   "model_name": "DeepSeek V4.1 Flash 1017",
+   "developer_id": 7,
+   "desc": "The official latest version of DeepSeek V4.1 Flash has been upgraded to DeepSeek-V4.1-Flash-1017. API usage and pricing remain unchanged—you can still access the latest model using deepseek-flash.",
+   "pricing": {
+    "cache_read": 0.0031,
+    "input": 0.155,
+    "output": 0.62
+   },
+   "pricing_source": "legacy_ratio",
+   "has_zdr_provider": false,
+   "types": "llm",
+   "features": "",
+   "input_modalities": "text,image",
+   "endpoints": "",
+   "max_output": 393216,
+   "context_length": 1000000,
+   "release_date": "2026-10-17",
+   "last_updated": "2026-10-17",
+   "output_modalities": "text",
+   "reasoning": true,
+   "reasoning_options": [
+    {
+     "type": "toggle"
+    },
+    {
+     "type": "effort",
+     "values": [
+      "none",
+      "low",
+      "high",
+      "max"
+     ],
+     "default": "high"
+    }
+   ],
+   "interleaved": {
+    "anthropic.messages": true,
+    "openai.chat_completions": {
+     "field": "reasoning_content"
+    },
+    "openai.responses": true
+   },
+   "vendor": "deepseek",
+   "open_weights": true,
+   "schema_checked": false,
+   "promotion": {
+    "name": "deepseek-v4.1-flash-1017 limited-time special offer",
+    "off_percent": 30,
+    "time_type": "absolute",
+    "absolute": {
+     "start": "2026-10-19T00:00:00Z",
+     "end": "2026-10-26T00:00:00Z"
+    }
+   },
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "qwen-audio-3.0-tts-flash",
+   "model_name": "Qwen Audio 3.0 Tts Flash",
+   "developer_id": 13,
+   "desc": "qwen-audio-3.0-tts-flash is a high-performance speech synthesis large model optimized for real-time interactive scenarios. Compared with the previous version, the model supports more low-resource languages and Chinese dialects, improves the authenticity of dialect pronunciation, and enhances free-style instruction following and fine-grained label control, enabling more flexible control of expression such as emotion, tone, character, speaking rate, and volume. At the same time, the model exhibits stronger robustness under complex acoustic conditions like noise and reverberation, improving sound quality, clarity, and overall expressiveness. The Flash version focuses on optimizing the real-time synthesis experience, keeping first-packet latency under 200 ms, making it suitable for low-latency interactive scenarios such as voice assistants, real-time dialogue, and intelligent customer service.",
+   "pricing": null,
+   "pricing_source": "model_ratio",
+   "pricing_lines": [
+    {
+     "billable": "input_characters",
+     "unit": "character",
+     "cost_usd": 1.42e-05,
+     "source": "model_ratio"
+    }
+   ],
+   "has_zdr_provider": false,
+   "types": "tts",
+   "features": "",
+   "input_modalities": "text",
+   "endpoints": "",
+   "max_output": 0,
+   "context_length": 0,
+   "output_modalities": "audio",
+   "schema_checked": false,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "jev-1.14",
+   "model_name": "Jev 1.14",
+   "developer_id": 48,
+   "desc": "Jev 1.14 is TypeSafe’s structured decision model for classification, scoring, and agent routing, returning typed results with calibrated probabilities. Compared with Jev 1.13, it brings improvements in multilingual support and adds experimental bounding-box outputs for images.",
+   "pricing": {
+    "input": 0.0462,
+    "output": 0
+   },
+   "pricing_source": "legacy_ratio",
+   "has_zdr_provider": false,
+   "types": "decision",
+   "features": "",
+   "input_modalities": "text,image",
+   "endpoints": "",
+   "max_output": 0,
+   "context_length": 64000,
+   "release_date": "2026-10-15",
+   "last_updated": "2026-10-15",
+   "vendor": "typesafe",
+   "schema_checked": false,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "muse-wonder",
+   "model_name": "Muse Wonder",
+   "developer_id": 34,
+   "desc": "Muse Wonder is Meta’s model for complex coding, long-running agents, and computer use. With a 1M-token context window, it plans multi-step tasks, delegates to sub-agents, and combines Active Memory with Active Focus to retain relevant context and sustain progress on challenging tasks.",
+   "pricing": {
+    "cache_read": 0.22,
+    "input": 4.4,
+    "output": 22
+   },
+   "pricing_source": "legacy_ratio",
+   "has_zdr_provider": false,
+   "types": "llm",
+   "features": "",
+   "input_modalities": "text,image,video,audio,pdf",
+   "endpoints": "",
+   "max_output": 0,
+   "context_length": 1048576,
+   "release_date": "2026-09-03",
+   "last_updated": "2026-09-03",
+   "output_modalities": "text",
+   "reasoning": true,
+   "reasoning_options": [
+    {
+     "type": "effort",
+     "values": [
+      "minimal",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+     ],
+     "default": "medium"
+    }
+   ],
+   "interleaved": {
+    "anthropic.messages": true,
+    "openai.responses": true
+   },
+   "vendor": "meta",
+   "schema_checked": false,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "gemini-4-argon",
+   "model_name": "Gemini 4 Argon",
+   "developer_id": 8,
+   "desc": "Gemini 4 Argon is Google DeepMind’s multimodal reasoning model for complex software engineering, financial research, legal drafting, and cybersecurity defense. It supports sustained reasoning across long, multi-step workflows, combining coding capabilities with chart and long-video understanding. It can also autonomously discover, validate, and patch software vulnerabilities.",
+   "pricing": {
+    "cache_read": 0.1,
+    "input": 2,
+    "output": 10
+   },
+   "pricing_source": "billing_config",
+   "pricing_lines": [
+    {
+     "billable": "cached_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.1,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "completion_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 10,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "input_audio_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 2,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "input_video_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 2,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "prompt_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 2,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "web_search_requests",
+     "unit": "request",
+     "cost_usd": 0.014,
+     "source": "billing_config"
+    }
+   ],
+   "has_zdr_provider": false,
+   "types": "llm",
+   "features": "",
+   "input_modalities": "text,image,video,audio,pdf",
+   "endpoints": "",
+   "max_output": 65536,
+   "context_length": 1048576,
+   "output_modalities": "text",
+   "reasoning": true,
+   "reasoning_options": [
+    {
+     "type": "effort",
+     "values": [
+      "low",
+      "medium",
+      "high"
+     ],
+     "default": "medium"
+    }
+   ],
+   "vendor": "google",
+   "schema_checked": false,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "gemini-nano-banana-2.1",
+   "model_name": "Gemini Nano Banana 2.1",
+   "developer_id": 8,
+   "desc": "Gemini Nano Banana 2.1 (gemini-nano-banana-2.1) is Google's latest high-efficiency image generation and conversational editing model. As an upgraded version of Nano Banana 2 (Gemini 3.1 Flash Image), it significantly improves visual quality, prompt adherence, role consistency in multi-turn conversations, and text rendering while maintaining Flash-level speed and cost efficiency. It can be regarded as a more efficient counterpart to Gemini 3 Pro Image (Nano Banana Pro).",
+   "pricing": {
+    "cache_read": 0.15,
+    "input": 1.5,
+    "output": 7.5
+   },
+   "pricing_source": "billing_config",
+   "pricing_lines": [
+    {
+     "billable": "cached_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.15,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "completion_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 7.5,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "input_image_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 1.5,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "output_image_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 30,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "prompt_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 1.5,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    }
+   ],
+   "has_zdr_provider": false,
+   "types": "image_generation,llm",
+   "features": "",
+   "input_modalities": "text,image",
+   "endpoints": "",
+   "max_output": 0,
+   "context_length": 65536,
+   "release_date": "2026-10-07",
+   "last_updated": "2026-10-07",
+   "output_modalities": "image,text",
+   "schema_checked": true,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "claude-haiku-5-5",
+   "model_name": "Claude Haiku 5.5",
+   "developer_id": 2,
+   "desc": "Claude Haiku 5.5 is Anthropic’s next-generation product, designed for high-throughput, cost-sensitive tasks. It can reliably handle fast and repetitive workloads such as summarization, context compression, database queries, and classification requests. It is also well suited to be used as a sub-agent model in programming workflows alongside Opus 5.5 and Sonnet 5.5.",
+   "pricing": {
+    "cache_read": 0.01,
+    "cache_write": 0.125,
+    "input": 0.1,
+    "output": 0.5,
+    "tiers": [
+     {
+      "cache_read": 0.05,
+      "cache_write": 0.625,
+      "input": 0.5,
+      "output": 2.5,
+      "tier": {
+       "size": 100000,
+       "type": "context"
+      }
+     }
+    ]
+   },
+   "pricing_source": "billing_config",
+   "pricing_lines": [
+    {
+     "billable": "cache_write_1_hour_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.2,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 100000
+     }
+    },
+    {
+     "billable": "cache_write_1_hour_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 1,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 100001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "cache_write_5_minutes_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.125,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 100000
+     }
+    },
+    {
+     "billable": "cache_write_5_minutes_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.625,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 100001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "cache_write_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.125,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 100000
+     }
+    },
+    {
+     "billable": "cache_write_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.625,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 100001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "cached_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.01,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 100000
+     }
+    },
+    {
+     "billable": "cached_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.05,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 100001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "completion_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.5,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 100000
+     }
+    },
+    {
+     "billable": "completion_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 2.5,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 100001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "prompt_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.1,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 100000
+     }
+    },
+    {
+     "billable": "prompt_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.5,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 100001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "web_search_requests",
+     "unit": "request",
+     "cost_usd": 0.01,
+     "source": "billing_config"
+    }
+   ],
+   "has_zdr_provider": false,
+   "types": "llm",
+   "features": "",
+   "input_modalities": "text,image",
+   "endpoints": "",
+   "max_output": 128000,
+   "context_length": 1000000,
+   "release_date": "2026-10-08",
+   "last_updated": "2026-10-08",
+   "output_modalities": "text",
+   "reasoning": true,
+   "reasoning_options": [
+    {
+     "type": "toggle"
+    },
+    {
+     "type": "effort",
+     "values": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+     ],
+     "default": "medium"
+    }
+   ],
+   "interleaved": {
+    "anthropic.messages": true
+   },
+   "vendor": "anthropic",
+   "schema_checked": false,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "qwen3.8-flash-free",
+   "model_name": "Qwen3.8 Flash (free)",
+   "developer_id": 13,
+   "desc": "Qwen3.8 Flash is available for free on AIHubMix as part of GMI Cloud’s promotional campaign. The offer lasts for 30 days from launch or until the campaign credits are exhausted, whichever comes first.",
+   "pricing": {
+    "input": 0,
+    "output": 0
+   },
+   "pricing_source": "legacy_ratio",
+   "has_zdr_provider": false,
+   "types": "llm",
+   "features": "",
+   "input_modalities": "text,image,video",
+   "endpoints": "",
+   "max_output": 131072,
+   "context_length": 1000000,
+   "output_modalities": "text",
+   "reasoning": true,
+   "reasoning_options": [
+    {
+     "type": "toggle"
+    },
+    {
+     "type": "effort",
+     "values": [
+      "low",
+      "medium",
+      "xhigh"
+     ],
+     "default": "xhigh"
+    },
+    {
+     "type": "budget_tokens"
+    }
+   ],
+   "interleaved": {
+    "anthropic.messages": true,
+    "openai.chat_completions": {
+     "field": "reasoning_content"
+    },
+    "openai.responses": true
+   },
+   "vendor": "alibaba",
+   "variant_of": "qwen3.8-flash",
+   "variant_kind": "pricing-tier",
+   "schema_checked": false,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "qwen3.8-max-free",
+   "model_name": "Qwen3.8 Max (free)",
+   "developer_id": 13,
+   "desc": "Qwen3.8 Max is available for free on AIHubMix as part of GMI Cloud’s promotional campaign. The offer lasts for 30 days from launch or until the campaign credits are exhausted, whichever comes first.",
+   "pricing": {
+    "input": 0,
+    "output": 0
+   },
+   "pricing_source": "legacy_ratio",
+   "has_zdr_provider": false,
+   "types": "llm",
+   "features": "",
+   "input_modalities": "text,image,video",
+   "endpoints": "",
+   "max_output": 131072,
+   "context_length": 1000000,
+   "output_modalities": "text",
+   "reasoning": true,
+   "reasoning_options": [
+    {
+     "type": "toggle"
+    },
+    {
+     "type": "effort",
+     "values": [
+      "low",
+      "medium",
+      "xhigh"
+     ],
+     "default": "xhigh"
+    },
+    {
+     "type": "budget_tokens"
+    }
+   ],
+   "interleaved": {
+    "anthropic.messages": true,
+    "openai.chat_completions": {
+     "field": "reasoning_content"
+    }
+   },
+   "vendor": "alibaba",
+   "variant_of": "qwen3.8-max",
+   "variant_kind": "pricing-tier",
+   "open_weights": false,
+   "schema_checked": false,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "claude-opus-5-5",
+   "model_name": "Claude Opus 5.5",
+   "developer_id": 2,
+   "desc": "Claude Opus 5.5 is Anthropic’s latest flagship model. In Anthropic’s comprehensive alignment testing, Opus 5.5 is the strongest-performing model tested to date. It also includes the safety safeguards Anthropic has developed for its most capable models.",
+   "pricing": {
+    "cache_read": 0.2,
+    "cache_write": 5,
+    "input": 4,
+    "output": 20
+   },
+   "pricing_source": "billing_config",
+   "pricing_lines": [
+    {
+     "billable": "cache_write_1_hour_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 8,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "cache_write_5_minutes_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 5,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "cache_write_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 5,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "cached_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.2,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "completion_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 20,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "prompt_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 4,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "web_search_requests",
+     "unit": "request",
+     "cost_usd": 0.01,
+     "source": "billing_config"
+    }
+   ],
+   "has_zdr_provider": false,
+   "types": "llm",
+   "features": "",
+   "input_modalities": "text,image,pdf",
+   "endpoints": "",
+   "max_output": 128000,
+   "context_length": 1000000,
+   "release_date": "2026-09-23",
+   "last_updated": "2026-09-23",
+   "output_modalities": "text",
+   "reasoning": true,
+   "reasoning_options": [
+    {
+     "type": "toggle"
+    },
+    {
+     "type": "effort",
+     "values": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+     ],
+     "default": "medium"
+    }
+   ],
+   "interleaved": {
+    "anthropic.messages": true
+   },
+   "vendor": "anthropic",
+   "open_weights": false,
+   "schema_checked": false,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "claude-sonnet-5-5",
+   "model_name": "Claude Sonnet 5.5",
+   "developer_id": 2,
+   "desc": "Claude Sonnet 5.5 is the next-generation product in Anthropic’s Sonnet model series; Claude Sonnet 5.5 offers the best balance between speed and intelligence. The following five major changes will affect code currently running on Claude Sonnet 5:\n1. Using \"between_tools\" can disable up-front thinking.\n2. Forcing the use of tools will result in an error.\n3. Thinking content blocks are bound to the model and the conversation.\n4. On the Claude API and Google Cloud, the older \"computer_20251124\" computer tool usage is no longer accepted.\n5. The advisor tool will refuse to accept Claude Opus 4.8, Claude Opus 4.7, and Claude Sonnet 5 as advisor models.\n\nUse between_tools to disable up-front thinking.\nForcing tool use will return an error.\nThinking blocks are bound to the model and the conversation.\nOn the Claude API and Google Cloud, early computer_20251124 computer tool usage is no longer accepted.\nThe advisor tool no longer accepts Claude Opus 4.8, Claude Opus 4.7, and Claude Sonnet 5 as advisors.",
+   "pricing": {
+    "cache_read": 0.1,
+    "cache_write": 2.5,
+    "input": 2,
+    "output": 10
+   },
+   "pricing_source": "billing_config",
+   "pricing_lines": [
+    {
+     "billable": "cache_write_1_hour_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 4,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "cache_write_5_minutes_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 2.5,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "cache_write_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 2.5,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "cached_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.1,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "completion_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 10,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "prompt_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 2,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "web_search_requests",
+     "unit": "request",
+     "cost_usd": 0.01,
+     "source": "billing_config"
+    }
+   ],
+   "has_zdr_provider": false,
+   "types": "llm",
+   "features": "",
+   "input_modalities": "text,image,pdf",
+   "endpoints": "",
+   "max_output": 128000,
+   "context_length": 1000000,
+   "release_date": "2026-09-29",
+   "last_updated": "2026-09-29",
+   "output_modalities": "text",
+   "reasoning": true,
+   "reasoning_options": [
+    {
+     "type": "effort",
+     "values": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+     ],
+     "default": "high"
+    }
+   ],
+   "interleaved": {
+    "anthropic.messages": true
+   },
+   "vendor": "anthropic",
+   "open_weights": false,
+   "schema_checked": false,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "gpt-6-luna",
+   "model_name": "GPT 6 Luna",
+   "developer_id": 12,
+   "desc": "GPT-6 Luna is OpenAI's latest and most efficient model, designed for focused, high-throughput tasks.",
+   "pricing": {
+    "cache_read": 0.01,
+    "cache_write": 0.125,
+    "input": 0.1,
+    "output": 0.5,
+    "tiers": [
+     {
+      "cache_read": 0.02,
+      "cache_write": 0.25,
+      "input": 0.2,
+      "output": 0.75,
+      "tier": {
+       "size": 272000,
+       "type": "context"
+      }
+     }
+    ]
+   },
+   "pricing_source": "billing_config",
+   "pricing_lines": [
+    {
+     "billable": "cache_write_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.125,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 272000
+     }
+    },
+    {
+     "billable": "cache_write_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.25,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 272001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "cached_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.01,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 272000
+     }
+    },
+    {
+     "billable": "cached_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.02,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 272001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "completion_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.5,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 272000
+     }
+    },
+    {
+     "billable": "completion_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.75,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 272001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "image_generation",
+     "unit": "image",
+     "cost_usd": 0,
+     "source": "billing_config"
+    },
+    {
+     "billable": "prompt_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.1,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 272000
+     }
+    },
+    {
+     "billable": "prompt_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.2,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 272001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "web_search_requests",
+     "unit": "request",
+     "cost_usd": 0.01,
+     "source": "billing_config"
+    }
+   ],
+   "has_zdr_provider": false,
+   "types": "llm,decision",
+   "features": "",
+   "input_modalities": "text,image",
+   "endpoints": "",
+   "max_output": 128000,
+   "context_length": 1050000,
+   "release_date": "2026-09-23",
+   "last_updated": "2026-09-23",
+   "output_modalities": "text",
+   "reasoning": true,
+   "reasoning_options": [
+    {
+     "type": "effort",
+     "values": [
+      "none",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+     ],
+     "default": "medium"
+    }
+   ],
+   "vendor": "openai",
+   "open_weights": false,
+   "schema_checked": false,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "gpt-6-sol",
+   "model_name": "GPT 6 Sol",
+   "developer_id": 12,
+   "desc": "GPT-6 Sol is OpenAI's latest model in the GPT-6 series, specifically designed for complex programming and agent workflows.",
+   "pricing": {
+    "cache_read": 0.2,
+    "cache_write": 2.5,
+    "input": 2,
+    "output": 10,
+    "tiers": [
+     {
+      "cache_read": 0.4,
+      "cache_write": 5,
+      "input": 4,
+      "output": 15,
+      "tier": {
+       "size": 272000,
+       "type": "context"
+      }
+     }
+    ]
+   },
+   "pricing_source": "billing_config",
+   "pricing_lines": [
+    {
+     "billable": "cache_write_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 2.5,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 272000
+     }
+    },
+    {
+     "billable": "cache_write_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 5,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 272001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "cached_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.2,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 272000
+     }
+    },
+    {
+     "billable": "cached_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 0.4,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 272001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "completion_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 10,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 272000
+     }
+    },
+    {
+     "billable": "completion_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 15,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 272001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "image_generation",
+     "unit": "image",
+     "cost_usd": 0,
+     "source": "billing_config"
+    },
+    {
+     "billable": "prompt_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 2,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier1",
+      "default": true,
+      "min_tokens": 0,
+      "max_tokens": 272000
+     }
+    },
+    {
+     "billable": "prompt_tokens",
+     "unit": "million_tokens",
+     "cost_usd": 4,
+     "source": "billing_config",
+     "tier": {
+      "name": "tier2",
+      "min_tokens": 272001,
+      "max_tokens": -1
+     }
+    },
+    {
+     "billable": "web_search_requests",
+     "unit": "request",
+     "cost_usd": 0.01,
+     "source": "billing_config"
+    }
+   ],
+   "has_zdr_provider": false,
+   "types": "llm",
+   "features": "",
+   "input_modalities": "text,image",
+   "endpoints": "",
+   "max_output": 128000,
+   "context_length": 1050000,
+   "release_date": "2026-09-23",
+   "last_updated": "2026-09-23",
+   "output_modalities": "text",
+   "reasoning": true,
+   "reasoning_options": [
+    {
+     "type": "effort",
+     "values": [
+      "none",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+     ],
+     "default": "medium"
+    }
+   ],
+   "vendor": "openai",
+   "open_weights": false,
+   "schema_checked": false,
+   "retire_stage": "active"
+  },
+  {
+   "model_id": "mistral-large-4-0",
+   "model_name": "Mistral Large 4.0",
+   "developer_id": 10,
+   "desc": "Mistral Large 4 is Mistral AI’s frontier multimodal model with text and image input, designed for complex reasoning, coding, and agentic workflows. It supports tool calling and structured outputs, with a 512K-token context window and up to 256K output tokens, making it well suited for long-context and multi-step tasks. Compared with earlier Mistral large models, Mistral Large 4 places greater emphasis on multimodal understanding, extended context, and agentic execution.",
+   "pricing": {
+    "cache_read": 0.139944,
+    "input": 1.36,
+    "output": 4.17996
+   },
+   "pricing_source": "legacy_ratio",
+   "has_zdr_provider": false,
+   "types": "llm",
+   "features": "",
+   "input_modalities": "text,image",
+   "endpoints": "",
+   "max_output": 0,
+   "context_length": 1000000,
+   "release_date": "2026-10-06",
+   "last_updated": "2026-10-06",
+   "output_modalities": "text",
+   "vendor": "mistral",
+   "schema_checked": false,
+   "retire_stage": "active"
+  }
+ ],
+ "message": "",
+ "success": true
+}

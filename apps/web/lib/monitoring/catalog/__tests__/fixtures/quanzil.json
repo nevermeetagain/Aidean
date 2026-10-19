@@ -1,0 +1,1414 @@
+{
+ "success": true,
+ "data": [
+  {
+   "model_name": "gpt-image-2-c",
+   "description": "gpt-image-2-c,支持返回url，base64,支持1k图片生成，gpt-image-2分组支持1k、2k、4k。暂不支持n参数",
+   "show_image_upload": 1,
+   "tags": "绘画",
+   "model_type": "图像",
+   "vendor_id": 93,
+   "quota_type": 1,
+   "model_ratio": 0,
+   "model_price": 0.12,
+   "owner_by": "",
+   "completion_ratio": 0,
+   "enable_groups": [
+    "Gpt-Image-1",
+    "Gpt-Image-2",
+    "Gpt-Image-3"
+   ],
+   "supported_endpoint_types": [
+    "openai-编辑",
+    "openai-绘图"
+   ],
+   "sort_order": 258,
+   "created_time": 1785206173,
+   "usage_count": 9310254873,
+   "translations": {
+    "ko": {
+     "model_type": "이미지",
+     "绘画": "그림",
+     "description": "gpt-image-2-c, URL 및 base64 반환 지원, 1k 이미지 생성 지원, gpt-image-2 그룹은 1k, 2k, 4k를 지원합니다. n 매개변수는 현재 지원되지 않습니다."
+    },
+    "zh": {
+     "绘画": "绘画",
+     "description": "gpt-image-2-c，支持返回url，base64，支持1k图片生成，gpt-image-2分组支持1k、2k、4k。暂不支持n参数",
+     "model_type": "图像"
+    },
+    "en": {
+     "description": "gpt-image-2-c, supports returning url, base64, supports 1k image generation, gpt-image-2 group supports 1k, 2k, 4k. n parameter not supported yet",
+     "model_type": "Image",
+     "绘画": "Painting"
+    },
+    "ru": {
+     "description": "gpt-image-2-c, поддержка возврата url, base64, поддержка генерации изображений 1k, группа gpt-image-2 поддерживает 1k, 2k, 4k. Временно не поддерживается параметр n",
+     "model_type": "Изображение",
+     "绘画": "Рисование"
+    },
+    "ja": {
+     "绘画": "絵画",
+     "description": "gpt-image-2-c、URLとbase64の返却をサポートし、1k画像生成をサポート、gpt-image-2グループは1k、2k、4kをサポートします。nパラメータは現在サポートされていません。",
+     "model_type": "画像"
+    },
+    "de": {
+     "description": "gpt-image-2-c, unterstützt die Rückgabe von URL, base64, unterstützt die Generierung von 1k Bildern, gpt-image-2 Gruppen unterstützen 1k, 2k, 4k. n-Parameter werden vorerst nicht unterstützt",
+     "model_type": "Bild",
+     "绘画": "Malerei"
+    },
+    "es": {
+     "description": "gpt-image-2-c, admite devolver url, base64, admite generación de imágenes de 1k, el grupo gpt-image-2 admite 1k, 2k, 4k. No se admite el parámetro n por el momento.",
+     "model_type": "Imagen",
+     "绘画": "Pintura"
+    }
+   },
+   "type": 1,
+   "available": true
+  },
+  {
+   "model_name": "gemini-3-pro-image-preview",
+   "description": "Nano Banana Pro is the next-generation AI image generation and editing model in the Google Gemini series, an upgrade of Gemini 2.5 Flash Image (Nano Banana). The model integrates a multimodal Transformer and diffusion model, natively supports 2K (2048×2048) and 4K resolution output, and delivers significant improvements in image quality, text rendering, and physical reasoning.",
+   "cover_image": "https://lsky.zhongzhuan.chat/i/2026/06/16/6a30b7d666115.png",
+   "show_image_upload": 1,
+   "tags": "绘画",
+   "model_type": "图像",
+   "vendor_id": 67,
+   "quota_type": 1,
+   "model_ratio": 0,
+   "model_price": 0.33,
+   "owner_by": "",
+   "completion_ratio": 0,
+   "enable_groups": [
+    "Aistudio-Gemini-1",
+    "Aistudio-Gemini-2",
+    "Aistudio-Gemini-3",
+    "Aistudio-Gemini-4",
+    "Discounted-Banana-1",
+    "Discounted-Banana-2",
+    "Vertex-Gemini-1",
+    "Vertex-Gemini-2",
+    "Vertex-Gemini-3"
+   ],
+   "supported_endpoint_types": [
+    "gemini",
+    "openai"
+   ],
+   "sort_order": 511,
+   "created_time": 1763690229,
+   "usage_count": 8922620740,
+   "type": 1,
+   "available": true
+  },
+  {
+   "model_name": "gpt-6-astra",
+   "description": "GPT-6 Astra is the most capable model of OpenAI, built for the hardest end-to-end work. Use it for complex reasoning, coding, computer use, research, and document creation. reasoning.effort supports low, medium, high, xhigh, and max.",
+   "show_image_upload": 1,
+   "tags": "对话,工具,识图,思考",
+   "model_type": "对话",
+   "vendor_id": 52,
+   "quota_type": 0,
+   "model_ratio": 5,
+   "model_price": 0,
+   "owner_by": "",
+   "completion_ratio": 5,
+   "cache_ratio": 0.1,
+   "cache_creation_ratio": 1.25,
+   "cache_creation_5m_ratio": 1.25,
+   "cache_creation_1h_ratio": 2,
+   "enable_groups": [
+    "Azure-Gpt-2",
+    "Azure-Gpt-3",
+    "Azure-Gpt-4",
+    "Azure-Gpt-5",
+    "Azure-Gpt-6",
+    "Codex-Gpt-1",
+    "Codex-Gpt-2",
+    "Codex-Gpt-3",
+    "Openai-Gpt-1",
+    "Openai-Gpt-2"
+   ],
+   "supported_endpoint_types": [
+    "openai",
+    "openai-response"
+   ],
+   "step_ratios": [
+    {
+     "step_size": 272000,
+     "completion_step_size": -1,
+     "prompt_step_ratio": 1,
+     "completion_step_ratio": 1,
+     "cache_step_ratio": 1,
+     "prompt_thinking_step_ratio": 0,
+     "completion_thinking_step_ratio": 0
+    },
+    {
+     "step_size": 1000000,
+     "completion_step_size": -1,
+     "prompt_step_ratio": 2,
+     "completion_step_ratio": 1.5,
+     "cache_step_ratio": 2,
+     "prompt_thinking_step_ratio": 0,
+     "completion_thinking_step_ratio": 0
+    }
+   ],
+   "created_time": 1788584566,
+   "usage_count": 31828739719,
+   "translations": {
+    "es": {
+     "工具": "Herramienta",
+     "识图": "Reconocimiento de imágenes",
+     "思考": "Pensamiento",
+     "description": "GPT-6 Astra es el modelo más capaz de OpenAI, diseñado para el trabajo más difícil de extremo a extremo. Úsalo para razonamiento complejo, codificación, uso de computadoras, investigación y creación de documentos. reasoning.effort admite bajo, medio, alto, muy alto y máximo.",
+     "model_type": "Diálogo",
+     "对话": "Diálogo"
+    },
+    "zh": {
+     "对话": "对话",
+     "工具": "工具",
+     "识图": "识图",
+     "思考": "思考",
+     "description": "GPT-6 Astra 是 OpenAI 最强大的模型，专为最困难的端到端工作而构建。可用于复杂推理、编码、计算机使用、研究和文档创建。reasoning.effort 支持低、中、高、极高和最大。",
+     "model_type": "对话"
+    },
+    "ko": {
+     "思考": "사고",
+     "description": "GPT-6 Astra는 OpenAI의 가장 강력한 모델로, 가장 어려운 엔드 투 엔드 작업을 위해 설계되었습니다. 복잡한 추론, 코딩, 컴퓨터 사용, 연구 및 문서 작성에 사용하세요. reasoning.effort는 낮음, 중간, 높음, 매우 높음 및 최대를 지원합니다.",
+     "model_type": "대화",
+     "对话": "대화",
+     "工具": "도구",
+     "识图": "이미지 인식"
+    },
+    "de": {
+     "model_type": "Konversation",
+     "对话": "Konversation",
+     "工具": "Werkzeuge",
+     "识图": "Bildverarbeitung",
+     "思考": "Denken",
+     "description": "GPT-6 Astra ist das leistungsfähigste Modell von OpenAI, das für die anspruchsvollsten End-to-End-Aufgaben entwickelt wurde. Verwenden Sie es für komplexes Denken, Programmierung, Computeranwendungen, Forschung und Dokumentenerstellung. reasoning.effort unterstützt niedrig, mittel, hoch, sehr hoch und maximal."
+    },
+    "en": {
+     "对话": "Conversation",
+     "工具": "Tools",
+     "识图": "Image Recognition",
+     "思考": "Thinking",
+     "description": "GPT-6 Astra is the most capable model of OpenAI, built for the hardest end-to-end work. Use it for complex reasoning, coding, computer use, research, and document creation. reasoning.effort supports low, medium, high, xhigh, and max.",
+     "model_type": "Conversation"
+    },
+    "ru": {
+     "对话": "Диалог",
+     "工具": "Инструмент",
+     "识图": "Распознавание изображений",
+     "思考": "Размышление",
+     "description": "GPT-6 Astra — это самая мощная модель OpenAI, созданная для самых сложных задач от начала до конца. Используйте её для сложного рассуждения, программирования, работы с компьютером, исследований и создания документов. reasoning.effort поддерживает низкий, средний, высокий, очень высокий и максимальный уровни.",
+     "model_type": "Диалог"
+    },
+    "ja": {
+     "工具": "ツール",
+     "识图": "識別画像",
+     "思考": "思考",
+     "description": "GPT-6 Astraは、最も高度なOpenAIのモデルであり、最も困難なエンドツーエンドの作業のために構築されています。複雑な推論、コーディング、コンピュータの使用、研究、文書作成に使用してください。reasoning.effortは、低、中、高、非常に高い、最大をサポートします。",
+     "model_type": "対話",
+     "对话": "対話"
+    }
+   },
+   "type": 0,
+   "available": true
+  },
+  {
+   "model_name": "claude-opus-5-5",
+   "description": "claude-opus-5-5 是 Anthropic 全新旗舰大模型，拥有百万级上下文，自适应思考不可关闭，Agent 与代码能力突出，速度更快、定价更低，适合复杂长任务。",
+   "show_image_upload": 1,
+   "tags": "对话,工具,识图",
+   "model_type": "对话",
+   "vendor_id": 55,
+   "quota_type": 0,
+   "model_ratio": 2,
+   "model_price": 0,
+   "owner_by": "",
+   "completion_ratio": 5,
+   "cache_ratio": 0.05,
+   "cache_creation_5m_ratio": 1.25,
+   "cache_creation_1h_ratio": 2,
+   "enable_groups": [
+    "AWS-Bedrock-2",
+    "AWS-Claude-2",
+    "AWS-Claude-3",
+    "Claude-Code-1",
+    "Claude-Code-2",
+    "Kiro-Claude-1"
+   ],
+   "supported_endpoint_types": [
+    "anthropic",
+    "openai"
+   ],
+   "created_time": 1790133533,
+   "usage_count": 25019824146,
+   "translations": {
+    "es": {
+     "description": "claude-opus-5-5 es el nuevo modelo insignia de Anthropic, con millones de contexto, pensamiento adaptativo no desactivable, capacidades destacadas de agente y código, más rápido y con precios más bajos, adecuado para tareas largas y complejas.",
+     "model_type": "Diálogo",
+     "对话": "Diálogo",
+     "工具": "Herramientas",
+     "识图": "识图"
+    },
+    "zh": {
+     "对话": "对话",
+     "工具": "工具",
+     "识图": "识图",
+     "description": "claude-opus-5-5 是 Anthropic 全新旗舰大模型，拥有百万级上下文，自适应思考不可关闭，Agent 与代码能力突出，速度更快、定价更低，适合复杂长任务。",
+     "model_type": "对话"
+    },
+    "en": {
+     "model_type": "Conversation",
+     "对话": "Conversation",
+     "工具": "Tool",
+     "识图": "Image Recognition",
+     "description": "Claude-opus-5-5 is Anthropic's new flagship large model, featuring millions of context, adaptive thinking that cannot be turned off, outstanding agent and coding capabilities, faster speed, and lower pricing, suitable for complex long tasks."
+    },
+    "ja": {
+     "工具": "ツール",
+     "识图": "画像認識",
+     "description": "claude-opus-5-5 は Anthropic の新しいフラッグシップ大モデルで、百万レベルのコンテキストを持ち、適応的思考をオフにできず、エージェントとコードの能力が際立っており、速度が速く、価格が低く、複雑な長期タスクに適しています。",
+     "model_type": "対話",
+     "对话": "対話"
+    },
+    "de": {
+     "对话": "Konversation",
+     "工具": "Werkzeuge",
+     "识图": "Bildverarbeitung",
+     "description": "claude-opus-5-5 ist das neue Flaggschiff-Modell von Anthropic mit Millionen von Kontexten, nicht deaktivierbarem adaptivem Denken, herausragenden Agenten- und Programmierfähigkeiten, schnellerer Geschwindigkeit und niedrigeren Preisen, geeignet für komplexe Langaufgaben.",
+     "model_type": "Konversation"
+    },
+    "ru": {
+     "工具": "Инструменты",
+     "识图": "Распознавание изображений",
+     "description": "claude-opus-5-5 — это новый флагманский большой модель от Anthropic, обладающий миллионами контекстов, с адаптивным мышлением, которое нельзя отключить, выдающимися возможностями в области агентов и кода, более высокой скоростью и более низкими ценами, подходящий для сложных долгих задач.",
+     "model_type": "Диалог",
+     "对话": "Диалог"
+    },
+    "ko": {
+     "工具": "도구",
+     "识图": "이미지 인식",
+     "description": "claude-opus-5-5는 Anthropic의 새로운 플래그십 대형 모델로, 백만 수준의 컨텍스트를 가지고 있으며, 적응형 사고 기능을 끌 수 없고, 에이전트 및 코드 능력이 뛰어나며, 더 빠르고 더 저렴한 가격으로 복잡한 긴 작업에 적합합니다.",
+     "model_type": "대화",
+     "对话": "대화"
+    }
+   },
+   "type": 0,
+   "available": true
+  },
+  {
+   "model_name": "gemini-3.8-flash",
+   "description": "Gemini-3.8-Flash is the general availability (GA) flagship multimodal model, designed for code development and AI agent scenarios. It supports configurable reasoning depth, offers a million-token context window, and is compatible with image, text, audio, and video inputs. With standout capabilities in tool invocation and multi-step task execution, it is well-suited for large-scale production workloads.",
+   "show_image_upload": 1,
+   "tags": "对话,识图,工具",
+   "model_type": "对话",
+   "vendor_id": 67,
+   "quota_type": 0,
+   "model_ratio": 0.375,
+   "model_price": 0,
+   "owner_by": "",
+   "completion_ratio": 5,
+   "cache_ratio": 0.1,
+   "enable_groups": [
+    "Aistudio-Gemini-1",
+    "Aistudio-Gemini-2",
+    "Aistudio-Gemini-3",
+    "Aistudio-Gemini-4",
+    "Anti-Gemini-1",
+    "Cli-Gemini-1",
+    "Vertex-Gemini-1",
+    "Vertex-Gemini-2",
+    "Vertex-Gemini-3"
+   ],
+   "supported_endpoint_types": [
+    "gemini",
+    "openai"
+   ],
+   "sort_order": 600,
+   "created_time": 1788376963,
+   "usage_count": 18701120300,
+   "translations": {
+    "es": {
+     "description": "Gemini-3.8-Flash es el modelo multimodal insignia de disponibilidad general (GA), diseñado para el desarrollo de código y escenarios de agentes de IA. Soporta profundidad de razonamiento configurable, ofrece una ventana de contexto de un millón de tokens y es compatible con entradas de imagen, texto, audio y video. Con capacidades destacadas en la invocación de herramientas y la ejecución de tareas en múltiples pasos, es adecuado para cargas de trabajo de producción a gran escala.",
+     "model_type": "Diálogo",
+     "对话": "Diálogo",
+     "识图": "Reconocimiento de imágenes",
+     "工具": "Herramientas"
+    },
+    "zh": {
+     "description": "Gemini-3.8-Flash 是通用可用性 (GA) 的旗舰多模态模型，旨在用于代码开发和 AI 代理场景。它支持可配置的推理深度，提供百万标记的上下文窗口，并兼容图像、文本、音频和视频输入。凭借在工具调用和多步骤任务执行方面的突出能力，它非常适合大规模生产工作负载。",
+     "model_type": "对话",
+     "对话": "对话",
+     "识图": "识图",
+     "工具": "工具"
+    },
+    "en": {
+     "model_type": "Conversation",
+     "对话": "Conversation",
+     "识图": "Image Recognition",
+     "工具": "Tools",
+     "description": "Gemini-3.8-Flash is the general availability (GA) flagship multimodal model, designed for code development and AI agent scenarios. It supports configurable reasoning depth, offers a million-token context window, and is compatible with image, text, audio, and video inputs. With standout capabilities in tool invocation and multi-step task execution, it is well-suited for large-scale production workloads."
+    },
+    "de": {
+     "识图": "Bild erkennen",
+     "工具": "Werkzeuge",
+     "description": "Gemini-3.8-Flash ist das allgemein verfügbare (GA) Flaggschiff-Modell für multimodale Anwendungen, das für die Codeentwicklung und AI-Agentenszenarien konzipiert wurde. Es unterstützt konfigurierbare Denkvertiefungen, bietet ein Kontextfenster von einer Million Token und ist kompatibel mit Bild-, Text-, Audio- und Videoeingaben. Mit herausragenden Fähigkeiten in der Werkzeugaufrufung und der Ausführung mehrstufiger Aufgaben ist es gut geeignet für großangelegte Produktionslasten.",
+     "model_type": "Gespräch",
+     "对话": "Gespräch"
+    },
+    "ko": {
+     "model_type": "대화",
+     "对话": "대화",
+     "识图": "이미지 인식",
+     "工具": "도구",
+     "description": "Gemini-3.8-Flash는 코드 개발 및 AI 에이전트 시나리오를 위해 설계된 일반 사용 가능(GA) 플래그십 다중 모드 모델입니다. 구성 가능한 추론 깊이를 지원하며, 백만 토큰의 컨텍스트 창을 제공하고 이미지, 텍스트, 오디오 및 비디오 입력과 호환됩니다. 도구 호출 및 다단계 작업 실행에서 뛰어난 기능을 갖추고 있어 대규모 생산 작업에 적합합니다."
+    },
+    "ru": {
+     "工具": "Инструменты",
+     "description": "Gemini-3.8-Flash — это модель общего назначения (GA) флагманского многомодального типа, предназначенная для разработки кода и сценариев с ИИ-агентами. Она поддерживает настраиваемую глубину рассуждений, предлагает контекстное окно на миллион токенов и совместима с изображениями, текстом, аудио и видео. Благодаря выдающимся возможностям вызова инструментов и выполнения многоэтапных задач, она хорошо подходит для производственных нагрузок большого масштаба.",
+     "model_type": "Диалог",
+     "对话": "Диалог",
+     "识图": "Распознавание изображений"
+    },
+    "ja": {
+     "识图": "画像認識",
+     "工具": "ツール",
+     "description": "Gemini-3.8-Flashは、コード開発およびAIエージェントシナリオ向けに設計された一般提供（GA）フラッグシップのマルチモーダルモデルです。構成可能な推論の深さをサポートし、100万トークンのコンテキストウィンドウを提供し、画像、テキスト、音声、動画の入力に対応しています。ツールの呼び出しや複数ステップのタスク実行に優れた能力を持ち、大規模な生産ワークロードに適しています。",
+     "model_type": "対話",
+     "对话": "対話"
+    }
+   },
+   "type": 0,
+   "available": true
+  },
+  {
+   "model_name": "gemini-3.7-flash",
+   "description": "gemini‑3.7‑flash为 GA 正式可用的多模态主力模型，面向代码开发与 AI 智能体场景，支持可配置思考深度，具备百万 Token 上下文，兼容图文音视频输入，工具调用与多步骤任务能力突出，适合大规模生产业务调用。",
+   "show_image_upload": 1,
+   "tags": "对话,识图,工具",
+   "model_type": "对话",
+   "vendor_id": 67,
+   "quota_type": 0,
+   "model_ratio": 0.375,
+   "model_price": 0,
+   "owner_by": "",
+   "completion_ratio": 5,
+   "cache_ratio": 0.1,
+   "enable_groups": [
+    "Aistudio-Gemini-1",
+    "Aistudio-Gemini-2",
+    "Aistudio-Gemini-3",
+    "Aistudio-Gemini-4",
+    "Anti-Gemini-1",
+    "Cli-Gemini-1",
+    "Vertex-Gemini-1",
+    "Vertex-Gemini-2",
+    "Vertex-Gemini-3"
+   ],
+   "supported_endpoint_types": [
+    "gemini",
+    "openai"
+   ],
+   "sort_order": 600,
+   "created_time": 1787709226,
+   "usage_count": 13366531980,
+   "translations": {
+    "ja": {
+     "工具": "ツール",
+     "description": "gemini‑3.7‑flashはGA正式に利用可能なマルチモーダルの主力モデルで、コード開発とAIエージェントシナリオに対応し、構成可能な思考の深さをサポートし、百万トークンのコンテキストを持ち、画像、テキスト、音声、動画の入力に対応し、ツール呼び出しと多ステップタスクの能力が際立っており、大規模な生産業務の呼び出しに適しています。",
+     "model_type": "対話",
+     "对话": "対話",
+     "识图": "画像認識"
+    },
+    "en": {
+     "对话": "Conversation",
+     "识图": "Image Recognition",
+     "工具": "Tools",
+     "description": "gemini‑3.7‑flash is a multimodal flagship model officially available for GA, aimed at code development and AI agent scenarios. It supports configurable thinking depth, has a million-token context, is compatible with text, image, audio, and video inputs, excels in tool invocation and multi-step task capabilities, making it suitable for large-scale production business calls.",
+     "model_type": "Conversation"
+    },
+    "es": {
+     "description": "gemini‑3.7‑flash está disponible oficialmente para GA como un modelo multimodal principal, orientado al desarrollo de código y escenarios de inteligencia artificial, soporta profundidad de pensamiento configurable, cuenta con contexto de millones de tokens, es compatible con entradas de texto, imagen, audio y video, y destaca en la capacidad de invocación de herramientas y tareas de múltiples pasos, adecuado para llamadas de negocios a gran escala.",
+     "model_type": "diálogo",
+     "对话": "diálogo",
+     "识图": "reconocimiento de imágenes",
+     "工具": "herramientas"
+    },
+    "ru": {
+     "model_type": "Диалог",
+     "对话": "Диалог",
+     "识图": "Распознавание изображений",
+     "工具": "Инструменты",
+     "description": "gemini‑3.7‑flash является основным мультимодальным моделью, доступной для GA, ориентированной на разработку кода и сценарии AI, поддерживает настраиваемую глубину мышления, обладает контекстом в миллион токенов, совместима с вводом текстов, изображений, звука и видео, выделяется способностью к вызову инструментов и многопошаговым задачам, подходит для вызова в масштабных производственных бизнесах."
+    },
+    "zh": {
+     "对话": "对话",
+     "识图": "识图",
+     "工具": "工具",
+     "description": "gemini‑3.7‑flash为 GA 正式可用的多模态主力模型，面向代码开发与 AI 智能体场景，支持可配置思考深度，具备百万 Token 上下文，兼容图文音视频输入，工具调用与多步骤任务能力突出，适合大规模生产业务调用。",
+     "model_type": "对话"
+    },
+    "de": {
+     "工具": "Werkzeuge",
+     "description": "gemini‑3.7‑flash ist das offiziell verfügbare multimodale Hauptmodell für GA, das auf die Szenarien der Codeentwicklung und KI-Agenten ausgerichtet ist. Es unterstützt konfigurierbare Denktiefen, verfügt über einen Kontext von Millionen von Token, ist kompatibel mit Bild-, Text-, Audio- und Videoeingaben und zeichnet sich durch die Fähigkeit zur Werkzeugnutzung und mehrstufigen Aufgaben aus, was es für den großflächigen Einsatz in Produktionsgeschäften geeignet macht.",
+     "model_type": "Konversation",
+     "对话": "Konversation",
+     "识图": "Bild erkennen"
+    },
+    "ko": {
+     "description": "gemini‑3.7‑flash는 GA에서 공식적으로 사용할 수 있는 다중 모드 주력 모델로, 코드 개발 및 AI 지능체 시나리오를 대상으로 하며, 구성 가능한 사고 깊이를 지원하고, 백만 개의 토큰 컨텍스트를 갖추고 있으며, 이미지, 텍스트, 음성 및 비디오 입력을 호환하고, 도구 호출 및 다단계 작업 능력이 뛰어나 대규모 생산 비즈니스 호출에 적합합니다.",
+     "model_type": "대화",
+     "对话": "대화",
+     "识图": "이미지 인식",
+     "工具": "도구"
+    }
+   },
+   "type": 0,
+   "available": true
+  },
+  {
+   "model_name": "gpt-6-luna",
+   "description": "GPT‑6‑Luna 是 OpenAI GPT‑6 系列高性价比轻量模型，105 万上下文、推理强度可调，继承 Astra 核心能力，主打极速、超低价，适合大批量并发、摘要提取、子 Agent 等高频任务。",
+   "show_image_upload": 1,
+   "tags": "对话,工具,识图,思考",
+   "model_type": "对话",
+   "vendor_id": 52,
+   "quota_type": 0,
+   "model_ratio": 0.05,
+   "model_price": 0,
+   "owner_by": "",
+   "completion_ratio": 5,
+   "cache_ratio": 0.1,
+   "cache_creation_ratio": 1.25,
+   "cache_creation_5m_ratio": 1.25,
+   "cache_creation_1h_ratio": 2,
+   "enable_groups": [
+    "Azure-Gpt-2",
+    "Azure-Gpt-3",
+    "Azure-Gpt-4",
+    "Azure-Gpt-5",
+    "Azure-Gpt-6",
+    "Openai-Gpt-1",
+    "Openai-Gpt-2"
+   ],
+   "supported_endpoint_types": [
+    "openai",
+    "openai-response"
+   ],
+   "step_ratios": [
+    {
+     "step_size": 272000,
+     "completion_step_size": -1,
+     "prompt_step_ratio": 1,
+     "completion_step_ratio": 1,
+     "cache_step_ratio": 1,
+     "prompt_thinking_step_ratio": 0,
+     "completion_thinking_step_ratio": 0
+    },
+    {
+     "step_size": 1000000,
+     "completion_step_size": -1,
+     "prompt_step_ratio": 2,
+     "completion_step_ratio": 1.5,
+     "cache_step_ratio": 2,
+     "prompt_thinking_step_ratio": 0,
+     "completion_thinking_step_ratio": 0
+    }
+   ],
+   "created_time": 1790133926,
+   "usage_count": 9490207073,
+   "translations": {
+    "de": {
+     "思考": "Denken",
+     "description": "GPT‑6‑Luna ist ein kosteneffizientes, leichtgewichtiges Modell der OpenAI GPT‑6-Serie mit 1,05 Millionen Kontexten, einstellbarer Schlussfolgerungsintensität, das die Kernfähigkeiten von Astra erbt. Es bietet hohe Geschwindigkeit und extrem niedrige Preise und eignet sich für große Mengen an gleichzeitigen Anfragen, Zusammenfassungen, Sub-Agenten und andere hochfrequente Aufgaben.",
+     "model_type": "Konversation",
+     "对话": "Konversation",
+     "工具": "Werkzeuge",
+     "识图": "Bildverarbeitung"
+    },
+    "en": {
+     "识图": "Image Recognition",
+     "思考": "Thinking",
+     "description": "GPT‑6‑Luna is a high-cost-performance lightweight model in the OpenAI GPT‑6 series, with 1.05 million context and adjustable reasoning intensity, inheriting Astra's core capabilities, focusing on speed and ultra-low cost, suitable for high-frequency tasks such as large-scale concurrency, summarization, and sub-agents.",
+     "model_type": "Conversation",
+     "对话": "Conversation",
+     "工具": "Tools"
+    },
+    "ko": {
+     "对话": "대화",
+     "工具": "도구",
+     "识图": "이미지 인식",
+     "思考": "사고",
+     "description": "GPT‑6‑Luna는 OpenAI GPT‑6 시리즈의 고성능 경량 모델로, 105만 개의 컨텍스트와 조정 가능한 추론 강도를 제공하며, Astra의 핵심 기능을 계승하고, 빠르고 저렴하여 대량 동시 처리, 요약 추출, 서브 에이전트 등 고빈도 작업에 적합합니다.",
+     "model_type": "대화"
+    },
+    "ja": {
+     "description": "GPT‑6‑Luna は OpenAI GPT‑6 シリーズの高コストパフォーマンス軽量モデルで、105 万のコンテキスト、調整可能な推論強度を持ち、Astra のコア機能を継承し、迅速かつ超低価格を特徴とし、大量の同時処理、要約抽出、サブエージェントなどの高頻度タスクに適しています。",
+     "model_type": "対話",
+     "对话": "対話",
+     "工具": "ツール",
+     "识图": "画像認識",
+     "思考": "思考"
+    },
+    "es": {
+     "description": "GPT‑6‑Luna es un modelo ligero de alta relación calidad-precio de la serie OpenAI GPT‑6, con 1.05 millones de contextos y una intensidad de razonamiento ajustable, hereda las capacidades centrales de Astra, se enfoca en velocidad extrema y precios muy bajos, adecuado para tareas de alta frecuencia como concurrencia masiva, extracción de resúmenes y subagentes.",
+     "model_type": "Diálogo",
+     "对话": "Diálogo",
+     "工具": "Herramientas",
+     "识图": "Reconocimiento de imágenes",
+     "思考": "Pensamiento"
+    },
+    "ru": {
+     "description": "GPT‑6‑Luna — это высокоэффективная легковесная модель серии OpenAI GPT‑6, с 1,05 миллиона контекстов и регулируемой интенсивностью вывода, унаследовавшая основные возможности Astra, ориентированная на скорость и низкую цену, подходит для массовых параллельных задач, извлечения резюме, субагентов и других высокочастотных задач.",
+     "model_type": "Диалог",
+     "对话": "Диалог",
+     "工具": "Инструмент",
+     "识图": "Распознавание изображений",
+     "思考": "Размышление"
+    },
+    "zh": {
+     "对话": "对话",
+     "工具": "工具",
+     "识图": "识图",
+     "思考": "思考",
+     "description": "GPT‑6‑Luna 是 OpenAI GPT‑6 系列高性价比轻量模型，105 万上下文、推理强度可调，继承 Astra 核心能力，主打极速、超低价，适合大批量并发、摘要提取、子 Agent 等高频任务。",
+     "model_type": "对话"
+    }
+   },
+   "type": 0,
+   "available": true
+  },
+  {
+   "model_name": "gpt-5.6-sol",
+   "description": "GPT-5.6 Sol is the flagship high-end model of the GPT-5.6 product line, with specifications benchmarking the top-tier original GPT-5 without suffixes. You may call the API using the alias gpt-5.6-sol, and the platform will automatically route requests to the GPT-5.6 Sol service cluster. This model supports differentiated calls via multiple suffixes, which can be appended to select performance tiers: -high, -xhigh, -low, -medium, -max, -ultra.",
+   "show_image_upload": 1,
+   "tags": "对话,工具,识图,思考",
+   "model_type": "对话",
+   "vendor_id": 52,
+   "quota_type": 0,
+   "model_ratio": 2.5,
+   "model_price": 0,
+   "owner_by": "",
+   "completion_ratio": 6,
+   "cache_ratio": 0.1,
+   "cache_creation_ratio": 1.25,
+   "cache_creation_5m_ratio": 1.25,
+   "cache_creation_1h_ratio": 2,
+   "enable_groups": [
+    "Azure-Gpt-2",
+    "Azure-Gpt-3",
+    "Azure-Gpt-4",
+    "Azure-Gpt-5",
+    "Azure-Gpt-6",
+    "Codex-Gpt-1",
+    "Codex-Gpt-2",
+    "Codex-Gpt-3",
+    "Openai-Gpt-1",
+    "Openai-Gpt-2"
+   ],
+   "supported_endpoint_types": [
+    "openai",
+    "openai-response"
+   ],
+   "step_ratios": [
+    {
+     "step_size": 272000,
+     "completion_step_size": -1,
+     "prompt_step_ratio": 1,
+     "completion_step_ratio": 1,
+     "cache_step_ratio": 1,
+     "prompt_thinking_step_ratio": 0,
+     "completion_thinking_step_ratio": 0
+    },
+    {
+     "step_size": 1000000,
+     "completion_step_size": -1,
+     "prompt_step_ratio": 2,
+     "completion_step_ratio": 1.5,
+     "cache_step_ratio": 2,
+     "prompt_thinking_step_ratio": 0,
+     "completion_thinking_step_ratio": 0
+    }
+   ],
+   "sort_order": 525,
+   "created_time": 1787707762,
+   "usage_count": 8815551143,
+   "translations": {
+    "ru": {
+     "识图": "Распознавание изображений",
+     "思考": "Размышление",
+     "description": "GPT-5.6 Sol является флагманской высококлассной моделью продуктовой линейки GPT-5.6, с характеристиками, сопоставимыми с оригинальным GPT-5 без суффиксов. Вы можете вызывать API, используя псевдоним gpt-5.6-sol, и платформа автоматически перенаправит запросы в кластер сервиса GPT-5.6 Sol. Эта модель поддерживает дифференцированные вызовы через несколько суффиксов, которые могут быть добавлены для выбора уровней производительности: -high, -xhigh, -low, -medium, -max, -ultra.",
+     "model_type": "Диалог",
+     "对话": "Диалог",
+     "工具": "Инструменты"
+    },
+    "ja": {
+     "model_type": "対話",
+     "description": "GPT-5.6 Solは、GPT-5.6製品ラインのフラッグシップハイエンドモデルであり、サフィックスなしのトップティアオリジナルGPT-5を基準とした仕様を持っています。エイリアスgpt-5.6-solを使用してAPIを呼び出すことができ、プラットフォームは自動的にリクエストをGPT-5.6 Solサービスクラスターにルーティングします。このモデルは、選択したパフォーマンスティアに追加できる複数のサフィックスを介した差別化された呼び出しをサポートしています: -high, -xhigh, -low, -medium, -max, -ultra。",
+     "对话": "対話",
+     "工具": "ツール",
+     "识图": "画像認識",
+     "思考": "思考"
+    },
+    "en": {
+     "对话": "Conversation",
+     "工具": "Tools",
+     "识图": "Image Recognition",
+     "思考": "Thinking",
+     "description": "GPT-5.6 Sol is the flagship high-end model of the GPT-5.6 product line, with specifications benchmarking the top-tier original GPT-5 without suffixes. You may call the API using the alias gpt-5.6-sol, and the platform will automatically route requests to the GPT-5.6 Sol service cluster. This model supports differentiated calls via multiple suffixes, which can be appended to select performance tiers: -high, -xhigh, -low, -medium, -max, -ultra.",
+     "model_type": "Conversation"
+    },
+    "es": {
+     "description": "GPT-5.6 Sol es el modelo insignia de alta gama de la línea de productos GPT-5.6, con especificaciones que superan al original GPT-5 de nivel superior sin sufijos. Puede llamar a la API utilizando el alias gpt-5.6-sol, y la plataforma enrutar automáticamente las solicitudes al clúster de servicios GPT-5.6 Sol. Este modelo admite llamadas diferenciadas a través de múltiples sufijos, que se pueden agregar a los niveles de rendimiento seleccionados: -high, -xhigh, -low, -medium, -max, -ultra.",
+     "对话": "Diálogo",
+     "工具": "Herramienta",
+     "识图": "Reconocimiento de imágenes",
+     "model_type": "Diálogo",
+     "思考": "Pensamiento"
+    },
+    "de": {
+     "工具": "Werkzeuge",
+     "识图": "Bildverarbeitung",
+     "思考": "Denken",
+     "description": "GPT-5.6 Sol ist das Flaggschiff-Modell der High-End-Serie von GPT-5.6, mit Spezifikationen, die die Spitzenleistung des ursprünglichen GPT-5 ohne Suffixe benchmarken. Sie können die API mit dem Alias gpt-5.6-sol aufrufen, und die Plattform wird automatisch Anfragen an den GPT-5.6 Sol-Service-Cluster weiterleiten. Dieses Modell unterstützt differenzierte Aufrufe über mehrere Suffixe, die an ausgewählte Leistungsstufen angehängt werden können: -high, -xhigh, -low, -medium, -max, -ultra.",
+     "model_type": "Gespräch",
+     "对话": "Gespräch"
+    },
+    "zh": {
+     "model_type": "对话",
+     "对话": "对话",
+     "工具": "工具",
+     "识图": "识图",
+     "思考": "思考",
+     "description": "GPT-5.6 Sol 是 GPT-5.6 产品线的旗舰高端模型，其规格与顶级原始 GPT-5（无后缀）相当。您可以使用别名 gpt-5.6-sol 调用 API，平台将自动将请求路由到 GPT-5.6 Sol 服务集群。该模型支持通过多个后缀进行差异化调用，这些后缀可以附加到选择的性能层级：-high, -xhigh, -low, -medium, -max, -ultra。"
+    },
+    "ko": {
+     "识图": "이미지 인식",
+     "思考": "사고",
+     "description": "GPT-5.6 Sol은 GPT-5.6 제품 라인의 플래그십 고급 모델로, 접미사가 없는 최상급 원래 GPT-5의 사양을 기준으로 합니다. gpt-5.6-sol 별칭을 사용하여 API를 호출할 수 있으며, 플랫폼은 요청을 자동으로 GPT-5.6 Sol 서비스 클러스터로 라우팅합니다. 이 모델은 여러 접미사를 통해 차별화된 호출을 지원하며, 선택된 성능 계층에 추가할 수 있습니다: -high, -xhigh, -low, -medium, -max, -ultra.",
+     "model_type": "대화",
+     "对话": "대화",
+     "工具": "도구"
+    }
+   },
+   "type": 0,
+   "available": true
+  },
+  {
+   "model_name": "claude-fable-5-1",
+   "description": "Claude Fable 5.1 是 Anthropic 于 2026‑09‑01 推出的旗舰前沿大模型，主打长周期 Agent 智能体、复杂编码、多步骤科研、重度知识分析，面向高难度长时间运行任务开放调用",
+   "show_image_upload": 1,
+   "tags": "对话,识图,工具",
+   "model_type": "对话",
+   "vendor_id": 55,
+   "quota_type": 0,
+   "model_ratio": 5,
+   "model_price": 0,
+   "owner_by": "",
+   "completion_ratio": 5,
+   "cache_ratio": 0.025,
+   "cache_creation_5m_ratio": 1.25,
+   "cache_creation_1h_ratio": 2,
+   "enable_groups": [
+    "AWS-Bedrock-2",
+    "AWS-Claude-2",
+    "AWS-Claude-3",
+    "Anthropic-Claude-1",
+    "Claude-Code-1",
+    "Claude-Code-2"
+   ],
+   "supported_endpoint_types": [
+    "anthropic",
+    "openai"
+   ],
+   "created_time": 1788331219,
+   "usage_count": 7941209424,
+   "translations": {
+    "de": {
+     "description": "Claude Fable 5.1 ist das Flaggschiff-Modell von Anthropic, das am 01.09.2026 eingeführt wurde. Es konzentriert sich auf langfristige Agentenintelligenz, komplexe Codierung, mehrstufige Forschung und intensive Wissensanalyse und ist für anspruchsvolle, langanhaltende Aufgaben offen.",
+     "model_type": "Konversation",
+     "对话": "Konversation",
+     "识图": "Bildverarbeitung",
+     "工具": "Werkzeuge"
+    },
+    "en": {
+     "识图": "Image Recognition",
+     "工具": "Tools",
+     "description": "Claude Fable 5.1 is the flagship cutting-edge large model launched by Anthropic on 2026-09-01, focusing on long-duration agent intelligence, complex coding, multi-step research, and heavy knowledge analysis, open for high-difficulty long-running tasks.",
+     "model_type": "Conversation",
+     "对话": "Conversation"
+    },
+    "zh": {
+     "工具": "工具",
+     "description": "Claude Fable 5.1 是 Anthropic 于 2026‑09‑01 推出的旗舰前沿大模型，主打长周期 Agent 智能体、复杂编码、多步骤科研、重度知识分析，面向高难度长时间运行任务开放调用",
+     "model_type": "对话",
+     "对话": "对话",
+     "识图": "识图"
+    },
+    "ko": {
+     "model_type": "대화",
+     "对话": "대화",
+     "识图": "이미지 인식",
+     "工具": "도구",
+     "description": "Claude Fable 5.1은 Anthropic이 2026‑09‑01에 출시한 플래그십 최첨단 대형 모델로, 장기 에이전트 인공지능, 복잡한 코딩, 다단계 연구, 심층 지식 분석을 주로 다루며, 고난이도 장시간 실행 작업에 대한 호출을 지원합니다."
+    },
+    "ja": {
+     "识图": "画像認識",
+     "工具": "ツール",
+     "description": "Claude Fable 5.1 は Anthropic が 2026‑09‑01 に発表したフラッグシップの最先端大規模モデルで、長期間のエージェントインテリジェンス、複雑なコーディング、多段階の研究、重度の知識分析を特徴とし、高難度の長時間実行タスクに向けてオープンに呼び出し可能です。",
+     "model_type": "対話",
+     "对话": "対話"
+    },
+    "es": {
+     "description": "Claude Fable 5.1 es el modelo insignia de vanguardia de Anthropic lanzado el 2026‑09‑01, enfocado en agentes inteligentes de largo plazo, codificación compleja, investigación de múltiples pasos y análisis de conocimiento profundo, disponible para tareas de alta dificultad y larga duración.",
+     "model_type": "Diálogo",
+     "对话": "Diálogo",
+     "识图": "Reconocimiento de imágenes",
+     "工具": "Herramientas"
+    },
+    "ru": {
+     "对话": "Диалог",
+     "识图": "Распознавание изображений",
+     "工具": "Инструменты",
+     "description": "Claude Fable 5.1 — это флагманская передовая модель от Anthropic, выпущенная 2026‑09‑01, ориентированная на долгосрочные интеллектуальные агенты, сложное кодирование, многоэтапные научные исследования и глубокий анализ знаний, доступная для вызова в сложных задачах длительного выполнения",
+     "model_type": "Диалог"
+    }
+   },
+   "type": 0,
+   "available": true
+  },
+  {
+   "model_name": "gpt-6.1-sol",
+   "description": "GPT-6.1-Sol 是 OpenAI 推出的 GPT-6 Sol 升级版推理模型，在智能体编程、计算机操作与专业复杂任务上能力贴近旗舰 GPT-6 Astra",
+   "show_image_upload": 1,
+   "tags": "对话,工具,识图,思考",
+   "model_type": "对话",
+   "vendor_id": 52,
+   "quota_type": 0,
+   "model_ratio": 1,
+   "model_price": 0,
+   "owner_by": "",
+   "completion_ratio": 5,
+   "cache_ratio": 0.05,
+   "cache_creation_ratio": 1.25,
+   "cache_creation_5m_ratio": 1.25,
+   "cache_creation_1h_ratio": 2,
+   "enable_groups": [
+    "Azure-Gpt-2",
+    "Azure-Gpt-3",
+    "Azure-Gpt-4",
+    "Azure-Gpt-5",
+    "Azure-Gpt-6",
+    "Codex-Gpt-1",
+    "Codex-Gpt-2",
+    "Codex-Gpt-3",
+    "Openai-Gpt-1",
+    "Openai-Gpt-2"
+   ],
+   "supported_endpoint_types": [
+    "openai",
+    "openai-response"
+   ],
+   "step_ratios": [
+    {
+     "step_size": 272000,
+     "completion_step_size": -1,
+     "prompt_step_ratio": 1,
+     "completion_step_ratio": 1,
+     "cache_step_ratio": 1,
+     "prompt_thinking_step_ratio": 0,
+     "completion_thinking_step_ratio": 0
+    },
+    {
+     "step_size": 1000000,
+     "completion_step_size": -1,
+     "prompt_step_ratio": 2,
+     "completion_step_ratio": 1.5,
+     "cache_step_ratio": 2,
+     "prompt_thinking_step_ratio": 0,
+     "completion_thinking_step_ratio": 0
+    }
+   ],
+   "created_time": 1790739472,
+   "usage_count": 7892679866,
+   "translations": {
+    "en": {
+     "思考": "Thinking",
+     "description": "GPT-6.1-Sol is an upgraded reasoning model of GPT-6 Sol launched by OpenAI, with capabilities close to flagship GPT-6 Astra in agent programming, computer operations, and professional complex tasks.",
+     "model_type": "Conversation",
+     "对话": "Conversation",
+     "工具": "Tools",
+     "识图": "Image Recognition"
+    },
+    "es": {
+     "工具": "Herramientas",
+     "识图": "Reconocimiento de imágenes",
+     "思考": "Pensamiento",
+     "description": "GPT-6.1-Sol es el modelo de razonamiento mejorado de GPT-6 Sol lanzado por OpenAI, con capacidades cercanas al modelo insignia GPT-6 Astra en programación de agentes, operaciones informáticas y tareas complejas profesionales.",
+     "model_type": "Diálogo",
+     "对话": "Diálogo"
+    },
+    "ko": {
+     "对话": "대화",
+     "工具": "도구",
+     "识图": "이미지 인식",
+     "思考": "사고",
+     "description": "GPT-6.1-Sol은 OpenAI에서 출시한 GPT-6 Sol 업그레이드 버전 추론 모델로, 지능형 에이전트 프로그래밍, 컴퓨터 작업 및 전문 복잡한 작업에서 플래그십 GPT-6 Astra에 가까운 능력을 가지고 있습니다.",
+     "model_type": "대화"
+    },
+    "ja": {
+     "对话": "対話",
+     "工具": "ツール",
+     "识图": "画像認識",
+     "思考": "思考",
+     "description": "GPT-6.1-Sol は OpenAI が提供する GPT-6 Sol のアップグレード版推論モデルで、エージェントプログラミング、コンピュータ操作、専門的な複雑なタスクにおいてフラッグシップ GPT-6 Astra に近い能力を持っています",
+     "model_type": "対話"
+    },
+    "de": {
+     "description": "GPT-6.1-Sol ist ein von OpenAI eingeführtes Upgrade-Modell des GPT-6 Sol, das in der Programmierung von Agenten, Computeroperationen und bei komplexen Fachaufgaben nahe an den Fähigkeiten des Flaggschiffs GPT-6 Astra liegt.",
+     "model_type": "Gespräch",
+     "对话": "Gespräch",
+     "工具": "Werkzeuge",
+     "识图": "Bildverarbeitung",
+     "思考": "Denken"
+    },
+    "ru": {
+     "工具": "Инструменты",
+     "识图": "识图",
+     "思考": "思考",
+     "description": "GPT-6.1-Sol — это обновленная версия модели вывода GPT-6 Sol, выпущенная OpenAI, обладающая возможностями, близкими к флагманскому GPT-6 Astra в области программирования агентов, компьютерных операций и профессиональных сложных задач.",
+     "model_type": "Диалог",
+     "对话": "Диалог"
+    },
+    "zh": {
+     "对话": "对话",
+     "工具": "工具",
+     "识图": "识图",
+     "思考": "思考",
+     "description": "GPT-6.1-Sol 是 OpenAI 推出的 GPT-6 Sol 升级版推理模型，在智能体编程、计算机操作与专业复杂任务上能力贴近旗舰 GPT-6 Astra",
+     "model_type": "对话"
+    }
+   },
+   "type": 0,
+   "available": true
+  },
+  {
+   "model_name": "gemini-3-flash-preview",
+   "description": "gemini-3-flash-preview is our most intelligent model, combining speed with frontier intelligence and featuring excellent search and grounding capabilities.",
+   "cover_image": "https://lsky.zhongzhuan.chat/i/2026/06/16/6a30c88f78c7c.png",
+   "show_image_upload": 1,
+   "tags": "对话,识图,工具",
+   "model_type": "对话",
+   "vendor_id": 67,
+   "quota_type": 0,
+   "model_ratio": 0.25,
+   "model_price": 0,
+   "owner_by": "",
+   "completion_ratio": 6,
+   "cache_ratio": 0.1,
+   "enable_groups": [
+    "Aistudio-Gemini-1",
+    "Aistudio-Gemini-2",
+    "Aistudio-Gemini-3",
+    "Aistudio-Gemini-4",
+    "Anti-Gemini-1",
+    "Cli-Gemini-1",
+    "Vertex-Gemini-1",
+    "Vertex-Gemini-2",
+    "Vertex-Gemini-3"
+   ],
+   "supported_endpoint_types": [
+    "gemini",
+    "openai"
+   ],
+   "sort_order": 509,
+   "created_time": 1766025012,
+   "usage_count": 6991027084,
+   "translations": {
+    "en": {
+     "识图": "Vision",
+     "工具": "Tools"
+    }
+   },
+   "type": 0,
+   "available": true
+  },
+  {
+   "model_name": "gpt-image-2",
+   "description": "GPT Image 2 is our most advanced image generation model, supporting fast, high-quality image generation and editing. It supports flexible image dimensions and high-fidelity image input.",
+   "cover_image": "https://soruxgpt-saas-yimeng-api.soruxgpt.com/file_download/72f77c13-8dad-4706-a614-1e88cb7c8299",
+   "show_image_upload": 1,
+   "tags": "绘画,dall-e-3格式",
+   "model_type": "图像",
+   "vendor_id": 52,
+   "quota_type": 0,
+   "model_ratio": 2.5,
+   "model_price": 0,
+   "owner_by": "",
+   "completion_ratio": 6,
+   "image_ratio": 1.6,
+   "image_cache_ratio": 0.6400000000000001,
+   "cache_ratio": 0.4,
+   "enable_groups": [
+    "Azure-Gpt-2",
+    "Azure-Gpt-3",
+    "Azure-Gpt-4",
+    "Azure-Gpt-5",
+    "Azure-Gpt-6",
+    "Codex-Gpt-2",
+    "Codex-Gpt-3",
+    "Openai-Gpt-1",
+    "Openai-Gpt-2"
+   ],
+   "supported_endpoint_types": [
+    "OpenAI image edit",
+    "image-generation"
+   ],
+   "sort_order": 525,
+   "created_time": 1776844213,
+   "usage_count": 6108640029,
+   "translations": {
+    "en": {
+     "dall-e-3格式": "DALL-E 3 format"
+    }
+   },
+   "type": 0,
+   "available": true
+  },
+  {
+   "model_name": "gpt-5.5",
+   "description": "GPT-5.5 is OpenAI's flagship large language model released on April 24, 2026, designed as a new intelligence for real-world work and agents. Its core breakthrough is autonomous planning and execution of multi-step complex tasks, excelling in coding, computer operations, and research analysis while achieving higher efficiency with fewer tokens. Appending high/low/medium/xhigh indicates the thinking effort level.",
+   "cover_image": "https://soruxgpt-saas-yimeng-api.soruxgpt.com/file_download/19011beb-6b4d-412e-b178-a55deb269c13",
+   "show_image_upload": 1,
+   "tags": "对话,识图",
+   "model_type": "对话",
+   "vendor_id": 52,
+   "quota_type": 0,
+   "model_ratio": 2.5,
+   "model_price": 0,
+   "owner_by": "",
+   "completion_ratio": 6,
+   "cache_ratio": 0.1,
+   "enable_groups": [
+    "Azure-Gpt-2",
+    "Azure-Gpt-3",
+    "Azure-Gpt-4",
+    "Azure-Gpt-5",
+    "Azure-Gpt-6",
+    "Codex-Gpt-1",
+    "Codex-Gpt-2",
+    "Codex-Gpt-3",
+    "Openai-Gpt-1",
+    "Openai-Gpt-2"
+   ],
+   "supported_endpoint_types": [
+    "openai",
+    "openai-response"
+   ],
+   "step_ratios": [
+    {
+     "step_size": 272000,
+     "completion_step_size": -1,
+     "prompt_step_ratio": 1,
+     "completion_step_ratio": 1,
+     "cache_step_ratio": 1,
+     "prompt_thinking_step_ratio": 0,
+     "completion_thinking_step_ratio": 0
+    },
+    {
+     "step_size": 1000000,
+     "completion_step_size": -1,
+     "prompt_step_ratio": 2,
+     "completion_step_ratio": 1.5,
+     "cache_step_ratio": 2,
+     "prompt_thinking_step_ratio": 0,
+     "completion_thinking_step_ratio": 0
+    }
+   ],
+   "sort_order": 522,
+   "created_time": 1776996565,
+   "usage_count": 6007919533,
+   "translations": {
+    "en": {
+     "识图": "Vision"
+    }
+   },
+   "type": 0,
+   "available": true
+  },
+  {
+   "model_name": "claude-sonnet-5-5",
+   "description": "Claude Sonnet 5.5 是 Anthropic 兼顾速度、成本与能力的多模态商用模型，擅长文档、代码、Agent 自动化与图文分析。",
+   "show_image_upload": 1,
+   "tags": "对话,识图,工具",
+   "model_type": "对话",
+   "vendor_id": 55,
+   "quota_type": 0,
+   "model_ratio": 1,
+   "model_price": 0,
+   "owner_by": "",
+   "completion_ratio": 5,
+   "cache_ratio": 0.05,
+   "cache_creation_5m_ratio": 1.25,
+   "cache_creation_1h_ratio": 2,
+   "enable_groups": [
+    "AWS-Bedrock-2",
+    "AWS-Claude-2",
+    "AWS-Claude-3",
+    "Claude-Code-1",
+    "Claude-Code-2",
+    "Kiro-Claude-1"
+   ],
+   "supported_endpoint_types": [
+    "anthropic",
+    "openai"
+   ],
+   "created_time": 1790665281,
+   "usage_count": 5475411100,
+   "translations": {
+    "ko": {
+     "model_type": "대화",
+     "对话": "대화",
+     "识图": "이미지 인식",
+     "工具": "도구",
+     "description": "Claude Sonnet 5.5는 Anthropic이 속도, 비용 및 능력을 균형 있게 갖춘 다중 모드 상용 모델로, 문서, 코드, 에이전트 자동화 및 이미지 분석에 능숙합니다."
+    },
+    "zh": {
+     "识图": "识图",
+     "工具": "工具",
+     "description": "Claude Sonnet 5.5 是 Anthropic 兼顾速度、成本与能力的多模态商用模型，擅长文档、代码、Agent 自动化与图文分析。",
+     "model_type": "对话",
+     "对话": "对话"
+    },
+    "de": {
+     "description": "Claude Sonnet 5.5 ist ein multimodales kommerzielles Modell von Anthropic, das Geschwindigkeit, Kosten und Fähigkeiten in Einklang bringt und sich auf Dokumente, Code, Agentenautomatisierung und Bild-Text-Analyse spezialisiert hat.",
+     "model_type": "Konversation",
+     "对话": "Konversation",
+     "识图": "Bildanalyse",
+     "工具": "Werkzeuge"
+    },
+    "en": {
+     "description": "Claude Sonnet 5.5 is Anthropic's multimodal commercial model that balances speed, cost, and capability, excelling in document, code, agent automation, and image-text analysis.",
+     "model_type": "Conversation",
+     "对话": "Conversation",
+     "识图": "Image Recognition",
+     "工具": "Tools"
+    },
+    "es": {
+     "识图": "Reconocimiento de imágenes",
+     "工具": "Herramientas",
+     "description": "Claude Sonnet 5.5 es un modelo multimodal comercial de Anthropic que equilibra velocidad, costo y capacidad, especializado en documentos, código, automatización de agentes y análisis de texto e imagen.",
+     "model_type": "Diálogo",
+     "对话": "Diálogo"
+    },
+    "ru": {
+     "工具": "Инструменты",
+     "description": "Claude Sonnet 5.5 — это многомодальная коммерческая модель от Anthropic, которая сочетает скорость, стоимость и возможности, специализируясь на документах, коде, автоматизации агентов и анализе изображений.",
+     "model_type": "Диалог",
+     "对话": "Диалог",
+     "识图": "Распознавание изображений"
+    },
+    "ja": {
+     "description": "Claude Sonnet 5.5 は、Anthropic が速度、コスト、能力を兼ね備えたマルチモーダル商用モデルであり、文書、コード、エージェントの自動化、画像とテキストの分析に優れています。",
+     "model_type": "対話",
+     "对话": "対話",
+     "识图": "画像認識",
+     "工具": "ツール"
+    }
+   },
+   "type": 0,
+   "available": true
+  },
+  {
+   "model_name": "claude-opus-5",
+   "description": "Claude Opus 5, the default model for Claude Max and the most powerful model for Claude Pro, is a thoughtful, proactive, cost-efficient agentic model that delivers nearly the cutting-edge intelligence of flagship Claude Fable 5 at half the cost and sets new state-of-the-art standards for coding and professional knowledge work.",
+   "show_image_upload": 1,
+   "tags": "对话,工具,识图",
+   "model_type": "对话",
+   "vendor_id": 55,
+   "quota_type": 0,
+   "model_ratio": 2.5,
+   "model_price": 0,
+   "owner_by": "",
+   "completion_ratio": 5,
+   "cache_ratio": 0.1,
+   "cache_creation_5m_ratio": 1.25,
+   "cache_creation_1h_ratio": 2,
+   "enable_groups": [
+    "AWS-Bedrock-2",
+    "AWS-Claude-2",
+    "AWS-Claude-3",
+    "Anthropic-Claude-1",
+    "Claude-Code-1",
+    "Claude-Code-2",
+    "Kiro-Claude-1"
+   ],
+   "supported_endpoint_types": [
+    "anthropic",
+    "openai"
+   ],
+   "sort_order": 524,
+   "created_time": 1787708127,
+   "usage_count": 5423417609,
+   "translations": {
+    "es": {
+     "model_type": "Diálogo",
+     "工具": "Herramientas",
+     "识图": "Reconocimiento de imágenes",
+     "description": "Claude Opus 5, el modelo predeterminado para Claude Max y el modelo más potente para Claude Pro, es un modelo agente reflexivo, proactivo y rentable que ofrece casi la inteligencia de vanguardia del modelo insignia Claude Fable 5 a la mitad del costo y establece nuevos estándares de vanguardia para la codificación y el trabajo profesional del conocimiento.",
+     "对话": "Diálogo"
+    },
+    "ru": {
+     "model_type": "Диалог",
+     "识图": "Распознавание изображений",
+     "description": "Claude Opus 5, стандартная модель для Claude Max и самая мощная модель для Claude Pro, является продуманной, проактивной, экономически эффективной агентной моделью, которая предоставляет почти передовой интеллект флагманского Claude Fable 5 за половину стоимости и устанавливает новые современные стандарты для программирования и профессиональной интеллектуальной работы.",
+     "对话": "Диалог",
+     "工具": "Инструменты"
+    },
+    "zh": {
+     "工具": "工具",
+     "识图": "识图",
+     "model_type": "对话",
+     "对话": "对话",
+     "description": "Claude Opus 5 是 Claude Max 的默认模型，也是 Claude Pro 最强大的模型，它是一个深思熟虑、积极主动、具有成本效益的代理模型，提供几乎与旗舰 Claude Fable 5 相媲美的前沿智能，成本仅为其一半，并为编码和专业知识工作设定了新的行业标准。"
+    },
+    "en": {
+     "对话": "Conversation",
+     "model_type": "Conversation",
+     "工具": "Tools",
+     "识图": "Image Recognition",
+     "description": "Claude Opus 5, the default model for Claude Max and the most powerful model for Claude Pro, is a thoughtful, proactive, cost-efficient agentic model that delivers nearly the cutting-edge intelligence of flagship Claude Fable 5 at half the cost and sets new state-of-the-art standards for coding and professional knowledge work."
+    },
+    "ja": {
+     "model_type": "対話",
+     "对话": "対話",
+     "工具": "ツール",
+     "识图": "画像認識",
+     "description": "Claude Opus 5は、Claude Maxのデフォルトモデルであり、Claude Proの最も強力なモデルです。これは、コスト効率の良い、思慮深く、積極的なエージェントモデルであり、フラッグシップのClaude Fable 5の最先端の知能を半分のコストで提供し、コーディングや専門的な知識作業の新しい最先端基準を設定します。"
+    },
+    "de": {
+     "model_type": "Gespräch",
+     "识图": "Bildverarbeitung",
+     "description": "Claude Opus 5, das Standardmodell für Claude Max und das leistungsstärkste Modell für Claude Pro, ist ein durchdachtes, proaktives, kosteneffizientes agentisches Modell, das nahezu die Spitzentechnologie der Flaggschiff Claude Fable 5 zu einem halben Preis bietet und neue Maßstäbe für Programmierung und professionelle Wissensarbeit setzt.",
+     "对话": "Gespräch",
+     "工具": "Werkzeuge"
+    },
+    "ko": {
+     "对话": "对话",
+     "工具": "工具",
+     "model_type": "대화",
+     "识图": "识图",
+     "description": "클로드 오퍼스 5는 클로드 맥의 기본 모델이자 클로드 프로를 위한 가장 강력한 모델로, 최첨단 클로드 페이블 5의 지능을 절반의 비용으로 제공하는 사려 깊고, 능동적이며, 비용 효율적인 에이전트 모델입니다. 이 모델은 코딩 및 전문 지식 작업을 위한 새로운 최첨단 기준을 설정합니다."
+    }
+   },
+   "type": 0,
+   "available": true
+  },
+  {
+   "model_name": "gemini-3.1-pro-preview",
+   "description": "Gemini 3.1 is Google's most intelligent model family to date, grounded in advanced reasoning. It is designed to turn any idea into reality by mastering agentic workflows, autonomous coding, and complex multimodal tasks. gemini-3.1-pro-preview is best suited for complex tasks requiring broad world knowledge and advanced cross-modal reasoning.",
+   "cover_image": "https://soruxgpt-saas-yimeng-api.soruxgpt.com/file_download/2be2df9d-dd5a-41fb-89b8-a5f9079b85d5",
+   "show_image_upload": 1,
+   "tags": "对话,思考,多模态",
+   "model_type": "对话",
+   "vendor_id": 67,
+   "quota_type": 0,
+   "model_ratio": 1,
+   "model_price": 0,
+   "owner_by": "",
+   "completion_ratio": 6,
+   "cache_ratio": 0.1,
+   "enable_groups": [
+    "Aistudio-Gemini-1",
+    "Aistudio-Gemini-2",
+    "Aistudio-Gemini-3",
+    "Aistudio-Gemini-4",
+    "Anti-Gemini-1",
+    "Cli-Gemini-1",
+    "Vertex-Gemini-1",
+    "Vertex-Gemini-2",
+    "Vertex-Gemini-3"
+   ],
+   "supported_endpoint_types": [
+    "gemini",
+    "openai"
+   ],
+   "step_ratios": [
+    {
+     "step_size": 200000,
+     "completion_step_size": -1,
+     "prompt_step_ratio": 1,
+     "completion_step_ratio": 1,
+     "cache_step_ratio": 1,
+     "prompt_thinking_step_ratio": 0,
+     "completion_thinking_step_ratio": 0
+    },
+    {
+     "step_size": 1000000,
+     "completion_step_size": -1,
+     "prompt_step_ratio": 2,
+     "completion_step_ratio": 1.5,
+     "cache_step_ratio": 2,
+     "prompt_thinking_step_ratio": 0,
+     "completion_thinking_step_ratio": 0
+    }
+   ],
+   "sort_order": 520,
+   "created_time": 1771524129,
+   "usage_count": 4794912769,
+   "type": 0,
+   "available": true
+  },
+  {
+   "model_name": "claude-sonnet-5",
+   "description": "Claude Sonnet 5 comes with a default 1 million-token context window (1 million tokens serves as both its default and maximum capacity; no variants with smaller context limits are available). It features a maximum output token limit of 128k, adaptive reasoning capabilities, and retains all the same tooling and platform functionalities as Claude Sonnet 4.6—with the sole exception of the Priority Tier feature, which is unsupported on Claude Sonnet 5.",
+   "show_image_upload": 1,
+   "tags": "对话,识图,工具",
+   "model_type": "对话",
+   "vendor_id": 55,
+   "quota_type": 0,
+   "model_ratio": 1,
+   "model_price": 0,
+   "owner_by": "",
+   "completion_ratio": 5,
+   "cache_ratio": 0.1,
+   "cache_creation_5m_ratio": 1.25,
+   "cache_creation_1h_ratio": 2,
+   "enable_groups": [
+    "AWS-Bedrock-2",
+    "AWS-Claude-2",
+    "AWS-Claude-3",
+    "Anthropic-Claude-1",
+    "Claude-Code-1",
+    "Claude-Code-2",
+    "Kiro-Claude-1"
+   ],
+   "supported_endpoint_types": [
+    "anthropic",
+    "openai"
+   ],
+   "sort_order": 526,
+   "created_time": 1787709522,
+   "usage_count": 4544279946,
+   "translations": {
+    "ja": {
+     "对话": "対話",
+     "识图": "画像認識",
+     "工具": "ツール",
+     "description": "Claude Sonnet 5は、デフォルトで100万トークンのコンテキストウィンドウを備えています（100万トークンはデフォルトおよび最大容量として機能します。小さいコンテキスト制限のバリアントは利用できません）。最大出力トークン制限は128kで、適応型推論機能を持ち、Claude Sonnet 4.6と同じツールとプラットフォーム機能をすべて保持しています。ただし、Priority Tier機能はClaude Sonnet 5ではサポートされていません。",
+     "model_type": "対話"
+    },
+    "zh": {
+     "对话": "对话",
+     "识图": "识图",
+     "工具": "工具",
+     "description": "Claude Sonnet 5 配备默认的 100 万标记上下文窗口（100 万标记既是其默认值也是最大容量；没有更小上下文限制的变体可用）。它具有最大输出标记限制为 128k、自适应推理能力，并保留与 Claude Sonnet 4.6 相同的所有工具和平台功能——唯一的例外是优先级层功能，在 Claude Sonnet 5 上不受支持。",
+     "model_type": "对话"
+    },
+    "es": {
+     "对话": "Diálogo",
+     "识图": "Reconocimiento de imágenes",
+     "工具": "Herramientas",
+     "description": "Claude Sonnet 5 viene con una ventana de contexto predeterminada de 1 millón de tokens (1 millón de tokens sirve como su capacidad predeterminada y máxima; no hay variantes con límites de contexto más pequeños disponibles). Presenta un límite máximo de tokens de salida de 128k, capacidades de razonamiento adaptativo y conserva todas las mismas funcionalidades de herramientas y plataforma que Claude Sonnet 4.6, con la única excepción de la función de Nivel de Prioridad, que no es compatible con Claude Sonnet 5.",
+     "model_type": "Diálogo"
+    },
+    "en": {
+     "model_type": "Conversation",
+     "对话": "Conversation",
+     "识图": "Image Recognition",
+     "工具": "Tools",
+     "description": "Claude Sonnet 5 comes with a default 1 million-token context window (1 million tokens serves as both its default and maximum capacity; no variants with smaller context limits are available). It features a maximum output token limit of 128k, adaptive reasoning capabilities, and retains all the same tooling and platform functionalities as Claude Sonnet 4.6—with the sole exception of the Priority Tier feature, which is unsupported on Claude Sonnet 5."
+    },
+    "ko": {
+     "对话": "대화",
+     "识图": "이미지 인식",
+     "工具": "도구",
+     "description": "Claude Sonnet 5는 기본 100만 토큰 컨텍스트 창을 제공합니다 (100만 토큰은 기본 및 최대 용량으로 사용되며, 더 작은 컨텍스트 한계를 가진 변형은 제공되지 않습니다). 최대 출력 토큰 한도는 128k이며, 적응형 추론 기능을 갖추고 있으며, Claude Sonnet 4.6과 동일한 모든 도구 및 플랫폼 기능을 유지합니다. 단, Priority Tier 기능은 Claude Sonnet 5에서 지원되지 않습니다.",
+     "model_type": "대화"
+    },
+    "de": {
+     "description": "Claude Sonnet 5 kommt mit einem standardmäßigen Kontextfenster von 1 Million Tokens (1 Million Tokens dient sowohl als Standard- als auch als maximale Kapazität; es sind keine Varianten mit kleineren Kontextgrenzen verfügbar). Es bietet ein maximales Ausgabe-Token-Limit von 128k, adaptive Denkfähigkeiten und behält alle gleichen Werkzeuge und Plattformfunktionen wie Claude Sonnet 4.6 bei – mit der einzigen Ausnahme der Funktion Priority Tier, die auf Claude Sonnet 5 nicht unterstützt wird.",
+     "model_type": "Konversation",
+     "对话": "Konversation",
+     "识图": "Bildverarbeitung",
+     "工具": "Werkzeuge"
+    },
+    "ru": {
+     "对话": "Диалог",
+     "识图": "Распознавание изображений",
+     "工具": "Инструменты",
+     "description": "Claude Sonnet 5 поставляется с предустановленным контекстным окном на 1 миллион токенов (1 миллион токенов является как его стандартной, так и максимальной емкостью; варианты с меньшими ограничениями контекста недоступны). Он имеет максимальный лимит выходных токенов в 128k, адаптивные способности рассуждения и сохраняет все те же инструменты и функциональные возможности платформы, что и Claude Sonnet 4.6, за исключением функции Приоритетного уровня, которая не поддерживается в Claude Sonnet 5.",
+     "model_type": "Диалог"
+    }
+   },
+   "type": 0,
+   "available": true
+  },
+  {
+   "model_name": "claude-opus-4-8",
+   "description": "claude-opus-4-8 is Anthropic's most capable model for sustained, complex long-horizon work. Ideal for developers tackling large projects, building Agents, or any scenario demanding high autonomy and output quality.",
+   "cover_image": "https://lsky.zhongzhuan.chat/i/2026/06/16/6a3109054a902.png",
+   "show_image_upload": 1,
+   "tags": "对话,识图,工具",
+   "model_type": "对话",
+   "vendor_id": 55,
+   "quota_type": 0,
+   "model_ratio": 2.5,
+   "model_price": 0,
+   "owner_by": "",
+   "completion_ratio": 5,
+   "cache_ratio": 0.1,
+   "cache_creation_5m_ratio": 1.25,
+   "cache_creation_1h_ratio": 2,
+   "enable_groups": [
+    "AWS-Bedrock-2",
+    "AWS-Claude-2",
+    "AWS-Claude-3",
+    "Anthropic-Claude-1",
+    "Claude-Code-1",
+    "Claude-Code-2",
+    "Kiro-Claude-1"
+   ],
+   "supported_endpoint_types": [
+    "anthropic",
+    "openai"
+   ],
+   "sort_order": 524,
+   "created_time": 1780024229,
+   "usage_count": 3984206022,
+   "translations": {
+    "en": {
+     "识图": "Vision",
+     "工具": "Tools"
+    }
+   },
+   "type": 0,
+   "available": true
+  }
+ ],
+ "vendors": [
+  {
+   "id": 52,
+   "name": "OpenAI",
+   "icon": "OpenAI"
+  },
+  {
+   "id": 55,
+   "name": "Anthropic",
+   "description": "最强大的模型! 模型名添加\"new-\"前缀可解决某些客户端模型兼容问题!!",
+   "icon": "Claude.Color"
+  },
+  {
+   "id": 67,
+   "name": "Google",
+   "description": "模型名添加\"new-\"前缀可解决某些客户端模型兼容问题!!部分模型支持区分思考和不思考,结尾带上-thinking或-nothinking,支持自定义-thinking-*思考程度(156-24576)",
+   "icon": "Gemini.Color"
+  },
+  {
+   "id": 93,
+   "name": "OpenAI Plus",
+   "icon": "OpenAI.Color"
+  }
+ ]
+}

@@ -1,0 +1,2 @@
+2026-10-19T04:23:19Z
+openrouter=https://openrouter.ai/api/v1/models?output_modalities=all aihubmix=https://aihubmix.com/api/v1/models quanzil=https://quanzil.com/api/pricing ; 各截取 ≤20 条真实响应条目（字段原样，未改值）
