@@ -1,2 +1,4 @@
 2026-10-19T04:23:19Z
 openrouter=https://openrouter.ai/api/v1/models?output_modalities=all aihubmix=https://aihubmix.com/api/v1/models quanzil=https://quanzil.com/api/pricing ; 各截取 ≤20 条真实响应条目（字段原样，未改值）
+2026-10-19T04:57Z 补录（STEP-4 审查 M1/M2）：aihubmix.json 以 3 条真实条目（doubao-seed-1-6：顶层 pricing 与 pricing_lines 默认档不一致；gpt-4：retired_at 为未来日期；gpt-3.5-turbo-1106：retired_at 已过）替换 3 条普通条目，仍 ≤20 条。
+说明：quanzil.json 仅保留顶层 success/data/vendors（删去 group_ratio/supported_endpoint/usable_group，vendors 只留被引用的 4 条）；条目内字段原样未改值。

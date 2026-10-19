@@ -1,0 +1,5 @@
+ ✓ lib/monitoring/catalog/__tests__/collectors.spec.ts (41 tests) 36ms
+ Test Files  1 passed (1)
+      Tests  41 passed (41)
+vitest_exit=0
+tsc_exit=0

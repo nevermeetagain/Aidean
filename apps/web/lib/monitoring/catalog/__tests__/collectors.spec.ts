@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { ProviderModelObservationSchema } from "@aidean/shared";
 import { describe, expect, it, vi } from "vitest";
-import { aihubmixCollector } from "../aihubmix";
+import { aihubmixCollector, aihubmixPrices, aihubmixRetired } from "../aihubmix";
 import { openrouterCollector } from "../openrouter";
 import { quanzilCollector, quanzilPrices } from "../quanzil";
 import { CATALOG_COLLECTORS, getCatalogCollector } from "../registry";
@@ -82,11 +82,31 @@ describe("AIHubMix 映射", () => {
     expect(ids.length).toBeGreaterThan(0);
     for (const id of ids) expect(by(id)).toMatchObject({ priceUnit: null, priceInput: null, priceOutput: null });
   });
-  it("retired_at 存在 → isListed=false 且 delistedAt=fetchedAt；无则在列", () => {
-    for (const m of raw.data as { model_id: string; retired_at?: string | null; retire_stage?: string }[]) {
-      const retired = m.retire_stage === "retired" || !!m.retired_at;
-      expect(by(m.model_id).isListed).toBe(!retired);
-    }
+  it("M1：retired_at 为未来日期（计划退役）仍在列；已到期才下架（真实样本 gpt-4 / gpt-3.5-turbo-1106）", () => {
+    const g4 = raw.data.find((m: { model_id: string }) => m.model_id === "gpt-4");
+    const old = raw.data.find((m: { model_id: string }) => m.model_id === "gpt-3.5-turbo-1106");
+    expect(Date.parse(g4.retired_at)).toBeGreaterThan(ctx.fetchedAt.getTime());
+    expect(Date.parse(old.retired_at)).toBeLessThanOrEqual(ctx.fetchedAt.getTime());
+    expect(by("gpt-4")).toMatchObject({ isListed: true, delistedAt: null });
+    expect(by("gpt-3.5-turbo-1106")).toMatchObject({ isListed: false, delistedAt: ctx.fetchedAt.toISOString() });
+    // 同一条目在退役日之后再采集 → 下架
+    expect(aihubmixRetired(g4, new Date(Date.parse(g4.retired_at) + 1000))).toBe(true);
+    expect(aihubmixRetired({ retire_stage: "retired" }, ctx.fetchedAt)).toBe(true);
+    expect(aihubmixRetired({ retired_at: "not-a-date" }, ctx.fetchedAt)).toBe(false);
+  });
+  it("M2：优先 pricing_lines 默认档（doubao-seed-1-6 顶层 0.18/1.8 vs 默认档 0.10959/1.0959）", () => {
+    const d = raw.data.find((m: { model_id: string }) => m.model_id === "doubao-seed-1-6");
+    expect(d.pricing.input).toBe(0.18);
+    expect(by("doubao-seed-1-6")).toMatchObject({ priceInput: "0.10959", priceOutput: "1.0959", priceCacheRead: "0.021918" });
+  });
+  it("M2：无 pricing_lines 时退回顶层 pricing；lines 仅含非 token 单位时不误取", () => {
+    expect(aihubmixPrices({ pricing: { input: 1, output: 2 } })).toEqual({ priceInput: "1", priceOutput: "2", priceCacheRead: null });
+    expect(
+      aihubmixPrices({ pricing: { input: 1, output: 2 }, pricing_lines: [{ billable: "prompt_tokens", unit: "image", cost_usd: 9 }] }),
+    ).toMatchObject({ priceInput: "1" });
+    expect(
+      aihubmixPrices({ pricing: null, pricing_lines: [{ billable: "prompt_tokens", unit: "million_tokens", cost_usd: 3, tier: { default: false } }] }),
+    ).toMatchObject({ priceInput: null });
   });
   it("缺 vendor 字段 → vendorHint=null（不用 developer_id 数字猜）", () => {
     const m = raw.data.find((x: { vendor?: string }) => !x.vendor);
@@ -130,6 +150,7 @@ describe("归一工具（DESIGN-004 §4）", () => {
     ["deepseek/deepseek-r1:thinking:free", "deepseek-r1"],
     ["Claude Opus 5", "claude-opus-5"],
     ["gpt-6-astra", "gpt-6-astra"],
+    ["Vendor/:free", "vendor/:free"],
   ])("normalizeModelId(%j) = %j", (a, b) => expect(normalizeModelId(a)).toBe(b));
   it("shiftDecimal 精确：0.00003→30、0.0000001→0.1、'0'→0、-1/abc/1e-7 → null", () => {
     expect(shiftDecimal("0.00003", 6)).toBe("30");
@@ -138,12 +159,16 @@ describe("归一工具（DESIGN-004 §4）", () => {
     expect(shiftDecimal("-1", 6)).toBeNull();
     expect(shiftDecimal("abc", 6)).toBeNull();
     expect(shiftDecimal(1e-7, 6)).toBe("0.1");
+    expect(shiftDecimal("1e-7", 6)).toBe("0.1");
+    expect(shiftDecimal("-1e-7", 6)).toBeNull();
   });
   it("toDecimalString：6 位小数、去尾 0、负/非有限 → null", () => {
     expect(toDecimalString(0.30000000000000004)).toBe("0.3");
     expect(toDecimalString(10)).toBe("10");
     expect(toDecimalString(-1)).toBeNull();
     expect(toDecimalString(Number.NaN)).toBeNull();
+    expect(toDecimalString(1e-7)).toBeNull(); // 极小正价不得舍成「免费」
+    expect(toDecimalString(0)).toBe("0");
   });
 });
 

@@ -47,7 +47,10 @@ export async function fetchCatalogText(
     headers: { accept: "application/json", "user-agent": "AideanMonitor/1.0 (+catalog)" },
     signal: AbortSignal.timeout(timeoutMs),
   });
-  if (!res.ok) throw new Error(`catalog fetch ${endpoint} → HTTP ${res.status}`);
+  if (!res.ok) {
+    await res.body?.cancel().catch(() => undefined); // 释放连接，不读错误页正文
+    throw new Error(`catalog fetch ${endpoint} → HTTP ${res.status}`);
+  }
   const text = await readCappedText(res, maxBytes);
   return { text, bytes: Buffer.byteLength(text, "utf8"), url: endpoint };
 }
@@ -74,7 +77,7 @@ export function normalizeModelId(externalId: string): string {
   if (slash >= 0) s = s.slice(slash + 1);
   while (SUFFIX_RE.test(s)) s = s.replace(SUFFIX_RE, "");
   s = s.replace(/\s+/g, "-");
-  return s.slice(0, 200) || externalId.slice(0, 200);
+  return s.slice(0, 200) || externalId.trim().toLowerCase().replace(/\s+/g, "-").slice(0, 200);
 }
 
 const DEC_RE = /^\d+(\.\d+)?$/;
@@ -82,7 +85,7 @@ const DEC_RE = /^\d+(\.\d+)?$/;
 /** 十进制字符串 ×10^shift（精确，无浮点误差），结果去尾随 0；非法/负数 → null */
 export function shiftDecimal(value: unknown, shift: number): string | null {
   if (typeof value !== "string" && typeof value !== "number") return null;
-  const str = typeof value === "number" ? numberToPlain(value) : value.trim();
+  const str = typeof value === "number" ? numberToPlain(value) : sciToPlain(value.trim());
   if (str === null || !DEC_RE.test(str)) return null;
   const [intPart, frac = ""] = str.split(".");
   const digits = intPart + frac;
@@ -98,11 +101,22 @@ export function shiftDecimal(value: unknown, shift: number): string | null {
   return fp ? `${ip}.${fp}` : ip;
 }
 
-/** 有限非负 number → 十进制字符串（最多 6 位小数，对齐 decimal(19,6)；去尾随 0）；否则 null */
+/**
+ * 有限非负 number → 十进制字符串（最多 6 位小数，对齐 decimal(19,6)；去尾随 0）；否则 null。
+ * 正数但舍入后为 0（< 5e-7）→ null：不可把极小正价误写成「免费」（STEP-4 审查建议）。
+ */
 export function toDecimalString(n: unknown, scale = 6): string | null {
   if (typeof n !== "number" || !Number.isFinite(n) || n < 0) return null;
+  if (n > 0 && Number(n.toFixed(scale)) === 0) return null;
   const fixed = n.toFixed(scale);
   return fixed.includes(".") ? fixed.replace(/0+$/, "").replace(/\.$/, "") : fixed;
+}
+
+/** "1e-7" / "2.5E-6" 等科学计数字符串 → 普通十进制字符串；非科学计数原样返回 */
+function sciToPlain(s: string): string | null {
+  if (!/e/i.test(s)) return s;
+  const n = Number(s);
+  return Number.isFinite(n) ? numberToPlain(n) : null;
 }
 
 function numberToPlain(n: number): string | null {
