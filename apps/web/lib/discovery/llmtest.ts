@@ -21,6 +21,7 @@ export interface LlmtestLeaderboardItem {
   rank?: unknown;
   total_checks?: unknown;
   pass_count?: unknown;
+  last_alive_at?: unknown;
 }
 
 /** composite 接口标准数据源 URL（发现证据 sourceUrl）。 */

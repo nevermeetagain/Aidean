@@ -1,0 +1,43 @@
+TASK-073 验证命令输出（llmtest 观测入时序）
+日期: 2026-10-19
+分支: nm-main  HEAD(执行前): 8dcc6873
+占位 DATABASE_URL（web 全量 test 用）: postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder?schema=public
+
+===== [1] 定向 vitest: pnpm --filter web exec vitest run lib/discovery/llmtest.spec.ts =====
+ RUN  v2.1.9 E:/Code/Aidean/apps/web
+ ✓ lib/discovery/llmtest.spec.ts (8 tests) 3ms
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+（既有 5 例保持不变 + 本卡新增 3 例 = 8；用例数只增不减）
+LLMTEST_SPEC_EXIT=0
+
+===== [2] pnpm --filter web exec tsc --noEmit =====
+WEB_TSC_EXIT=0
+
+===== [3] 回归 · pnpm --filter web test =====
+ Test Files  128 passed | 2 skipped (130)
+      Tests  1241 passed | 5 skipped (1246)
+（= TASK-093 后基线 1238 + 本卡新增 3 = 1241；skipped 5 不变）
+WEB_TEST_EXIT=0
+
+===== [4] 回归 · pnpm --filter @aidean/shared exec tsc --noEmit =====
+SHARED_TSC_EXIT=0
+
+===== [5] 回归 · pnpm --filter @aidean/shared test =====
+ Test Files  21 passed (21)
+      Tests  210 passed (210)
+SHARED_TEST_EXIT=0
+
+===== [6] git status --short =====
+ M apps/web/lib/discovery/llmtest.spec.ts
+ M apps/web/lib/discovery/llmtest.ts
+?? apps/web/lib/discovery/llmtest-observations.ts
+（随后新增 EVD-073/**）
+
+===== [7] git diff --name-only（已跟踪） =====
+apps/web/lib/discovery/llmtest.spec.ts
+apps/web/lib/discovery/llmtest.ts
+
+结论: 定向 llmtest.spec.ts 8/8 绿（含新增 3 例）；web tsc exit 0；回归四连全绿；
+shared 210/tsc0 不受影响；改动仅落在允许范围（llmtest.ts + llmtest.spec.ts +
+新建 llmtest-observations.ts + EVD-073/**），未触候选发现行为、迁移、契约、pricing/shared。
