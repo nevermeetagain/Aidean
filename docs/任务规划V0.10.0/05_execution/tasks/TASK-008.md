@@ -1,0 +1,76 @@
+# TASK-008：OIDC 种子 wechat-rag 回调白名单按端口裁决对齐（保留 BotHot 3200；AideanBot 3333 按 P-2 补录）
+
+> 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
+
+> 执行者：**外部Agent** ｜ 所有权 Agent：**Agent-Data** ｜ 建议档位：**haiku** ｜ **条件卡：待 P-2（AideanBot 3333 回调是否保留）裁决后下发**
+
+> V0.10.0 状态：**条件·待裁决**｜V0.10.0：条件卡，待 P-2 裁决；已完成依赖 TASK-085 移出卡集
+
+> 历史（V0.4.0→V0.5.0）：沿用（V0.5.0 重核：cd5b1a9 业务树=77c7952 无 delta）
+
+## 归属
+- 所属切片：S0（步行骨架与契约守卫（V0.9.0：剩工件回补、CI 门禁与独立复核））
+- 来源需求：REQ-C-02 端口 / P-2（AideanBot 是否仍需 3333 回调）
+- RTM 追溯（V0.10.0 统一编号，见 03a_统一需求追溯矩阵.md）：REQ-C-006
+- 来源方案：SOL-S0
+
+## 目标
+seed.ts wechat-rag.redirectUris 与 P-2 裁决一致：方案A（AideanBot 仍在用）= [wechat-rag.aidean.local, localhost:3200, localhost:3333]；方案B（AideanBot 已由 BotHot 取代）= 保持现状 [wechat-rag.aidean.local, localhost:3200]，sso-3333 e2e 的去留另行立卡（Agent-Guard 所有，本卡不改 e2e）
+
+## 输入
+- 文档：`docs/product/modules/子平台规范说明.md §5.0 端口区间`；`BotHot AGENTS.md 端口表（3200 前端宿主，外部仓 aideanew/BotHot@13acacc）`
+- 契约：`无（数据值）`
+- 前置任务：无
+- 前置状态：P-2 已由用户裁决
+
+## 输出
+- 新增/修改的文件路径：
+  - `apps/web/prisma/seed.ts`
+  - `docs/任务规划V0.10.0/06_validation/evidence/EVD-008/`（取证：命令输出/截图/日志）
+
+## Execution Steps
+1. [ ] 方案A：seed.ts:354 redirectUris 追加 'http://localhost:3333/auth/aidean/callback'（不删 3200）
+2. [ ] 本地 db:seed 两次（upsert 幂等），运行 node apps/web/scripts/check-oidc.mjs
+3. [ ] 方案B：不改代码，证据目录写入裁决原文
+4. [ ] 运行「验证命令」并将完整输出存入证据目录
+
+## 验收标准
+- [ ] 方案A：`grep -c "localhost:3200/auth/aidean/callback\|localhost:3333/auth/aidean/callback" apps/web/prisma/seed.ts` 两个回调均命中；check-oidc has3333=true
+- [ ] 方案B：git diff 为空且证据含裁决记录
+- [ ] TASK-007 端口守卫对 seed 回调无 ERROR
+- [ ] diff 仅落在「允许修改」范围内（`git diff --name-only` 逐行核对）
+
+## 验证命令
+```bash
+grep -n "auth/aidean/callback" apps/web/prisma/seed.ts && node scripts/guard/port-consistency.mjs
+```
+
+## 证据路径
+`docs/任务规划V0.10.0/06_validation/evidence/EVD-008/`
+
+## 允许修改
+- `apps/web/prisma/seed.ts`
+- `docs/任务规划V0.10.0/06_validation/evidence/EVD-008/**`
+
+## 禁止修改
+- `apps/web/prisma/migrations/**`
+- `apps/web/prisma/schema.prisma`
+- `.example/history/**（铁律4 历史只读）`
+- `docs/任务规划V0.5.0/contracts/**（冻结契约；变更须先提 ADR 并经 opus/fable 券审批）`
+- `docs/任务规划V0.1.0/** … docs/任务规划V0.4.0/** · docs/任务规划V0.6.0/** … docs/任务规划V0.9.0/**（历代规划只读；V0.5.0 仅 TASK-087 可改文件名）`
+- `AGENTS.md`
+
+## 依赖与阻塞
+- Depends on：无
+- 资源锁串行（同文件，须在其后执行）：无
+- Blocks：无
+- 阻塞条件：P-2 未裁决 → 不执行（条件卡）
+
+## 建议执行档位
+haiku　理由：单值替换（seed.ts:354）
+
+## 升级条件
+无；通用熔断：同一任务连续 2 次验收失败 → 停止改代码，改为重写任务书/升级档位/标记 blocked（禁止第 3 次硬撞）
+
+## 预估规模
+小（<2h，§6.3 过小信号：因所有权仅 Agent-Data 可写 seed，无法并入同刀他卡，保留独立卡并在证据中注明）　约 1h　<2h
