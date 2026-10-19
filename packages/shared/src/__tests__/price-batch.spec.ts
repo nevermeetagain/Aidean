@@ -7,9 +7,9 @@ const row = (i: number) => ({ modelId: `m-${i}`, priceInput: 1, priceOutput: "2.
 
 describe("PriceBatchUpsertSchema（TASK-082）", () => {
   it("上限常量为 500", () => expect(PRICE_BATCH_MAX_ROWS).toBe(500));
-  it("1 行与 500 行通过；行复用 AdminPriceCreateSchema 默认 billingMode=PER_TOKEN", () => {
+  it("1 行与 500 行通过；billingMode 无默认值（更新时保留原值由 TASK-081 决定）", () => {
     const one = PriceBatchUpsertSchema.parse({ requestId: rid, rows: [row(0)] });
-    expect(one.rows[0].billingMode).toBe("PER_TOKEN");
+    expect(one.rows[0].billingMode).toBeUndefined();
     expect(one.rows[0].priceOutput).toBe(2.5);
     const max = Array.from({ length: 500 }, (_, i) => row(i));
     expect(PriceBatchUpsertSchema.safeParse({ requestId: rid, rows: max }).success).toBe(true);
@@ -31,6 +31,20 @@ describe("PriceBatchUpsertSchema（TASK-082）", () => {
     expect(r.success).toBe(false);
     if (!r.success) expect(r.error.issues[0].path).toEqual(["rows", 2, "modelId"]);
   });
+  it.each(["", " ", null, true, [], "0x10", "1e3", "-0.5", Number.NaN, Number.POSITIVE_INFINITY])(
+    "价格非法值 %j 拒绝（空格子不得被当成免费价）",
+    (bad) => {
+      expect(PriceBatchUpsertSchema.safeParse({ requestId: rid, rows: [{ ...row(0), priceInput: bad }] }).success).toBe(false);
+    },
+  );
+  it("价格接受 number 与十进制字符串，统一为 number", () => {
+    const r = PriceBatchUpsertSchema.parse({ requestId: rid, rows: [{ modelId: "m", priceInput: "0", priceOutput: 0.000001 }] });
+    expect(r.rows[0].priceInput).toBe(0);
+    expect(r.rows[0].priceOutput).toBe(0.000001);
+  });
+  it("行 strict：拼错字段（priceCach）拒绝，防静默丢弃", () => {
+    expect(PriceBatchUpsertSchema.safeParse({ requestId: rid, rows: [{ ...row(0), priceCach: 1 }] }).success).toBe(false);
+  });
   it("strict：未知顶层键拒绝", () => {
     expect(PriceBatchUpsertSchema.safeParse({ requestId: rid, rows: [row(0)], dryRun: true }).success).toBe(false);
   });
@@ -47,5 +61,9 @@ describe("PriceBatchUpsertResponseSchema（TASK-082）", () => {
       replayed: false,
     });
     expect(ok.success).toBe(true);
+  });
+  it("total ≠ created+updated+failed 拒绝", () => {
+    const bad = PriceBatchUpsertResponseSchema.safeParse({ requestId: rid, total: 5, created: 1, updated: 1, failed: [], replayed: false });
+    expect(bad.success).toBe(false);
   });
 });
