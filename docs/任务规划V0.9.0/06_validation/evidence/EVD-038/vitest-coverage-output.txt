@@ -1,0 +1,73 @@
+===== WEB vitest run --coverage (reportsDir -> .scratch) =====
+[90mstderr[2m | lib/features/system/__tests__/ready-route.spec.ts[2m > [22m[2mGET /api/v1/system/ready · 路由 HTTP 层[2m > [22m[2mDB 不可达 → 503 + 信封 code=50010 / message '依赖不可用: db'
+[22m[39m{"tag":"ready-probe","dep":"db","reason":"error","name":"Error"}
+
+[90mstderr[2m | lib/features/system/__tests__/ready-route.spec.ts[2m > [22m[2mGET /api/v1/system/ready · 路由 HTTP 层[2m > [22m[2mRedis 不可达（DB 可达）→ 503 + code=50010 / message '依赖不可用: redis'
+[22m[39m{"tag":"ready-probe","dep":"redis","reason":"error","name":"Error"}
+
+ [32m✓[39m lib/features/system/__tests__/ready-route.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 29[2mms[22m[39m
+ [32m✓[39m lib/features/home/__tests__/site-sections.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m lib/discovery/llmtest.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/refresh-replay-alert.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/sync-changes.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m lib/product-label.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/huggingface.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/usage-window.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 873[2mms[22m[39m
+   [33m[2m✓[22m[39m PRESET_RANGE_DAYS 与服务端 USAGE_STATS_RANGE_DAYS 同口径（7/30/90） [33m869[2mms[22m[39m
+ [32m✓[39m lib/features/admin/script-validation.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 43[2mms[22m[39m
+ [32m✓[39m lib/intelligence/__tests__/intelligence.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/sync-dedup.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m lib/security/__tests__/url-policy-outbound.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/login-rate-limit-bypass.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/sync-batches-route.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m lib/admin/load-guard.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m lib/features/ranking/__tests__/recap.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/tier-order.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m lib/sync/sources/registry.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-errors.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m125 passed[39m[22m[2m | [22m[33m2 skipped[39m[90m (127)[39m
+[2m      Tests [22m [1m[32m1210 passed[39m[22m[2m | [22m[33m5 skipped[39m[90m (1215)[39m
+[2m   Start at [22m 17:29:36
+[2m   Duration [22m 7.95s[2m (transform 17.76s, setup 0ms, collect 72.20s, tests 17.60s, environment 34ms, prepare 36.57s)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+
+=============================== Coverage summary ===============================
+Statements   : 66.56% ( 7996/12012 )
+Branches     : 79.81% ( 2290/2869 )
+Functions    : 76.06% ( 502/660 )
+Lines        : 66.56% ( 7996/12012 )
+================================================================================
+WEB_COV_EXIT=0
+===== SHARED vitest run --coverage (reportsDir -> .scratch) =====
+ [32m✓[39m src/__tests__/ladder.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/__tests__/gateway.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/__tests__/favorites.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/__tests__/feature-flags.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/promotion.spec.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/monitoring.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/schemas.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/__tests__/price-batch.spec.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m21 passed[39m[22m[90m (21)[39m
+[2m      Tests [22m [1m[32m210 passed[39m[22m[90m (210)[39m
+[2m   Start at [22m 17:29:46
+[2m   Duration [22m 1.56s[2m (transform 1.52s, setup 0ms, collect 5.90s, tests 158ms, environment 6ms, prepare 9.73s)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+
+=============================== Coverage summary ===============================
+Statements   : 92.65% ( 2284/2465 )
+Branches     : 77.91% ( 194/249 )
+Functions    : 57.14% ( 36/63 )
+Lines        : 92.65% ( 2284/2465 )
+================================================================================
+SHARED_COV_EXIT=0
+===== WEB coverage-summary.json (totals) =====
+{"lines":66.56,"statements":66.56,"functions":76.06,"branches":79.81}
+lines_abs 7996/12012 branches_abs 2290/2869
+===== SHARED coverage-summary.json (totals) =====
+{"lines":92.65,"statements":92.65,"functions":57.14,"branches":77.91}
+lines_abs 2284/2465 branches_abs 194/249
+DONE

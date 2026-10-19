@@ -14,5 +14,17 @@ export default defineConfig({
     // 15s：auth 首调 RS256 generateKeyPair（无 REDIS_URL 时进程内生成）在低速机/冷机
     // 可达 5~6s，默认 5s 会把慢初始化误判为死锁超时（2026-10-01 实测 12 例假失败）。
     testTimeout: 15000,
+    // 覆盖率基线（TASK-038 / REQ-NF-008）：v8 provider，仅上报不设阈值（无 thresholds）。
+    // 默认 `vitest run` 不启用；`vitest run --coverage` 或 CI 传 --coverage 时产出。
+    coverage: {
+      provider: "v8",
+      reporter: ["text-summary", "json-summary"],
+      reportsDirectory: "./coverage",
+      // 基线只度量单测实际触及的 lib 单元面（与 test.include=lib/**/*.spec.ts 对齐）；
+      // 排除测试自身。app/components 等未纳入本轮单测的目录不计入该基线分母。
+      include: ["lib/**"],
+      exclude: ["lib/**/*.spec.ts", "lib/**/__tests__/**"],
+      all: true,
+    },
   },
 });
