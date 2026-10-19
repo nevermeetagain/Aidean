@@ -1,0 +1,316 @@
+  ▲ Next.js 15.0.0
+  - Experiments (use with caution):
+    · staleTimes
+
+   Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (219kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ⚠ Compiled with warnings
+
+../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/runtime/wasm-engine-edge.js
+A Node.js API is used (setImmediate at line: 12) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+
+Import trace for requested module:
+../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/runtime/wasm-engine-edge.js
+../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/.prisma/client/wasm.js
+../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/.prisma/client/default.js
+../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/default.js
+./lib/db/prisma.ts
+./lib/features/auth/constants.ts
+
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+
+./components/common/SafeImage.tsx
+19:14  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/29) ...
+   Generating static pages (7/29) 
+   Generating static pages (14/29) 
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+[ladder/models] SSR 取数失败，降级空排行： PrismaClientInitializationError: 
+Invalid `prisma.aiModel.findMany()` invocation:
+
+
+Can't reach database server at `127.0.0.1:5432`
+
+Please make sure your database server is running at `127.0.0.1:5432`.
+    at ei.handleRequestError (node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/runtime/library.js:121:7568)
+    at ei.handleAndLogRequestError (node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/runtime/library.js:121:6593)
+    at ei.request (node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/runtime/library.js:121:6300)
+    at async a (node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/runtime/library.js:130:9551)
+    at async Object.getModelsForMatrix (apps/web/.next/server/chunks/8473.js:1:2514)
+    at async Object.getRanking (apps/web/.next/server/chunks/8473.js:1:10125)
+    at async c (apps/web/.next/server/app/(site)/models/page.js:1:4713)
+    at async Promise.all (index 0)
+    at async m (apps/web/.next/server/app/(site)/models/page.js:1:5036) {
+  clientVersion: '6.19.3',
+  errorCode: undefined,
+  retryable: undefined
+}
+[ladder/stations] SSR 取数失败，降级空排行： PrismaClientInitializationError: 
+Invalid `prisma.aPIStation.findMany()` invocation:
+
+
+Can't reach database server at `127.0.0.1:5432`
+
+Please make sure your database server is running at `127.0.0.1:5432`.
+    at ei.handleRequestError (node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/runtime/library.js:121:7568)
+    at ei.handleAndLogRequestError (node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/runtime/library.js:121:6593)
+    at ei.request (node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/runtime/library.js:121:6300)
+    at async a (node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/runtime/library.js:130:9551)
+    at async Object.getStationsForMatrix (apps/web/.next/server/chunks/8473.js:1:3705)
+    at async Object.getRanking (apps/web/.next/server/chunks/8473.js:1:10125)
+    at async h (apps/web/.next/server/app/(site)/ladder/page.js:1:5598)
+    at async Promise.all (index 0)
+    at async g (apps/web/.next/server/app/(site)/ladder/page.js:1:6396) {
+  clientVersion: '6.19.3',
+  errorCode: undefined,
+  retryable: undefined
+}
+   Generating static pages (21/29) 
+[providers] SSR 取数失败，降级空提供商列表： 
+Invalid `prisma.modelProvider.findMany()` invocation:
+
+
+Can't reach database server at `127.0.0.1:5432`
+
+Please make sure your database server is running at `127.0.0.1:5432`.
+ ✓ Generating static pages (29/29)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                              Size     First Load JS
+┌ ○ /                                                    808 B           139 kB
+├ ○ /_not-found                                          900 B           100 kB
+├ ƒ /.well-known/jwks.json                               547 B          99.9 kB
+├ ƒ /.well-known/openid-configuration                    547 B          99.9 kB
+├ ○ /about                                               739 B           139 kB
+├ ƒ /admin                                               192 B           117 kB
+├ ƒ /admin/announcements                                 5.34 kB         113 kB
+├ ƒ /admin/api-stations                                  4.89 kB         113 kB
+├ ƒ /admin/audit-logs                                    175 B           112 kB
+├ ƒ /admin/benchmarks                                    5.66 kB         114 kB
+├ ƒ /admin/capabilities                                  1.72 kB         110 kB
+├ ƒ /admin/configs                                       12.3 kB         150 kB
+├ ƒ /admin/discovery                                     5.29 kB         113 kB
+├ ƒ /admin/evaluations                                   4.71 kB         113 kB
+├ ƒ /admin/feature-flags                                 4.15 kB         112 kB
+├ ƒ /admin/free-quotas                                   4.96 kB         113 kB
+├ ƒ /admin/intelligence                                  2.46 kB         110 kB
+├ ○ /admin/login                                         2 kB            139 kB
+├ ƒ /admin/logs                                          3.25 kB         115 kB
+├ ƒ /admin/menus                                         4.57 kB         113 kB
+├ ƒ /admin/models                                        6.48 kB         114 kB
+├ ƒ /admin/news                                          16.5 kB         154 kB
+├ ƒ /admin/oidc-clients                                  4.39 kB         112 kB
+├ ƒ /admin/orders                                        2.29 kB         114 kB
+├ ƒ /admin/packages                                      5.9 kB          114 kB
+├ ƒ /admin/partner-keys                                  4.77 kB         113 kB
+├ ƒ /admin/prices                                        5.02 kB         113 kB
+├ ƒ /admin/products                                      8.39 kB         116 kB
+├ ƒ /admin/protocols                                     1.74 kB         110 kB
+├ ƒ /admin/providers                                     5.67 kB         114 kB
+├ ƒ /admin/redemptions                                   6.74 kB         115 kB
+├ ƒ /admin/reports                                       177 B           108 kB
+├ ƒ /admin/roles                                         4.51 kB         142 kB
+├ ƒ /admin/scripts                                       5.79 kB         114 kB
+├ ƒ /admin/sync                                          5.8 kB          114 kB
+├ ƒ /admin/tier-mappings                                 4.54 kB         112 kB
+├ ƒ /admin/users                                         6.9 kB          115 kB
+├ ƒ /admin/vendors                                       5.46 kB         113 kB
+├ ƒ /admin/wallets                                       2.8 kB          114 kB
+├ ƒ /announcements                                       201 B           109 kB
+├ ƒ /api/v1/admin/announcements                          547 B          99.9 kB
+├ ƒ /api/v1/admin/announcements/[id]                     547 B          99.9 kB
+├ ƒ /api/v1/admin/announcements/batch                    547 B          99.9 kB
+├ ƒ /api/v1/admin/api-stations                           547 B          99.9 kB
+├ ƒ /api/v1/admin/api-stations/[id]                      550 B          99.9 kB
+├ ƒ /api/v1/admin/api-stations/[id]/billing              547 B          99.9 kB
+├ ƒ /api/v1/admin/api-stations/[id]/keys                 547 B          99.9 kB
+├ ƒ /api/v1/admin/api-stations/[id]/keys/[keyId]         547 B          99.9 kB
+├ ƒ /api/v1/admin/api-stations/batch                     547 B          99.9 kB
+├ ƒ /api/v1/admin/audit-logs                             548 B          99.9 kB
+├ ƒ /api/v1/admin/benchmarks                             548 B          99.9 kB
+├ ƒ /api/v1/admin/benchmarks/[id]                        547 B          99.9 kB
+├ ƒ /api/v1/admin/benchmarks/batch                       547 B          99.9 kB
+├ ƒ /api/v1/admin/benchmarks/import                      550 B          99.9 kB
+├ ƒ /api/v1/admin/capabilities                           547 B          99.9 kB
+├ ƒ /api/v1/admin/configs                                547 B          99.9 kB
+├ ƒ /api/v1/admin/discovery/candidates                   547 B          99.9 kB
+├ ƒ /api/v1/admin/discovery/candidates/[id]              547 B          99.9 kB
+├ ƒ /api/v1/admin/discovery/candidates/[id]/promote      547 B          99.9 kB
+├ ƒ /api/v1/admin/discovery/pipeline                     546 B          99.9 kB
+├ ƒ /api/v1/admin/evaluations                            547 B          99.9 kB
+├ ƒ /api/v1/admin/evaluations/[id]                       547 B          99.9 kB
+├ ƒ /api/v1/admin/evaluations/batch                      547 B          99.9 kB
+├ ƒ /api/v1/admin/feature-flags                          548 B          99.9 kB
+├ ƒ /api/v1/admin/feature-flags/[id]                     547 B          99.9 kB
+├ ƒ /api/v1/admin/free-quotas                            547 B          99.9 kB
+├ ƒ /api/v1/admin/free-quotas/[id]                       546 B          99.9 kB
+├ ƒ /api/v1/admin/free-quotas/batch                      547 B          99.9 kB
+├ ƒ /api/v1/admin/holds                                  546 B          99.9 kB
+├ ƒ /api/v1/admin/intelligence/reports                   547 B          99.9 kB
+├ ƒ /api/v1/admin/intelligence/snapshots                 547 B          99.9 kB
+├ ƒ /api/v1/admin/intelligence/snapshots/[id]            547 B          99.9 kB
+├ ƒ /api/v1/admin/ladder/config                          547 B          99.9 kB
+├ ƒ /api/v1/admin/logs/scripts                           547 B          99.9 kB
+├ ƒ /api/v1/admin/logs/security                          547 B          99.9 kB
+├ ƒ /api/v1/admin/logs/usage                             547 B          99.9 kB
+├ ƒ /api/v1/admin/menus                                  546 B          99.9 kB
+├ ƒ /api/v1/admin/menus/[id]                             547 B          99.9 kB
+├ ƒ /api/v1/admin/menus/apply-default                    547 B          99.9 kB
+├ ƒ /api/v1/admin/models                                 546 B          99.9 kB
+├ ƒ /api/v1/admin/models/[id]                            547 B          99.9 kB
+├ ƒ /api/v1/admin/models/batch                           547 B          99.9 kB
+├ ƒ /api/v1/admin/news                                   547 B          99.9 kB
+├ ƒ /api/v1/admin/news/[id]                              547 B          99.9 kB
+├ ƒ /api/v1/admin/news/batch                             547 B          99.9 kB
+├ ƒ /api/v1/admin/oidc-clients                           547 B          99.9 kB
+├ ƒ /api/v1/admin/oidc-clients/[id]                      547 B          99.9 kB
+├ ƒ /api/v1/admin/orders                                 547 B          99.9 kB
+├ ƒ /api/v1/admin/package-orders                         547 B          99.9 kB
+├ ƒ /api/v1/admin/package-orders/[id]                    547 B          99.9 kB
+├ ƒ /api/v1/admin/packages                               549 B          99.9 kB
+├ ƒ /api/v1/admin/packages/[id]                          546 B          99.9 kB
+├ ƒ /api/v1/admin/packages/batch                         546 B          99.9 kB
+├ ƒ /api/v1/admin/partner-keys                           547 B          99.9 kB
+├ ƒ /api/v1/admin/partner-keys/[id]                      547 B          99.9 kB
+├ ƒ /api/v1/admin/partner-keys/batch                     547 B          99.9 kB
+├ ƒ /api/v1/admin/prices                                 547 B          99.9 kB
+├ ƒ /api/v1/admin/prices/[id]                            546 B          99.9 kB
+├ ƒ /api/v1/admin/products                               547 B          99.9 kB
+├ ƒ /api/v1/admin/products/[id]                          547 B          99.9 kB
+├ ƒ /api/v1/admin/products/batch                         547 B          99.9 kB
+├ ƒ /api/v1/admin/protocols                              547 B          99.9 kB
+├ ƒ /api/v1/admin/providers                              547 B          99.9 kB
+├ ƒ /api/v1/admin/providers/[id]                         547 B          99.9 kB
+├ ƒ /api/v1/admin/providers/[id]/offerings               547 B          99.9 kB
+├ ƒ /api/v1/admin/providers/[id]/offerings/[offeringId]  547 B          99.9 kB
+├ ƒ /api/v1/admin/providers/batch                        547 B          99.9 kB
+├ ƒ /api/v1/admin/ranking-weights                        547 B          99.9 kB
+├ ƒ /api/v1/admin/recharge-orders/[id]                   547 B          99.9 kB
+├ ƒ /api/v1/admin/redemption-codes                       549 B          99.9 kB
+├ ƒ /api/v1/admin/redemption-codes/[id]                  547 B          99.9 kB
+├ ƒ /api/v1/admin/redemption-codes/batch                 547 B          99.9 kB
+├ ƒ /api/v1/admin/redemption-codes/batches               547 B          99.9 kB
+├ ƒ /api/v1/admin/redemption-codes/batches/[id]/disable  547 B          99.9 kB
+├ ƒ /api/v1/admin/reports/overview                       547 B          99.9 kB
+├ ƒ /api/v1/admin/roles                                  547 B          99.9 kB
+├ ƒ /api/v1/admin/roles/[id]                             547 B          99.9 kB
+├ ƒ /api/v1/admin/scripts                                547 B          99.9 kB
+├ ƒ /api/v1/admin/scripts/[id]                           547 B          99.9 kB
+├ ƒ /api/v1/admin/scripts/[id]/executions                547 B          99.9 kB
+├ ƒ /api/v1/admin/scripts/[id]/trigger                   547 B          99.9 kB
+├ ƒ /api/v1/admin/scripts/run-due                        547 B          99.9 kB
+├ ƒ /api/v1/admin/sync/batches                           547 B          99.9 kB
+├ ƒ /api/v1/admin/sync/batches/[id]                      546 B          99.9 kB
+├ ƒ /api/v1/admin/sync/changes                           547 B          99.9 kB
+├ ƒ /api/v1/admin/sync/changes/[id]/revert               549 B          99.9 kB
+├ ƒ /api/v1/admin/tier-mappings                          547 B          99.9 kB
+├ ƒ /api/v1/admin/tier-mappings/[id]                     547 B          99.9 kB
+├ ƒ /api/v1/admin/tier-mappings/batch                    547 B          99.9 kB
+├ ƒ /api/v1/admin/users                                  547 B          99.9 kB
+├ ƒ /api/v1/admin/users/[id]                             547 B          99.9 kB
+├ ƒ /api/v1/admin/users/[id]/credentials                 547 B          99.9 kB
+├ ƒ /api/v1/admin/users/[id]/credentials/revoke          547 B          99.9 kB
+├ ƒ /api/v1/admin/users/[id]/roles                       548 B          99.9 kB
+├ ƒ /api/v1/admin/users/batch                            547 B          99.9 kB
+├ ƒ /api/v1/admin/vendors                                547 B          99.9 kB
+├ ƒ /api/v1/admin/vendors/[id]                           547 B          99.9 kB
+├ ƒ /api/v1/admin/vendors/batch                          547 B          99.9 kB
+├ ƒ /api/v1/admin/wallets                                549 B          99.9 kB
+├ ƒ /api/v1/admin/wallets/adjust                         547 B          99.9 kB
+├ ƒ /api/v1/auth/email/code                              547 B          99.9 kB
+├ ƒ /api/v1/auth/email/verify                            549 B          99.9 kB
+├ ƒ /api/v1/auth/login                                   547 B          99.9 kB
+├ ƒ /api/v1/auth/logout                                  548 B          99.9 kB
+├ ƒ /api/v1/auth/me                                      547 B          99.9 kB
+├ ƒ /api/v1/auth/refresh                                 549 B          99.9 kB
+├ ƒ /api/v1/auth/register                                546 B          99.9 kB
+├ ƒ /api/v1/billing/ledger                               547 B          99.9 kB
+├ ƒ /api/v1/billing/recharge-orders                      550 B          99.9 kB
+├ ƒ /api/v1/billing/recharge-orders/[id]/mock-pay        547 B          99.9 kB
+├ ƒ /api/v1/billing/recharge-orders/[id]/notify          547 B          99.9 kB
+├ ƒ /api/v1/billing/wallet                               547 B          99.9 kB
+├ ƒ /api/v1/evaluations                                  547 B          99.9 kB
+├ ƒ /api/v1/evaluations/[id]                             550 B          99.9 kB
+├ ƒ /api/v1/evaluations/demo                             550 B          99.9 kB
+├ ƒ /api/v1/gateway/chat                                 547 B          99.9 kB
+├ ƒ /api/v1/internal/billing/wallet                      547 B          99.9 kB
+├ ƒ /api/v1/ladder                                       547 B          99.9 kB
+├ ƒ /api/v1/mock-upstream/[...path]                      547 B          99.9 kB
+├ ƒ /api/v1/models                                       547 B          99.9 kB
+├ ƒ /api/v1/models/[id]                                  547 B          99.9 kB
+├ ƒ /api/v1/models/[id]/stations                         547 B          99.9 kB
+├ ƒ /api/v1/partner/codes                                547 B          99.9 kB
+├ ƒ /api/v1/partner/codes/status                         547 B          99.9 kB
+├ ƒ /api/v1/redemption/redeem                            547 B          99.9 kB
+├ ƒ /api/v1/system/features                              547 B          99.9 kB
+├ ƒ /api/v1/system/health                                547 B          99.9 kB
+├ ƒ /api/v1/system/navigation                            547 B          99.9 kB
+├ ƒ /api/v1/system/ready                                 547 B          99.9 kB
+├ ƒ /api/v1/user/api-keys                                547 B          99.9 kB
+├ ƒ /api/v1/user/api-keys/[id]                           547 B          99.9 kB
+├ ƒ /api/v1/user/channels                                546 B          99.9 kB
+├ ƒ /api/v1/user/custom-channels                         547 B          99.9 kB
+├ ƒ /api/v1/user/custom-channels/[id]                    547 B          99.9 kB
+├ ƒ /api/v1/user/favorites                               546 B          99.9 kB
+├ ƒ /api/v1/user/favorites/[id]                          547 B          99.9 kB
+├ ƒ /api/v1/user/priorities                              547 B          99.9 kB
+├ ƒ /api/v1/user/quota-usage                             547 B          99.9 kB
+├ ƒ /api/v1/user/station-keys                            546 B          99.9 kB
+├ ƒ /api/v1/user/station-keys/[id]                       547 B          99.9 kB
+├ ƒ /api/v1/user/station-keys/stations                   547 B          99.9 kB
+├ ƒ /api/v1/user/tier-mappings                           547 B          99.9 kB
+├ ƒ /api/v1/user/usage                                   547 B          99.9 kB
+├ ƒ /api/v1/user/usage/breakdown                         547 B          99.9 kB
+├ ƒ /api/v1/user/usage/stats                             547 B          99.9 kB
+├ ƒ /api/v1/wechat/qrcode                                547 B          99.9 kB
+├ ○ /apple-icon.png                                      0 B                0 B
+├ ○ /docs                                                2.76 kB         141 kB
+├ ○ /evaluations                                         1.95 kB         110 kB
+├ ƒ /evaluations/[id]                                    2.21 kB         111 kB
+├ ƒ /evaluations/new                                     2.69 kB         140 kB
+├ ○ /icon.png                                            0 B                0 B
+├ ○ /ladder                                              149 B           158 kB
+├ ○ /login                                               2.88 kB         149 kB
+├ ○ /models                                              147 B           158 kB
+├ ƒ /models/[slug]                                       1.78 kB         122 kB
+├ ○ /news                                                2.07 kB         140 kB
+├ ƒ /news/[slug]                                         201 B           109 kB
+├ ƒ /oauth/authorize                                     547 B          99.9 kB
+├ ƒ /oauth/consent                                       547 B          99.9 kB
+├ ƒ /oauth/dev/callback                                  547 B          99.9 kB
+├ ƒ /oauth/introspect                                    547 B          99.9 kB
+├ ƒ /oauth/revoke                                        548 B          99.9 kB
+├ ƒ /oauth/token                                         547 B          99.9 kB
+├ ƒ /oauth/userinfo                                      547 B          99.9 kB
+├ ○ /opengraph-image.png                                 0 B                0 B
+├ ○ /partners                                            739 B           139 kB
+├ ○ /pricing                                             201 B           109 kB
+├ ○ /products                                            201 B           109 kB
+├ ƒ /products/[slug]                                     201 B           109 kB
+├ ○ /providers                                           201 B           109 kB
+├ ○ /register                                            2.88 kB         149 kB
+├ ○ /roadmap                                             201 B           109 kB
+├ ƒ /user/balance                                        5.3 kB          126 kB
+└ ƒ /user/console                                        18.2 kB         174 kB
++ First Load JS shared by all                            99.3 kB
+  ├ chunks/7167-8dbc8cc33c2db398.js                      44.7 kB
+  ├ chunks/d9f66b3b-f03a77af58839975.js                  52.6 kB
+  └ other shared chunks (total)                          2.05 kB
+
+
+ƒ Middleware                                             127 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+real	4m16.574s
+user	1m43.222s
+sys	0m10.576s
+build exit 0

@@ -1,0 +1,28 @@
+
+ RUN  v3.2.7 packages/shared
+
+ ✓ src/__tests__/gateway.spec.ts (15 tests) 11ms
+ ✓ src/__tests__/product-intro.spec.ts (19 tests) 15ms
+ ✓ src/__tests__/contract/errors.generated.spec.ts (7 tests) 13ms
+ ✓ src/__tests__/errors.spec.ts (8 tests) 8ms
+ ✓ src/__tests__/schemas.spec.ts (12 tests) 8ms
+ ✓ src/__tests__/favorites.spec.ts (8 tests) 9ms
+ ✓ src/__tests__/provider-pricing.spec.ts (29 tests) 6ms
+ ✓ src/__tests__/feature-flags.spec.ts (8 tests) 89ms
+ ✓ src/__tests__/user.spec.ts (5 tests) 9ms
+ ✓ src/__tests__/envelope.spec.ts (2 tests) 4ms
+ ✓ src/__tests__/admin-permissions.spec.ts (6 tests) 5ms
+ ✓ src/__tests__/money.spec.ts (11 tests) 5ms
+ ✓ src/__tests__/billing.spec.ts (9 tests) 5ms
+ ✓ src/__tests__/auth.spec.ts (4 tests) 7ms
+ ✓ src/__tests__/pricing-config.spec.ts (4 tests) 5ms
+ ✓ src/__tests__/contract/envelope.generated.spec.ts (3 tests) 5ms
+ ✓ src/__tests__/contract/identity.generated.spec.ts (3 tests) 5ms
+ ✓ src/__tests__/ladder.spec.ts (2 tests) 4ms
+
+ Test Files  18 passed (18)
+      Tests  155 passed (155)
+   Start at  01:59:36
+   Duration  8.87s (transform 731ms, setup 0ms, collect 1.80s, tests 213ms, environment 3ms, prepare 3.54s)
+
+vitest exit 0

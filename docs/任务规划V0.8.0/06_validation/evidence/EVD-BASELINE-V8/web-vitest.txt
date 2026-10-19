@@ -1,0 +1,272 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v2.1.9 apps/web
+
+ ✓ lib/features/gateway/__tests__/gateway-orchestrator.spec.ts (25 tests) 134ms
+ ✓ lib/features/ladder/__tests__/ladder.spec.ts (24 tests) 3936ms
+   ✓ GET /api/v1/ladder（withApi 包装路由） > 非法 type=skills 收敛为 code=20002 信封（榜单类型非法），data=null 且携带 x-request-id 3901ms
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ① 未登录 POST gateway/chat → HTTP 401 + 信封 code=10004
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ② 登录后 chat body 非法（缺 messages）→ 40000 且编排未触达
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ③ chat 成功 → 直通响应（无信封）+ 计费事实头部 + x-request-id 透传
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ⑪ Bearer 平台 API Key → 200 免 cookie；userId 取 Key 归属；计费事实头不变
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ⑫ x-api-key（Anthropic 形态）→ 200 同通道
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ⑬ 伪造 Key → 401/10004 且编排未触达
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ⑭ 吊销 Key → 401/10004 即时生效
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ⑮ 无 gateway:chat 权限 → 403/10008
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ⑯ Key 超限 → 429/10006（提示语含重试语义）
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ⑰ Responses API 接入 → 归一为 openai 调编排（instructions→system）+ 响应回写 response 体裁
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ⑱ Gemini generateContent 接入 → 归一为 openai + 响应回写 candidates/usageMetadata 体裁
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+ ✓ lib/features/gateway/__tests__/routes-gateway.spec.ts (20 tests) 115ms
+ ✓ lib/features/evaluation/__tests__/evaluation-service.spec.ts (15 tests) 23ms
+ ✓ lib/features/apikey/__tests__/routes-apikey.spec.ts (17 tests) 192ms
+ ✓ lib/features/auth/__tests__/oidc-redlines.spec.ts (12 tests) 191ms
+ ✓ lib/features/billing/__tests__/billing.spec.ts (16 tests) 27ms
+ ✓ lib/features/gateway/__tests__/gateway-adapters.spec.ts (23 tests) 23ms
+ ✓ lib/features/auth/__tests__/admin-products.spec.ts (14 tests) 26ms
+ ✓ lib/security/__tests__/url-policy.spec.ts (87 tests) 131ms
+ ✓ lib/features/auth/__tests__/admin-configs.spec.ts (15 tests) 26ms
+ ✓ lib/features/gateway/__tests__/stream-passthrough.spec.ts (5 tests) 35ms
+ ✓ lib/features/gateway/__tests__/stream-parse.spec.ts (24 tests) 12ms
+ ✓ lib/features/gateway/__tests__/gateway-svc.spec.ts (13 tests) 11ms
+ ✓ lib/features/favorites/__tests__/favorites-api.spec.ts (16 tests) 26ms
+ ✓ lib/features/package/__tests__/redemption.spec.ts (13 tests) 10ms
+ ✓ lib/features/auth/__tests__/admin-users.spec.ts (10 tests) 19ms
+ ✓ lib/features/auth/__tests__/admin-vendors.spec.ts (10 tests) 19ms
+ ✓ lib/features/auth/__tests__/admin-models.spec.ts (9 tests) 20ms
+ ✓ lib/features/billing/__tests__/refund-reconcile.spec.ts (8 tests) 9ms
+ ✓ lib/features/billing/__tests__/hold.spec.ts (11 tests) 10ms
+ ✓ lib/features/billing/__tests__/capture.spec.ts (8 tests) 11ms
+ ✓ lib/features/apikey/__tests__/channel-aggregate.spec.ts (13 tests) 8ms
+ ✓ lib/features/auth/__tests__/routes-auth.spec.ts (7 tests) 220ms
+ ✓ lib/features/auth/__tests__/admin-delete-routes.spec.ts (11 tests) 19ms
+ ✓ lib/sync/__tests__/writer-prices-benchmarks.spec.ts (8 tests) 8ms
+ ✓ lib/features/auth/__tests__/admin-guard.spec.ts (13 tests) 131ms
+ ✓ lib/features/auth/__tests__/email-code.spec.ts (10 tests) 523ms
+ ✓ lib/features/auth/__tests__/session-tokens.spec.ts (14 tests) 393ms
+ ✓ lib/features/gateway/__tests__/usage-stats.spec.ts (10 tests) 13ms
+ ✓ lib/features/auth/__tests__/admin-batch-new.spec.ts (14 tests) 22ms
+ ✓ lib/features/apikey/__tests__/station-keys-catalog.spec.ts (4 tests) 86ms
+ ✓ lib/admin-navigation-core.spec.ts (13 tests) 8ms
+stderr | lib/sync/__tests__/sync-orchestrator.spec.ts > SyncOrchestrator > R-43: CrossValidator 接线 > 额外 adapter fetch 失败时不阻塞主流程
+[CrossValidator] adapter "test-adapter" fetch failed: Error: fetch failed
+    at TestAdapter.fetch (apps/web/lib/sync/__tests__/sync-orchestrator.spec.ts:51:33)
+    at SyncOrchestrator.execute (apps/web/lib/sync/sync-orchestrator.ts:94:49)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at apps/web/lib/sync/__tests__/sync-orchestrator.spec.ts:245:22
+    at file://node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file://node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file://node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file://node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file://node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file://node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+
+ ✓ lib/sync/__tests__/sync-orchestrator.spec.ts (9 tests) 16ms
+ ✓ lib/features/user/__tests__/user-svc.spec.ts (9 tests) 10ms
+ ✓ lib/features/apikey/__tests__/apikey.spec.ts (14 tests) 13ms
+ ✓ lib/features/auth/__tests__/order-disposition.spec.ts (12 tests) 20ms
+stderr | lib/features/evaluation/__tests__/routes-evaluations.spec.ts > POST /api/v1/evaluations > ① 未登录 → 401（requireUserApi 抛 10004）
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+
+stderr | lib/features/evaluation/__tests__/routes-evaluations.spec.ts > POST /api/v1/evaluations > ① 未登录 → 401（requireUserApi 抛 10004）
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+
+stderr | lib/features/evaluation/__tests__/routes-evaluations.spec.ts > POST /api/v1/evaluations > ② 免费用户（NORMAL）→ service 抛 403 付费用户能力
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+
+stderr | lib/features/evaluation/__tests__/routes-evaluations.spec.ts > POST /api/v1/evaluations > ② 免费用户（NORMAL）→ service 抛 403 付费用户能力
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+
+stderr | lib/features/evaluation/__tests__/routes-evaluations.spec.ts > POST /api/v1/evaluations > ③ 参数非法（模型数 1）→ 40000 信封，不触 service
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+
+stderr | lib/features/evaluation/__tests__/routes-evaluations.spec.ts > POST /api/v1/evaluations > ③ 参数非法（模型数 1）→ 40000 信封，不触 service
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+
+stderr | lib/features/evaluation/__tests__/routes-evaluations.spec.ts > POST /api/v1/evaluations > ④ 创建成功 → 信封 {evaluation, idempotent}；tier 与幂等键透传
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+
+stderr | lib/features/evaluation/__tests__/routes-evaluations.spec.ts > POST /api/v1/evaluations > ④ 创建成功 → 信封 {evaluation, idempotent}；tier 与幂等键透传
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+
+ ✓ lib/features/evaluation/__tests__/routes-evaluations.spec.ts (12 tests) 134ms
+ ✓ lib/features/auth/__tests__/auth-service.spec.ts (9 tests) 2316ms
+   ✓ authService.login > ⑤ 登录成功返回 profile 526ms
+   ✓ authService.login > ⑦ 密码错误与用户不存在同码同文案（防枚举一致性） 507ms
+   ✓ authService.login > ⑨ 凭据正确但账号停用 → 10005 '账号已被禁用或锁定' 504ms
+ ✓ lib/features/billing/__tests__/adjust.spec.ts (7 tests) 6ms
+ ✓ lib/sync/__tests__/aggregation-adapters.spec.ts (9 tests) 2039ms
+   ✓ ArtificialAnalysisAdapter > testConnection() 返回 false 当 API 不可达 603ms
+   ✓ EpochAIAdapter > fetch() API 失败时返回空数组 1205ms
+ ✓ lib/features/auth/__tests__/admin-logs.spec.ts (8 tests) 17ms
+ ✓ lib/features/user/__tests__/routes-user.spec.ts (5 tests) 137ms
+ ✓ lib/features/auth/__tests__/admin-packages.spec.ts (7 tests) 15ms
+ ✓ lib/features/auth/__tests__/admin-credentials.spec.ts (9 tests) 20ms
+ ✓ lib/features/auth/__tests__/admin-feature-flags.spec.ts (9 tests) 21ms
+ ✓ lib/features/auth/__tests__/admin-routes.spec.ts (9 tests) 17ms
+ ✓ lib/features/auth/__tests__/partner-codes.spec.ts (10 tests) 19ms
+ ✓ lib/features/admin/__tests__/api-stations-route.spec.ts (9 tests) 194ms
+ ✓ lib/__tests__/site-content-s4.spec.ts (13 tests) 9ms
+stderr | lib/features/auth/__tests__/backchannel-logout.spec.ts > back-channel logout（ADR-0003 L4.1） > ④ 广播目标不可达 → 登出主流程不受影响，Cookie 清理头照常返回
+[oauth] back-channel logout 异常: client=aidean-bot
+
+ ✓ lib/features/auth/__tests__/backchannel-logout.spec.ts (5 tests) 162ms
+ ✓ lib/features/admin/__tests__/free-quotas-route.spec.ts (7 tests) 221ms
+ ✓ lib/features/admin/__tests__/evaluations-route.spec.ts (8 tests) 183ms
+ ✓ lib/features/news/__tests__/admin-news.spec.ts (10 tests) 21ms
+ ✓ lib/features/admin/__tests__/run-due-route.spec.ts (7 tests) 25ms
+ ❯ lib/sync/writers/__tests__/persist-prices.int.spec.ts (2 tests | 2 skipped) 269ms
+stderr | lib/features/auth/__tests__/middleware.spec.ts > middleware RS256/JWKS 守卫 > 过期 access → 307 /login?redirect=…
+{"tag":"auth-guard","code":"ERR_JWT_EXPIRED","iss":null}
+
+stderr | lib/features/auth/__tests__/middleware.spec.ts > middleware RS256/JWKS 守卫 > kid 不在 JWKS（伪造/跨环境令牌）→ 307
+{"tag":"auth-guard","code":"ERR_JWKS_NO_MATCHING_KEY","iss":null}
+
+stderr | lib/features/auth/__tests__/middleware.spec.ts > middleware RS256/JWKS 守卫 > JWKS 拉取失败且无缓存公钥 → fail-closed 307（不 crash）
+{"tag":"auth-guard","code":"ERR_JOSE_GENERIC","iss":null}
+
+ ✓ lib/features/auth/__tests__/middleware.spec.ts (10 tests) 34ms
+ ✓ lib/features/admin/__tests__/tier-mappings-route.spec.ts (7 tests) 181ms
+ ✓ lib/features/auth/__tests__/admin-prices.spec.ts (8 tests) 16ms
+ ✓ lib/features/admin/__tests__/new-domain-batch.spec.ts (12 tests) 20ms
+ ✓ lib/features/admin/__tests__/change-log-coverage.spec.ts (5 tests) 58ms
+ ✓ lib/features/ladder/__tests__/ladder-store.spec.ts (10 tests) 13ms
+ ✓ lib/features/auth/__tests__/site-content.spec.ts (22 tests) 33ms
+ ✓ lib/features/news/__tests__/site-pages.spec.ts (6 tests) 29ms
+ ✓ lib/features/billing/__tests__/reverse.spec.ts (5 tests) 5ms
+ ✓ lib/sync/__tests__/quanzil.spec.ts (7 tests) 9ms
+ ✓ lib/features/auth/__tests__/admin-batch.spec.ts (9 tests) 18ms
+ ✓ lib/features/upstream/__tests__/official-catalog.spec.ts (11 tests) 8ms
+ ✓ lib/features/news/__tests__/markdown.spec.ts (20 tests) 32ms
+ ✓ lib/discovery/__tests__/pipeline.spec.ts (11 tests) 15ms
+ ✓ lib/admin-nav-default-tree.spec.ts (7 tests) 7ms
+ ✓ lib/features/auth/__tests__/admin-holds.spec.ts (8 tests) 14ms
+ ✓ lib/features/auth/__tests__/admin-config-seed-parity.spec.ts (6 tests) 8ms
+ ✓ lib/features/auth/__tests__/admin-orders.spec.ts (5 tests) 13ms
+ ✓ lib/features/flags/__tests__/flags.spec.ts (9 tests) 6ms
+ ✓ lib/features/auth/__tests__/redeem-route.spec.ts (6 tests) 14ms
+ ✓ lib/features/system/__tests__/readiness.spec.ts (6 tests) 7ms
+ ✓ lib/sync/__tests__/arena-ai.spec.ts (7 tests) 11ms
+ ✓ lib/features/auth/__tests__/admin-zod-messages.spec.ts (4 tests) 12ms
+ ✓ lib/features/auth/__tests__/admin-oidc.spec.ts (5 tests) 12ms
+ ✓ lib/sync/writers/__tests__/persist-prices.spec.ts (2 tests) 5ms
+ ✓ lib/features/gateway/__tests__/channel-pick.spec.ts (15 tests) 23ms
+ ✓ lib/features/auth/__tests__/admin-benchmarks.spec.ts (6 tests) 13ms
+ ✓ lib/features/auth/__tests__/permissions.spec.ts (8 tests) 5ms
+ ✓ lib/features/auth/__tests__/session-guard.spec.ts (5 tests) 55ms
+ ✓ lib/sync/__tests__/cross-validator.spec.ts (7 tests) 4ms
+ ✓ lib/features/auth/__tests__/admin-sync.spec.ts (5 tests) 10ms
+ ✓ lib/admin/__tests__/reports.spec.ts (5 tests) 5ms
+ ✓ lib/features/auth/__tests__/admin-benchmarks-import.spec.ts (6 tests) 12ms
+ ✓ lib/features/auth/__tests__/oauth-redirect-origin.spec.ts (3 tests) 7ms
+ ✓ lib/navigation-sync.spec.ts (5 tests) 4ms
+ ✓ lib/features/admin/__tests__/field-ownership.spec.ts (3 tests) 9ms
+ ✓ lib/sync/__tests__/lmsys.spec.ts (7 tests) 12ms
+ ✓ lib/features/auth/__tests__/admin-redemptions.spec.ts (4 tests) 11ms
+stdout | lib/features/auth/__tests__/mailer.spec.ts > sendCodeMail > SMTP 未配置时返回 false 且不抛错
+[email-code] SMTP 未配置，验证码（仅服务端日志可见）：user@example.com -> 123456
+
+ ✓ lib/features/auth/__tests__/mailer.spec.ts (5 tests) 19ms
+ ✓ lib/features/gateway/__tests__/usage-window.spec.ts (10 tests) 308ms
+   ✓ PRESET_RANGE_DAYS 与服务端 USAGE_STATS_RANGE_DAYS 同口径（7/30/90） 305ms
+ ✓ lib/features/flags/__tests__/route-gate.spec.ts (2 tests) 8ms
+ ✓ lib/features/admin/__tests__/announcements-route.spec.ts (3 tests) 163ms
+ ✓ lib/features/home/__tests__/site-sections.spec.ts (7 tests) 6ms
+ ✓ lib/features/auth/__tests__/sync-orchestrator.spec.ts (3 tests) 3ms
+ ✓ lib/features/news/__tests__/seed-official-news.spec.ts (4 tests) 8ms
+ ✓ lib/features/auth/__tests__/admin-batch-disable.spec.ts (3 tests) 10ms
+stderr | lib/features/system/__tests__/ready-route.spec.ts > GET /api/v1/system/ready · 路由 HTTP 层 > DB 不可达 → 503 + 信封 code=50010 / message '依赖不可用: db'
+{"tag":"ready-probe","dep":"db","reason":"error","name":"Error"}
+
+stderr | lib/features/system/__tests__/ready-route.spec.ts > GET /api/v1/system/ready · 路由 HTTP 层 > Redis 不可达（DB 可达）→ 503 + code=50010 / message '依赖不可用: redis'
+{"tag":"ready-probe","dep":"redis","reason":"error","name":"Error"}
+
+ ✓ lib/features/system/__tests__/ready-route.spec.ts (3 tests) 10ms
+ ✓ lib/features/ranking/__tests__/update-ranking-script.spec.ts (3 tests) 7ms
+ ✓ lib/features/auth/__tests__/sync-changes.spec.ts (4 tests) 11ms
+ ✓ lib/sync/__tests__/sync-batches-route.spec.ts (4 tests) 10ms
+ ✓ lib/features/auth/__tests__/redirect.spec.ts (15 tests) 5ms
+ ✓ lib/features/admin/__tests__/script-executor.spec.ts (6 tests) 27ms
+ ✓ lib/features/announcements/__tests__/read.spec.ts (6 tests) 6ms
+ ✓ lib/sync/__tests__/huggingface.spec.ts (5 tests) 5ms
+ ✓ lib/features/ranking/__tests__/formula-parser.spec.ts (12 tests) 6ms
+ ✓ lib/discovery/llmtest.spec.ts (5 tests) 5ms
+ ✓ lib/features/auth/__tests__/refresh-replay-alert.spec.ts (2 tests) 5ms
+ ✓ lib/product-label.spec.ts (5 tests) 4ms
+ ✓ lib/features/admin/script-validation.spec.ts (7 tests) 26ms
+ ✓ lib/security/__tests__/url-policy-outbound.spec.ts (5 tests) 4ms
+ ✓ lib/features/gateway/__tests__/tier-order.spec.ts (4 tests) 4ms
+ ✓ lib/intelligence/__tests__/intelligence.spec.ts (4 tests) 4ms
+ ✓ lib/sync/sources/registry.spec.ts (5 tests) 5ms
+ ✓ lib/features/auth/__tests__/sync-dedup.spec.ts (5 tests) 3ms
+ ✓ lib/features/ranking/__tests__/recap.spec.ts (7 tests) 4ms
+ ✓ lib/features/auth/__tests__/admin-errors.spec.ts (4 tests) 3ms
+ ✓ lib/features/auth/__tests__/login-rate-limit-bypass.spec.ts (4 tests) 3ms
+ ✓ lib/admin/load-guard.spec.ts (4 tests) 3ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/sync/writers/__tests__/persist-prices.int.spec.ts > persistPrices 多次采集写价（R-01 / REQ-F-019）
+PrismaClientInitializationError: 
+Invalid `prisma.vendor.create()` invocation in
+apps/web/lib/sync/writers/__tests__/persist-prices.int.spec.ts:50:40
+
+  47 const writers = await import("../index");
+  48 upsertModel = writers.upsertModel;
+  49 
+→ 50 const vendor = await prisma.vendor.create(
+Can't reach database server at `localhost:5432`
+
+Please make sure your database server is running at `localhost:5432`.
+ ❯ ei.handleRequestError ../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/src/runtime/RequestHandler.ts:242:13
+ ❯ ei.handleAndLogRequestError ../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12
+ ❯ ei.request ../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12
+ ❯ a ../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24
+ ❯ lib/sync/writers/__tests__/persist-prices.int.spec.ts:50:20
+     48|     upsertModel = writers.upsertModel;
+     49| 
+     50|     const vendor = await prisma.vendor.create({
+       |                    ^
+     51|       data: { code: vendorCode, name: "IT R-01 Vendor" },
+     52|       select: { id: true },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed | 123 passed (124)
+      Tests  1152 passed | 2 skipped (1154)
+   Start at  02:01:59
+   Duration  105.35s (transform 3.56s, setup 0ms, collect 36.84s, tests 13.75s, environment 20ms, prepare 18.29s)
+
+vitest exit 1

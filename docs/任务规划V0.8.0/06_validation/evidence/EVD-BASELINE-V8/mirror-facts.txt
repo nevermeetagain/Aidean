@@ -1,0 +1,16 @@
+scripts/contract:
+ls: cannot access 'scripts/contract': No such file or directory
+scripts/guard:
+ls: cannot access 'scripts/guard': No such file or directory
+ci.yml e2e-skeleton:
+0
+ci.yml lint:
+0
+int spec gate:
+25:const DB_ENABLED = !!process.env.DATABASE_URL;
+ci DATABASE_URL:
+25:      DATABASE_URL: "postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder?schema=public"
+generated header:
+// 由 scripts/contract/gen-contract-tests.mjs 生成（TASK-004 / REQ-NF-001 / ADR-P001）。
+// 真源：packages/shared/src/errors.ts + docs/architecture/API接口文档.md §4 + contracts/03-identity.contract.ts
+// 重生成：node scripts/contract/gen-contract-tests.mjs ；CI 以 git diff --exit-code 防漂移/手改。
