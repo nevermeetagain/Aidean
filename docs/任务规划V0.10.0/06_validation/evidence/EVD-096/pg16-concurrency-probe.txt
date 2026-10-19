@@ -1,0 +1,7 @@
+## PG16.14 真库并发探针（8 并发同窗口写入）
+### 对照：默认 ReadCommitted 事务（096 之前的语义）
+open-ended overlap detected: true
+{"concurrent":8,"fulfilled":5,"promoRowsInDb":5,"rejected":["overlap","overlap","overlap"]}
+### 096：runSerializable
+open-ended overlap detected: true
+{"concurrent":8,"fulfilled":1,"promoRowsInDb":1,"rejected":["overlap","overlap","overlap","overlap","overlap","overlap","overlap"]}

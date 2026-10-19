@@ -4,7 +4,8 @@
  * 目标行必须是 sourceType=PROMOTION（本端点只服务优惠行；OFFICIAL/当前价走 /prices 与 /prices/[id]）。
  * PATCH：requireAdminApi("admin.models.write") + PromotionPricePatchSchema（strict，未知键→40000，
  *   故请求体无法注入 isCurrent/sourceType/modelId）。合并现值后校验：
- *   effectiveUntil 必填且 > effectiveFrom；同模型窗口重叠（排除自身）→ 40000；价格小数位 ≤6。
+ *   effectiveUntil 必填且 > effectiveFrom；同模型窗口重叠（排除自身，含开放式窗口）→ 40000；价格小数位 ≤6、整数位 ≤13；
+ *   计费三元组须与当前价一致；写入恒复位 isCurrent=false/sourceType=PROMOTION；校验与写入同处 Serializable 事务（TASK-096）。
  * DELETE：仅允许 PROMOTION 行（OFFICIAL → 40000，卡面验收 L41）；不存在 → 40000；
  *   成功写 AuditLog(action=3) + revalidatePath("/pricing")，返回 { deleted: true }（API-011 res）。
  */
@@ -16,14 +17,10 @@ import { ApiError, ERROR_CODES, formatZodMessage } from "../../../../_lib/errors
 import { withApi, type RouteContext } from "../../../../_lib/handler";
 import { writeAudit } from "../../../../_lib/audit";
 import { PromotionPricePatchSchema } from "@aidean/shared";
+import { assertPriceDecimal, promotionOverlapWhere, runSerializable } from "../_shared";
 
 export const dynamic = "force-dynamic";
 
-/** Decimal(19,6) 防护：小数位 >6 会被静默舍入 → 拒 40000（E9-11）。 */
-function exceedsScale(s: string, max = 6): boolean {
-  const i = s.indexOf(".");
-  return i >= 0 && s.length - i - 1 > max;
-}
 
 interface PromotionRow {
   id: string;
@@ -80,12 +77,6 @@ export const PATCH = withApi(
     const session = await requireAdminApi("admin.models.write");
     const { id } = await ctx.params;
 
-    const before = await prisma.modelPrice.findUnique({ where: { id }, select: SELECT_FIELDS });
-    if (!before) throw new ApiError(ERROR_CODES.BAD_REQUEST, "优惠记录不存在");
-    if (before.sourceType !== "PROMOTION") {
-      throw new ApiError(ERROR_CODES.BAD_REQUEST, "本端点仅允许修改优惠行（PROMOTION）");
-    }
-
     const body = (await req.json().catch(() => null)) as unknown;
     const parsed = PromotionPricePatchSchema.safeParse(body);
     if (!parsed.success) {
@@ -93,48 +84,61 @@ export const PATCH = withApi(
     }
     const d = parsed.data;
 
-    // 价格小数位 ≤6（仅对本次提交的字段判）。
-    for (const [field, val] of [
-      ["priceInput", d.priceInput],
-      ["priceOutput", d.priceOutput],
-      ["priceCache", d.priceCache],
-    ] as const) {
-      if (typeof val === "string" && exceedsScale(val)) {
-        throw new ApiError(ERROR_CODES.BAD_REQUEST, `${field} 小数位不能超过 6 位`);
+    // 价格小数位 ≤6、整数位 ≤13（仅对本次提交的字段判；TASK-096 D11）。
+    assertPriceDecimal("priceInput", d.priceInput);
+    assertPriceDecimal("priceOutput", d.priceOutput);
+    assertPriceDecimal("priceCache", d.priceCache);
+
+    const { before, updated } = await runSerializable(async (tx) => {
+      const before = await tx.modelPrice.findUnique({ where: { id }, select: SELECT_FIELDS });
+      if (!before) throw new ApiError(ERROR_CODES.BAD_REQUEST, "优惠记录不存在");
+      if (before.sourceType !== "PROMOTION") {
+        throw new ApiError(ERROR_CODES.BAD_REQUEST, "本端点仅允许修改优惠行（PROMOTION）");
       }
-    }
 
-    // 合并现值后校验窗口合法性：until 必填且 > from（半开区间）。
-    const from = d.effectiveFrom ? new Date(d.effectiveFrom) : before.effectiveFrom;
-    const until = d.effectiveUntil ? new Date(d.effectiveUntil) : before.effectiveUntil;
-    if (!until) throw new ApiError(ERROR_CODES.BAD_REQUEST, "effectiveUntil 必填");
-    if (!(until > from)) throw new ApiError(ERROR_CODES.BAD_REQUEST, "effectiveUntil 必须晚于 effectiveFrom");
+      // 合并现值后校验窗口合法性：until 必填且 > from（半开区间）。
+      const from = d.effectiveFrom ? new Date(d.effectiveFrom) : before.effectiveFrom;
+      const until = d.effectiveUntil ? new Date(d.effectiveUntil) : before.effectiveUntil;
+      if (!until) throw new ApiError(ERROR_CODES.BAD_REQUEST, "effectiveUntil 必填");
+      if (!(until > from)) throw new ApiError(ERROR_CODES.BAD_REQUEST, "effectiveUntil 必须晚于 effectiveFrom");
 
-    // 窗口重叠（排除自身）。
-    const overlap = await prisma.modelPrice.findFirst({
-      where: {
-        modelId: before.modelId,
-        sourceType: "PROMOTION",
-        id: { not: id },
-        effectiveFrom: { lt: until },
-        effectiveUntil: { gt: from },
-      },
-      select: { id: true },
-    });
-    if (overlap) throw new ApiError(ERROR_CODES.BAD_REQUEST, "与既有优惠窗口重叠");
+      // 计费口径复核（TASK-096 D3）：优惠行三元组必须与该模型当前价一致，否则优惠价与原价不同口径 → 40000。
+      const current = await tx.modelPrice.findFirst({
+        where: { modelId: before.modelId, isCurrent: true, sourceType: { not: "PROMOTION" } },
+        select: { billingMode: true, billingUnit: true, billingCurrency: true },
+      });
+      if (!current) throw new ApiError(ERROR_CODES.BAD_REQUEST, "该模型无当前价，无法校验优惠计费口径");
+      if (
+        current.billingMode !== before.billingMode ||
+        current.billingUnit !== before.billingUnit ||
+        current.billingCurrency !== before.billingCurrency
+      ) {
+        throw new ApiError(
+          ERROR_CODES.BAD_REQUEST,
+          `优惠计费口径（${before.billingCurrency}/${before.billingUnit}/${before.billingMode}）与当前价（${current.billingCurrency}/${current.billingUnit}/${current.billingMode}）不一致，请删除后按当前价口径重建`,
+        );
+      }
 
-    const updated = await prisma.modelPrice.update({
-      where: { id },
-      data: {
-        ...(d.priceInput !== undefined ? { priceInput: d.priceInput } : {}),
-        ...(d.priceOutput !== undefined ? { priceOutput: d.priceOutput } : {}),
-        ...(d.priceCache !== undefined ? { priceCache: d.priceCache ?? null } : {}),
-        ...(d.effectiveFrom !== undefined ? { effectiveFrom: from } : {}),
-        ...(d.effectiveUntil !== undefined ? { effectiveUntil: until } : {}),
-        ...(d.notes !== undefined ? { notes: d.notes } : {}),
-        // 不动 isCurrent/sourceType/modelId/billing：优惠恒为 PROMOTION/isCurrent=false，口径继承当前价。
-      },
-      select: SELECT_FIELDS,
+      // 窗口重叠（排除自身；含开放式窗口，TASK-096 D2）。
+      const overlap = await tx.modelPrice.findFirst({ where: promotionOverlapWhere(before.modelId, from, until, id), select: { id: true } });
+      if (overlap) throw new ApiError(ERROR_CODES.BAD_REQUEST, "与既有优惠窗口重叠");
+
+      const updated = await tx.modelPrice.update({
+        where: { id },
+        data: {
+          ...(d.priceInput !== undefined ? { priceInput: d.priceInput } : {}),
+          ...(d.priceOutput !== undefined ? { priceOutput: d.priceOutput } : {}),
+          ...(d.priceCache !== undefined ? { priceCache: d.priceCache ?? null } : {}),
+          ...(d.effectiveFrom !== undefined ? { effectiveFrom: from } : {}),
+          ...(d.effectiveUntil !== undefined ? { effectiveUntil: until } : {}),
+          ...(d.notes !== undefined ? { notes: d.notes } : {}),
+          // TASK-096 D3：每次编辑都把优惠行复位为 PROMOTION/isCurrent=false（修复误标 isCurrent=true 的历史脏行）。
+          isCurrent: false,
+          sourceType: "PROMOTION",
+        },
+        select: SELECT_FIELDS,
+      });
+      return { before, updated };
     });
 
     revalidatePath("/pricing");

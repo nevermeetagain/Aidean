@@ -1,0 +1,28 @@
+import { prisma } from "./lib/db/prisma";
+import { promotionOverlapWhere, runSerializable } from "./app/api/v1/admin/prices/promotions/_shared";
+async function main() {
+  const v = await prisma.vendor.upsert({ where: { code: "probe" }, update: {}, create: { code: "probe", name: "Probe" } });
+  const m = await prisma.aiModel.upsert({ where: { modelCode: "probe-096" }, update: {}, create: { modelCode: "probe-096", nameDisplay: "Probe", slug: "probe-096", vendorId: v.id, modelType: "CHAT" } });
+  await prisma.modelPrice.deleteMany({ where: { modelId: m.id } });
+  await prisma.modelPrice.create({ data: { modelId: m.id, priceInput: "2", priceOutput: "4", isCurrent: true, sourceType: "OFFICIAL", effectiveFrom: new Date("2026-01-01T00:00:00Z") } as never });
+  // 开放式历史脏行
+  await prisma.modelPrice.create({ data: { modelId: m.id, priceInput: "0", priceOutput: "0", isCurrent: false, sourceType: "PROMOTION", effectiveFrom: new Date("2026-10-01T00:00:00Z"), effectiveUntil: null } as never });
+  const from = new Date("2026-11-01T00:00:00Z"), until = new Date("2026-12-01T00:00:00Z");
+  const openHit = await prisma.modelPrice.findFirst({ where: promotionOverlapWhere(m.id, from, until) });
+  console.log("open-ended overlap detected:", !!openHit);
+  await prisma.modelPrice.deleteMany({ where: { modelId: m.id, sourceType: "PROMOTION" } });
+  const N = 8;
+  const mode = process.env.MODE; const runner = mode === "rc" ? (fn: any) => prisma.$transaction(fn) : runSerializable;
+  const results = await Promise.allSettled(Array.from({ length: N }, (_, i) => runner(async (tx: any) => {
+    const ov = await tx.modelPrice.findFirst({ where: promotionOverlapWhere(m.id, from, until), select: { id: true } });
+    if (ov) throw new Error("overlap");
+    await new Promise((r) => setTimeout(r, 20));
+    return tx.modelPrice.create({ data: { modelId: m.id, priceInput: String(i), priceOutput: "1", isCurrent: false, sourceType: "PROMOTION", effectiveFrom: from, effectiveUntil: until } as never });
+  })));
+  const ok = results.filter((r) => r.status === "fulfilled").length;
+  const reasons = results.filter((r) => r.status === "rejected").map((r) => (r as PromiseRejectedResult).reason?.message);
+  const rows = await prisma.modelPrice.count({ where: { modelId: m.id, sourceType: "PROMOTION" } });
+  console.log(JSON.stringify({ concurrent: N, fulfilled: ok, promoRowsInDb: rows, rejected: reasons }));
+  await prisma.$disconnect();
+}
+main().catch((e) => { console.error(e); process.exit(1); });

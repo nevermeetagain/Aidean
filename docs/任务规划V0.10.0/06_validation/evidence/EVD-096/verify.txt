@@ -1,0 +1,16 @@
+ Test Files  1 passed (1)
+      Tests  25 passed (25)
+web tsc exit=0
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+lint exit=0
+
+[首轮] 1 assertion(s) failed（queryraw-biz：_shared.ts 注释含原生 SQL 方法名字面量，已改写注释）
+✅ usage-stats-anchor-pair: 《API架构设计方案》含 usage-stats-architecture 锚 且《API接口文档》含其回链（铁律 2 双向互引） → expected=2/2, actual=2/2
+RESULT: PASS (4/4 守卫通过)
+ Test Files  128 passed | 2 skipped (130)
+      Tests  1250 passed | 5 skipped (1255)
+[复跑]
+All 14 assertions passed.
+facts exit=0
+web tsc exit=0
