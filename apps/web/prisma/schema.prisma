@@ -2237,3 +2237,114 @@ model MarketSnapshot {
   @@index([snapshotType])
   @@map("market_snapshots")
 }
+
+// ==================== 模型源监控（M-002 / TASK-058 / DESIGN-004 / REQ-M-001..016） ====================
+// 字段/索引/唯一键与 docs/任务规划V0.5.0/database/002_monitoring.sql 逐一对应；
+// 枚举型列沿用基线 SQL 的 varchar + CHECK（契约 07-monitoring.contract.ts 的 zod 枚举为应用层真源），
+// 不建 PG enum 类型（V0.9.0 执行裁定 E9-08：卡面「2 enum」与 SQL 基线冲突，以冻结 SQL 为准）。
+// Prisma schema 无法表达的部分（CHECK 约束、部分索引 WHERE）只在迁移 SQL 中维护（同 M-001 先例）。
+
+/// 监控源注册表（源分级 S1/S2/A/B/C；后台仅可改 enabled/cadenceCron）
+model MonitoringSource {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  key              String    @unique(map: "monitoring_sources_key_key") @db.VarChar(40)
+  label            String    @db.VarChar(80)
+  tier             String    @db.VarChar(2) // CHECK IN ('S1','S2','A','B','C')
+  kind             String    @db.VarChar(16) // CHECK IN ('official','cloud','hosted','aggregator','relay','benchmark','community')
+  endpoint         String
+  docsUrl          String?   @map("docs_url")
+  authRequired     Boolean   @default(false) @map("auth_required")
+  cadenceCron      String    @default("15 2 * * *") @map("cadence_cron") @db.VarChar(64)
+  tosStatus        String    @default("pending") @map("tos_status") @db.VarChar(24) // CHECK IN ('allowed','attribution_required','pending','forbidden')
+  enabled          Boolean   @default(true)
+  mappedEntityType String?   @map("mapped_entity_type") @db.VarChar(16) // CHECK IN ('ModelProvider','APIStation')（U-M5）
+  mappedEntityId   String?   @map("mapped_entity_id") @db.Uuid
+  lastRunAt        DateTime? @map("last_run_at") @db.Timestamp(3)
+  lastStatus       String    @default("never") @map("last_status") @db.VarChar(24) // CHECK IN ('never','ok','partial','failed','credential_missing','disabled')
+  lastCount        Int?      @map("last_count")
+  lastError        String?   @map("last_error") @db.VarChar(2000)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamp(3)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(3)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamp(3)
+
+  snapshots    CatalogSnapshot[]
+  observations ProviderModelObservation[]
+  changeEvents CatalogChangeEvent[]
+
+  // monitoring_sources_enabled_idx ON (enabled) WHERE deleted_at IS NULL —— 部分索引，仅迁移 SQL 维护
+  @@map("monitoring_sources")
+}
+
+/// 目录快照（原始响应不落盘：仅 sha256 + 字节数 + ≤2KB 采样；同源同哈希不重复入库）
+model CatalogSnapshot {
+  id        String           @id @default(uuid(7)) @db.Uuid
+  sourceId  String           @map("source_id") @db.Uuid
+  source    MonitoringSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  fetchedAt DateTime         @map("fetched_at") @db.Timestamp(3)
+  itemCount Int              @map("item_count") // CHECK >= 0
+  rawSha256 String           @map("raw_sha256") @db.Char(64)
+  rawBytes  Int              @map("raw_bytes") // CHECK >= 0
+  rawSample String           @default("") @map("raw_sample") @db.VarChar(2048)
+  sourceUrl String           @map("source_url")
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamp(3)
+
+  observations ProviderModelObservation[]
+  changeEvents CatalogChangeEvent[]
+
+  @@unique([sourceId, rawSha256], map: "catalog_snapshots_source_sha_key")
+  @@index([sourceId, fetchedAt(sort: Desc)], map: "catalog_snapshots_source_fetched_idx")
+  @@map("catalog_snapshots")
+}
+
+/// 按源观测（每源每外部模型 1 行当前观测，upsert 键 (source_id, external_model_id)；价格保留原币+单位）
+model ProviderModelObservation {
+  id                String           @id @default(uuid(7)) @db.Uuid
+  sourceId          String           @map("source_id") @db.Uuid
+  source            MonitoringSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  externalModelId   String           @map("external_model_id") @db.VarChar(200)
+  normalizedModelId String           @map("normalized_model_id") @db.VarChar(200)
+  displayName       String?          @map("display_name") @db.VarChar(200)
+  vendorHint        String?          @map("vendor_hint") @db.VarChar(80)
+  isListed          Boolean          @default(true) @map("is_listed")
+  priceUnit         String?          @map("price_unit") @db.VarChar(24) // CHECK IN ('usd_per_1m_tokens','cny_per_1m_tokens','usd_per_request','ratio')
+  priceInput        Decimal?         @map("price_input") @db.Decimal(19, 6)
+  priceOutput       Decimal?         @map("price_output") @db.Decimal(19, 6)
+  priceCacheRead    Decimal?         @map("price_cache_read") @db.Decimal(19, 6)
+  contextLength     Int?             @map("context_length")
+  firstSeenAt       DateTime         @map("first_seen_at") @db.Timestamp(3)
+  lastSeenAt        DateTime         @map("last_seen_at") @db.Timestamp(3)
+  delistedAt        DateTime?        @map("delisted_at") @db.Timestamp(3)
+  lastSnapshotId    String?          @map("last_snapshot_id") @db.Uuid
+  lastSnapshot      CatalogSnapshot? @relation(fields: [lastSnapshotId], references: [id], onDelete: SetNull)
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamp(3)
+  updatedAt         DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamp(3)
+
+  @@unique([sourceId, externalModelId], map: "pmo_source_external_key")
+  // pmo_normalized_listed_idx ON (normalized_model_id) WHERE is_listed —— 部分索引，仅迁移 SQL 维护
+  @@map("provider_model_observations")
+}
+
+/// 目录变更事件（追加型事实表；幂等键 (snapshot_id, normalized_model_id, kind)）
+model CatalogChangeEvent {
+  id                String           @id @default(uuid(7)) @db.Uuid
+  sourceId          String           @map("source_id") @db.Uuid
+  source            MonitoringSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  snapshotId        String           @map("snapshot_id") @db.Uuid
+  snapshot          CatalogSnapshot  @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  kind              String           @db.VarChar(24) // CHECK IN ('listed','delisted','model_first_seen','price_changed')
+  externalModelId   String           @map("external_model_id") @db.VarChar(200)
+  normalizedModelId String           @map("normalized_model_id") @db.VarChar(200)
+  priceUnit         String?          @map("price_unit") @db.VarChar(24)
+  beforeInput       Decimal?         @map("before_input") @db.Decimal(19, 6)
+  beforeOutput      Decimal?         @map("before_output") @db.Decimal(19, 6)
+  afterInput        Decimal?         @map("after_input") @db.Decimal(19, 6)
+  afterOutput       Decimal?         @map("after_output") @db.Decimal(19, 6)
+  deltaPct          Float?           @map("delta_pct")
+  sourceUrl         String           @map("source_url")
+  detectedAt        DateTime         @default(now()) @map("detected_at") @db.Timestamp(3)
+
+  @@unique([snapshotId, normalizedModelId, kind], map: "cce_snapshot_model_kind_key")
+  @@index([detectedAt(sort: Desc)], map: "cce_detected_idx")
+  @@index([sourceId, kind, detectedAt(sort: Desc)], map: "cce_source_kind_detected_idx")
+  @@map("catalog_change_events")
+}

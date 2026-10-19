@@ -1,0 +1,11 @@
+== 存量升级（aidean_test：17 条已应用 → deploy）==
+18 migrations found in prisma/migrations
+Applying migration `20261015000000_model_source_monitoring`
+The following migration(s) have been applied:
+  └─ 20261015000000_model_source_monitoring/
+All migrations have been successfully applied.
+== 漂移检查：迁移后库 vs schema.prisma（期望仅 Prisma 无法表达的部分索引/CHECK，或空）==
+-- This is an empty migration.
+
+== 既有迁移未改 ==
+(空=未改)

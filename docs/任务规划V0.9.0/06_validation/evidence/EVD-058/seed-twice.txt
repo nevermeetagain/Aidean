@@ -1,0 +1,14 @@
+== db:seed 第 1 次 ==
+✅ 5 monitoring sources upserted
+  vendors=32 (expect >=22)
+  aiModels=1000 (expect >=60)
+  monitoringSources=5 (expect =5)
+🎉 Database seeding completed!
+seed_exit=0
+== db:seed 第 2 次 ==
+✅ 5 monitoring sources upserted
+  vendors=32 (expect >=22)
+  aiModels=1000 (expect >=60)
+  monitoringSources=5 (expect =5)
+🎉 Database seeding completed!
+seed_exit=0

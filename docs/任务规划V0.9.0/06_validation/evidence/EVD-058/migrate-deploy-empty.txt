@@ -1,0 +1,66 @@
+== PG version ==
+postgres (PostgreSQL) 16.14
+== 空库 migrate deploy ==
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "aidean_m002", schema "public" at "127.0.0.1:55432"
+PostgreSQL database aidean_m002 created at 127.0.0.1:55432
+18 migrations found in prisma/migrations
+Applying migration `0000_init`
+Applying migration `20260915100201_add_station_user_key`
+Applying migration `20260916104633_encrypt_custom_channel_key`
+Applying migration `20260917004900_drop_deprecated_apikey`
+Applying migration `20260917150000_add_news_item`
+Applying migration `20260923120000_r34_extend_weight_columns`
+Applying migration `20260925000000_d5_add_billing_unit`
+Applying migration `20260925120000_add_product_intro`
+Applying migration `20260925170000_align_unique_indexes`
+Applying migration `20260928120000_product_display_name_category`
+Applying migration `20260929000000_add_provider_and_offerings_tables`
+Applying migration `20260930120000_ai_market_discovery_engine`
+Applying migration `20261008093000_channel_scheduling_enhance`
+Applying migration `20261010000000_channel_format_extend_4`
+Applying migration `20261012075217_navigation_menu_scope`
+Applying migration `20261012082315_rbac_role_permission_user_role`
+Applying migration `20261014000000_model_prices_partial_current_unique`
+Applying migration `20261015000000_model_source_monitoring`
+The following migration(s) have been applied:
+migrations/
+  └─ 0000_init/
+    └─ migration.sql
+  └─ 20260915100201_add_station_user_key/
+    └─ migration.sql
+  └─ 20260916104633_encrypt_custom_channel_key/
+    └─ migration.sql
+  └─ 20260917004900_drop_deprecated_apikey/
+    └─ migration.sql
+  └─ 20260917150000_add_news_item/
+    └─ migration.sql
+  └─ 20260923120000_r34_extend_weight_columns/
+    └─ migration.sql
+  └─ 20260925000000_d5_add_billing_unit/
+    └─ migration.sql
+  └─ 20260925120000_add_product_intro/
+    └─ migration.sql
+  └─ 20260925170000_align_unique_indexes/
+    └─ migration.sql
+  └─ 20260928120000_product_display_name_category/
+    └─ migration.sql
+  └─ 20260929000000_add_provider_and_offerings_tables/
+    └─ migration.sql
+  └─ 20260930120000_ai_market_discovery_engine/
+    └─ migration.sql
+  └─ 20261008093000_channel_scheduling_enhance/
+    └─ migration.sql
+  └─ 20261010000000_channel_format_extend_4/
+    └─ migration.sql
+  └─ 20261012075217_navigation_menu_scope/
+    └─ migration.sql
+  └─ 20261012082315_rbac_role_permission_user_role/
+    └─ migration.sql
+  └─ 20261014000000_model_prices_partial_current_unique/
+    └─ migration.sql
+  └─ 20261015000000_model_source_monitoring/
+    └─ migration.sql
+      
+All migrations have been successfully applied.
+deploy_exit=0

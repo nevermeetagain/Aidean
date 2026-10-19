@@ -1,0 +1,23 @@
+rows 5 [{"key":"aihubmix","tier":"B","kind":"aggregator","enabled":true,"tosStatus":"pending","authRequired":false},{"key":"huggingface","tier":"A","kind":"community","enabled":false,"tosStatus":"pending","authRequired":false},{"key":"llmtest","tier":"C","kind":"benchmark","enabled":false,"tosStatus":"pending","authRequired":false},{"key":"openrouter","tier":"B","kind":"aggregator","enabled":true,"tosStatus":"pending","authRequired":false},{"key":"quanzil","tier":"C","kind":"relay","enabled":true,"tosStatus":"pending","authRequired":false}]
+IDX catalog_change_events_pkey | CREATE UNIQUE INDEX catalog_change_events_pkey ON public.catalog_change_events USING btree (id)
+IDX catalog_snapshots_pkey | CREATE UNIQUE INDEX catalog_snapshots_pkey ON public.catalog_snapshots USING btree (id)
+IDX catalog_snapshots_source_fetched_idx | CREATE INDEX catalog_snapshots_source_fetched_idx ON public.catalog_snapshots USING btree (source_id, fetched_at DESC)
+IDX catalog_snapshots_source_sha_key | CREATE UNIQUE INDEX catalog_snapshots_source_sha_key ON public.catalog_snapshots USING btree (source_id, raw_sha256)
+IDX cce_detected_idx | CREATE INDEX cce_detected_idx ON public.catalog_change_events USING btree (detected_at DESC)
+IDX cce_snapshot_model_kind_key | CREATE UNIQUE INDEX cce_snapshot_model_kind_key ON public.catalog_change_events USING btree (snapshot_id, normalized_model_id, kind)
+IDX cce_source_kind_detected_idx | CREATE INDEX cce_source_kind_detected_idx ON public.catalog_change_events USING btree (source_id, kind, detected_at DESC)
+IDX monitoring_sources_enabled_idx | CREATE INDEX monitoring_sources_enabled_idx ON public.monitoring_sources USING btree (enabled) WHERE (deleted_at IS NULL)
+IDX monitoring_sources_key_key | CREATE UNIQUE INDEX monitoring_sources_key_key ON public.monitoring_sources USING btree (key)
+IDX monitoring_sources_pkey | CREATE UNIQUE INDEX monitoring_sources_pkey ON public.monitoring_sources USING btree (id)
+IDX pmo_normalized_listed_idx | CREATE INDEX pmo_normalized_listed_idx ON public.provider_model_observations USING btree (normalized_model_id) WHERE is_listed
+IDX pmo_source_external_key | CREATE UNIQUE INDEX pmo_source_external_key ON public.provider_model_observations USING btree (source_id, external_model_id)
+IDX provider_model_observations_pkey | CREATE UNIQUE INDEX provider_model_observations_pkey ON public.provider_model_observations USING btree (id)
+CHECKS 9 catalog_change_events_kind_check,catalog_snapshots_item_count_check,catalog_snapshots_raw_bytes_check,monitoring_sources_kind_check,monitoring_sources_last_status_check,monitoring_sources_mapped_entity_type_check,monitoring_sources_tier_check,monitoring_sources_tos_status_check,provider_model_observations_price_unit_check
+REJECT bad tier => 23514
+REJECT bad kind => 23514
+REJECT dup key => 23505
+--- 运营改动保留验证 ---
+set {"enabled":false,"cadenceCron":"0 */6 * * *","label":"OpenRouter"} count 5
+✅ 5 monitoring sources upserted
+  monitoringSources=5 (expect =5)
+after-seed {"enabled":false,"cadenceCron":"0 */6 * * *","label":"OpenRouter"} count 5

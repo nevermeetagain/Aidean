@@ -1199,6 +1199,32 @@ async function main() {
   }
 
   // ============================================
+  // 6.z 模型源监控：公开源注册（TASK-058 / M-002 / DESIGN-004 §7 / U-M6 首批 5 源假设）
+  // ============================================
+  // 幂等：按 key upsert。update 只覆盖「描述性」字段（label/tier/kind/endpoint/docsUrl/authRequired），
+  // 不覆盖运营可改字段 enabled/cadenceCron（REQ-M-011 后台可改）与 tosStatus（U-M6 核验结论），避免重跑 seed 冲掉后台配置。
+  // tosStatus 初值：U-M6 未裁决 → 'pending'（契约：pending=未核验，仅后台可见、禁止对外展示）。
+  // enabled 初值：有 collector 的公开源（openrouter/aihubmix/quanzil，TASK-060）=true；
+  //   huggingface / llmtest 尚无 collector（llmtest 指标归 TASK-073）→ false，防调度空跑（V0.9.0 执行裁定 E9-08）。
+  // authRequired=true 的源默认 enabled=false（本批 5 源均实测无凭证可访问，见 V0.4.0 19_外部来源核验证据）。
+  const monitoringSourcesData = [
+    { key: 'openrouter', label: 'OpenRouter', tier: 'B', kind: 'aggregator', endpoint: 'https://openrouter.ai/api/v1/models?output_modalities=all', docsUrl: 'https://openrouter.ai/docs/api/api-reference/models/get-models', authRequired: false, enabled: true },
+    { key: 'aihubmix', label: 'AIHubMix', tier: 'B', kind: 'aggregator', endpoint: 'https://aihubmix.com/api/v1/models', docsUrl: null, authRequired: false, enabled: true },
+    { key: 'quanzil', label: 'Quanzil', tier: 'C', kind: 'relay', endpoint: 'https://quanzil.com/api/pricing', docsUrl: null, authRequired: false, enabled: true },
+    { key: 'huggingface', label: 'Hugging Face Hub', tier: 'A', kind: 'community', endpoint: 'https://huggingface.co/api/models?sort=createdAt&limit=100', docsUrl: 'https://huggingface.co/docs/hub/en/api', authRequired: false, enabled: false },
+    { key: 'llmtest', label: 'llmtest 综合榜', tier: 'C', kind: 'benchmark', endpoint: 'https://llmtest.cn/api/leaderboard/composite', docsUrl: null, authRequired: false, enabled: false },
+  ] as const
+  for (const src of monitoringSourcesData) {
+    const descriptive = { label: src.label, tier: src.tier, kind: src.kind, endpoint: src.endpoint, docsUrl: src.docsUrl, authRequired: src.authRequired }
+    await prisma.monitoringSource.upsert({
+      where: { key: src.key },
+      create: { key: src.key, ...descriptive, cadenceCron: '15 2 * * *', tosStatus: 'pending', enabled: src.authRequired ? false : src.enabled },
+      update: descriptive,
+    })
+  }
+  console.log(`✅ ${monitoringSourcesData.length} monitoring sources upserted`)
+
+  // ============================================
   // 7. Count 取证（SubTask L.1.1 验收断言）
   // ============================================
   const [vendorCount, aiModelCount, modelScoreCount, rankingWeightCount, ladderChartCount, providerCount, offeringCount] = await Promise.all([
@@ -1210,6 +1236,7 @@ async function main() {
     prisma.modelProvider.count(),
     prisma.providerModelOffering.count(),
   ])
+  const monitoringSourceCount = await prisma.monitoringSource.count()
   console.log('\n📊 Seed counts:')
   console.log(`  vendors=${vendorCount} (expect >=22)`)
   console.log(`  aiModels=${aiModelCount} (expect >=60)`)
@@ -1218,6 +1245,7 @@ async function main() {
   console.log(`  ladderCharts=${ladderChartCount} (expect >=3)`)
   console.log(`  modelProviders=${providerCount} (expect >=3)`)
   console.log(`  providerOfferings=${offeringCount} (expect >=5)`)
+  console.log(`  monitoringSources=${monitoringSourceCount} (expect =5)`)
 
   console.log('\n🎉 Database seeding completed!')
   console.log('\n📋 Login Credentials:')
