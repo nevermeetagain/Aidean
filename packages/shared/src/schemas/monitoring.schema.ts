@@ -6,9 +6,11 @@
 //   ③ Identity：无新增权限码——读 admin:sync:read、写 admin:sync:write。
 // 唯一偏差（落地适配，非语义变更）：契约自 01-api.contract.ts 引入 PageQuerySchema/paged，shared 尚无同名导出，
 //   故在本文件内以逐字相同定义的模块私有常量承接（不导出，避免与 TASK-032 等后续契约的 barrel 同名冲突）。
+// 另：契约的 monitoringCodeCollisions()（以「并表前」既有码表为基准）在并表后恒返回 [20004,50012]，语义失效，故不落地；
+//   冲突自检改为 monitoring.spec.ts「ERROR_CODES 去重计数 = 27」+ 契约侧 selfcheck-monitoring.ts（collisions=[]）。（E9-12）
 // 价格一律「原币 + 单位」，本包不做汇率换算（U-15 未决）。
 import { z } from "zod";
-import { DEFAULT_STATUS_BY_CODE, ERROR_CODES } from "../errors";
+import { ERROR_CODES } from "../errors";
 
 // —— 01-api.contract.ts 全局分页口径（逐字同形，模块私有）——
 const PageQuerySchema = z.object({
@@ -171,10 +173,8 @@ export const MONITORING_ERROR_CODES = {
   /** 源需要 API Key 但未配置（run 或 keyed collector） */
   MONITOR_SOURCE_CREDENTIAL_MISSING: ERROR_CODES.MONITOR_SOURCE_CREDENTIAL_MISSING,
 } as const;
-export const MONITORING_STATUS_BY_CODE = {
-  20004: DEFAULT_STATUS_BY_CODE[20004] as 404,
-  50012: DEFAULT_STATUS_BY_CODE[50012] as 503,
-} as const;
+/** 契约字面值 { 20004: 404, 50012: 503 }；与 errors.ts DEFAULT_STATUS_BY_CODE 的一致性由 monitoring.spec.ts 断言（类型层不做断言转换） */
+export const MONITORING_STATUS_BY_CODE = { 20004: 404, 50012: 503 } as const satisfies Readonly<Record<20004 | 50012, number>>;
 export const MONITORING_FAILURE_PATHS = [
   { path: "PATCH/run 的 {key} 未注册", code: "MONITOR_SOURCE_NOT_FOUND" },
   { path: "run authRequired 源但 env MONITOR_KEY_<SOURCE> 缺失", code: "MONITOR_SOURCE_CREDENTIAL_MISSING" },
