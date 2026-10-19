@@ -1,0 +1,71 @@
+# EVD-009 验证取证
+
+> 版本: v0.9 | 更新: 2026-10-19 | 变更: TASK-009 执行期验证输出（命令 + 逐条验收 + 提交范围核对）。
+
+## 环境
+- 分支 nm-main，提交前 HEAD = c304eba5（TASK-090）。
+- 占位 DATABASE_URL='postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder?schema=public'。
+
+## 验证命令：node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs
+
+### 1. 契约重生成（gen 解析 §4 → errors.generated.spec.ts）
+```
+[gen-contract-tests] 生成 3 个契约 spec：码表 27 码 / HTTP 映射 12 条 / §4 登记 27 行 / 域 30 / AUTHZ deny 4 条 → packages/shared/src/__tests__/contract/
+GEN_EXIT=0
+GEN2_EXIT=0（幂等：重跑内容不变）
+```
+
+### 2. §4 全码表行数（与 gen 同源正则，独立复算）
+```
+§4 parsed rows = 27
+DOC_REGISTERED 条目 = 27（errors.generated.spec.ts L41-67，升序、无重复、逐条同 errors.ts 名值）
+errors.generated.spec.ts 内容差 = 1 file changed, 16 insertions(+), 0 deletions(-)（DOC_REGISTERED 11→27 净增 16）
+```
+
+### 3. check-docs-rule
+```
+[铁律1] docs rule PASS：apps/ 下无实体 .md（README.md 豁免）。
+[铁律-数字] 数字真源断言 PASS（锚=文档，代码=实测）：schema model=72, enum=37, admin API 域=37, admin 页面=33, Next.js=15.0.x
+RULE_EXIT=0
+```
+
+### 4. check-docs-facts（14/14；本卡零代码改动，计数沿用 090 实测值，无新漂移）
+```
+All 14 assertions passed.
+FACTS_EXIT=0
+（usage-stats-anchor-pair 仍 2/2：本卡改 §4/§5.7 未触及 §7.5/§5.4 usage-stats 双锚）
+```
+
+### 5. §4/§5.7/锚点存在性
+```
+system/ready 出现（API接口文档）= 3（版本头 + §4 50010 语义 + §5.7 行）
+error-code-unified-architecture 出现（API架构设计方案）= 2（<a id> 锚 + 版本头）
+双源对齐 残留（API接口文档）= 1 → 仅历史 changelog（090 v1.51 条目），live §4 已改「唯一源=errors.ts」
+```
+
+## 回归四连（收尾，占位 DATABASE_URL）
+```
+SHARED_TSC_EXIT=0
+SHARED_TEST_EXIT=0   # 21 files, 210 passed（含 contract/errors.generated.spec.ts 7 例：DOC_REGISTERED=27 交叉断言 live ERROR_CODES 全过）
+WEB_TSC_EXIT=0
+WEB_TEST_EXIT=0      # 125 files passed | 2 skipped；1210 passed | 5 skipped（5 为占位库下 DB 门控 int 测试，预期非失败；ready-route.spec.ts 验 /system/ready 503+50010 通过）
+```
+
+## CI 漂移门自洽性核对（对应 ci.yml「gen + git add + git diff --cached --exit-code HEAD」）
+- 提交将包含 errors.generated.spec.ts 的重生成产物（DOC_REGISTERED=27）。
+- 提交后 CI 重跑 gen → 产物与已提交 spec 逐字节一致 → 漂移门绿。
+- envelope/identity 两 spec 本卡内容零变化（errors.ts/permissions/03-identity 契约均未动），仅本地 LF→CRLF 工作树幻影，不入库。
+
+## 逐条验收对照
+- [x] node scripts/check-docs-rule.mjs exit 0 → RULE_EXIT=0
+- [x] node scripts/check-docs-facts.mjs 全 PASS → FACTS_EXIT=0（无计数漂移，未改脚本）
+- [~] §4 表行数 = 25（卡面 V0.5.0 遗留数）→ 实际 27（真实唯一源 errors.ts 全码，经管理者授权「数字以实测为准」；详见 authorized-deviations.md）
+- [x] diff 仅落在允许范围内（+ 1 处授权偏离 packages）→ git diff --name-only 见下
+
+## git diff --name-only（内容变更，恰 4 文件；不含 EOL 幻影）
+```
+docs/architecture/API接口文档.md
+docs/architecture/API架构设计方案.md
+docs/文档索引.md
+packages/shared/src/__tests__/contract/errors.generated.spec.ts   # 授权偏离（CI 漂移门强耦合）
+```
