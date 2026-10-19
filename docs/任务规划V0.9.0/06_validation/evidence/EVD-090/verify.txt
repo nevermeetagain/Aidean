@@ -1,0 +1,52 @@
+TASK-090 验证记录（V0.9.0 文档门禁收口 + 授权偏离）
+运行时间: 2026-10-19
+分支: nm-main  HEAD(执行前): f666f0da
+
+==================================================================
+一、验证命令（卡面「验证命令」+ 追加 §4 断言）
+==================================================================
+$ node scripts/check-docs-rule.mjs
+  [铁律1] docs rule PASS：apps/ 下无实体 .md（README.md 豁免）。
+  [铁律-数字] 数字真源断言 PASS（锚=文档，代码=实测）：schema model=72, enum=37, admin API 域=37, admin 页面=33, Next.js=15.0.x
+  check-docs-rule exit=0
+
+$ node scripts/check-docs-facts.mjs
+  All 14 assertions passed.
+  check-docs-facts exit=0
+  （本轮转绿 5 项：lib-features 18→22、aidean-ui-refs 62→65、route-count 148→154、
+    page-count 56→57、spec-count 151→170，均以执行时代码实测为准，见二·偏离①）
+
+$ grep -Eq '^| 20004 | MONITOR_SOURCE_NOT_FOUND'  docs/architecture/API接口文档.md  → exit=0
+$ grep -Eq '^| 50012 | MONITOR_SOURCE_CREDENTIAL_MISSING'  ... → exit=0
+$ grep -q  '/api/v1/user/favorites'                docs/architecture/API接口文档.md  → exit=0
+$ grep -q  'feature-flags'                          docs/architecture/API接口文档.md  → exit=0
+
+VERIFY_EXIT=0 (ALL GREEN)
+
+==================================================================
+二、契约重生成（§4 登记 20004/50012 的强耦合产物，见 authorized-deviations.md 偏离②）
+==================================================================
+$ node scripts/contract/gen-contract-tests.mjs
+  [gen-contract-tests] 生成 3 个契约 spec：码表 27 码 / HTTP 映射 12 条 / §4 登记 11 行 / 域 30 / AUTHZ deny 4 条
+  GEN_EXIT=0
+  DOC_REGISTERED: 9 → 11（新增 {20004,MONITOR_SOURCE_NOT_FOUND} 与 {50012,MONITOR_SOURCE_CREDENTIAL_MISSING}）
+  仅 packages/shared/src/__tests__/contract/errors.generated.spec.ts 内容变化（+2 行）；
+  envelope/identity.generated.spec.ts 内容零差异（git diff 未列出）。
+
+==================================================================
+三、回归四连（占位 DATABASE_URL=postgresql://placeholder:...@127.0.0.1:5432/placeholder?schema=public）
+==================================================================
+$ pnpm -F @aidean/shared typecheck → SHARED_TSC_EXIT=0
+$ pnpm -F @aidean/shared test      → SHARED_TEST_EXIT=0  Test Files 21 passed | Tests 210 passed (含 errors.generated.spec.ts 7 tests，DOC_REGISTERED=11 与 live errors.ts 交叉断言通过)
+$ pnpm -F web typecheck            → WEB_TSC_EXIT=0
+$ pnpm -F web test                 → WEB_TEST_EXIT=0     Test Files 125 passed | 2 skipped (127); Tests 1210 passed | 5 skipped (1215)
+  （5 个 skip 为 DB 门控集成用例，占位模式未开 RUN_DB_TESTS 的预期行为，非失败）
+
+==================================================================
+四、提交范围（git diff --name-only，逐行核对仅落允许范围+两处授权偏离）
+==================================================================
+docs/architecture/API接口文档.md                         # 允许：docs/architecture/
+docs/product/design/功能设计文档.md                       # 允许：docs/product/
+scripts/check-docs-facts.mjs                             # 授权偏离①：卡面允许漏列、但目标明写收口 facts 全绿
+packages/shared/src/__tests__/contract/errors.generated.spec.ts  # 授权偏离②：§4 登记强耦合的生成物
+（无 docs/任务规划* 实体文档改动；envelope/identity 生成物无内容差异，未纳入）

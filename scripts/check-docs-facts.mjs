@@ -83,7 +83,7 @@ const assertions = [
   },
   {
     id: "lib-features-count",
-    desc: "lib/features 子目录数 = 18（S7.4 新增 announcements 前台公告读服务目录，17→18）",
+    desc: "lib/features 子目录数 = 22（S7.4 announcements 起 17→18；TASK-090 收口以代码实测同步 18→22，含 lib/features/pricing 等新增目录）",
     check: () => {
       try {
         return String(readdirSync(join(ROOT, "apps/web/lib/features"), { withFileTypes: true }).filter((e) => e.isDirectory()).length);
@@ -91,11 +91,11 @@ const assertions = [
         return "0";
       }
     },
-    expect: "18",
+    expect: "22",
   },
   {
     id: "aidean-ui-refs",
-    desc: "@aidean/ui 在 apps/web/components 的 import 数 = 61（S5 新增 HoldsPanel/WalletsTabs 各引 @aidean/ui，59→61）",
+    desc: "@aidean/ui 在 apps/web/components 的 import 数 = 65（TASK-090 收口以代码实测同步 62→65）",
     check: () =>
       String(
         walk("apps/web/components", () => true).filter((f) => {
@@ -106,19 +106,19 @@ const assertions = [
           }
         }).length
       ),
-    expect: "62",
+    expect: "65",
   },
   {
     id: "route-count",
-    desc: "apps/web route.ts 文件数（含 app/ 全域）= 148（S5 新增 admin/holds 在途冻结款只读分页端点）",
+    desc: "apps/web route.ts 文件数（含 app/ 全域）= 154（TASK-090 收口以代码实测同步 148→154）",
     check: () => String(walk("apps/web/app", (n) => n === "route.ts").length),
-    expect: "148",
+    expect: "154",
   },
   {
     id: "page-count",
-    desc: "apps/web page.tsx 文件数 = 56（S2r 新增 /admin/reports 独立报表页）",
+    desc: "apps/web page.tsx 文件数 = 57（TASK-090 收口以代码实测同步 56→57）",
     check: () => String(walk("apps/web/app", (n) => n === "page.tsx").length),
-    expect: "56",
+    expect: "57",
   },
   {
     id: "next-version",
@@ -132,10 +132,10 @@ const assertions = [
   },
   {
     id: "spec-count",
-    desc: "spec 文件总数 = 151 (38 e2e + 113 unit)（S8 新增 home/site-sections.spec 跑马灯+关于正文读取兑底）",
+    desc: "spec 文件总数 = 170（TASK-090 收口以代码实测同步 151→170）",
     check: () =>
       String(walk("e2e", (n) => n.endsWith(".spec.ts")).length + walk("apps/web", (n) => n.endsWith(".spec.ts")).length),
-    expect: "151",
+    expect: "170",
   },
   {
     id: "queryraw-biz",

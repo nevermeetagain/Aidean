@@ -38,6 +38,7 @@ const CODE_TABLE = {
 } as const;
 
 const DOC_REGISTERED: ReadonlyArray<{ code: number; identifier: string }> = [
+  { code: 20004, identifier: "MONITOR_SOURCE_NOT_FOUND" },
   { code: 30001, identifier: "SITE_UNAVAILABLE" },
   { code: 30002, identifier: "GATEWAY_NO_ROUTE" },
   { code: 30003, identifier: "GATEWAY_ALL_FAILED" },
@@ -47,6 +48,7 @@ const DOC_REGISTERED: ReadonlyArray<{ code: number; identifier: string }> = [
   { code: 40003, identifier: "ORDER_STATE_INVALID" },
   { code: 40004, identifier: "HOLD_INVALID" },
   { code: 40005, identifier: "NOTIFY_SIGNATURE_INVALID" },
+  { code: 50012, identifier: "MONITOR_SOURCE_CREDENTIAL_MISSING" },
 ];
 
 const HTTP_STATUS_MAP: Readonly<Record<number, number>> = {
