@@ -1,0 +1,69 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v2.1.9 /workspace/work/Aidean/apps/web
+
+ ✓ lib/features/gateway/__tests__/gateway-orchestrator.spec.ts (25 tests) 112ms
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ① 未登录 POST gateway/chat → HTTP 401 + 信封 code=10004
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ② 登录后 chat body 非法（缺 messages）→ 40000 且编排未触达
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ③ chat 成功 → 直通响应（无信封）+ 计费事实头部 + x-request-id 透传
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ⑪ Bearer 平台 API Key → 200 免 cookie；userId 取 Key 归属；计费事实头不变
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ⑫ x-api-key（Anthropic 形态）→ 200 同通道
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ⑬ 伪造 Key → 401/10004 且编排未触达
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ⑭ 吊销 Key → 401/10004 即时生效
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ⑮ 无 gateway:chat 权限 → 403/10008
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ⑯ Key 超限 → 429/10006（提示语含重试语义）
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ⑰ Responses API 接入 → 归一为 openai 调编排（instructions→system）+ 响应回写 response 体裁
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+stderr | lib/features/gateway/__tests__/routes-gateway.spec.ts > gateway routes > ⑱ Gemini generateContent 接入 → 归一为 openai + 响应回写 candidates/usageMetadata 体裁
+{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+ ✓ lib/features/gateway/__tests__/routes-gateway.spec.ts (20 tests) 279ms
+ ✓ lib/features/gateway/__tests__/gateway-adapters.spec.ts (23 tests) 57ms
+ ✓ lib/features/gateway/__tests__/stream-passthrough.spec.ts (5 tests) 115ms
+ ✓ lib/features/gateway/__tests__/stream-parse.spec.ts (24 tests) 15ms
+ ✓ lib/features/gateway/__tests__/gateway-svc.spec.ts (13 tests) 14ms
+ ✓ lib/features/gateway/__tests__/usage-stats.spec.ts (10 tests) 21ms
+ ✓ lib/features/pricing/__tests__/effective-price.spec.ts (15 tests) 11ms
+ ↓ lib/features/pricing/__tests__/effective-price.int.spec.ts (3 tests | 3 skipped)
+ ✓ lib/features/gateway/__tests__/channel-pick.spec.ts (15 tests) 39ms
+ ✓ lib/features/gateway/__tests__/usage-window.spec.ts (10 tests) 728ms
+   ✓ PRESET_RANGE_DAYS 与服务端 USAGE_STATS_RANGE_DAYS 同口径（7/30/90） 722ms
+ ✓ lib/features/gateway/__tests__/tier-order.spec.ts (4 tests) 6ms
+
+ Test Files  11 passed | 1 skipped (12)
+      Tests  164 passed | 3 skipped (167)
+   Start at  03:56:11
+   Duration  16.11s (transform 1.07s, setup 0ms, collect 6.84s, tests 1.40s, environment 2ms, prepare 3.67s)
+
+vitest_exit=0
+tsc_exit=0

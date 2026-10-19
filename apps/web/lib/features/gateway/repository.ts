@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { prisma } from "../../db/prisma";
 import { gatewayFormatToChannelEnum, KEY_COOLDOWN_MINUTES, KEY_FAILURE_THRESHOLD, type GatewayFormat } from "@aidean/shared";
+import { EFFECTIVE_PRICE_CANDIDATE_TAKE, effectivePriceWhere, pickEffectivePrice } from "../pricing/effective-price";
 
 /**
  * gateway 网关域 repository（Task G.2.1）：网关域全部数据访问。
@@ -14,6 +15,32 @@ export interface RouteConfigRow {
   tierMappings: { tierLevel: "OPUS" | "SONNET" | "FABLE" | "HAIKU"; modelId: string }[];
   priorities: { modelId: string; priority: number; enabled: boolean }[];
   free: { modelId: string; quotaTokens: number; refreshCycle: "DAY" | "WEEK" | "MONTH" }[];
+}
+
+/** 生效价候选行的 select（选择所需字段 + 计费读取的 priceInput/priceOutput/billingCurrency） */
+const EFFECTIVE_PRICE_ROW_SELECT = {
+  priceInput: true,
+  priceOutput: true,
+  billingCurrency: true,
+  isCurrent: true,
+  sourceType: true,
+  effectiveFrom: true,
+  effectiveUntil: true,
+} as const;
+
+/**
+ * TASK-027：候选价格行 → 至多 1 条生效价（保持 service 既有消费形状 {priceInput, priceOutput, billingCurrency}[]）。
+ * 原 Decimal 对象原样透传，不做 Number 转换（精度由 service 既有计费路径决定）。
+ */
+function collapseToEffectivePrice<
+  P extends { priceInput: unknown; priceOutput: unknown; billingCurrency: string; isCurrent: boolean; sourceType: string; effectiveFrom: Date; effectiveUntil: Date | null },
+  M extends { prices: P[] },
+>(model: M, at: Date): Omit<M, "prices"> & { prices: { priceInput: P["priceInput"]; priceOutput: P["priceOutput"]; billingCurrency: string }[] } {
+  const picked = pickEffectivePrice(model.prices, at);
+  const prices = picked
+    ? [{ priceInput: picked.effective.priceInput, priceOutput: picked.effective.priceOutput, billingCurrency: picked.effective.billingCurrency }]
+    : [];
+  return { ...model, prices };
 }
 
 export const gatewayRepository = {
@@ -76,9 +103,13 @@ export const gatewayRepository = {
     });
   },
 
-  /** 入口 model 串解析：modelCode 唯一或 slug；取当前价（计费/预扣依据） */
-  async findModelByCode(client: GatewayClient = prisma, code: string) {
-    return client.aiModel.findFirst({
+  /**
+   * 入口 model 串解析：modelCode 唯一或 slug；取 at 时刻生效价（计费/预扣依据）。
+   * TASK-027：prices 由「仅 isCurrent」改为「当前价 ∪ 窗口内限时优惠」候选，经 pickEffectivePrice
+   * 收敛为至多 1 条（形状不变，service.ts 继续读 prices[0]；加价率/倍率仍在 service 内乘，不外泄）。
+   */
+  async findModelByCode(client: GatewayClient = prisma, code: string, at: Date = new Date()) {
+    const row = await client.aiModel.findFirst({
       where: { OR: [{ modelCode: code }, { slug: code }], deletedAt: null, status: "ACTIVE", isActive: true },
       select: {
         id: true,
@@ -86,17 +117,18 @@ export const gatewayRepository = {
         nameDisplay: true,
         maxOutputTokens: true,
         prices: {
-          where: { isCurrent: true },
-          take: 1,
+          where: effectivePriceWhere(at),
+          take: EFFECTIVE_PRICE_CANDIDATE_TAKE,
           orderBy: { effectiveFrom: "desc" },
-          select: { priceInput: true, priceOutput: true, billingCurrency: true },
+          select: EFFECTIVE_PRICE_ROW_SELECT,
         },
       },
     });
+    return row ? collapseToEffectivePrice(row, at) : null;
   },
 
   /** 批量按 id 取模型（路由链候选解析，保持入参顺序） */
-  async findModelsByIds(client: GatewayClient = prisma, ids: string[]) {
+  async findModelsByIds(client: GatewayClient = prisma, ids: string[], at: Date = new Date()) {
     if (ids.length === 0) return new Map<string, Awaited<ReturnType<typeof gatewayRepository.findModelByCode>>>();
     const rows = await client.aiModel.findMany({
       where: { id: { in: ids }, deletedAt: null, status: "ACTIVE", isActive: true },
@@ -106,14 +138,14 @@ export const gatewayRepository = {
         nameDisplay: true,
         maxOutputTokens: true,
         prices: {
-          where: { isCurrent: true },
-          take: 1,
+          where: effectivePriceWhere(at),
+          take: EFFECTIVE_PRICE_CANDIDATE_TAKE,
           orderBy: { effectiveFrom: "desc" },
-          select: { priceInput: true, priceOutput: true, billingCurrency: true },
+          select: EFFECTIVE_PRICE_ROW_SELECT,
         },
       },
     });
-    return new Map(rows.map((r) => [r.id, r]));
+    return new Map(rows.map((r) => [r.id, collapseToEffectivePrice(r, at)]));
   },
 
   /** 服务某模型且可直连调用的站点（baseUrl 非空；rating 降序） */

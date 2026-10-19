@@ -3,9 +3,14 @@
  *
  * 按 slug 或 cuid 双查（findFirst OR）；聚合厂商品牌素材、当前价(isCurrent 取1)、
  * 当前评分(取1)、基准测试(取3)。未命中抛 ApiError(20001「模型不存在」)。
+ *
+ * TASK-027：追加 effectivePrice（契约① EffectivePriceSchema，DESIGN-002 生效规则：窗口内限时优惠优先，
+ * 否则当前价；含 isPromotion/promotionEndsAt/base* 供划线展示；不含任何加价率/倍率键）。
+ * 既有 price 字段保持「当前价（isCurrent）」语义与形状不变（向后兼容），前台改读 effectivePrice 归 TASK-029。
  */
 import { prisma } from "../../../../../lib/db/prisma";
 import { ladderRepository } from "../../../../../lib/features/ladder/repository";
+import { resolveEffectivePrice } from "../../../../../lib/features/pricing/effective-price";
 import { ApiError, ERROR_CODES } from "../../_lib/errors";
 import { withApi, type RouteContext } from "../../_lib/handler";
 
@@ -17,6 +22,7 @@ async function loadDetail(identifier: string) {
 
   const price = m.prices[0];
   const score = m.scores[0];
+  const effectivePrice = await resolveEffectivePrice(m.id, new Date());
 
   return {
     id: m.id,
@@ -48,6 +54,7 @@ async function loadDetail(identifier: string) {
           billingCurrency: price.billingCurrency,
         }
       : null,
+    effectivePrice,
     score: score
       ? {
           compositeScore: Number(score.compositeScore),

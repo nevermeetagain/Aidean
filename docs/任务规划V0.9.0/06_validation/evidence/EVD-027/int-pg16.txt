@@ -1,0 +1,13 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v2.1.9 /workspace/work/Aidean/apps/web
+
+ ✓ lib/features/pricing/__tests__/effective-price.spec.ts (15 tests) 10ms
+ ✓ lib/features/pricing/__tests__/effective-price.int.spec.ts (3 tests) 284ms
+
+ Test Files  2 passed (2)
+      Tests  18 passed (18)
+   Start at  03:56:44
+   Duration  1.81s (transform 384ms, setup 0ms, collect 602ms, tests 294ms, environment 0ms, prepare 417ms)
+
+exit=0
