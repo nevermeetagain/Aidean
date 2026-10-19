@@ -1069,3 +1069,8 @@ for _t in T:
     if "085" in _t["deps"]:
         _t["v7"] = _t["v7"].replace("V0.9.0：B-0' 已裁决 A'（镜像 main 为开发线），无需再等 TASK-085 才开工",
                                     "V0.9.0：B-0' 已裁决 A'（镜像 main 为开发线）；本卡仍依赖 TASK-085 的工件回补部分")
+# ---- STEP-5b 复核残项
+patch("086", name="已移出卡独立复核：V0.8.0 判镜像落地的 22 张卡逐卡跑原验证命令并裁决 PASS/FAIL/UNKNOWN（补 e2e/真库/运行态证据）")
+get("086")["v7"] = "V0.9.0：复核范围为已移出卡集的 22 张 0 工时卡（卡面原文见 V0.8.0）；089 已完成；可复用 Hark PG16 证据（EVD-058/089）"
+_t91 = get("091")
+_t91["steps"][1] = "收藏唯一约束真库断言（不改 apps/**）：用 psql 对同一 (user_id, ref_type, ref_id) 连续两次 INSERT INTO favorites，第二次应报 23505；输出存 EVD-091/favorites.txt"

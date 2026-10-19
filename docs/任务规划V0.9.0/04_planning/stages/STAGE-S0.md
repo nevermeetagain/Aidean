@@ -13,7 +13,7 @@
 |---|---|---|---|---|
 | L0 | [TASK-085](../../05_execution/tasks/TASK-085.md) 叠加缺口回补 + 他线归档（B-0' 已裁决 A'：镜像 main 为唯一开发线） | 外部Agent | Agent-Guard | — |
 | L1 | [TASK-008](../../05_execution/tasks/TASK-008.md) OIDC 种子 wechat-rag 回调白名单按端口裁决对齐（保留 BotHot 3200；AideanBot 3333 按 P-2 补录） | 外部Agent | Agent-Data | TASK-085 |
-| L1 | [TASK-086](../../05_execution/tasks/TASK-086.md) 他线 S0–S3 落地独立复核：30 张卡逐卡跑验证命令并裁决 PASS/FAIL/UNKNOWN（单测已由规划期先行实测） | Hark(主Agent) | Agent-Guard | TASK-091 |
+| L1 | [TASK-086](../../05_execution/tasks/TASK-086.md) 已移出卡独立复核：V0.8.0 判镜像落地的 22 张卡逐卡跑原验证命令并裁决 PASS/FAIL/UNKNOWN（补 e2e/真库/运行态证据） | Hark(主Agent) | Agent-Guard | TASK-091 |
 | L3 | [TASK-009](../../05_execution/tasks/TASK-009.md) S0 文档同步：API接口文档§4 全码表 + /system/ready 登记 + 双向锚 + 版本头 | 外部Agent | Agent-Docs | — |
 | L4 | [TASK-006](../../05_execution/tasks/TASK-006.md) CI 新增 e2e-skeleton job（PG16+Redis7 服务容器、空库迁移重放、:3000 启动） | Hark(主Agent) | Agent-Guard | TASK-009 |
 | L5 | [TASK-007](../../05_execution/tasks/TASK-007.md) 守卫脚本：根目录污染 / 密钥扫描 / 模块边界 / 端口区间一致性（零新依赖） | 外部Agent | Agent-Guard | TASK-085 |

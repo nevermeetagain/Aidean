@@ -31,7 +31,7 @@
 
 ## Execution Steps
 1. [ ] `docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=p postgres:16`（或 embedded PG16）；`export PG16_URL=...`；`DATABASE_URL=$PG16_URL pnpm --filter web exec prisma migrate deploy`
-2. [ ] 收藏唯一约束真库断言：同一 (userId, refType, refId) 第二次 insert 得 23505/P2002；POST /api/v1/user/favorites 幂等返回既有记录（可用 vitest int spec，RUN_DB_TESTS=1 门控，输出存 EVD-091/favorites.txt）
+2. [ ] 收藏唯一约束真库断言（不改 apps/**）：用 psql 对同一 (user_id, ref_type, ref_id) 连续两次 INSERT INTO favorites，第二次应报 23505；输出存 EVD-091/favorites.txt
 3. [ ] `psql $PG16_URL -c "\d model_prices"` 输出存 EVD-091/model_prices.txt（应见 WHERE is_current 部分唯一索引）
 4. [ ] 运行「验证命令」并将完整输出存入证据目录
 

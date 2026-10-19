@@ -9,7 +9,7 @@
 | 任务 | 切片 | 名称 | 执行者 | 所有权 Agent | 档位 | 规模/工时 | 依赖 | 层级 | 条件 | V0.9.0 状态 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | [TASK-085](tasks/TASK-085.md) | S0 | 叠加缺口回补 + 他线归档（B-0' 已裁决 A'：镜像 main 为唯一开发线） | 外部Agent | Agent-Guard | opus | 小/3h | — | L0 | — | B-0' 已裁决 A'·待回补 |
-| [TASK-086](tasks/TASK-086.md) | S0 | 他线 S0–S3 落地独立复核：30 张卡逐卡跑验证命令并裁决 PASS/FAIL/UNKNOWN（单测已由规划期先行实测） | Hark(主Agent) | Agent-Guard | opus | 中/6h | 091 | L1 | — | 未开工（Hark 核心） |
+| [TASK-086](tasks/TASK-086.md) | S0 | 已移出卡独立复核：V0.8.0 判镜像落地的 22 张卡逐卡跑原验证命令并裁决 PASS/FAIL/UNKNOWN（补 e2e/真库/运行态证据） | Hark(主Agent) | Agent-Guard | opus | 中/6h | 091 | L1 | — | 未开工（Hark 核心） |
 | [TASK-090](tasks/TASK-090.md) | S7 | 文档层回灌：把他线 S0–S3 的文档同步内容（API 文档/数据库文档/功能设计/术语）合入镜像 docs/（排除规划目录） | 外部Agent | Agent-Docs | haiku | 中/4h | 085 | L1 | — | 未开工 |
 | [TASK-091](tasks/TASK-091.md) | S1 | PG16 真库验证：空库迁移重放 + persistPrices 三次写价 + 收藏唯一约束（证据产出，不改代码） | 外部Agent | Agent-Guard | sonnect | 小/1h | — | L0 | — | 未开工 |
 | [TASK-092](tasks/TASK-092.md) | S3 | UI 运行态验收：S2 功能开关页/入口隐藏/403 态 + S3 收藏按钮/控制台 Tab/筛选全选/价格档位（截图 + 五态核对） | Hark(主Agent) | Agent-Guard | opus | 中/4h | 086 | L2 | — | 未开工（Hark 核心） |
