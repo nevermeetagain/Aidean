@@ -1,0 +1,32 @@
+== shared tsc ==
+tsc_exit=0
+== shared test ==
+ ✓ src/__tests__/price-batch.spec.ts (21 tests) 47ms
+ ✓ src/__tests__/product-intro.spec.ts (19 tests) 20ms
+ ✓ src/__tests__/contract/errors.generated.spec.ts (7 tests) 17ms
+ ✓ src/__tests__/promotion.spec.ts (20 tests) 13ms
+ ✓ src/__tests__/monitoring.spec.ts (14 tests) 13ms
+ ✓ src/__tests__/gateway.spec.ts (15 tests) 12ms
+ ✓ src/__tests__/favorites.spec.ts (8 tests) 12ms
+ ✓ src/__tests__/pricing-config.spec.ts (4 tests) 5ms
+ ✓ src/__tests__/errors.spec.ts (8 tests) 12ms
+ ✓ src/__tests__/auth.spec.ts (4 tests) 9ms
+ ✓ src/__tests__/feature-flags.spec.ts (8 tests) 9ms
+ ✓ src/__tests__/schemas.spec.ts (12 tests) 7ms
+ ✓ src/__tests__/provider-pricing.spec.ts (29 tests) 9ms
+ ✓ src/__tests__/contract/identity.generated.spec.ts (3 tests) 10ms
+ ✓ src/__tests__/user.spec.ts (5 tests) 10ms
+ ✓ src/__tests__/billing.spec.ts (9 tests) 5ms
+ ✓ src/__tests__/money.spec.ts (11 tests) 5ms
+ ✓ src/__tests__/contract/envelope.generated.spec.ts (3 tests) 5ms
+ ✓ src/__tests__/admin-permissions.spec.ts (6 tests) 5ms
+ ✓ src/__tests__/envelope.spec.ts (2 tests) 4ms
+ ✓ src/__tests__/ladder.spec.ts (2 tests) 4ms
+ Test Files  21 passed (21)
+      Tests  210 passed (210)
+== ERROR_CODES 去重计数 ==
+total 27 unique 27
+== contracts/selfcheck-monitoring.ts（副本运行，契约文件未改） ==
+{"collisions":[],"tiers":5,"endpoints":5,"eventSampleOk":true,"sourceSampleOk":true}
+== web tsc ==
+webtsc_exit=0

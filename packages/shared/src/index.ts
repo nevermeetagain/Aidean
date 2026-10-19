@@ -24,6 +24,7 @@ export * from "./schemas/logs.schema";
 export * from "./schemas/reports.schema";
 export * from "./schemas/promotion.schema";
 export * from "./schemas/price-batch.schema";
+export * from "./schemas/monitoring.schema";
 
 export * from "./constants/ladder.constants";
 export * from "./constants/gateway.constants";

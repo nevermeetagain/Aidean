@@ -37,12 +37,17 @@ export const ERROR_CODES = {
   SERVICE_UNAVAILABLE: 50010,
   /** 功能开关关闭（S2：需求 §3.9「关闭则页面 403、API 拒绝」） */
   FEATURE_DISABLED: 50011,
+  // —— 模型源监控增量 2 码（contracts/07-monitoring.contract.ts MONITORING_ERROR_CODES，TASK-056 落地；合计 27 码）——
+  /** 监控源 key 不存在（PATCH/run 路径参数） */
+  MONITOR_SOURCE_NOT_FOUND: 20004,
+  /** 源需要 API Key 但未配置（run 或 keyed collector） */
+  MONITOR_SOURCE_CREDENTIAL_MISSING: 50012,
 } as const;
 
 export type ErrorCodeKey = keyof typeof ERROR_CODES;
 export type ErrorCodeValue = (typeof ERROR_CODES)[ErrorCodeKey];
 
-/** 偏离默认（50000→500，其余→400）的 HTTP 映射。既有 8 条逐字沿用 errors.ts:84-94，新增 2 条。 */
+/** 偏离默认（50000→500，其余→400）的 HTTP 映射。既有 8 条逐字沿用 errors.ts:84-94，新增 2 条（TASK-001）+ 监控 2 条（TASK-056）。 */
 export const DEFAULT_STATUS_BY_CODE: Readonly<Partial<Record<ErrorCodeValue, number>>> = {
   10003: 401,
   10004: 401,
@@ -54,6 +59,8 @@ export const DEFAULT_STATUS_BY_CODE: Readonly<Partial<Record<ErrorCodeValue, num
   10009: 409,
   50010: 503,
   50011: 403,
+  20004: 404,
+  50012: 503,
 };
 
 /** 由码推断 HTTP 状态（与 apps/web/app/api/v1/_lib/response.ts errorResponse 规则一致） */
@@ -103,6 +110,8 @@ export const ERROR_PRESENTATION: Readonly<Record<ErrorCodeKey, ErrorPresentation
   FAVORITE_TARGET_NOT_FOUND: "toast",
   SERVICE_UNAVAILABLE: "page",
   FEATURE_DISABLED: "page",
+  MONITOR_SOURCE_NOT_FOUND: "toast",
+  MONITOR_SOURCE_CREDENTIAL_MISSING: "inline",
 };
 
 /** 失败路径 → 错误码覆盖表（契约自检 §4.4「错误码覆盖所有已知失败路径」的机器口径） */
@@ -120,5 +129,7 @@ export const FAILURE_PATHS: ReadonlyArray<{ path: string; code: ErrorCodeKey }> 
   { path: "限时优惠窗口非法（until<=from / 与已有窗口重叠）", code: "BAD_REQUEST" },
   { path: "限时优惠指向不存在模型", code: "MODEL_NOT_FOUND" },
   { path: "网关余额不足且无 free 兜底", code: "INSUFFICIENT_BALANCE" },
+  { path: "监控源 PATCH/run 的 {key} 未注册", code: "MONITOR_SOURCE_NOT_FOUND" },
+  { path: "监控源 run：authRequired 源但 env MONITOR_KEY_<SOURCE> 缺失", code: "MONITOR_SOURCE_CREDENTIAL_MISSING" },
   { path: "未知异常", code: "INTERNAL_ERROR" },
 ];
