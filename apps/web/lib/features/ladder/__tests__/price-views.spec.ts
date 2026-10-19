@@ -11,11 +11,15 @@ import { invalidatePriceViews } from "../price-views";
 beforeEach(() => vi.resetAllMocks());
 
 describe("invalidatePriceViews", () => {
-  it("失效 /pricing、/models、/models/[slug]、/ladder 并清 Redis 天梯缓存", async () => {
+  it("失效 /pricing、/models、/(site)/models/[slug]（含路由组，review-097 M1）、/ladder 并清 Redis 天梯缓存", async () => {
     await invalidatePriceViews();
     const paths = nextCache.revalidatePath.mock.calls.map((c) => c[0]);
-    expect(paths).toEqual(["/pricing", "/models", "/models/[slug]", "/ladder"]);
-    expect(nextCache.revalidatePath).toHaveBeenCalledWith("/models/[slug]", "page");
+    expect(paths).toEqual(["/pricing", "/models", "/(site)/models/[slug]", "/ladder"]);
+    expect(nextCache.revalidatePath).toHaveBeenCalledWith("/(site)/models/[slug]", "page");
+    // 页面文件真实存在于该路由组路径下（防止路由组改名后失效静默失灵）
+    const { existsSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    expect(existsSync(resolve(__dirname, "../../../../app/(site)/models/[slug]/page.tsx"))).toBe(true);
     expect(svc.ladderService.invalidateLadderCache).toHaveBeenCalledTimes(1);
   });
 

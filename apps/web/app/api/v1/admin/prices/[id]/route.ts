@@ -3,7 +3,7 @@
  *
  * PATCH：requireAdminApi("admin.models.write") + AdminPricePatchSchema。
  *   仅更新价格数值/计价粒度/币种/备注；不动 isCurrent/modelId（新建当前价请走 POST /prices）。
- *   记录不存在 → 40000；成功写 AuditLog(action=2) + revalidatePath("/pricing")。
+ *   记录不存在 → 40000；成功写 AuditLog(action=2) + invalidatePriceViews()（ISR + 天梯 Redis，TASK-097）。
  */
 import { invalidatePriceViews } from "../../../../../../lib/features/ladder/price-views";
 

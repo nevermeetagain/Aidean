@@ -213,6 +213,16 @@ describe("TASK-097 天梯读侧加固 + 缓存 TTL 对齐（review-ext12 D4/D5�
     expect(setCalls[1]).toBe(LADDER_CACHE_TTL_SECONDS);
   });
 
+  it("getRanking(models)：取数与 TTL 边界使用同一时刻 at（review-097 M2）", async () => {
+    const cache = { get: vi.fn(async () => null), set: vi.fn(async () => "OK") };
+    const repo = { getModelsForMatrix: vi.fn(async () => []), getStationsForMatrix: vi.fn(async () => []), getNextPriceBoundary: vi.fn(async () => null) };
+    await ladderService.getRanking({ type: "models" }, { repository: repo, cache } as never);
+    const atLoad = (repo.getModelsForMatrix.mock.calls[0] as unknown[])[1] as Date;
+    const atBoundary = (repo.getNextPriceBoundary.mock.calls[0] as unknown[])[1] as Date;
+    expect(atLoad).toBeInstanceOf(Date);
+    expect(atBoundary).toBe(atLoad);
+  });
+
   it("getRanking(stations)：不查价格边界，TTL 固定", async () => {
     const setCalls: number[] = [];
     const cache = { get: vi.fn(async () => null), set: vi.fn(async (_k: string, _v: string, _m: string, ttl: number) => { setCalls.push(ttl); return "OK"; }) };

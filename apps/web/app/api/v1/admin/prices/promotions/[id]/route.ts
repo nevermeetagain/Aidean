@@ -7,7 +7,7 @@
  *   effectiveUntil 必填且 > effectiveFrom；同模型窗口重叠（排除自身，含开放式窗口）→ 40000；价格小数位 ≤6、整数位 ≤13；
  *   计费三元组须与当前价一致；写入恒复位 isCurrent=false/sourceType=PROMOTION；校验与写入同处 Serializable 事务（TASK-096）。
  * DELETE：仅允许 PROMOTION 行（OFFICIAL → 40000，卡面验收 L41）；不存在 → 40000；
- *   成功写 AuditLog(action=3) + revalidatePath("/pricing")，返回 { deleted: true }（API-011 res）。
+ *   成功写 AuditLog(action=3) + invalidatePriceViews()（ISR + 天梯 Redis，TASK-097），返回 { deleted: true }（API-011 res）。
  */
 import { invalidatePriceViews } from "../../../../../../../lib/features/ladder/price-views";
 

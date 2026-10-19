@@ -338,10 +338,10 @@ function buildCacheKey(type: LadderTypeValue, fingerprint: string): string {
   return `${CACHE_KEY_PREFIX}:${type}:${hash12(fingerprint)}`;
 }
 
-async function loadItems(query: MatrixQuery, repo: NonNullable<LadderDeps["repository"]>): Promise<MatrixItem[]> {
+async function loadItems(query: MatrixQuery, repo: NonNullable<LadderDeps["repository"]>, at: Date): Promise<MatrixItem[]> {
   return query.type === "stations"
     ? repo.getStationsForMatrix()
-    : repo.getModelsForMatrix();
+    : repo.getModelsForMatrix(undefined, at); // TASK-097（review-097 M2）：与 TTL 边界同一 at
 }
 
 export const ladderService = {
@@ -371,7 +371,9 @@ export const ladderService = {
       }
     }
 
-    const items = applyFilters(await loadItems(query, repo), query.filters);
+    // review-097 M2：生效价快照与 TTL 边界共用同一时刻 at，避免取数与算 TTL 之间跨过优惠起止而缓存旧快照 3600s
+    const at = new Date();
+    const items = applyFilters(await loadItems(query, repo, at), query.filters);
     const built = buildRanking(items, query.type, resolveSortSpec(query));
 
     // R-83 T3 分数带分窗：bandIndex 提供时取代 offset/limit 切片（整带返回 + 分带元数据）
@@ -391,9 +393,8 @@ export const ladderService = {
       try {
         let ttl = LADDER_CACHE_TTL_SECONDS;
         if (query.type === "models" && typeof repo.getNextPriceBoundary === "function") {
-          const now = new Date();
           try {
-            ttl = ttlUntilBoundary(await repo.getNextPriceBoundary(undefined, now), now);
+            ttl = ttlUntilBoundary(await repo.getNextPriceBoundary(undefined, at), at);
           } catch {
             /* 边界查询失败 → 固定 TTL 兜底 */
           }

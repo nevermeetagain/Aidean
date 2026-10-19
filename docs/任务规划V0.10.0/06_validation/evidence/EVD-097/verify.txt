@@ -6,3 +6,16 @@ RESULT: PASS (4/4 守卫通过)
 contract drift exit=0
  Test Files  129 passed | 2 skipped (131)
       Tests  1261 passed | 5 skipped (1266)
+[review-097 M1/M2/S3/S4/S5 修复后复跑 2026-10-19T14:31:34Z]
+ Test Files  6 passed (6)
+      Tests  85 passed (85)
+web tsc exit=0
+
+1 assertion(s) failed.
+✅ usage-stats-anchor-pair: 《API架构设计方案》含 usage-stats-architecture 锚 且《API接口文档》含其回链（铁律 2 双向互引） → expected=2/2, actual=2/2
+[review-097 M1/M2/S3/S4/S5 修复后复跑（工作区仅本提交内容）]
+ Test Files  6 passed (6)
+      Tests  85 passed (85)
+web tsc exit=0
+All 14 assertions passed.
+rule exit=0

@@ -12,7 +12,7 @@
  *   ② billing 三元组一律从该模型当前价（isCurrent=true）派生，无当前价 → 40000（防 R9-04 计费口径漂移）；
  *   ③ 价格小数位 ≤6、整数位 ≤13（Decimal(19,6)，E9-11 / TASK-096）→ 超出 40000；
  *   ④ 同模型优惠窗口重叠（含开放式窗口）→ 40000；②④与写入同处 Serializable 事务（TASK-096）。
- *   成功写 AuditLog(action=1) + revalidatePath("/pricing")。
+ *   成功写 AuditLog(action=1) + invalidatePriceViews()（ISR + 天梯 Redis，TASK-097）。
  */
 import { invalidatePriceViews } from "../../../../../../lib/features/ladder/price-views";
 import { Prisma } from "@prisma/client";

@@ -1,5 +1,5 @@
 ## PG16.14 真库探针（ladderPriceWhere + getNextPriceBoundary）
-场景：当前价 OFFICIAL ¥2；插入 5 条已过期且误标 isCurrent=true 的 PROMOTION 脏行（其中被 M-001 部分唯一索引拒绝的以 P2002 行列出，其余入库；入库脏行 effectiveFrom 均新于当前价）
+场景：当前价 OFFICIAL ¥2；插入 5 条已过期且误标 isCurrent=true 的 PROMOTION 脏行（M-001 部分唯一索引拒绝的写入以 P2002 行列出——实际脏行可能全部被拒，故本探针主要验证「当前价可读、优惠窗口内显示优惠价、边界时刻正确」；脏行排除为防御性逻辑，由单测覆盖）
 insert dirty failed (partial unique index?) P2002
 insert dirty failed (partial unique index?) P2002
 insert dirty failed (partial unique index?) P2002

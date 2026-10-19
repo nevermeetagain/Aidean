@@ -4,7 +4,7 @@
  * 背景：ModelPrice 由爬虫/seed 写入、前台 /pricing 消费，此前无后台管理面。
  * GET ：requireAdminApi("admin.models.read") → 当前价（isCurrent=true）+ 模型投影，Decimal→string。
  * POST：requireAdminApi("admin.models.write") → 为尚无当前价的模型新建当前价（已有 → 400 请改用编辑）。
- *       写 AuditLog(action=1) + revalidatePath("/pricing")。
+ *       写 AuditLog(action=1) + invalidatePriceViews()（ISR + 天梯 Redis，TASK-097）。
  */
 import { invalidatePriceViews } from "../../../../../lib/features/ladder/price-views";
 import { Prisma } from "@prisma/client";

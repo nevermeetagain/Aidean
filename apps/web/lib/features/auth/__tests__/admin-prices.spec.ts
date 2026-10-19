@@ -17,6 +17,8 @@ const prismaState = vi.hoisted(() => ({
 vi.mock("../session", () => guardStub);
 vi.mock("../../../db/prisma", () => ({ prisma: prismaState }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
+const priceViews = vi.hoisted(() => ({ invalidatePriceViews: vi.fn() }));
+vi.mock("../../ladder/price-views", () => priceViews); // TASK-097（review-097 S3）
 
 import { ApiError, ERROR_CODES } from "../../../../app/api/v1/_lib/errors";
 
@@ -98,6 +100,7 @@ describe("POST /api/v1/admin/prices", () => {
     const arg = prismaState.modelPrice.create.mock.calls[0][0] as { data: Record<string, unknown> };
     expect(arg.data.sourceType).toBe("OFFICIAL");
     expect(arg.data.isCurrent).toBe(true);
+    expect(priceViews.invalidatePriceViews).toHaveBeenCalledTimes(1); // TASK-097：写后两层失效
     expect(prismaState.auditLog.create).toHaveBeenCalledTimes(1);
   });
 
@@ -139,6 +142,7 @@ describe("PATCH /api/v1/admin/prices/[id]", () => {
     expect(res.status).toBe(200);
     expect(prismaState.modelPrice.update).toHaveBeenCalledTimes(1);
     expect(prismaState.auditLog.create).toHaveBeenCalledTimes(1);
+    expect(priceViews.invalidatePriceViews).toHaveBeenCalledTimes(1); // TASK-097：写后两层失效
   });
 
   it("记录不存在 → 400，不更新", async () => {
