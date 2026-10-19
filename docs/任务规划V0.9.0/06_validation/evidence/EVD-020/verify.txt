@@ -1,0 +1,50 @@
+TASK-020 · S2 功能开关运行时文档同步 · 验证记录
+================================================
+卡面目标：API接口文档登记 API-002/003/004 与 50011；API架构设计方案互引锚；功能设计文档 §3.9 改为已实装；术语表增「功能开关」。
+
+【实测落点与偏差（详见 authorized-deviations.md）】
+- API-003/004 已由 TASK-090 登记 API接口文档 §5.8.9（本卡校核内容一致，转「由 TASK-020 补登」互引句为实然真链）。
+- API-002 GET /api/v1/system/features 本卡补登于 §5.7 系统（原 §5.7 仅 health/ready/config/navigation）。
+- 50011 FEATURE_DISABLED 已在 §4 全 27 码表（TASK-009 建），本卡不改 §4。
+- 卡面「功能设计文档 §3.9」：本文档 §3 止于 3.6，无 §3.9（§3.9 为 S2 来源需求文档编号）；未实装态实测仅在 §3.5.1 P2 表 L206 → 落 §3.5.1 标注 + 新建 §3.5.2。
+- 卡面「术语表增功能开关」：词条已存在于 §三 L58 → 本卡扩写非新增。
+
+【1. check-docs-rule.mjs】RULE_EXIT=0
+[铁律1] PASS：apps/ 下无实体 .md。
+[铁律-数字] schema model=72, enum=37, admin API 域=37, admin 页面=33, Next.js=15.0.x（§3.5 口径锚未动，020 零代码）。
+
+【2. check-docs-facts.mjs】FACTS_EXIT=0，All 14 assertions passed
+route=154 / page=57 / spec=170 / lib-features=22 / ui-refs=65 / batch=15（020 纯文档，代码计数无漂移）。
+db-doc-product-fields 2/2、usage-stats-anchor-pair 2/2、category-label-single-source 0 全绿。
+
+【3. 契约漂移门幂等（关键实证）】
+node scripts/contract/gen-contract-tests.mjs → GEN_EXIT=0
+生成 3 spec：码表 27 码 / §4 登记 27 行 / 域 30 / AUTHZ deny 4（与 TASK-009 提交值一致）。
+git diff --stat -- packages/shared/src/__tests__/contract/ → 无任何文件内容行（仅 LF→CRLF 行尾 warning）。
+结论：parseDocCodeTable 切片边界为 §4..§5 之外不读取；本卡只改 §5 端点文本 → errors.generated.spec.ts 字节不变 → CI「重生成 + git diff --exit-code」漂移门保持绿，未触碰 packages/**。
+
+【4. 双向锚核对（grep -c）】
+API架构设计方案.md anchor id="feature-flag-runtime-architecture" ×1
+API接口文档.md 引用 feature-flag-runtime-architecture ×4（§5.7 / §5.8.9 互引句 / 表后锚 / 版本头）
+API-002 system/features 行 ×2（§5.7 端点行 + §5.8.9 版本头引用）
+
+【5. git diff --name-only（提交前，恰 5 允许文档）】
+docs/architecture/API接口文档.md
+docs/architecture/API架构设计方案.md
+docs/governance/术语表.md
+docs/product/design/功能设计文档.md
+docs/文档索引.md
+（EOL 幻影 envelope/identity.generated.spec.ts 仅 warning、无内容差、不入库；无 packages/apps 越界）
+
+【回归四连（收尾门，占位 DATABASE_URL）全绿】
+SHARED_TSC=0
+SHARED_TEST=0（210 passed / 21 files，含 feature-flags.spec 8 tests）
+WEB_TSC=0
+WEB_TEST=0（1210 passed | 5 skipped；5 skip 为 DB 门控在占位连接串下的预期）
+
+【逐条验收】
+[✓] check-docs-rule exit 0
+[✓] check-docs-facts 全 PASS（14/14）
+[✓] diff 仅落在允许范围（5 文档 + EVD-020 证据）
+[✓] 契约漂移门幂等（未改 §4、未触碰 packages）
+[✓] 回归四连全绿
