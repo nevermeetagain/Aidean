@@ -59,9 +59,9 @@ const countPatternLines = (rel, re) => readFile(rel).split("\n").filter((l) => r
 const assertions = [
   {
     id: "schema-models",
-    desc: "schema.prisma model 数 = 68（S3 RBAC 新增 Role/Permission/RolePermission/UserRoleAssignment，64→68）",
+    desc: "schema.prisma model 数 = 72（M-002 模型源监控 TASK-058 新增 MonitoringSource/CatalogSnapshot/ProviderModelObservation/CatalogChangeEvent，68→72；前次 S3 RBAC 64→68）",
     check: () => String(countPatternLines("apps/web/prisma/schema.prisma", /^model /)),
-    expect: "68",
+    expect: "72",
   },
   {
     id: "seed-models",
