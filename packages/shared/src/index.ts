@@ -13,6 +13,7 @@ export * from "./schemas/rbac.schema";
 export * from "./schemas/common.schema";
 export * from "./schemas/system.schema";
 export * from "./schemas/feature-flags.schema";
+export * from "./schemas/favorites.schema";
 export * from "./schemas/site-content.schema";
 export * from "./schemas/news.schema";
 export * from "./schemas/roadmap.schema";

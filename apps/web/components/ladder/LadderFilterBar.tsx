@@ -155,12 +155,42 @@ export function LadderFilterBar({ onQueryChange }: LadderFilterBarProps) {
     onQueryChange?.();
   }
 
+  /**
+   * 「全选」三态（v1.9 / TASK-078）：非互斥组一键全选/全不选该组「可过滤项」。
+   * - values 由调用方传入（已排除伪标签——排序透镜且互斥，不参与全选）；
+   * - 全选/全不选仅作用于「可过滤值」子集，**永不触碰正交的伪标签排序透镜**（与
+   *   toggleOption「保留真实标签、仅替换其它伪标签」的哲学对称，避免整组替换误丢透镜）；
+   * - URL 兼容：ladderFetchQuery 对数组整体 CSV join，全选项即全部值，回放无歧义。
+   */
+  function toggleAll(group: FilterGroup, values: readonly string[], allSelected: boolean) {
+    const current = filters[group.key];
+    if (allSelected) {
+      // 全不选：仅移除可过滤值，保留既有伪标签透镜
+      const valueSet = new Set(values);
+      commit(group.key, current.filter((v) => !valueSet.has(v)));
+      return;
+    }
+    // 全选：并入全部可过滤值（去重），保留既有伪标签透镜
+    commit(group.key, [...new Set([...current, ...values])]);
+  }
+
   return (
     <div ref={rootRef} className="flex flex-wrap items-center gap-2">
       <span className="text-xs font-medium text-slate-500">筛选</span>
       {GROUPS.map((group) => {
         const selected = filters[group.key];
         const isOpen = openGroup === group.key;
+        // 可过滤项：排除伪标签（最新/热门/冷门为排序透镜且互斥，不参与全选三态）
+        const filterableValues = group.options
+          .map((o) => o.value)
+          .filter((v) => !(LADDER_PSEUDO_TAGS as readonly string[]).includes(v));
+        const selectedFilterableCount = selected.filter((v) =>
+          filterableValues.includes(v),
+        ).length;
+        const allSelected =
+          filterableValues.length > 0 &&
+          selectedFilterableCount === filterableValues.length;
+        const someSelected = selectedFilterableCount > 0 && !allSelected;
         return (
           <div key={group.key} className="relative">
             <button
@@ -204,6 +234,30 @@ export function LadderFilterBar({ onQueryChange }: LadderFilterBarProps) {
                   不限
                 </button>
                 <div className="my-1 border-t border-slate-100" aria-hidden="true" />
+                {!group.exclusive ? (
+                  <>
+                    <label
+                      className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                      title={
+                        group.key === "updatedWithin"
+                          ? "全选＝勾选全部时间窗（并集取最宽区间，仍排除超期项）；如需完全不限请选「不限」"
+                          : undefined
+                      }
+                    >
+                      <input
+                        type="checkbox"
+                        data-testid={`ladder-filter-all-${group.key}`}
+                        checked={allSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = someSelected;
+                        }}
+                        onChange={() => toggleAll(group, filterableValues, allSelected)}
+                      />
+                      <span>全选</span>
+                    </label>
+                    <div className="my-1 border-t border-slate-100" aria-hidden="true" />
+                  </>
+                ) : null}
                 {group.options.map((option) => (
                   <label
                     key={option.value}

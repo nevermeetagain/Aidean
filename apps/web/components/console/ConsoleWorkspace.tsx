@@ -13,16 +13,18 @@
  * playground 面板加 playgroundMounted 门控——CallPlayground（898 行 + echarts）
  * 仅在用户首次点击「调用测试台」tab 时挂载，避免首屏即拉 /api/v1/models?pageSize=100。
  */
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 import { Button } from "@aidean/ui";
 
 import { useConsoleStore } from "../../stores/consoleStore";
+import { useFavoritesEnabled } from "../../hooks/useFavorites";
+import { FavoritesPanel } from "./FavoritesPanel";
 import { ModeSwitch, useConsoleMode } from "./GeneralForm";
 
-export type ConsoleTabId = "config" | "quotas" | "platformKeys" | "apiChannels" | "playground" | "stats";
+export type ConsoleTabId = "config" | "quotas" | "platformKeys" | "apiChannels" | "playground" | "stats" | "favorites";
 
-const TAB_ITEMS: ReadonlyArray<{ id: ConsoleTabId; label: string }> = [
+const BASE_TAB_ITEMS: ReadonlyArray<{ id: ConsoleTabId; label: string }> = [
   { id: "config", label: "模型配置" },
   { id: "quotas", label: "免费额度" },
   { id: "platformKeys", label: "平台渠道" },
@@ -30,9 +32,13 @@ const TAB_ITEMS: ReadonlyArray<{ id: ConsoleTabId; label: string }> = [
   { id: "playground", label: "调用测试台" },
   { id: "stats", label: "统计报表" },
 ];
+/** 「我的收藏」受 favorites.enabled 控制（契约⑥：关闭时 Tab 隐藏，但直链 ?tab=favorites 仍进面板显示禁用态） */
+const FAVORITES_TAB = { id: "favorites" as const, label: "我的收藏" };
+/** 全部合法 tab（深链 ?tab= 校验用，含 favorites，不受开关影响） */
+const ALL_TAB_ITEMS: ReadonlyArray<{ id: ConsoleTabId; label: string }> = [...BASE_TAB_ITEMS, FAVORITES_TAB];
 
 function isTabId(value: string): value is ConsoleTabId {
-  return TAB_ITEMS.some((item) => item.id === value);
+  return ALL_TAB_ITEMS.some((item) => item.id === value);
 }
 
 /**
@@ -97,17 +103,26 @@ export function ConsoleWorkspace({
   // playground 懒挂载（2026-10-09）：CallPlayground 898 行 + echarts + /api/v1/models 请求，
   // 首次点击「调用测试台」tab 才挂载，避免首屏即拉模型列表。
   const [playgroundMounted, setPlaygroundMounted] = useState(false);
+  // 收藏 tab 受 favorites.enabled 控制 + 懒挂载（面板首激活才拉 /user/favorites）
+  const favoritesEnabled = useFavoritesEnabled();
+  const [favoritesMounted, setFavoritesMounted] = useState(false);
+  // 可见 tab：开关关闭时隐藏「我的收藏」（深链 ?tab=favorites 仍可进入面板显示禁用态）
+  const tabs = useMemo(
+    () => (favoritesEnabled ? [...BASE_TAB_ITEMS, FAVORITES_TAB] : BASE_TAB_ITEMS),
+    [favoritesEnabled],
+  );
   // 深链 ?tab=<id>：仅客户端挂载时同步一次；无参/非法值回落「模型配置」
   useEffect(() => {
     const fromUrl = new URLSearchParams(window.location.search).get("tab") ?? "";
     if (isTabId(fromUrl)) setActive(fromUrl);
   }, []);
 
-  // 统计/渠道/playground 面板首次激活挂载（隐藏态不拉数）
+  // 统计/渠道/playground/收藏 面板首次激活挂载（隐藏态不拉数）
   useEffect(() => {
     if (active === "stats") setStatsMounted(true);
     if (active === "apiChannels") setChannelsMounted(true);
     if (active === "playground") setPlaygroundMounted(true);
+    if (active === "favorites") setFavoritesMounted(true);
   }, [active]);
 
   function select(id: ConsoleTabId, focus = false) {
@@ -116,7 +131,7 @@ export function ConsoleWorkspace({
   }
 
   function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
-    const last = TAB_ITEMS.length - 1;
+    const last = tabs.length - 1;
     let target: number | null = null;
     if (event.key === "ArrowRight") target = index === last ? 0 : index + 1;
     else if (event.key === "ArrowLeft") target = index === 0 ? last : index - 1;
@@ -124,7 +139,7 @@ export function ConsoleWorkspace({
     else if (event.key === "End") target = last;
     if (target === null) return;
     event.preventDefault();
-    select(TAB_ITEMS[target].id, true);
+    select(tabs[target].id, true);
   }
 
   return (
@@ -135,7 +150,7 @@ export function ConsoleWorkspace({
         aria-label="控制台功能板块"
         className="flex gap-1 overflow-x-auto rounded-xl border border-border bg-card p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {TAB_ITEMS.map((item, index) => {
+        {tabs.map((item, index) => {
           const selected = active === item.id;
           return (
             <button
@@ -251,6 +266,19 @@ export function ConsoleWorkspace({
         data-testid="console-panel-stats"
       >
         {statsMounted ? stats : null}
+      </section>
+      {/* 我的收藏（TASK-023）：受 favorites.enabled 控制；懒挂载，首次激活才拉列表。
+          开关关闭时 tab 按钮不渲染，但直链 ?tab=favorites 仍进此面板显示 favs-disabled 态 */}
+      <section
+        role="tabpanel"
+        id="console-panel-favorites"
+        aria-labelledby={favoritesEnabled ? "console-tab-favorites" : undefined}
+        aria-label="我的收藏"
+        hidden={active !== "favorites"}
+        className="mt-6"
+        data-testid="console-panel-favorites"
+      >
+        {favoritesMounted ? <FavoritesPanel /> : null}
       </section>
     </div>
   );

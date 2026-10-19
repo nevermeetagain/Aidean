@@ -9,6 +9,7 @@ import { prisma } from "../../../lib/db/prisma";
 import {
   CURRENCY_SYMBOLS,
   PRICING_CONFIG_KEYS,
+  RECHARGE_TIERS,
   formatEvalPrice,
   parsePricingConfig,
   type PricingCurrency,
@@ -26,9 +27,6 @@ const BADGE_CLS: Record<BadgeTone, string> = {
   secondary: "bg-[var(--muted)] text-foreground",
   muted: "border border-[var(--border)] bg-transparent text-slate-500",
 };
-
-/** 充值五档金额（元）；货币符号由 pricing.currency 读侧决定，不硬编码 ¥ */
-const RECHARGE_TIER_AMOUNTS = [10, 55, 115, 600, 2500] as const;
 
 /** 网关单价表列（2026-09-23：移除「计费倍率」——markupRate/tokenMultiplier 属 per-API 站点
  *  station_billing_rules 配置，非模型级属性，混进模型单价表会误导；改由模型详情/控制台呈现）*/
@@ -191,19 +189,22 @@ export default async function PricingPage() {
           </div>
 
           <ul className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {RECHARGE_TIER_AMOUNTS.map((amount) => (
-              <li
-                key={amount}
-                className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-5 text-center shadow-sm transition-shadow hover:shadow-md"
-              >
-                <p className="text-xs text-slate-400">充值档位</p>
-                <p className="mt-1 text-2xl font-bold tracking-tight text-primary">
-                  {symbol}
-                  {amount}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">到账同等余额</p>
-              </li>
-            ))}
+            {RECHARGE_TIERS.map((tier) => {
+              const amount = Number(tier.amountMinor) / 100;
+              return (
+                <li
+                  key={tier.id}
+                  className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-5 text-center shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <p className="text-xs text-slate-400">{tier.label}档位</p>
+                  <p className="mt-1 text-2xl font-bold tracking-tight text-primary">
+                    {symbol}
+                    {amount}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">到账同等余额</p>
+                </li>
+              );
+            })}
           </ul>
         </section>
 

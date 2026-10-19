@@ -12,6 +12,7 @@ import { ArrowLeft } from "lucide-react";
 import { RevealOnScroll } from "../../../../components/home/RevealOnScroll";
 import { DetailToc } from "../../../../components/models/DetailToc";
 import { CompareAddButton } from "../../../../components/site/CompareAddButton";
+import { FavoriteButton } from "../../../../components/site/FavoriteButton";
 import { prisma } from "../../../../lib/db/prisma";
 import { ladderRepository } from "../../../../lib/features/ladder/repository";
 
@@ -183,12 +184,15 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
                 <h2 id="intro-title" className="text-xl font-bold text-foreground">
                   基本介绍
                 </h2>
-                <CompareAddButton
-                  modelId={model.id}
-                  nameDisplay={model.nameDisplay}
-                  slug={model.slug}
-                  size="md"
-                />
+                <div className="flex items-center gap-2">
+                  <FavoriteButton refType="MODEL" refId={model.id} name={model.nameDisplay} size="md" />
+                  <CompareAddButton
+                    modelId={model.id}
+                    nameDisplay={model.nameDisplay}
+                    slug={model.slug}
+                    size="md"
+                  />
+                </div>
               </div>
               <p className="mt-1 text-xs text-slate-400">modelCode：{model.modelCode}</p>
               <div className="mt-4 flex flex-wrap gap-2">

@@ -28,6 +28,7 @@ import Link from "next/link";
 import { useLadderStore } from "../../stores/ladderStore";
 import type { LadderPageType } from "../../stores/ladderStore";
 import { CompareAddButton } from "../site/CompareAddButton";
+import { FavoriteButton } from "../site/FavoriteButton";
 import { LADDER_SHOWCASE_AUTO_SCROLL, type LadderRankEntry } from "../../lib/features/ladder/types";
 import { getTier, type TierThresholds, type PerformanceTier } from "../../lib/features/ladder/config";
 import { ROW_H, buildLayout } from "../../lib/features/ladder/matrix-layout";
@@ -231,6 +232,28 @@ function CompareAddButtonWrap({ entry, row }: { entry: LadderRankEntry; row: num
   );
 }
 
+/**
+ * 卡片「收藏」浮钮（TASK-023）：与「+对比」并列浮于卡片右上角（对比按钮左侧），
+ * 悬浮不遮分数/名次（分数在卡片左下，浮钮恒在右上）。refType 依 pageType 归一：
+ *   models 榜=MODEL（refId=AiModel.id）；stations 榜=API_STATION（refId=APIStation.id）。
+ * favorites.enabled 关闭时 FavoriteButton 自身返回 null（受控面）。
+ */
+function FavoriteButtonWrap({ entry, row, pageType }: { entry: LadderRankEntry; row: number; pageType: LadderPageType }) {
+  return (
+    <div
+      className="absolute z-10 flex items-start justify-end p-1"
+      style={{ top: row * ROW_H + (ROW_H - CARD_H) / 2, right: 28, height: CARD_H, width: 26 }}
+    >
+      <FavoriteButton
+        refType={pageType === "stations" ? "API_STATION" : "MODEL"}
+        refId={entry.modelId}
+        name={entry.modelName}
+        size="sm"
+      />
+    </div>
+  );
+}
+
 /** 档位网格线背景：每 ROW_H 一条 1px 淡线 */
 const GRID_STYLE: React.CSSProperties = {
   backgroundImage: `repeating-linear-gradient(to bottom, rgba(148,163,184,0.16) 0px, rgba(148,163,184,0.16) 1px, transparent 1px, transparent ${ROW_H}px)`,
@@ -264,6 +287,7 @@ function MatrixColumnTrack({
         {col.cells.map(({ entry, row }) => (
           <div key={entry.modelId} className="group/compare relative">
             <MatrixCard entry={entry} row={row} pageType={pageType} tierThresholds={tierThresholds} />
+            <FavoriteButtonWrap entry={entry} row={row} pageType={pageType} />
             <CompareAddButtonWrap entry={entry} row={row} />
           </div>
         ))}
