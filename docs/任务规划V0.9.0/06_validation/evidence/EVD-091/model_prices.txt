@@ -1,0 +1,51 @@
+TASK-091 model_prices 部分唯一索引真库取证（\d 输出）
+=====================================================================
+执行日期: 2026-10-19 | 开发线: nevermeetagain/Aidean main（本地 nm-main，remote 名 mirror）
+DB 环境: 隔离一次性容器 aidean-091-pg（postgres:16）/ 库 aidean091 / 宿主 5437（空库重放 18 迁移）
+关注点: 当前价部分唯一索引 model_prices_model_id_current_key UNIQUE (model_id) WHERE is_current = true
+  —— 迁移 20261014000000_model_prices_partial_current_unique（M-001 / TASK-011：全列唯一 (model_id,is_current) 改为部分唯一 (model_id) WHERE is_current=true），
+  —— 与 schema.prisma 注释一致：R-01 修复（ADR-P003 / M-001 / TASK-011）不再用 @@unique([modelId,isCurrent])。
+命令: docker exec aidean-091-pg psql -U postgres -d aidean091 -c "\d model_prices"
+
+----- (a) \d model_prices（原样输出）-----
+                                      Table "public.model_prices"
+        Column         |              Type              | Collation | Nullable |        Default
+-----------------------+--------------------------------+-----------+----------+-----------------------
+ id                    | text                           |           | not null |
+ model_id              | text                           |           | not null |
+ price_cache           | numeric(19,6)                  |           |          |
+ price_input           | numeric(19,6)                  |           | not null |
+ price_output          | numeric(19,6)                  |           | not null |
+ price_per_request     | numeric(19,6)                  |           |          |
+ billing_mode          | "BillingMode"                  |           | not null | '1'::"BillingMode"
+ billing_currency      | text                           |           | not null | 'CNY'::text
+ original_currency     | text                           |           |          |
+ original_price_input  | numeric(19,6)                  |           |          |
+ original_price_output | numeric(19,6)                  |           |          |
+ exchange_rate         | numeric(10,6)                  |           |          |
+ effective_from        | timestamp(3) without time zone |           | not null |
+ effective_until       | timestamp(3) without time zone |           |          |
+ is_current            | boolean                        |           | not null | true
+ source_type           | "PriceSource"                  |           | not null | '1'::"PriceSource"
+ source_name           | text                           |           |          |
+ source_url            | text                           |           |          |
+ notes                 | text                           |           |          |
+ created_at            | timestamp(3) without time zone |           | not null | CURRENT_TIMESTAMP
+ billing_unit          | text                           |           | not null | 'per_1k_tokens'::text
+Indexes:
+    "model_prices_pkey" PRIMARY KEY, btree (id)
+    "model_prices_effective_from_idx" btree (effective_from)
+    "model_prices_is_current_idx" btree (is_current)
+    "model_prices_model_id_current_key" UNIQUE, btree (model_id) WHERE is_current = true
+    "model_prices_model_id_idx" btree (model_id)
+Foreign-key constraints:
+    "model_prices_model_id_fkey" FOREIGN KEY (model_id) REFERENCES ai_models(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+----- (b) pg_indexes 唯一索引 indexdef 佐证 -----
+ CREATE UNIQUE INDEX model_prices_pkey ON public.model_prices USING btree (id)
+ CREATE UNIQUE INDEX model_prices_model_id_current_key ON public.model_prices USING btree (model_id) WHERE (is_current = true)
+
+----- 结论 -----
+\d 输出含行 "model_prices_model_id_current_key" UNIQUE, btree (model_id) WHERE is_current = true，
+即部分唯一索引带 WHERE is_current 谓词真实存在于 PG16 真库；旧的 (model_id,is_current) 全列唯一已被替换为部分唯一。
+同一 model_id 只允许一行 is_current=true，历史行(is_current=false)不受该约束限制。取证通过，无 skipped。

@@ -1,0 +1,35 @@
+TASK-091 卡面验证命令 + 收尾回归 + 作用域（执行者取证，最终裁定交主助手/子智能体审查）
+=====================================================================
+日期: 2026-10-19 | 开发线 nm-main(=mirror/main) | 基线 bd8f0c17，含 TASK-085 提交 d7ab85a2
+
+## 1) 卡面「验证命令」执行（Git bash 忠实复现，路径经 find 定位避免内联 CJK）
+命令:
+  export PG16_URL="postgresql://postgres:***@localhost:5437/aidean091?schema=public"
+  test -n "$PG16_URL" || { echo PG16_URL_missing; exit 2; }
+  grep -Eq '23505|P2002' "$d/favorites.txt" && grep -q 'WHERE is_current' "$d/model_prices.txt"; echo exit=$?
+输出:
+  DIR=docs/任务规划V0.9.0/06_validation/evidence/EVD-091
+  VERIFY_EXIT=0
+  SQLSTATE=23505
+  39:    "model_prices_model_id_current_key" UNIQUE, btree (model_id) WHERE is_current = true
+判定: 两条 grep 均命中，VERIFY_EXIT=0。
+
+## 2) 真库断言要点（详见 favorites.txt / model_prices.txt）
+- 收藏 favorites(user_id,refType,ref_id)：第二次重复 INSERT -> SQLSTATE=23505（P2002 等价），约束名 favorites_user_id_refType_ref_id_key。无 skipped。
+- model_prices：\d 显示 model_prices_model_id_current_key UNIQUE (model_id) WHERE is_current = true（部分唯一）。旧全列唯一已被迁移 20261014000000 替换。
+
+## 3) 空库迁移重放（隔离容器 aidean-091-pg / postgres:16 / 宿主 5437）
+- prisma migrate deploy：18 migrations 全部 Applied，"All migrations have been successfully applied."，MIGRATE_EXIT=0
+- 命中校验：db=aidean091  rows_applied=18（确认非共享 5435/aidean）
+- 收尾：docker rm -f aidean-091-pg（TEARDOWN_EXIT=0，容器已消失）
+
+## 4) 收尾回归（卡规则 3，全部绿）
+- pnpm --filter @aidean/shared exec tsc --noEmit         -> SHARED_TSC_EXIT=0
+- pnpm --filter @aidean/shared test                        -> Test Files 21 passed (21) / Tests 210 passed (210)  SHARED_TEST_EXIT=0
+- pnpm --filter web exec tsc --noEmit                      -> WEB_TSC_EXIT=0
+- DATABASE_URL=placeholder pnpm --filter web test          -> Test Files 125 passed | 2 skipped (127) / Tests 1210 passed | 5 skipped (1215)  WEB_TEST_EXIT=0
+  注：5 处 skip 为 DB 门控集成用例（未设 RUN_DB_TESTS=1），占位串环境下预期；真库证据见 §1/§2/§3（RUN_DB 断言已在隔离 PG16 真跑，无 skipped）。
+
+## 5) 作用域（git status --porcelain，提交前）
+?? docs/任务规划V0.9.0/06_validation/evidence/EVD-091/
+- 本卡仅新增 EVD-091/**{favorites.txt, model_prices.txt, context.txt, verify-cmd.txt}，未触碰 apps/packages/迁移/契约/AGENTS.md/.example/history/历代规划。

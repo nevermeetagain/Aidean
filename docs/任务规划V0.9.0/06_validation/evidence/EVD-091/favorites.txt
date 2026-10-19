@@ -1,0 +1,42 @@
+TASK-091 收藏唯一约束真库功能断言（证据，不改代码）
+=====================================================================
+执行日期: 2026-10-19 | 开发线: nevermeetagain/Aidean main（本地 nm-main，remote 名 mirror）
+基线: bd8f0c17 + TASK-085 提交 d7ab85a2
+DB 环境: 隔离一次性容器 aidean-091-pg（postgres:16），宿主端口 5437 -> 容器 5432
+库名: aidean091（空库经 prisma migrate deploy 重放 18 个迁移后创建，未触碰共享 5435/aidean）
+FavoriteType 枚举: MODEL | API_STATION
+
+断言逻辑:
+  favorites.user_id 有 FK -> users.id（ON DELETE CASCADE），故先插入一个最小 user 满足 FK，
+  再对同一 (user_id, refType, ref_id) 连续两次 INSERT，第二次应触发 unique_violation。
+  DO 块用 EXCEPTION WHEN unique_violation 捕获并 RAISE NOTICE 打印 SQLSTATE，稳定呈现错误码 23505。
+命令:
+  Get-Content .scratch/091/fav.sql | docker exec -i aidean-091-pg psql -U postgres -d aidean091 -v ON_ERROR_STOP=0
+
+----- 原始 psql 输出（DO 内捕获，psql 整体退出码 0 属正常）-----
+INSERT 0 1
+NOTICE:  RESULT: REJECTED duplicate; SQLSTATE=23505; MSG=duplicate key value violates unique constraint "favorites_user_id_refType_ref_id_key"
+DO
+                                Table "public.favorites"
+   Column   |              Type              | Collation | Nullable |      Default
+------------+--------------------------------+-----------+----------+-------------------
+ id         | text                           |           | not null |
+ user_id    | text                           |           | not null |
+ refType    | "FavoriteType"                 |           | not null |
+ ref_id     | text                           |           | not null |
+ note       | text                           |           |          |
+ created_at | timestamp(3) without time zone |           | not null | CURRENT_TIMESTAMP
+Indexes:
+    "favorites_pkey" PRIMARY KEY, btree (id)
+    "favorites_refType_ref_id_idx" btree ("refType", ref_id)
+    "favorites_user_id_idx" btree (user_id)
+    "favorites_user_id_refType_ref_id_key" UNIQUE, btree (user_id, "refType", ref_id)
+Foreign-key constraints:
+    "favorites_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+DELETE 1
+
+----- 结论 -----
+第二次相同 (user_id='u-091-test', refType='MODEL', ref_id='m-091') 的 INSERT 被数据库唯一约束拒绝，
+SQLSTATE=23505（对应 Prisma P2002），约束名 favorites_user_id_refType_ref_id_key，
+与 schema.prisma 的 favorites @@unique([userId, refType, refId]) 一致。真库断言通过，无 skipped。

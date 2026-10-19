@@ -1,0 +1,37 @@
+TASK-091 运行上下文与可复现性
+=====================================================================
+执行者: 外部Agent（本卡仅产出证据，未改任何代码/迁移/契约/规划文件）
+日期: 2026-10-19 | 开发线: nevermeetagain/Aidean main（本地分支 nm-main，remote 名 mirror）
+基线: bd8f0c17（含 TASK-085 提交 d7ab85a2）
+
+## 目标（卡面）
+补齐 PG16 真库证据中 Hark 未覆盖部分：收藏唯一约束 favorites @@unique(userId,refType,refId) 真库断言 + \d model_prices 部分唯一索引。
+迁移重放与 persistPrices 三次写价已由 Hark 在 PG16.14 实测（EVD-058/migrate-deploy-empty.txt、EVD-089/int-spec-gate-matrix.txt）。
+
+## 环境选择：隔离一次性容器（不污染共享 dev 库）
+- 现状: shared-postgres（postgres:16-alpine，宿主 5435 -> 容器 5432）为项目/bothot 共用 dev 库；apps/web/.env DATABASE_URL 指向 localhost:5435/aidean。
+- 决策: 为避免向共享库写入测试数据，另起一次性容器 aidean-091-pg（宿主 5437），空库经 prisma migrate deploy 重放，再在容器内做断言；完成后 docker rm -f 销毁。
+
+## 步骤与命令证据
+1) 空库迁移重放:
+   docker run -d --name aidean-091-pg -p 5437:5432 -e POSTGRES_PASSWORD=*** -e POSTGRES_DB=aidean091 postgres:16   (RUN_EXIT=0)
+   DATABASE_URL='postgresql://postgres:***@localhost:5437/aidean091?schema=public' pnpm --filter web exec prisma migrate deploy
+   结果: 18 migrations found -> 逐条 Applying ... -> "All migrations have been successfully applied." (MIGRATE_EXIT=0)
+   其中含 20261014000000_model_prices_partial_current_unique、20260925170000_align_unique_indexes。
+   命中校验（确认非共享库）: SELECT current_database(),count(*) FROM _prisma_migrations -> db=aidean091  rows_applied=18
+
+2) 收藏功能断言: 见 favorites.txt —— 第二次重复 INSERT 被拒，SQLSTATE=23505，约束名 favorites_user_id_refType_ref_id_key。
+
+3) 部分唯一索引取证: 见 model_prices.txt —— \d 含 "model_prices_model_id_current_key" UNIQUE, btree (model_id) WHERE is_current = true。
+
+4) 卡面验证命令: 见 verify-cmd.txt（PG16_URL 非空 && grep 23505|P2002 favorites.txt && grep 'WHERE is_current' model_prices.txt）。
+
+## 范围自证
+本卡写入文件仅落在 docs/任务规划V0.9.0/06_validation/evidence/EVD-091/**（favorites.txt、model_prices.txt、context.txt、verify-cmd.txt）。
+未改 apps/**、packages/**、迁移、契约、AGENTS.md、.example/history、历代规划目录。git diff --name-only 见 verify-cmd.txt 附。
+
+## 回归（卡规则 3）
+见 verify-cmd.txt 末尾回归摘要（shared tsc / shared test / web tsc / web 全量单测占位串）。
+
+## 收尾
+断言与取证完成后执行 docker rm -f aidean-091-pg 销毁隔离容器。
