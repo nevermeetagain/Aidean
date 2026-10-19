@@ -1,0 +1,51 @@
+TASK-085 叠加缺口回补 + 他线归档 —— 拓扑与缺口取证
+=====================================================
+生成日期: 2026-10-19
+开发线裁决 B-0' = A'（2026-10-19 用户裁决原文见下 §裁决）
+唯一开发线: nevermeetagain/Aidean · main（本仓库 remote 名 mirror）
+他线(归档对象): aideanew/Aidean · huaweicloud（本仓库 remote 名 origin）
+
+## 基线（实测）
+- 开工基线 mirror/main = bd8f0c17（= 任务基线，Hark 已完成 089/026/082/027/056/058/060/057 后 tip）
+- 他线 tip huaweicloud = 0d4c8b51（S3 收口线；与镜像历史不相交：git merge-base 为空）
+- 历史叠加基线 c2da2197 是 bd8f0c17 的祖先：git merge-base --is-ancestor c2da2197 bd8f0c17 → exit 0（验收项之一）
+
+## 叠加遗漏清单（huaweicloud 有、镜像缺；限定 Agent-Guard 所有权路径）
+命令: git diff --stat bd8f0c17 0d4c8b51 -- scripts/contract scripts/guard .github/workflows/ci.yml
+结果（10 文件 · 945 插入 / 2 删除）:
+  A scripts/contract/gen-contract-tests.mjs        （契约测试唯一生成器，真源）
+  A scripts/guard/_lib.mjs
+  A scripts/guard/module-boundary.mjs
+  A scripts/guard/port-consistency.mjs
+  A scripts/guard/port-ranges.json
+  A scripts/guard/root-allowlist.txt
+  A scripts/guard/root-pollution.mjs
+  A scripts/guard/run-all.mjs
+  A scripts/guard/secret-scan.mjs
+  M .github/workflows/ci.yml                        （镜像版缺 e2e-skeleton job + Guard rails + 漂移步骤；huaweicloud 版补齐）
+package.json: 无差异（scripts 段两侧一致，不回补）
+
+## 另列（不在本卡回补，属他卡/他线）
+- scripts/check-docs-facts.mjs（M）：docs 门禁期望值回灌归 TASK-090
+- apps/** / packages/**（除 contract 重生成产物）：业务源码，本卡禁止改动
+- docs/**、.example/**：历代规划只读 / 历史只读（铁律4），本卡不动
+
+## 回补后重生成核对（E9-07 关键）
+命令: node scripts/contract/gen-contract-tests.mjs && git diff --exit-code packages/shared/src/__tests__/contract/
+- 生成器确定性幂等：连跑两次产物一致（envelope/identity 与已提交完全相同）
+- errors.generated.spec.ts：
+  - CODE_TABLE（27，含 20004 MONITOR_SOURCE_NOT_FOUND / 50012 MONITOR_SOURCE_CREDENTIAL_MISSING）↔ live ERROR_CODES 逐值一致 → Hark 手补两码与生成器输出吻合（E9-07 达成）
+  - HTTP_STATUS_MAP（12，含 20004:404 / 50012:503）↔ live DEFAULT_STATUS_BY_CODE 一致
+  - DOC_REGISTERED 差异：已提交 26 行 → 重生成 9 行
+    根因：镜像 docs/architecture/API接口文档.md §4 码表实测仅登记 9 行（30001-30004 / 40001-40005），
+    1xxxx/2xxxx/5xxxx 系列在镜像文档未登记；已提交的 26 行是当初叠加自 huaweicloud（其 §4 更全），与镜像自身文档不一致。
+    断言 "§4 每个登记码 ⊆ 代码表" 为子集校验，9 行仍全绿（shared 210/210 复验）。
+    → 补全镜像 §4 文档登记（含 20004/50012）属 TASK-090（E9-15 明确把 §4 登记归 090）；本卡在允许范围内提交与镜像文档自洽的重生成产物，使 CI 漂移门（gen && git diff --cached --exit-code HEAD）转绿。
+
+## 裁决原文（B-0' = A'，摘自 24_/README/25_）
+"用户回应『那你来做核心部分，非核心部分交由其他助手』（2026-10-19 11:39 CST），对应 Hark 提议『选 A'（只在镜像开发）并批准改业务代码』→ B-0' = A'：nevermeetagain/Aidean main 为唯一开发线。
+huaweicloud 由 TASK-085 打 archive/huaweicloud-<YYYYMMDD> tag 冻结，工件回补后不再叠加业务源码。"
+
+## 他线冻结
+- 在 huaweicloud tip 0d4c8b51 打 tag：archive/huaweicloud-20261019（附注，指向该线最终 HEAD）
+- tag 推送至 origin（aideanew），作为归档锚点；不改 huaweicloud 分支本身、无 --force

@@ -1,0 +1,20 @@
+# TASK-007 root-pollution 已认可「根级文件」基线（提交态唯一真源）
+# 每行一个仓库根级文件名（posix、无斜杠）。以 # 起始为注释、空行忽略。
+# 语义：任何「根级 tracked 文件 ⊖ 本基线」= 新增污染 → 守卫 FAIL；本基线中已不存在于根级 tracked 的项 → WARN（漂移）。
+# 目的：让守卫在 CI 干净检出下也能拦截「把污染文件提交进仓库」这一真实场景（CodeReview M-2）。
+# 新增合法根级文件必须同时：①确实落在此处 ②对应独立任务/ADR，方可扩基线。
+# 基线来源：分支 huaweicloud HEAD 5ea3cb1b 的 `git ls-files` 根级集合（14 项，用户 2026-10-14 复核）。
+.dockerignore
+.editorconfig
+.eslintrc.json
+.gitignore
+AGENTS.md
+CHANGELOG.md
+Dockerfile
+README.md
+package.json
+playwright.config.ts
+pnpm-lock.yaml
+pnpm-workspace.yaml
+tsconfig.base.json
+turbo.json

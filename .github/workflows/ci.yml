@@ -1,8 +1,8 @@
 # CI 门禁（G-2 硬门禁实装，2026-08-28）
 #
-# 门禁链：铁律1 文档检查 → prisma generate → 双包 typecheck（tsc --noEmit）→ 双包单测 → 生产构建
+# 门禁链：铁律1 文档检查 → 自动化守卫(TASK-007：根污染/密钥/模块边界/端口区间) → prisma generate → 双包 typecheck（tsc --noEmit）→ lint(web) → 三包单测（shared/ui/web）→ 生产构建
 # 取舍：
-#   - e2e（Playwright）需 PG/Redis/Mock 上游 service，暂不进 CI，本地 `pnpm test:e2e` 口径不变；
+#   - e2e：S0 步行骨架子集（smoke 七断言 + walking-skeleton）进独立 e2e-skeleton job（真 PG16/Redis7 服务容器 + 空库 prisma migrate deploy + seed + next start :3000 + /system/ready 轮询）；全量 9 spec（含 3333 等外部依赖）仍本地 `pnpm test:e2e`，不进 CI；
 #   - tsc 与 next build 分开跑：build 内置 typecheck，但独立 tsc 失败信息定位更直接；
 #   - DATABASE_URL 用占位串：prisma generate / next build 只解析不连接。
 name: CI
@@ -42,6 +42,19 @@ jobs:
       - name: Docs facts (基线不变量)
         run: node scripts/check-docs-facts.mjs
 
+      - name: Guard rails (TASK-007 根污染/密钥/模块边界/端口区间)
+        # 零依赖确定性守卫（node 内置 fs/path/url/child_process + git）。任一 FAIL → 阻断；
+        # WARN（如模块边界既存例外、端口未裁决区间）不改退出码，仅在日志显形，供证据归档。
+        run: node scripts/guard/run-all.mjs
+
+      - name: Contract tests (generate + drift check)
+        # 重生成契约 spec；漂移(真源改了未重生成)/手改生成物/生成物未入库 → 非零退出，快速失败。
+        # 用 git add -A + --cached 覆盖未跟踪态，避免 git diff 对 ?? 文件空转（CodeReview TASK-004 Warning）。
+        run: |
+          node scripts/contract/gen-contract-tests.mjs
+          git add -A packages/shared/src/__tests__/contract
+          git diff --cached --exit-code HEAD -- packages/shared/src/__tests__/contract
+
       - name: Prisma generate
         run: pnpm --filter web exec prisma generate
 
@@ -51,8 +64,16 @@ jobs:
       - name: Typecheck (web)
         run: pnpm --filter web exec tsc --noEmit
 
+      - name: Lint (web)
+        # TASK-050：把既有 lint 纳入硬门禁（Execution Step 1：Typecheck(web) 之后）。命令 = next lint（等价根 `pnpm -w lint`，lint 脚本仅 web 定义）。
+        run: pnpm --filter web lint
+
       - name: Unit tests (shared)
         run: pnpm --filter @aidean/shared test
+
+      - name: Unit tests (ui)
+        # TASK-050：packages/ui 既有 vitest 用例（cn tailwind-merge 冲突消解 4 例）纳入门禁（Execution Step 2：Unit tests(shared) 之后）。
+        run: pnpm --filter @aidean/ui test
 
       - name: Unit tests (web)
         run: pnpm --filter web test
@@ -93,3 +114,125 @@ jobs:
           JWT_SECRET: x
           NEXT_PUBLIC_SITE_URL: http://localhost
         run: docker compose -f docker/docker-compose.prod.yml config -q
+
+  # S0 步行骨架真库 e2e（TASK-006 / REQ-NF-005 / 未完成事项 #36）。
+  # 定位：全部集成验收卡的上游门禁——push/PR 时在一次性 PG16 上重放迁移 + seed + 生产构建产物，
+  #       next start 于 :3000（与 playwright baseURL 恒一致，禁临时端口），/system/ready=200 后跑
+  #       smoke 七断言 + walking-skeleton。仅覆盖 S0 骨架子集，全量 9 spec（含 3333 外部依赖）仍本地跑。
+  # 关键取舍（逐条经代码/实测取证，详见 EVD-006）：
+  #   - next start 而非 dev：生产构建产物消除 dev 冷编译竞态（TASK-005 曾受其扰）；实测 start-server.js 下
+  #     smoke[6] Secure cookie 经 http://localhost（Chromium 视 localhost 为安全上下文）正常回传、4 次登录 < 20/600s 限流。
+  #   - 不注入 JWT_PRIVATE_KEY：keys.ts 优先级 env→Redis keyring→内存兜底，单实例 next start 签发与 /.well-known/jwks.json
+  #     同源自洽，中间件 RS256 可验签；NEXT_PUBLIC_SITE_URL 决定 AUTH_ISSUER（jwks 基准），必须与 :3000 对齐否则 fail-closed 307 到错误基址。
+  #   - JWT_SECRET 强制：env-check.assertJwtSecret() 在 login/register 签发期抛错，缺失即全红。
+  #   - 仅测骨架子集故登录数低，AIDEAN_BYPASS_LOGIN_RATE_LIMIT=1 在 production 下不生效（isProduction 双条件保护）也无 429 风险。
+  #   - seed 全离线（无外网/上游采集，见 EVD-006 阻塞条件核验），不触发 TASK-006 停止条件。
+  e2e-skeleton:
+    name: E2E Walking Skeleton (S0)
+    runs-on: ubuntu-latest
+    needs: verify
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: "postgresql://aidean:aidean@localhost:5432/aidean?schema=public"
+      REDIS_URL: "redis://localhost:6379"
+      JWT_SECRET: "ci-e2e-skeleton-throwaway-secret-not-a-real-key"
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+      AIDEAN_ENABLE_MOCK_UPSTREAM: "1"
+      AIDEAN_BYPASS_LOGIN_RATE_LIMIT: "1"
+      CHECKPOINT_DISABLE: "1"
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: aidean
+          POSTGRES_PASSWORD: aidean
+          POSTGRES_DB: aidean
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U aidean -d aidean"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prisma generate
+        run: pnpm --filter web exec prisma generate
+
+      - name: Migrate deploy (empty DB, replay all migrations)
+        # 空库全量重放；日志应见应用全部迁移目录（V0.5.0 实测 17 条，任务书「16」基于旧 main，属规格漂移，见 EVD-006）。
+        run: pnpm --filter web exec prisma migrate deploy
+
+      - name: Seed (users/products + navigation-menu + rbac)
+        # db:seed = tsx prisma/seed.ts；navigation-menu/rbac 无 npm script，tsx 直调。
+        run: |
+          pnpm --filter web run db:seed
+          pnpm --filter web exec tsx prisma/seed-navigation-menu.ts
+          pnpm --filter web exec tsx prisma/seed-rbac.ts
+
+      - name: Production build
+        run: pnpm --filter web build
+
+      - name: Install Playwright browsers (chromium)
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run E2E skeleton (start :3000 → ready → walking-skeleton + smoke)
+        shell: bash
+        run: |
+          set +e
+          mkdir -p .auth
+          pnpm --filter web exec next start -p 3000 > /tmp/next-start.log 2>&1 &
+          SERVER_PID=$!
+          # 精确回收：$! 仅捕获 pnpm 包装 PID，next start 实为其子进程（node bin/next start / next-server 标题）；
+          # 用 trap EXIT 覆盖两条退出路径（未就绪 exit 1 / 末尾 exit $rc），pkill 兜住孤儿子进程。CodeReview Major-1。
+          cleanup() {
+            kill "$SERVER_PID" 2>/dev/null || true
+            pkill -f "next start" 2>/dev/null || true
+            pkill -f "next-server" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+          ready=0
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/v1/system/ready || echo 000)
+            if [ "$code" = "200" ]; then ready=1; echo "ready after ${i}s"; break; fi
+            sleep 1
+          done
+          if [ "$ready" != "1" ]; then
+            echo "::error::/system/ready 未在 60s 内变 200"; cat /tmp/next-start.log
+            exit 1
+          fi
+          rc=0
+          pnpm exec playwright test --project=web e2e/web/walking-skeleton.spec.ts || rc=1
+          pnpm exec playwright test --project=smoke || rc=1
+          exit $rc
+
+      - name: Show next start log (on failure)
+        if: failure()
+        run: cat /tmp/next-start.log || true
+
+      - name: Upload Playwright report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-e2e-skeleton
+          path: playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore

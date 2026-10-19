@@ -1,0 +1,42 @@
+TASK-085 验证输出（执行者取证，最终通过与否由主助手/子智能体审查裁定）
+=====================================================================
+日期: 2026-10-19   分支: nm-main(=mirror/main) 基线 bd8f0c17
+
+## 卡面「验证命令」
+$ git merge-base --is-ancestor c2da219 mirror/main; echo ff=$?
+  ff=0
+$ test -f scripts/contract/gen-contract-tests.mjs && node scripts/contract/gen-contract-tests.mjs && git diff --exit-code packages/shared/src/__tests__/contract/; echo gen=$?
+  （回补后工作树=生成器输出；errors.generated.spec.ts 相对旧提交为 9 行 DOC_REGISTERED，与镜像 §4 文档一致；见 topology.txt 说明）
+  gen=0
+$ test -d scripts/guard; echo guard=$?
+  guard=0
+
+## 语法自检（回补脚本 node --check）
+gen-contract-tests.mjs=0  run-all.mjs=0  secret-scan.mjs=0  port-consistency.mjs=0
+module-boundary.mjs=0  root-pollution.mjs=0  _lib.mjs=0
+
+## ci.yml 关键步骤存在性（回补自 huaweicloud）
+L45  name: Guard rails (TASK-007 ...)
+L48  run: node scripts/guard/run-all.mjs
+L54  node scripts/contract/gen-contract-tests.mjs
+L55  git add -A packages/shared/src/__tests__/contract
+L56  git diff --cached --exit-code HEAD -- packages/shared/src/__tests__/contract   （防漂移门）
+L130 e2e-skeleton:  （job 存在）
+
+## 回归（卡规则 3）
+- pnpm --filter @aidean/shared exec tsc --noEmit            → exit 0
+- pnpm --filter @aidean/shared exec vitest run              → Test Files 21 passed / Tests 210 passed（含 contract/errors.generated.spec.ts 7 项）
+- pnpm --filter web exec tsc --noEmit                        → exit 0（注：需先 prisma generate，因切到 nm-main 后 node_modules/.prisma 需含 MonitoringSource；已重建，属环境前置非本卡改动）
+
+## 环境
+- Postgres 16：docker shared-postgres postgres:16-alpine（宿主 5435→容器 5432）；本卡为 docs/scripts/gate 回补，无 PG 集成用例，未触发 int spec
+- node v24.12.0 / pnpm 9.15.9 / Docker 29.4.3
+
+## 本卡提交变更集（git diff --name-only，限「允许修改」范围）
+- A scripts/contract/gen-contract-tests.mjs
+- A scripts/guard/{_lib,module-boundary,port-consistency,root-pollution,run-all,secret-scan}.mjs
+- A scripts/guard/{port-ranges.json,root-allowlist.txt}
+- M .github/workflows/ci.yml
+- M packages/shared/src/__tests__/contract/errors.generated.spec.ts（重生成产物，DOC_REGISTERED 对齐镜像 §4）
+- A docs/任务规划V0.9.0/06_validation/evidence/EVD-085/{topology.txt,verify.txt}
+（envelope/identity 内容无变化，仅 autocrlf EOL 噪声，未纳入提交）

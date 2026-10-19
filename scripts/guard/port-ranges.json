@@ -1,0 +1,10 @@
+{
+  "$comment": "TASK-007 端口区间登记表（守卫 port-consistency.mjs 的唯一区间真源）。confirmed=true 仅登记已裁决项；seed.ts OIDC localhost 回调端口命中任一登记区间即放行，命中未裁决区间→WARN，全部区间之外→FAIL。Aidean 主站用户访问端口口径：2026-10-14。子平台区间以 P-1/P-2 裁决为准。",
+  "self": "aidean",
+  "aideanSelf": { "min": 3000, "max": 3100, "confirmed": true, "note": "Aidean 主站自身入口（apps/web dev/start、playwright baseURL、Dockerfile PORT/EXPOSE、auth/constants AUTH_ISSUER）必须落此区间，否则 FAIL" },
+  "ranges": [
+    { "platform": "aidean", "min": 3000, "max": 3100, "confirmed": true, "note": "Aidean 主站（用户 2026-10-14 口径）" },
+    { "platform": "aideanFleet", "min": 3100, "max": 3200, "confirmed": true, "note": "AideanFleet 3100-3200" },
+    { "platform": "aideanBotHot", "min": 3200, "max": 3300, "confirmed": true, "note": "AideanBotHot 3200-3300" }
+  ]
+}

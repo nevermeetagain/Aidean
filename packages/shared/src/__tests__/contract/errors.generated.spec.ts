@@ -38,31 +38,15 @@ const CODE_TABLE = {
 } as const;
 
 const DOC_REGISTERED: ReadonlyArray<{ code: number; identifier: string }> = [
-  { code: 10001, identifier: "USER_NOT_FOUND" },
-  { code: 10002, identifier: "EMAIL_DUPLICATED" },
-  { code: 10003, identifier: "INVALID_CREDENTIALS" },
-  { code: 10004, identifier: "UNAUTHENTICATED" },
-  { code: 10005, identifier: "ACCOUNT_DISABLED" },
-  { code: 10006, identifier: "TOO_MANY_REQUESTS" },
-  { code: 10007, identifier: "FORBIDDEN_CLIENT_SCOPE" },
-  { code: 10008, identifier: "FORBIDDEN" },
-  { code: 10009, identifier: "CREDENTIAL_NOT_REVOCABLE" },
-  { code: 20001, identifier: "MODEL_NOT_FOUND" },
-  { code: 20002, identifier: "RANKING_TYPE_INVALID" },
-  { code: 20003, identifier: "FAVORITE_TARGET_NOT_FOUND" },
   { code: 30001, identifier: "SITE_UNAVAILABLE" },
   { code: 30002, identifier: "GATEWAY_NO_ROUTE" },
   { code: 30003, identifier: "GATEWAY_ALL_FAILED" },
   { code: 30004, identifier: "UPSTREAM_ERROR" },
-  { code: 40000, identifier: "BAD_REQUEST" },
   { code: 40001, identifier: "INSUFFICIENT_BALANCE" },
   { code: 40002, identifier: "RECHARGE_ORDER_NOT_FOUND" },
   { code: 40003, identifier: "ORDER_STATE_INVALID" },
   { code: 40004, identifier: "HOLD_INVALID" },
   { code: 40005, identifier: "NOTIFY_SIGNATURE_INVALID" },
-  { code: 50000, identifier: "INTERNAL_ERROR" },
-  { code: 50010, identifier: "SERVICE_UNAVAILABLE" },
-  { code: 50011, identifier: "FEATURE_DISABLED" },
 ];
 
 const HTTP_STATUS_MAP: Readonly<Record<number, number>> = {
