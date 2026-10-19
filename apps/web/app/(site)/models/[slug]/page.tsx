@@ -152,7 +152,10 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
   const effective = price ? await loadEffectivePrice(model.id) : null;
   const priceCurrency = price?.billingCurrency ?? "CNY";
   // 单位随价格行 billingUnit 展示（原硬编码「¥/M Tokens」与 per_1k_tokens 存量行不符；统一 ¥/M 归一属 TASK-053/U-15）
-  const priceUnit = price?.billingUnit === "per_1k_tokens" ? "/K Tokens" : price?.billingUnit === "per_1m_tokens" ? "/M Tokens" : price?.billingUnit ? `/${price.billingUnit}` : undefined;
+  const UNIT_LABEL: Record<string, string> = { per_1k_tokens: "/K Tokens", per_1m_tokens: "/M Tokens", per_million_tokens: "/M Tokens" };
+  const priceUnit = price?.billingUnit ? (UNIT_LABEL[price.billingUnit] ?? `/${price.billingUnit}`) : undefined;
+  // 「限时免费」须输入与输出同为 0（与 /pricing、后台口径一致，review-029 M1）
+  const promoFree = !!effective?.isPromotion && Number(effective.priceInput) === 0 && Number(effective.priceOutput) === 0;
   const score = model.scores[0];
   const protocolLabel = PROTOCOL_LABELS[String(model.protocol)] ?? String(model.protocol);
 
@@ -264,6 +267,7 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
                       isPromotion={effective?.isPromotion ?? false}
                       basePrice={effective?.basePriceInput ?? null}
                       promotionEndsAt={effective?.promotionEndsAt ?? null}
+                      free={promoFree}
                     />
                   ) : (
                     "未公开"

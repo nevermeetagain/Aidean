@@ -20,3 +20,10 @@
 - D-029-4：详情页单位硬编码「¥/M Tokens」与存量 per_1k_tokens/USD 行不符 → 单位与币种随价格行展示（¥/M 归一仍属 TASK-053/U-15）。
 
 截图中文为 wqy-microhei 字体渲染（沙箱无系统中文字体）。
+
+## review-029 处置（独立审查：04cd079 PASS；648d93a 必改 2 项）
+- M1 已修：PriceTag 新增 `free` 入参，详情页按「输入与输出同为 0」判定「限时免费」（与 /pricing、后台口径一致），单测 +2。
+- M2 已处置：`apps/web/lib/admin/promotions-ui.spec.ts` 不在卡面允许清单 → 规划方追认 E10-09（components/ 不在 vitest include 内，组件纯逻辑与渲染单测只能落 lib/**；同步写入 TASK-029 卡面允许路径）。
+- S1/S2/S3/S6 已修：createFor 每个 nonce 只消费一次；补查/搜索未新增时保留原数组；load 丢弃过期响应；单位映射补 per_million_tokens、原价比较改数值；删除成功提示 testid 改 promo-deleted。
+- S4/S5 登记未改：详情页生效价解析失败时 prices[0] 已是生效行（可能为优惠价但无徽标）；/pricing 优惠查询失败会整体走空态。两者均需改读侧仓储（Agent-API），转 TASK-053（价格展示归一）一并处理。
+- S7：优惠自然起止无写事件，页面最多 5 分钟滞后（TASK-097 已接受），TASK-030 e2e 需按此设定等待。

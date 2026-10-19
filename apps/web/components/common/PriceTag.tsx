@@ -71,6 +71,8 @@ export interface PriceTagProps {
   promotionEndsAt?: string | null;
   /** 同一行多个价格时，仅一处显示徽标（如只在输入价旁显示） */
   showBadge?: boolean;
+  /** 徽标「限时免费」判定：须由调用方按输入价与输出价同时为 0 传入；缺省时按本价格是否为 0（review-029 M1） */
+  free?: boolean;
   align?: "start" | "end";
   className?: string;
 }
@@ -83,12 +85,14 @@ export function PriceTag({
   basePrice = null,
   promotionEndsAt = null,
   showBadge = true,
+  free,
   align = "start",
   className,
 }: PriceTagProps) {
   const text = formatPriceValue(value, currency);
   const isFree = text === "免费";
-  const showBase = isPromotion && basePrice !== null && basePrice !== undefined && String(basePrice) !== String(value);
+  // 数值比较（"1.000000" 与 "1" 视为相同，review-029 S6）
+  const showBase = isPromotion && basePrice !== null && basePrice !== undefined && Number(basePrice) !== Number(value);
   return (
     <span
       data-testid={isPromotion ? "price-tag-promo" : "price-tag"}
@@ -103,7 +107,7 @@ export function PriceTag({
           {formatPriceValue(basePrice, currency)}
         </s>
       ) : null}
-      {isPromotion && showBadge ? <PromoBadge free={isFree} endsAt={promotionEndsAt} /> : null}
+      {isPromotion && showBadge ? <PromoBadge free={free ?? isFree} endsAt={promotionEndsAt} /> : null}
     </span>
   );
 }

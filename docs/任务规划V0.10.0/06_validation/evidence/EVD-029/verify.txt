@@ -6,3 +6,9 @@ All 14 assertions passed.
 RESULT: PASS (4/4 守卫通过)
  Test Files  130 passed | 2 skipped (132)
       Tests  1271 passed | 5 skipped (1276)
+[review-029 修复后复跑]
+web tsc exit=0
+web lint exit=0
+All 14 assertions passed.
+ Test Files  130 passed | 2 skipped (132)
+      Tests  1273 passed | 5 skipped (1278)

@@ -83,4 +83,15 @@ describe("PriceTag 前台价格徽标（契约⑥）", () => {
     expect(out).not.toContain("price-promo-badge");
     expect(out).toContain('data-testid="price-base"');
   });
+
+  it("free 显式传入优先：输入 0、输出 >0 的优惠不得显示「限时免费」（review-029 M1）", () => {
+    const out = html({ value: "0", basePrice: "2", isPromotion: true, free: false });
+    expect(out).toContain("限时优惠");
+    expect(out).not.toContain("限时免费");
+  });
+
+  it("原价与优惠价数值相等（\"1.000000\" vs \"1\"）不划线（review-029 S6）", () => {
+    const out = html({ value: "1", basePrice: "1.000000", isPromotion: true });
+    expect(out).not.toContain('data-testid="price-base"');
+  });
 });

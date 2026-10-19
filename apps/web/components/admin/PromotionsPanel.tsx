@@ -11,7 +11,7 @@
  *   - 「限时免费」= 输入价与输出价都为 0。
  *   - 无写权限（canWrite=false）只读：隐藏新建/编辑/删除，显示「只读」标记。
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button, Dialog, Input } from "@aidean/ui";
 
@@ -165,12 +165,15 @@ export function PromotionsPanel({ canWrite, models, createFor = null }: Props) {
   const modelById = useMemo(() => new Map([...models, ...extraModels].map((m) => [m.id, m])), [models, extraModels]);
   const now = Date.now();
 
+  const loadSeq = useRef(0);
   const load = useCallback(async () => {
+    const seq = ++loadSeq.current;
     setLoading(true);
     // AdminPageQuerySchema：pageSize ≤ 50（运行态验收实测 pageSize=100 → 40000），按 effectiveFrom 倒序分页
     const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
     if (filterModel) params.set("modelId", filterModel);
     const res = await adminFetch<{ items: PromotionRow[]; total: number; totalPages: number }>(`/api/v1/admin/prices/promotions?${params}`);
+    if (seq !== loadSeq.current) return; // 过期响应丢弃（快速翻页/切筛选，review-029 S3）
     setLoading(false);
     if (res.ok && res.data) {
       setRows(res.data.items);
@@ -196,7 +199,10 @@ export function PromotionsPanel({ canWrite, models, createFor = null }: Props) {
     ).then((results) => {
       if (cancelled) return;
       const found = results.flatMap((r) => (r.ok && r.data ? r.data.items.map(toOption) : []));
-      if (found.length) setExtraModels((prev) => [...prev, ...found.filter((f) => !prev.some((p) => p.id === f.id))]);
+      if (found.length) setExtraModels((prev) => {
+        const add = found.filter((f) => !prev.some((p) => p.id === f.id));
+        return add.length ? [...prev, ...add] : prev;
+      });
     });
     return () => {
       cancelled = true;
@@ -216,7 +222,10 @@ export function PromotionsPanel({ canWrite, models, createFor = null }: Props) {
         if (cancelled) return;
         const opts = res.ok && res.data ? res.data.items.map(toOption) : [];
         setSearchResults(opts);
-        if (opts.length) setExtraModels((prev) => [...prev, ...opts.filter((o) => !prev.some((p) => p.id === o.id))]);
+        if (opts.length) setExtraModels((prev) => {
+          const add = opts.filter((o) => !prev.some((p) => p.id === o.id));
+          return add.length ? [...prev, ...add] : prev;
+        });
       });
     }, 250);
     return () => {
@@ -234,8 +243,13 @@ export function PromotionsPanel({ canWrite, models, createFor = null }: Props) {
     setDialogOpen(true);
   }, []);
 
+  // 每个 nonce 只消费一次：切 Tab 重挂载后不再自动弹出（review-029 S1）
   useEffect(() => {
-    if (createFor && canWrite) openCreate(createFor.modelId);
+    if (!createFor || !canWrite) return;
+    const key = `promo-create-nonce:${createFor.nonce}`;
+    if (typeof window !== "undefined" && window.sessionStorage.getItem(key)) return;
+    window.sessionStorage?.setItem(key, "1");
+    openCreate(createFor.modelId);
   }, [createFor, canWrite, openCreate]);
 
   function openEdit(r: PromotionRow) {
@@ -389,7 +403,7 @@ export function PromotionsPanel({ canWrite, models, createFor = null }: Props) {
   return (
     <div className="space-y-3" data-testid="promo-panel">
       {notice ? (
-        <p data-testid={notice.startsWith("已") ? "promo-saved" : "promo-error"} role="status" className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p data-testid={notice.startsWith("已保存") ? "promo-saved" : notice.startsWith("已删除") ? "promo-deleted" : "promo-error"} role="status" className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           {notice}
         </p>
       ) : null}
