@@ -1,0 +1,1 @@
+apps/web/lib/sync/writers/__tests__/persist-prices.int.spec.ts

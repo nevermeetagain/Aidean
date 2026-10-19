@@ -14,15 +14,17 @@
  * 历史行（false）不再受限，当前行（true）每模型唯一 → 三次写价全部成功、current 恰 1 条。
  * 本用例在 TASK-011 之前为「红」（第 3 轮 action=failed/P2002），之后转「绿」。
  *
- * 运行门控：仅当设置 DATABASE_URL 时执行；默认 `pnpm --filter web test`（无 dotenv 注入
- * DATABASE_URL）自动 skip，保证基线 1081 例通过数不受影响。验证命令见 STAGE-S1：
- *   DATABASE_URL=postgresql://... pnpm --filter web exec vitest run \
+ * 运行门控（TASK-089 / V0.8.0 D8-01）：须显式 RUN_DB_TESTS=1 且设置 DATABASE_URL 才执行。
+ * 仅凭 DATABASE_URL 不足以开启——CI 作业级占位串（.github/workflows/ci.yml env.DATABASE_URL，
+ * 供 prisma generate / next build 只解析不连接）曾误触发本套件连接 127.0.0.1:5432 而失败。
+ * 默认 `pnpm --filter web test`（含 CI 占位 DATABASE_URL）一律 skip。真库验证命令：
+ *   RUN_DB_TESTS=1 DATABASE_URL=postgresql://... pnpm --filter web exec vitest run \
  *     lib/sync/writers/__tests__/persist-prices.int.spec.ts
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-// 门控：无 DATABASE_URL → 整组 skip（保护默认单测基线，避免误连共享开发库）。
-const DB_ENABLED = !!process.env.DATABASE_URL;
+// 门控：显式 RUN_DB_TESTS=1 ∧ DATABASE_URL 才执行；否则整组 skip（防 CI 占位串误触发、避免误连共享开发库）。
+const DB_ENABLED = process.env.RUN_DB_TESTS === "1" && !!process.env.DATABASE_URL;
 const suite = DB_ENABLED ? describe : describe.skip;
 
 suite("persistPrices 多次采集写价（R-01 / REQ-F-019）", () => {

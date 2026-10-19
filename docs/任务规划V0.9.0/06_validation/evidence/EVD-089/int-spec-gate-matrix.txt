@@ -1,0 +1,9 @@
+== RUN_DB_TESTS unset (real PG16 URL) ==
+ ↓ lib/sync/writers/__tests__/persist-prices.int.spec.ts (2 tests | 2 skipped)
+ Test Files  1 skipped (1)
+      Tests  2 skipped (2)
+== RUN_DB_TESTS=1 (PG16.14 embedded) ==
+ ✓ lib/sync/writers/__tests__/persist-prices.int.spec.ts (2 tests) 246ms
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+exit=0
