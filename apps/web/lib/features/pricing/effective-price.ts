@@ -53,7 +53,9 @@ export function pickEffectivePrice<T extends PriceRowLike>(
   rows: readonly T[],
   at: Date,
 ): { effective: T; base: T | null; isPromotion: boolean } | null {
-  const current = rows.filter((r) => r.isCurrent).sort(byFromDesc)[0] ?? null;
+  // 当前价分支排除 PROMOTION 行：优惠行误写 isCurrent=true（Prisma 默认值）时，过期后不得被当成当前价永久生效
+  // （STEP-2 审查真库探针；写侧强制 isCurrent=false 归 TASK-028 验收）。
+  const current = rows.filter((r) => r.isCurrent && r.sourceType !== "PROMOTION").sort(byFromDesc)[0] ?? null;
   const promo = rows.filter((r) => isActivePromotion(r, at)).sort(byFromDesc)[0] ?? null;
   if (promo) return { effective: promo, base: current, isPromotion: true };
   if (current) return { effective: current, base: null, isPromotion: false };

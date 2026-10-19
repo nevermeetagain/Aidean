@@ -1,0 +1,4 @@
+ ✓ lib/features/pricing/__tests__/effective-price.spec.ts (17 tests) 28ms
+ ✓ lib/features/pricing/__tests__/effective-price.int.spec.ts (3 tests) 199ms
+      Tests  20 passed (20)
+exit=0

@@ -1,0 +1,16 @@
+ ✓ lib/features/gateway/__tests__/gateway-orchestrator.spec.ts (25 tests) 110ms
+ ✓ lib/features/gateway/__tests__/routes-gateway.spec.ts (20 tests) 123ms
+ ✓ lib/features/gateway/__tests__/gateway-adapters.spec.ts (23 tests) 23ms
+ ✓ lib/features/gateway/__tests__/stream-passthrough.spec.ts (5 tests) 37ms
+ ✓ lib/features/gateway/__tests__/stream-parse.spec.ts (24 tests) 8ms
+ ✓ lib/features/gateway/__tests__/gateway-svc.spec.ts (13 tests) 11ms
+ ✓ lib/features/pricing/__tests__/effective-price.spec.ts (17 tests) 10ms
+ ✓ lib/features/gateway/__tests__/usage-stats.spec.ts (10 tests) 15ms
+ ↓ lib/features/pricing/__tests__/effective-price.int.spec.ts (3 tests | 3 skipped)
+ ✓ lib/features/gateway/__tests__/channel-pick.spec.ts (15 tests) 16ms
+ ✓ lib/features/gateway/__tests__/usage-window.spec.ts (10 tests) 271ms
+ ✓ lib/features/gateway/__tests__/tier-order.spec.ts (4 tests) 4ms
+ Test Files  11 passed | 1 skipped (12)
+      Tests  166 passed | 3 skipped (169)
+vitest_exit=0
+tsc_exit=0

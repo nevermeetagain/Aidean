@@ -90,6 +90,37 @@ describe("pickEffectivePrice（TASK-027）", () => {
   });
 });
 
+describe("脏数据防护（STEP-2 审查）", () => {
+  it("12 优惠行误标 isCurrent=true：窗口内生效、过期后不得当当前价（回落真正的当前价）", () => {
+    const badPromo = { ...promo("2026-11-01T00:00:00Z", "2026-11-02T00:00:00Z", "0", "0"), isCurrent: true };
+    expect(pickEffectivePrice([current, badPromo], D("2026-11-01T12:00:00Z"))?.effective).toBe(badPromo);
+    expect(pickEffectivePrice([current, badPromo], D("2026-11-05T00:00:00Z"))?.effective).toBe(current);
+    expect(pickEffectivePrice([badPromo], D("2026-11-05T00:00:00Z"))).toBeNull();
+  });
+});
+
+describe("gatewayRepository 收敛（TASK-027，无 DB）", () => {
+  it("13 findModelByCode / findModelsByIds：候选行收敛为 1 条 {priceInput,priceOutput,billingCurrency}，where 透传 at；无行 → prices=[]", async () => {
+    const { gatewayRepository } = await import("../../gateway/repository");
+    const at = D("2026-11-02T00:00:00Z");
+    const rows = [
+      { ...current, billingCurrency: "CNY" },
+      { ...promo("2026-11-01T00:00:00Z", "2026-11-08T00:00:00Z", "0", "0"), billingCurrency: "CNY" },
+    ];
+    const model = { id: "m1", modelCode: "c", nameDisplay: "n", maxOutputTokens: null, prices: rows };
+    const findFirst = vi.fn().mockResolvedValue(model);
+    const findMany = vi.fn().mockResolvedValue([model, { ...model, id: "m2", prices: [] }]);
+    const client = { aiModel: { findFirst, findMany } } as never;
+    const one = await gatewayRepository.findModelByCode(client, "c", at);
+    expect(one?.prices).toEqual([{ priceInput: rows[1].priceInput, priceOutput: rows[1].priceOutput, billingCurrency: "CNY" }]);
+    expect(findFirst.mock.calls[0][0].select.prices.where).toEqual(effectivePriceWhere(at));
+    const map = await gatewayRepository.findModelsByIds(client, ["m1", "m2"], at);
+    expect(String(map.get("m1")?.prices[0].priceInput)).toBe("0");
+    expect(map.get("m2")?.prices).toEqual([]);
+    expect(await gatewayRepository.findModelByCode({ aiModel: { findFirst: vi.fn().mockResolvedValue(null) } } as never, "x", at)).toBeNull();
+  });
+});
+
 describe("toEffectivePriceDto（TASK-027）", () => {
   it("优惠中：base* 为原价、promotionEndsAt=until；通过契约 EffectivePriceSchema（strict 解析无多余键）", () => {
     const dto = toEffectivePriceDto("m1", pickEffectivePrice([current, P1], D("2026-11-02T00:00:00Z"))!);
