@@ -1,0 +1,23 @@
+== check-docs-rule ==
+[铁律1] docs rule PASS：apps/ 下无实体 .md（README.md 豁免）。
+
+[铁律-数字] 数字真源断言 FAIL：
+  - [数字漂移] admin API 域数（锚：功能设计文档 §3.5 实现状态行）：文档声称 36，代码实测 37
+  - [数字漂移] admin 前端页面数（锚：功能设计文档 §3.5 实现状态行）：文档声称 32，代码实测 33
+
+处置：以代码实测为准更新口径锚文档——《数据库文档》§二标题（model/enum 数）、《功能设计文档》§3.5 实现状态行（admin 域/页数）；脚本期望值自动跟随文档锚，无需改本脚本。
+rule_exit=1
+== check-docs-facts ==
+❌ lib-features-count: lib/features 子目录数 = 18（S7.4 新增 announcements 前台公告读服务目录，17→18） → expected=18, actual=22
+❌ aidean-ui-refs: @aidean/ui 在 apps/web/components 的 import 数 = 61（S5 新增 HoldsPanel/WalletsTabs 各引 @aidean/ui，59→61） → expected=62, actual=65
+❌ route-count: apps/web route.ts 文件数（含 app/ 全域）= 148（S5 新增 admin/holds 在途冻结款只读分页端点） → expected=148, actual=154
+❌ page-count: apps/web page.tsx 文件数 = 56（S2r 新增 /admin/reports 独立报表页） → expected=56, actual=57
+❌ spec-count: spec 文件总数 = 151 (38 e2e + 113 unit)（S8 新增 home/site-sections.spec 跑马灯+关于正文读取兑底） → expected=151, actual=170
+5 assertion(s) failed.
+== grep -c REQ-M-0 需求文档 ==
+16
+== REQ-M 编号逐一 ==
+16
+== 双向链接 ==
+1
+1
