@@ -15,7 +15,7 @@
 | [TASK-098](tasks/TASK-098.md) | S10 | 快照写入器加固：空 items 不下架、分批 upsert 与事务超时、同 hash 并发返回既有快照 | 外部Agent | Agent-Data | sonnect | 小/2h | — | L0 | — | 未开工 |
 | [TASK-099](tasks/TASK-099.md) | S12 | llmtest 观测落库前置：reliability_observations 幂等键口径 + entityId/窗口口径裁定（文档与单测，不建迁移） | 外部Agent | Agent-API | sonnect | 小/2h | — | L0 | — | 未开工 |
 | [TASK-050](tasks/TASK-050.md) | S0 | CI verify 收尾：本地按 ci.yml 顺序复现 verify job 全部步骤 + coverage 目录入 .gitignore | 外部Agent | Agent-Guard | sonnect | 小/1h | — | L0 | — | 已完成（助手C e0e35c6，见 EVD-050） |
-| [TASK-008](tasks/TASK-008.md) | S0 | OIDC 种子 wechat-rag 回调白名单按端口裁决对齐（保留 BotHot 3200；AideanBot 3333 按 P-2 补录） | 外部Agent | Agent-Data | haiku | 小/1h | — | L0 | P-2 | 条件·待裁决 |
+| [TASK-008](tasks/TASK-008.md) | S0 | OIDC 种子 wechat-rag 回调白名单按端口裁决对齐（保留 BotHot 3200；AideanBot 3333 按 P-2 补录） | 外部Agent | Agent-Data | haiku | 小/1h | — | L0 | P-2 | 已完成（EVD-008，方案B 不改代码） |
 | [TASK-084](tasks/TASK-084.md) | S6 | 核验：天梯页无页脚 + 台账 #19 admin 配置治理收口状态 | 外部Agent | Agent-Guard | haiku | 小/2h | 006 | L1 | — | 已完成·e2e 待复跑（助手B；需 C 改根配置收录 e2e 根 spec，见 EVD-084/deviation.md） |
 | [TASK-055](tasks/TASK-055.md) | S4 | 种子：系统配置新增 pricing.fxUsdCny 默认行（值取 U-15 裁决） | 外部Agent | Agent-Data | haiku | 小/1h | 047 | L1 | U-15 | 条件·待裁决 |
 | [TASK-047](tasks/TASK-047.md) | S4 | 计价口径归一契约：币种 CNY + 每百万 Token + 汇率配置键（EffectivePrice 扩展） | Hark(主Agent) | Agent-Contract | opus | 中/4h | — | L0 | U-15 | 条件·待裁决 |

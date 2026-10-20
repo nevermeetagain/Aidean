@@ -1,0 +1,22 @@
+$ grep -n "auth/aidean/callback" apps/web/prisma/seed.ts && node scripts/guard/port-consistency.mjs
+353:    { clientId: 'aidean-rag', name: 'AideanRag', redirectUris: ['http://36.134.158.50:10001/auth/aidean/callback'], scopes: ['openid', 'profile', 'wallet:read'], secretEnv: 'OIDC_CLIENT_SECRET_AIDEAN_RAG', firstParty: true, pkceRequired: false },
+354:    { clientId: 'wechat-rag', name: 'WeChatRag', redirectUris: ['https://wechat-rag.aidean.local/auth/aidean/callback', 'http://localhost:3200/auth/aidean/callback'], scopes: ['openid', 'profile', 'wallet:read'], secretEnv: 'OIDC_CLIENT_SECRET_WECHAT_RAG', firstParty: true, pkceRequired: false },
+355:    { clientId: 'skills-cloud', name: 'SkillsCloud', redirectUris: ['https://skills-cloud.aidean.local/auth/aidean/callback'], scopes: ['openid', 'profile', 'wallet:read', 'billing:write'], secretEnv: 'OIDC_CLIENT_SECRET_SKILLS_CLOUD', firstParty: true, pkceRequired: false },
+
+=== port-consistency（端口区间一致性） ===
+  [PASS] 入口 apps/web dev/start 显式端口：合规（未显式指定端口→Next 默认 3000）。
+  [PASS] 入口 e2e/playwright baseURL/webServer 端口：端口 3000 全部 ∈ [3000,3100]。
+  [PASS] 入口 根 playwright baseURL/webServer 端口：端口 3000 全部 ∈ [3000,3100]。
+  [PASS] 入口 Dockerfile PORT/EXPOSE：端口 3000 全部 ∈ [3000,3100]。
+  [PASS] 入口 auth AUTH_ISSUER / AUTH_ISSUER_CONTAINER：端口 3000 全部 ∈ [3000,3100]。
+  [PASS] seed 回调端口 3200 ∈ aideanFleet [3100,3200]（已裁决）。
+  [PASS] seed 回调端口 3000 ∈ aidean [3000,3100]（已裁决）。
+  [PASS] 区间登记表 aideanSelf = [3000,3100]，与端口铁律一致。
+
+=== port-consistency: SUMMARY ===
+  failures=0 warnings=0
+RESULT: PASS (port-consistency)
+exit=0
+
+$ git diff --stat origin/main -- apps/web/prisma/seed.ts
+(空 = 方案B 不改代码)
