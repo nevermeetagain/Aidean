@@ -132,10 +132,10 @@ const assertions = [
   },
   {
     id: "spec-count",
-    desc: "spec 文件总数 = 189（TASK-084 新增 e2e/ladder-no-footer.spec.ts 188→189，R10-01；前次 TASK-080 新增 cache-billing.spec.ts 187→188）",
+    desc: "spec 文件总数 = 190（TASK-068 新增 offering-sync.spec.ts 189→190；前次 TASK-084 新增 e2e/ladder-no-footer.spec.ts 188→189，R10-01）",
     check: () =>
       String(walk("e2e", (n) => n.endsWith(".spec.ts")).length + walk("apps/web", (n) => n.endsWith(".spec.ts")).length),
-    expect: "189",
+    expect: "190",
   },
   {
     id: "queryraw-biz",

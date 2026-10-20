@@ -1,0 +1,28 @@
+import { prisma } from "/workspace/work/Aidean/apps/web/lib/db/prisma";
+import { syncOfferingsForSource, assertMappedEntityId } from "/workspace/work/Aidean/apps/web/lib/sync/writers/offering-sync";
+async function main() {
+  const model = await prisma.aiModel.findFirst({ where: { nameDisplay: "Qwen-Max" }, select: { id: true, modelCode: true } });
+  const prov = await prisma.modelProvider.upsert({ where: { code: "probe-068" }, update: {}, create: { code: "probe-068", name: "Probe 068", rechargeRatio: "1", priceCurrency: "CNY" } });
+  const src = await prisma.monitoringSource.upsert({
+    where: { key: "probe-068" }, update: { mappedEntityType: "ModelProvider", mappedEntityId: assertMappedEntityId(prov.id) },
+    create: { key: "probe-068", label: "probe", tier: "A", kind: "hosted", endpoint: "https://example.invalid/pricing", mappedEntityType: "ModelProvider", mappedEntityId: assertMappedEntityId(prov.id) },
+  });
+  const t = new Date("2026-10-01T00:00:00Z");
+  for (const [ext, norm] of [["Qwen/Qwen-Max", model!.modelCode], ["foo/unknown-model-x", "unknown-model-x"]]) {
+    await prisma.providerModelObservation.upsert({
+      where: { sourceId_externalModelId: { sourceId: src.id, externalModelId: ext } }, update: {},
+      create: { sourceId: src.id, externalModelId: ext, normalizedModelId: norm, priceUnit: "cny_per_1m_tokens", priceInput: "20", priceOutput: "60", firstSeenAt: t, lastSeenAt: t },
+    });
+  }
+  console.log("run1", JSON.stringify(await syncOfferingsForSource(prisma, src.id)));
+  await prisma.providerModelOffering.update({ where: { providerId_modelId: { providerId: prov.id, modelId: model!.id } }, data: { defaultMultiplier: "0.85" } });
+  await prisma.providerModelObservation.update({ where: { sourceId_externalModelId: { sourceId: src.id, externalModelId: "Qwen/Qwen-Max" } }, data: { isListed: false, priceInput: "18" } });
+  console.log("run2", JSON.stringify(await syncOfferingsForSource(prisma, src.id)));
+  console.log("run3", JSON.stringify(await syncOfferingsForSource(prisma, src.id)));
+  const of = await prisma.providerModelOffering.findUnique({ where: { providerId_modelId: { providerId: prov.id, modelId: model!.id } } });
+  console.log("offering", JSON.stringify({ listedAt: of!.listedAt, isActive: of!.isActive, priceInput: String(of!.priceInput), defaultMultiplier: String(of!.defaultMultiplier) }));
+  console.log("evidence rows", await prisma.evidenceChain.count({ where: { providerId: prov.id } }), "candidates", await prisma.discoveryCandidate.count({ where: { name: "unknown-model-x" } }));
+  try { assertMappedEntityId("siliconflow"); } catch (e) { console.log("reject code:", (e as Error).name); }
+  await prisma.$disconnect();
+}
+main().catch((e) => { console.error(e); process.exit(1); });

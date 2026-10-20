@@ -1,5 +1,7 @@
 # TASK-068：上架同步：观测 → ProviderModelOffering（源↔平台实体映射，listedAt=firstSeenAt，isActive=isListed）
 
+> **2026-10-20 完成（Hark）**：按 U-M5=A（映射 ModelProvider）、U-24=A（mapped_entity_id 只存 uuid，联表 `::text`，写侧 assertMappedEntityId 拒非 uuid）实现 `lib/sync/writers/offering-sync.ts`，并接入 `scripts/crawl/monitor_catalogs.ts`（快照非重放时同步）。价格仅在观测币种 = 提供商标价币种时写原币价。PG16 实测见 EVD-068。
+
 > 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
 
 > 执行者：**Hark(主Agent)** ｜ 所有权 Agent：**Agent-Data** ｜ 建议档位：**opus** ｜ **条件卡：待 U-M5（provider 映射到 ModelProvider 还是 APIStation）裁决后下发**

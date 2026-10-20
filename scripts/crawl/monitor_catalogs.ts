@@ -238,23 +238,27 @@ type Deps = {
   persistCatalogSnapshot: typeof import("../../apps/web/lib/sync/writers/catalog-snapshot").persistCatalogSnapshot;
   detect: typeof import("../../apps/web/lib/monitoring/diff/detect").detect;
   persistCatalogChangeEvents: typeof import("../../apps/web/lib/monitoring/diff/persist").persistCatalogChangeEvents;
+  /** TASK-068：观测 → ProviderModelOffering（源未映射 ModelProvider 时返回 unmapped，不写库） */
+  syncOfferingsForSource: typeof import("../../apps/web/lib/sync/writers/offering-sync").syncOfferingsForSource;
 };
 
 async function loadDeps(): Promise<Deps> {
   if (!process.env.DATABASE_URL) {
     throw new Error("缺少 DATABASE_URL（写库/无 fixture 的 dry-run 需要数据库；离线请设 MONITOR_FIXTURE_DIR）");
   }
-  const [db, writer, diff, persist] = await Promise.all([
+  const [db, writer, diff, persist, offering] = await Promise.all([
     import("../../apps/web/lib/db/prisma"),
     import("../../apps/web/lib/sync/writers/catalog-snapshot"),
     import("../../apps/web/lib/monitoring/diff/detect"),
     import("../../apps/web/lib/monitoring/diff/persist"),
+    import("../../apps/web/lib/sync/writers/offering-sync"),
   ]);
   return {
     prisma: db.prisma,
     persistCatalogSnapshot: writer.persistCatalogSnapshot,
     detect: diff.detect,
     persistCatalogChangeEvents: persist.persistCatalogChangeEvents,
+    syncOfferingsForSource: offering.syncOfferingsForSource,
   };
 }
 
@@ -374,6 +378,15 @@ async function writeSource(
     );
     const persisted = await persistCatalogChangeEvents(changes);
     events = persisted.events;
+
+    // TASK-068 上架同步（同 hash 重放跳过；源未映射 ModelProvider → unmapped 不写）
+    const src = await deps.prisma.monitoringSource.findFirst({ where: { key, deletedAt: null }, select: { id: true } });
+    if (src) {
+      const sync = await deps.syncOfferingsForSource(deps.prisma, src.id, { now });
+      if (sync.status === "ok") {
+        console.log(`[monitor] ${key} offerings: +${sync.created} ~${sync.updated} =${sync.unchanged} candidates+${sync.candidates}`);
+      }
+    }
   }
 
   return {

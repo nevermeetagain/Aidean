@@ -1,0 +1,6 @@
+run1 {"status":"ok","created":1,"updated":0,"unchanged":0,"candidates":1,"priceSkipped":0}
+run2 {"status":"ok","created":0,"updated":1,"unchanged":0,"candidates":0,"priceSkipped":0}
+run3 {"status":"ok","created":0,"updated":0,"unchanged":1,"candidates":0,"priceSkipped":0}
+offering {"listedAt":"2026-10-01T00:00:00.000Z","isActive":false,"priceInput":"18","defaultMultiplier":"0.85"}
+evidence rows 2 candidates 1
+reject code: MappedEntityIdError
