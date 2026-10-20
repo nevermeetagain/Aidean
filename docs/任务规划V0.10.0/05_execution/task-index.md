@@ -28,10 +28,10 @@
 | [TASK-031](tasks/TASK-031.md) | S4 | S4 文档同步：API 文档登记优惠端点 + 网关计费时序契约补生效价规则 | 外部Agent | Agent-Docs | haiku | 小/2h | 030 | L2 | — | 未开工 |
 | [TASK-054](tasks/TASK-054.md) | S4 | S4b 文档同步：计价口径归一（网关计费时序契约 + API 文档 + 术语表） | 外部Agent | Agent-Docs | haiku | 小/2h | 053, 031 | L4 | U-15 | 条件·待裁决 |
 | [TASK-032](tasks/TASK-032.md) | S5 | 搜索契约落地（search.schema.ts） | 外部Agent | Agent-Contract | sonnect | 小/2h | — | L1 | U-5 | 已完成（助手B 7bf9764d） |
-| [TASK-033](tasks/TASK-033.md) | S5 | 搜索 API GET /api/v1/search（模型/产品/资讯，仅已发布） | 外部Agent | Agent-API | sonnect | 中/5h | 032 | L2 | U-5 | 进行中（助手B） |
-| [TASK-034](tasks/TASK-034.md) | S5 | UI：顶栏搜索（桌面框 + 移动端展开 + 键盘导航） | Hark(主Agent) | Agent-App | opus | 中/8h | 033 | L3 | U-5 | 条件·待裁决 |
-| [TASK-035](tasks/TASK-035.md) | S5 | e2e：搜索（命中/无结果/键盘跳转/移动端） | 外部Agent | Agent-Guard | sonnect | 小/3h | 034, 006 | L4 | U-5 | 条件·待裁决 |
-| [TASK-036](tasks/TASK-036.md) | S5 | S5 文档同步：API 文档登记搜索端点 + UI/界面交互文档补搜索 | 外部Agent | Agent-Docs | haiku | 小/2h | 035 | L6 | U-5 | 条件·待裁决 |
+| [TASK-033](tasks/TASK-033.md) | S5 | 搜索 API GET /api/v1/search（模型/产品/资讯，仅已发布） | 外部Agent | Agent-API | sonnect | 中/5h | 032 | L2 | U-5 | 已完成（助手B 993571c） |
+| [TASK-034](tasks/TASK-034.md) | S5 | UI：顶栏搜索（桌面框 + 移动端展开 + 键盘导航） | Hark(主Agent) | Agent-App | opus | 中/8h | 033 | L3 | U-5 | 已完成（助手B c2adbf3） |
+| [TASK-035](tasks/TASK-035.md) | S5 | e2e：搜索（命中/无结果/键盘跳转/移动端） | 外部Agent | Agent-Guard | sonnect | 小/3h | 034, 006 | L4 | U-5 | 已完成（助手B 99bf378） |
+| [TASK-036](tasks/TASK-036.md) | S5 | S5 文档同步：API 文档登记搜索端点 + UI/界面交互文档补搜索 | 外部Agent | Agent-Docs | haiku | 小/2h | 035 | L6 | U-5 | 已完成（助手B） |
 | [TASK-039](tasks/TASK-039.md) | S6 | 千级模型天梯量级基线（只测量，不优化） | 外部Agent | Agent-Guard | sonnect | 中/6h | 006 | L1 | — | 未开工 |
 | [TASK-040](tasks/TASK-040.md) | S7 | 需求文档 v1.15 对齐代码事实与用户裁决 | Hark(主Agent) | Agent-Docs | opus | 中/4h | — | L3 | — | 未开工（Hark 核心） |
 | [TASK-041](tasks/TASK-041.md) | S7 | 台账拆分 + 勾选滞后补录 + CHANGELOG 补录 finalize 里程碑 | 外部Agent | Agent-Docs | sonnect | 中/5h | 040 | L4 | — | 未开工 |
