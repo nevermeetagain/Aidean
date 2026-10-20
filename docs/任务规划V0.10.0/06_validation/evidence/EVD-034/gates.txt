@@ -1,0 +1,35 @@
+EVD-034 证据索引（TASK-034，2026-10-20，基线 mirror/main@0a6d8447 + 本卡）
+
+## verify.txt
+卡面验证命令：pnpm --filter web exec tsc --noEmit && pnpm --filter web lint → 双双 exit 0（TSC=0 / LINT=0）。
+
+## 验收标准逐条
+1. web tsc/lint 0 error → TSC=0、LINT=0
+2. TASK-035 通过（独立验证者判定）→ 由 035 卡交付时判定（本线下一卡）
+3. grep -rln "GlobalSearch" apps/web/app apps/web/components → 仅 3 行，全部在 components/site/ 下：
+   apps/web/components/site/GlobalSearch.tsx
+   apps/web/components/site/MobileNav.tsx
+   apps/web/components/site/SiteHeader.tsx
+4. diff 仅落在允许修改范围 → 本提交仅含 GlobalSearch.tsx / SiteHeader.tsx / MobileNav.tsx / EVD-034/**
+
+## 运行态截图（:3000 实跑，PG16=shared-postgres:5435 + Redis=shared-redis:6379）
+- desktop-1440-header.png：桌面顶栏搜索框（导航右侧，宽度聚焦扩展交互位）
+- desktop-1440-search-panel.png：键入 "deep" 防抖后，面板按「模型」分组展示
+  DeepSeek-V3/R1/Coder-V2/V2.5（标题+副标题），契约⑥ success 态
+- mobile-390-search.png：移动端（390）汉堡抽屉顶部搜索入口，键入后内联结果面板
+
+## 契约⑤五态实现对照（06-ux-states.contract.ts「顶栏全局搜索」）
+- loading：data-testid="search-loading"（防抖 250ms 后发请求，旧请求 AbortController 取消）
+- success：data-testid="search-results"（按 模型/产品/资讯 分组；↑↓ 循环选择、Enter 跳转、Esc 关闭）
+- empty：data-testid="search-no-hit"（面板内提示「没有找到相关结果」）
+- error：data-testid="search-error"（面板内提示「搜索暂不可用」，不弹窗）
+- forbidden：不适用（公开端点）
+- 可访问性：role=combobox（aria-expanded/aria-controls/aria-haspopup）+ role=listbox + role=option（aria-selected）
+- 三主题：data-theme indigo/teal/orange 仅覆盖 --primary；对比度由 slate 文字系 + text-primary 保证（浅色单轨，无 dark: 变体）
+
+## 环境备注
+首拍时 shared-postgres 容器未随 Docker Desktop 引擎启动而就绪（5435 不可达 → API 50000），
+Docker Desktop 启动、shared-postgres healthy 后复拍，API 实测返回真实命中（tookMs≈81ms）。
+
+## 全局门禁（本卡提交前复跑）
+rule 0 / facts 14/14 / guard 4/4 / tsc 0 / lint 0 / web test 1353 passed / 5 skipped / 0 failed（≥ 基线）

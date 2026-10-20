@@ -1,0 +1,8 @@
+== TASK-034 卡面验证命令 ==
+$ pnpm --filter web exec tsc --noEmit && pnpm --filter web lint
+EXIT=0
+
+== grep 验收 ==
+apps/web/components/site/GlobalSearch.tsx
+apps/web/components/site/MobileNav.tsx
+apps/web/components/site/SiteHeader.tsx

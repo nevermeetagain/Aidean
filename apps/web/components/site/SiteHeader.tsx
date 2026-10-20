@@ -6,6 +6,7 @@ import { getFeatureFlags } from "../../lib/features/flags/service";
 import { ThemeSwitcher } from "../common/ThemeSwitcher";
 import { HeaderSession } from "./HeaderSession";
 import { MobileNav } from "./MobileNav";
+import { GlobalSearch } from "./GlobalSearch";
 
 /**
  * 顶部导航单项（server 组件，零客户端 JS）：
@@ -116,6 +117,10 @@ export async function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2.5">
+          {/* 桌面端顶栏搜索（TASK-034，唯一搜索入口：桌面此处 / 移动端 MobileNav 抽屉内） */}
+          <div className="hidden md:block">
+            <GlobalSearch variant="desktop" />
+          </div>
           <div className="hidden items-center gap-2 rounded-full border border-slate-200/80 bg-slate-50 px-2.5 py-1.5 shadow-sm sm:flex">
             <ThemeSwitcher />
           </div>

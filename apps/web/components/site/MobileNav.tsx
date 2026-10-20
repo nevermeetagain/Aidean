@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { NAV_ITEMS, type NavItem } from "../../lib/navigation";
+import { GlobalSearch } from "./GlobalSearch";
 
 /**
  * 移动端抽屉导航（<768px）。
@@ -67,6 +68,10 @@ export function MobileNav({ items = NAV_ITEMS }: { items?: readonly NavItem[] } 
             aria-label="移动端主导航"
             className="fixed inset-x-0 top-[64px] z-40 max-h-[calc(100dvh-64px)] overflow-y-auto border-b border-slate-200 bg-white px-4 py-3 shadow-xl"
           >
+            {/* 移动端搜索入口（TASK-034，唯一搜索入口之二：桌面在 SiteHeader） */}
+            <div className="mb-3 border-b border-slate-100 pb-3">
+              <GlobalSearch variant="mobile" />
+            </div>
             <ul className="flex flex-col">
               {items.map((item) => (
                 <li key={item.key}>
