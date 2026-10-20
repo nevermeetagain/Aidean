@@ -59,13 +59,17 @@ export async function collectPublicPricing(
 
 // ---------------------------------------------------------------- 登录/反爬检测（该源停止并回报）
 
-const BLOCKED_MARKERS = ["请先登录", "登录后查看", "人机验证", "验证码", "captcha"];
+const STRONG_BLOCKED_MARKERS = ["请先登录", "登录后查看", "人机验证"];
+const WEAK_BLOCKED_MARKERS = ["验证码", "captcha"];
 
-/** 命中登录/反爬标记 → 返回停止原因；未命中 → null（其余源不受影响） */
+/** 命中登录/反爬标记 → 返回停止原因；未命中 → null（弱标记仅在登录语境下判定，避免页脚「获取验证码」误封） */
 export function blockedPageReason(text: string): string | null {
   const visible = htmlToText(text).toLowerCase();
-  const hit = BLOCKED_MARKERS.find((m) => visible.includes(m.toLowerCase()));
-  return hit ? `blocked_or_login_required: 页面命中「${hit}」标记` : null;
+  const strong = STRONG_BLOCKED_MARKERS.find((m) => visible.includes(m.toLowerCase()));
+  if (strong) return `blocked_or_login_required: 页面命中「${strong}」标记`;
+  const weak = WEAK_BLOCKED_MARKERS.find((m) => visible.includes(m.toLowerCase()));
+  if (weak && visible.includes("登录")) return `blocked_or_login_required: 页面命中「${weak}」标记`;
+  return null;
 }
 
 // ---------------------------------------------------------------- HTML 解析工具（零依赖）
@@ -88,16 +92,17 @@ export function htmlToText(html: string): string {
     .trim();
 }
 
-/** 截取子串：[startMarker, 任一 endMarker 首次出现)，找不到起点 → null */
+/** 截取子串：[startMarker, 任一 endMarker 首次出现)，找不到起点 → null；先剔除 script/style，避免 SPA 内联 JSON 抢先命中 */
 export function sliceSection(text: string, startMarker: string, endMarkers: readonly string[]): string | null {
-  const start = text.indexOf(startMarker);
+  const cleaned = text.replace(/<script\b[\s\S]*?<\/script>/gi, " ").replace(/<style\b[\s\S]*?<\/style>/gi, " ");
+  const start = cleaned.indexOf(startMarker);
   if (start < 0) return null;
-  let end = text.length;
+  let end = cleaned.length;
   for (const m of endMarkers) {
-    const i = text.indexOf(m, start + startMarker.length);
+    const i = cleaned.indexOf(m, start + startMarker.length);
     if (i >= 0 && i < end) end = i;
   }
-  return text.slice(start, end);
+  return cleaned.slice(start, end);
 }
 
 /** 所有 <table>…</table> 片段 */
@@ -115,18 +120,18 @@ export function rowCells(rowHtml: string): string[] {
   return Array.from(rowHtml.matchAll(/<t[hd]\b[^>]*>([\s\S]*?)<\/t[hd]>/gi), (m) => htmlToText(m[1]));
 }
 
-/** 十进制字符串规范化：去前导 0、去尾随 0（"2.00"→"2"，"0.30"→"0.3"）；不做数值舍入 */
+/** 十进制字符串规范化：去千分位逗号、前导 0、尾随 0（"2.00"→"2"，"0.30"→"0.3"）；不做数值舍入 */
 export function normalizeDecimalString(raw: string): string {
-  const [intPart, frac = ""] = raw.split(".");
+  const [intPart, frac = ""] = raw.replace(/,/g, "").split(".");
   const ip = intPart.replace(/^0+(?=\d)/, "") || "0";
   const fp = frac.replace(/0+$/, "");
   return fp ? `${ip}.${fp}` : ip;
 }
 
-/** 提取 CNY 金额：`¥ 2.00` / `￥2` / `0.04元` → 规范化十进制字符串（按出现顺序） */
+/** 提取 CNY 金额：`¥ 2.00` / `￥2` / `0.04元` / `¥1,000` → 规范化十进制字符串（按出现顺序） */
 export function yuanAmounts(text: string): string[] {
   const out: string[] = [];
-  const re = /[¥￥]\s*([0-9]+(?:\.[0-9]+)?)|([0-9]+(?:\.[0-9]+)?)\s*元/g;
+  const re = /[¥￥]\s*([0-9][0-9,]*(?:\.[0-9]+)?)|([0-9][0-9,]*(?:\.[0-9]+)?)\s*元/g;
   for (const m of text.matchAll(re)) out.push(normalizeDecimalString(m[1] ?? m[2]));
   return out;
 }

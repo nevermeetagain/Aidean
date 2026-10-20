@@ -14,7 +14,7 @@ TASK-070 · 公开定价页采集（SiliconFlow / DeepSeek，无 API Key）— �
 - apps/web/lib/monitoring/public-pricing/index.ts        出口 + PUBLIC_PRICING_COLLECTORS（供 TASK-062 装配；未改 registry.ts）
 - apps/web/lib/monitoring/public-pricing/__tests__/fixtures/siliconflow-pricing.html  公开页价格表节选（头注 URL + 2026-10-20，≤50KB）
 - apps/web/lib/monitoring/public-pricing/__tests__/fixtures/deepseek-pricing.html     公开页价格表节选（头注 URL + 2026-10-20，≤50KB）
-- apps/web/lib/monitoring/public-pricing/__tests__/public-pricing.spec.ts            13 例（SiliconFlow 6、DeepSeek 5、collect 2）
+- apps/web/lib/monitoring/public-pricing/__tests__/public-pricing.spec.ts            16 例（SiliconFlow 8、DeepSeek 6、collect 2；含审查修复补 3 例）
 - scripts/check-docs-facts.mjs                          spec-count 181→182（仅计数断言，共享热点最小改动）
 - docs/任务规划V0.10.0/06_validation/evidence/EVD-070/verify.txt（本文件）
 
@@ -33,9 +33,9 @@ TASK-070 · 公开定价页采集（SiliconFlow / DeepSeek，无 API Key）— �
 
 == 4. 卡面验证命令（完整输出见 .scratch/070/v1.sh 运行记录；已通过）==
 $ pnpm --filter web exec vitest run lib/monitoring/public-pricing
-  ✓ 13 tests passed（1 file）｜exit 0
-  用例分布: SiliconFlow 6（正常解析 9 模型+schema / 高峰档 2-8-0.04 与 3-9-0.3 / 缺缓存与上下文 null / 免费与生图跳过 / 结构变化 ok:false / 登录标记停止）
-            DeepSeek 5（正常 2 模型+缓存命中 0.04/0.3+上下文 1048576 / CNY+USD 双币取 CNY / 缺缓存与上下文 null / 结构变化 ok:false / 登录标记停止）
+  ✓ 16 tests passed（1 file）｜exit 0
+  用例分布: SiliconFlow 8（正常解析 9 模型+schema / 高峰档 2-8-0.04 与 3-9-0.3 / 缺缓存与上下文 null / 免费与生图跳过 / 结构变化 ok:false / 表头插入列不错位 / 千分位保留 / 登录标记停止且弱标记不误封）
+            DeepSeek 6（正常 2 模型+缓存命中 0.04/0.3+上下文 1048576 / 中文表头 USD 表在前仍取 CNY / 缺缓存与上下文 null / 空表头不串列 / 结构变化 ok:false / 登录标记停止）
             collectPublicPricing 2（默认端点调用一次+透传 / fetch 抛错 → ok:false+fetch_failed）
 $ grep -rn "MONITOR_KEY_\|credential_missing" apps/web/lib/monitoring/public-pricing
   → 0 行（grep exit 1 = 无匹配），验收通过
@@ -48,8 +48,8 @@ $ node scripts/guard/secret-scan.mjs
 - pnpm --filter web exec tsc --noEmit → exit 0
 - pnpm --filter web run lint → exit 0（唯一既有 warning: components/common/SafeImage.tsx <img>）
 - powershell -File scripts/check-gates.ps1 → Total 7 | PASS 7 | FAIL 0（barrel 3 ≤ 3 含本卡 index.ts）
-- pnpm --filter web exec vitest run（全量）→ 1350 passed | 5 skipped | 0 failed（137 files passed）
-  基线: TASK-099 推送后 1325 passed；本卡 +13，另含并行已推送卡（033/047 等）+12。
+- pnpm --filter web exec vitest run（全量）→ 1353 passed | 5 skipped | 0 failed（137 files passed | 2 skipped）
+  基线: TASK-099 推送后 1325 passed；本卡 +16（13 主 + 3 审查回归），另含并行已推送卡（033/047 等）+12。
 
 == 6. 合规与口径偏离（登记）==
 1) 抓取合规: 两页均为公开页面，未登录、未绕过反爬；仅以公开可见内容校对表格结构并制作节选 fixture，采集运行时（062）才真正抓取。
@@ -59,7 +59,19 @@ $ node scripts/guard/secret-scan.mjs
 4) 未改 catalog/registry.ts（不在允许范围）；TASK-062 装配时使用 PUBLIC_PRICING_COLLECTORS / getPublicPricingCollector。
 5) spec-count 断言 181→182 为新增 spec 的唯一共享改动；其余共享文件未触碰。
 
+== 6.1 CodeReview 修复（同卡 fix 提交）==
+审查范围 993571cd..77fdc262（feat 提交）：0 阻断 / 2 重要 / 4 次要。重要与次要项均已修复并补回归用例（13→16 例）：
+1) [重要] DeepSeek 选表由「文本含元」改为「该表能解析出 CNY 金额」——中文表头的 USD 表在前时不再被误选后整源报失败；双币用例改为中文表头 USD 表在前。
+2) [重要] SiliconFlow 价格列改由表头定位（输入/输出/缓存列索引），不再按固定偏移；模型列后插入「计费方式」列不再静默错位；表头缺失 → ok:false。
+3) [次要] DeepSeek 模型表头保留位置对齐（不 filter），空表头单元格不再导致后续模型串列。
+4) [次要] yuanAmounts 支持千分位（¥1,000 → 1000；¥2,000.50 → 2000.5），normalizeDecimalString 去逗号。
+5) [次要] 登录/反爬标记分级：强标记（请先登录/登录后查看/人机验证）直接停止；弱标记（验证码/captcha）仅在登录语境下判定，页脚「获取验证码」不再误封。
+6) [次要] sliceSection 先剔除 script/style 再定位区段，避免 SPA 内联 JSON 抢先命中。
+修复后卡面验证：16 passed；grep 0 命中；secret-scan PASS；tsc/lint/facts/check-gates 全绿（见同提交重跑记录）。
+
 == 7. 提交与推送 ==
-- 提交: 一卡一提交（提交信息含 TASK-070；白名单: apps/web/lib/monitoring/public-pricing/** + 本证据目录 + scripts/check-docs-facts.mjs）。
-- 推送前: git fetch mirror + git rebase --autostash mirror/main → 重跑全局门禁 → git push mirror main（快进；禁强推）。
+- feat 提交: 77fdc262（已推送；白名单: apps/web/lib/monitoring/public-pricing/** + 本证据目录 + scripts/check-docs-facts.mjs）。
+- fix 提交: 同卡 CodeReview 修复（见 §6.1）。因 feat 已进入公共 main，按禁改写历史/禁强推约束不以 amend 合流，
+  以同卡 fix 提交闭环（“一卡一提交”例外已登记，属审查后置导致的必要偏差；后续卡先审查后推送）。
+- 推送前: git fetch mirror + git rebase --autostash mirror/main → 重跑全局门禁 → git push mirror（快进；禁强推）。
 - 推送后: HEAD == mirror/main 核验。

@@ -38,8 +38,21 @@ export function parseSiliconflowPricing(text: string, fetchedAt: Date): PublicPr
   const out: ProviderModelObservation[] = [];
   const seen = new Set<string>();
 
-  for (const row of tableRows(section)) {
-    const cells = rowCells(row);
+  // 列位置由表头确定（不按固定偏移）：页面插入/调整列时宁可不解析，也不静默错位
+  const rows = tableRows(section).map((r) => rowCells(r));
+  const header = rows.find((cells) => {
+    const hasIn = cells.some((c) => c.includes("输入"));
+    const hasOut = cells.some((c) => c.includes("输出"));
+    const hasUnit = cells.some((c) => c.includes("Tokens") || c.includes("tokens"));
+    return hasIn && hasOut && hasUnit;
+  });
+  if (!header) return { ok: false, reason: "未找到价格表头（页面结构变化？）" };
+  const iInput = header.findIndex((c) => c.includes("输入"));
+  const iOutput = header.findIndex((c) => c.includes("输出"));
+  const iCache = header.findIndex((c) => c.includes("缓存"));
+  if (iInput < 0 || iOutput < 0) return { ok: false, reason: "价格列缺失（页面结构变化？）" };
+
+  for (const cells of rows) {
     if (cells.length < 3) continue;
     // 模型 ID 可能在第 1 列（厂商 + 模型）或第 2 列（独立「模型」列）
     let idCell = -1;
@@ -56,10 +69,9 @@ export function parseSiliconflowPricing(text: string, fetchedAt: Date): PublicPr
     const externalModelId = id.slice(0, 200);
     if (seen.has(externalModelId)) continue;
 
-    const priceCells = cells.slice(idCell + 1, idCell + 4);
-    const priceInput = maxDecimal(yuanAmounts(priceCells[0] ?? ""));
-    const priceOutput = maxDecimal(yuanAmounts(priceCells[1] ?? ""));
-    const priceCacheRead = maxDecimal(yuanAmounts(priceCells[2] ?? ""));
+    const priceInput = maxDecimal(yuanAmounts(cells[iInput] ?? ""));
+    const priceOutput = maxDecimal(yuanAmounts(cells[iOutput] ?? ""));
+    const priceCacheRead = iCache >= 0 ? maxDecimal(yuanAmounts(cells[iCache] ?? "")) : null;
     if (priceInput === null && priceOutput === null && priceCacheRead === null) continue; // 免费/非 token 计价
 
     seen.add(externalModelId);

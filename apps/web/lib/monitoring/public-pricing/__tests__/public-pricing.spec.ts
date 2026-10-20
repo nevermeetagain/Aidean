@@ -70,10 +70,36 @@ describe("SiliconFlow 公开定价页（TASK-070）", () => {
     expect(noSection.ok).toBe(false);
   });
 
-  it("命中登录/反爬标记 → 该源停止（ok:false），不产出观测", () => {
+  it("价格列按表头定位：模型列后插入「计费方式」列不错位", () => {
+    const html = [
+      "<h2>对话模型</h2><table><thead><tr>",
+      "<th>厂商</th><th>模型</th><th>计费方式</th><th>输入价格（M Tokens）</th><th>输出价格（M Tokens）</th><th>缓存价格（M Tokens）</th>",
+      "</tr></thead><tbody><tr>",
+      "<td>acme</td><td>Acme-1 <span>acme/Acme-1</span></td><td>按 Token</td><td>¥ 1.00</td><td>¥ 2.00</td><td>¥ 0.10</td>",
+      "</tr></tbody></table>",
+    ].join("");
+    const res = parseSiliconflowPricing(html, at);
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.observations[0]).toMatchObject({ priceInput: "1", priceOutput: "2", priceCacheRead: "0.1" });
+  });
+
+  it("千分位金额保留原值：¥ 1,000 / ¥ 2,000.50 → 1000 / 2000.5", () => {
+    const html = [
+      "<h2>对话模型</h2><table><thead><tr><th>模型</th><th>输入价格（M Tokens）</th><th>输出价格（M Tokens）</th><th>缓存价格（M Tokens）</th></tr></thead>",
+      "<tbody><tr><td>Acme-2 <span>acme/Acme-2</span></td><td>¥ 1,000</td><td>¥ 2,000.50</td><td>-</td></tr></tbody></table>",
+    ].join("");
+    const res = parseSiliconflowPricing(html, at);
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.observations[0]).toMatchObject({ priceInput: "1000", priceOutput: "2000.5", priceCacheRead: null });
+  });
+
+  it("登录/反爬标记停止该源；页脚「获取验证码」弱标记不误封", () => {
     const blocked = parseSiliconflowPricing("<h2>对话模型</h2><p>请先登录后查看价格</p>", at);
     expect(blocked.ok).toBe(false);
     if (!blocked.ok) expect(blocked.reason).toContain("blocked_or_login_required");
+
+    const withFooter = fx("siliconflow-pricing.html").replace("</body>", "<footer>获取验证码</footer></body>");
+    expect(parseSiliconflowPricing(withFooter, at).ok).toBe(true);
   });
 });
 
@@ -103,13 +129,13 @@ describe("DeepSeek 公开定价文档（TASK-070）", () => {
     });
   });
 
-  it("同页 CNY+USD 时取 CNY（USD 表在前也不选，缓存命中价不串币种）", () => {
+  it("同页 CNY+USD 时取 CNY（中文表头的 USD 表在前也不选，缓存命中价不串币种）", () => {
     const usd = [
-      "<table><thead><tr><th>Model</th><th>deepseek-flash</th><th>deepseek-v4-pro</th></tr></thead><tbody>",
-      "<tr><th>Context Length</th><td>1M</td><td>1M</td></tr>",
-      "<tr><th>Input (Cache Hit)</th><td>$0.01</td><td>$0.05</td></tr>",
-      "<tr><th>Input (Cache Miss)</th><td>$0.5</td><td>$2.0</td></tr>",
-      "<tr><th>Output</th><td>$1.0</td><td>$3.0</td></tr>",
+      "<table><thead><tr><th>模型</th><th>deepseek-flash</th><th>deepseek-v4-pro</th></tr></thead><tbody>",
+      "<tr><th>上下文长度</th><td>1M</td><td>1M</td></tr>",
+      "<tr><th>百万tokens输入（缓存命中）（美元计价 USD）</th><td>$0.01</td><td>$0.05</td></tr>",
+      "<tr><th>百万tokens输入（缓存未命中）（美元计价 USD）</th><td>$0.5</td><td>$2.0</td></tr>",
+      "<tr><th>百万tokens输出（美元计价 USD）</th><td>$1.0</td><td>$3.0</td></tr>",
       "</tbody></table>",
     ].join("");
     const res = parseDeepseekPricing(usd + fx("deepseek-pricing.html"), at);
@@ -138,6 +164,21 @@ describe("DeepSeek 公开定价文档（TASK-070）", () => {
     }
   });
 
+  it("表头空单元格不串列：第三列为空时后续模型取对应列", () => {
+    const html = [
+      "<table><thead><tr><th>模型</th><th>deepseek-a</th><th></th><th>deepseek-b</th></tr></thead><tbody>",
+      "<tr><th>百万tokens输入（缓存未命中）</th><td>1元</td><td>9元</td><td>5元</td></tr>",
+      "<tr><th>百万tokens输出</th><td>2元</td><td>9元</td><td>10元</td></tr>",
+      "</tbody></table>",
+    ].join("");
+    const res = parseDeepseekPricing(html, at);
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      const b = res.observations.find((o) => o.externalModelId === "deepseek-b");
+      expect(b).toMatchObject({ priceInput: "5", priceOutput: "10" });
+    }
+  });
+
   it("页面结构变化（无价格表/无模型表头）→ ok:false", () => {
     expect(parseDeepseekPricing("<p>价格调整中</p>", at).ok).toBe(false);
     const noHeader = "<table><tbody><tr><td>价格调整中</td><td>请稍后再试</td></tr></tbody></table>";
@@ -145,7 +186,7 @@ describe("DeepSeek 公开定价文档（TASK-070）", () => {
   });
 
   it("命中登录/反爬标记 → 该源停止（ok:false）", () => {
-    const blocked = parseDeepseekPricing("<table><tr><td>模型</td><td>captcha challenge</td></tr></table>", at);
+    const blocked = parseDeepseekPricing("<table><tr><td>模型</td><td>请登录后完成验证码校验</td></tr></table>", at);
     expect(blocked.ok).toBe(false);
     if (!blocked.ok) expect(blocked.reason).toContain("blocked_or_login_required");
   });

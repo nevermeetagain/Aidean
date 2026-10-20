@@ -35,9 +35,9 @@ export function parseDeepseekPricing(text: string, fetchedAt: Date): PublicPrici
 
   const cnyTable = allTables(text).find((t) => {
     const visible = htmlToText(t);
-    const hasCnyAmount = visible.includes("元") || /[¥￥]|CNY/.test(visible);
     const hasTokenPriceRow = visible.includes("缓存命中") || visible.includes("缓存未命中") || visible.includes("百万tokens");
-    return hasCnyAmount && hasTokenPriceRow;
+    // 以“能解析出 CNY 金额”为准（“美元”不算；避免中文表头的 USD 表抢先命中后整源误报失败）
+    return hasTokenPriceRow && yuanAmounts(visible).length > 0;
   });
   if (!cnyTable) return { ok: false, reason: "未找到 CNY 价格表（页面结构变化或仅提供 USD？）" };
 
@@ -47,11 +47,12 @@ export function parseDeepseekPricing(text: string, fetchedAt: Date): PublicPrici
   const headerIdx = rows.findIndex((cells) => cells[0].includes("模型"));
   if (headerIdx < 0) return { ok: false, reason: "未找到模型表头（页面结构变化？）" };
 
-  const models = rows[headerIdx]
-    .slice(1)
-    .map((s) => stripFootnote(s))
-    .filter((s) => s.length > 0 && s.length <= 200);
-  if (models.length === 0) return { ok: false, reason: "模型列为空（页面结构变化？）" };
+  // 保留列位置对齐（不 filter）：表头出现空单元格（colspan/占位）时不串列
+  const models: (string | null)[] = rows[headerIdx].slice(1).map((s) => {
+    const v = stripFootnote(s);
+    return v.length > 0 && v.length <= 200 ? v : null;
+  });
+  if (models.every((m) => m === null)) return { ok: false, reason: "模型列为空（页面结构变化？）" };
 
   const contextLength: (number | null)[] = models.map(() => null);
   const priceInput: (string | null)[] = models.map(() => null);
@@ -84,6 +85,7 @@ export function parseDeepseekPricing(text: string, fetchedAt: Date): PublicPrici
   const out: ProviderModelObservation[] = [];
   const seen = new Set<string>();
   models.forEach((model, i) => {
+    if (!model) return;
     if (priceInput[i] === null && priceOutput[i] === null && priceCacheRead[i] === null) return;
     if (seen.has(model)) return;
     seen.add(model);
