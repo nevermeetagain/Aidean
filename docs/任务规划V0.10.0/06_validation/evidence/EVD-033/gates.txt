@@ -1,0 +1,23 @@
+EVD-033 全局门禁记录（2026-10-20，基线 mirror/main@05d0c0b5 + 本卡提交）
+
+1) node scripts/check-docs-rule.mjs   → PASS（铁律1；数字真源断言 PASS，schema model=73）exit 0
+2) node scripts/check-docs-facts.mjs  → All 14 assertions passed（本卡更新三处计数期望：lib/features 22→23、route 157→158、spec 180→181，R10-01）exit 0
+3) node scripts/guard/run-all.mjs     → PASS 4/4
+4) pnpm --filter web exec tsc --noEmit → exit 0
+5) pnpm --filter web lint             → exit 0
+6) pnpm --filter web test             → 1337 passed / 5 skipped / 0 failed（≥ 基线；含本卡 12 例）
+   注：以提交前最后一次全量实跑为准，见下方记录
+7) 契约漂移：gen-contract-tests && git diff --exit-code → exit 0（search 不在生成器覆盖域）
+
+改动文件（git diff --name-only 相对提交前）：
+- apps/web/lib/features/search/service.ts（新增）
+- apps/web/app/api/v1/search/route.ts（新增）
+- apps/web/lib/features/search/__tests__/search.spec.ts（新增 12 例 ≥ 卡面 8 例）
+- docs/architecture/API接口文档.md（v1.56→v1.57，仅新增本卡端点行 + 版本头，§5.2）
+- scripts/check-docs-facts.mjs（仅三处计数期望值，R10-01 格式）
+- docs/任务规划V0.10.0/05_execution/task-index.md（仅 032/033 两行状态列）
+- docs/任务规划V0.10.0/25_执行记录.md（仅追加助手 B 流水段）
+- docs/任务规划V0.10.0/06_validation/evidence/EVD-033/**
+
+偏离说明：无（全部在卡面「允许修改」+ 共享热点最小追加范围内；API 文档登记依协议 §3.4，
+实现先于登记属流程瑕疵，已在同一提交内补正）

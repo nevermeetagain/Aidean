@@ -83,7 +83,7 @@ const assertions = [
   },
   {
     id: "lib-features-count",
-    desc: "lib/features 子目录数 = 22（S7.4 announcements 起 17→18；TASK-090 收口以代码实测同步 18→22，含 lib/features/pricing 等新增目录）",
+    desc: "lib/features 子目录数 = 23（TASK-033 新增 lib/features/search 22→23，R10-01；前次 TASK-090 收口 18→22，含 lib/features/pricing 等新增目录）",
     check: () => {
       try {
         return String(readdirSync(join(ROOT, "apps/web/lib/features"), { withFileTypes: true }).filter((e) => e.isDirectory()).length);
@@ -91,7 +91,7 @@ const assertions = [
         return "0";
       }
     },
-    expect: "22",
+    expect: "23",
   },
   {
     id: "aidean-ui-refs",
@@ -110,9 +110,9 @@ const assertions = [
   },
   {
     id: "route-count",
-    desc: "apps/web route.ts 文件数（含 app/ 全域）= 157（TASK-066 新增 models/[id]/offerings 156→157，R10-01；前次 TASK-095 154→156）",
+    desc: "apps/web route.ts 文件数（含 app/ 全域）= 158（TASK-033 新增 api/v1/search/route 157→158，R10-01；前次 TASK-066 156→157）",
     check: () => String(walk("apps/web/app", (n) => n === "route.ts").length),
-    expect: "157",
+    expect: "158",
   },
   {
     id: "page-count",
@@ -132,10 +132,10 @@ const assertions = [
   },
   {
     id: "spec-count",
-    desc: "spec 文件总数 = 180（TASK-047 新增 lib/features/pricing/__tests__/fx.spec 179→180，R10-01；前次 TASK-061 177→179）",
+    desc: "spec 文件总数 = 181（TASK-033 新增 lib/features/search/__tests__/search.spec 180→181，R10-01；前次 TASK-047 179→180）",
     check: () =>
       String(walk("e2e", (n) => n.endsWith(".spec.ts")).length + walk("apps/web", (n) => n.endsWith(".spec.ts")).length),
-    expect: "180",
+    expect: "181",
   },
   {
     id: "queryraw-biz",
