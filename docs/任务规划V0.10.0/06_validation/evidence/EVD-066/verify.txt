@@ -1,0 +1,19 @@
+# EVD-066 · GET /api/v1/models/[id]/offerings  (2026-10-20T01:33:39Z)
+## 路由单测
+ ✓ lib/monitoring/__tests__/offerings-route.spec.ts (10 tests) 17ms
+      Tests  10 passed (10)
+
+## 运行态（PG16 + next dev，真实 Prisma 查询）
+seeded observations: 3 (openrouter/aihubmix/quanzil) norm: claude-3-5-haiku
+offerings state: offerings-ready rows: 3 relay chips(desktop table+hidden mobile list): 2 (=1 relay source)
+
+## 全局回归
+web tsc exit=0
+web lint exit=0
+rule exit=0
+All 14 assertions passed.
+RESULT: PASS (4/4 守卫通过)
+contract drift exit=0
+ Test Files  132 passed | 2 skipped (134)
+      Tests  1292 passed | 5 skipped (1297)
+next build exit=0
