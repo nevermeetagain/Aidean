@@ -1,0 +1,56 @@
+<!--
+  TASK-070 fixture · DeepSeek 公开定价文档「模型细节」价格表节选
+  来源: https://api-docs.deepseek.com/zh-cn/quick_start/pricing
+  保存日期: 2026-10-20
+  说明: 仅保留公开页面可见的价格表部分（节选，≤50KB），数值按页面原样抄录（未改值）；
+        页面同时给出空闲时段/高峰时段两档价格（此处原样保留，解析取高峰档上限）。
+-->
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>模型 &amp; 价格 | DeepSeek API Docs</title>
+</head>
+<body>
+  <h1>模型 &amp; 价格</h1>
+  <p>下表所列模型价格以“百万 tokens”为单位。</p>
+
+  <h2>模型细节</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>模型</th>
+        <th>deepseek-flash<sup>(1)</sup></th>
+        <th>deepseek-v4-pro</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th>上下文长度</th>
+        <td>1M</td>
+        <td>1M</td>
+      </tr>
+      <tr>
+        <th>输出长度</th>
+        <td>最大 384K</td>
+        <td>最大 384K</td>
+      </tr>
+      <tr>
+        <th>百万tokens输入（缓存命中）</th>
+        <td>空闲时段 0.02元<br>高峰时段 0.04元</td>
+        <td>空闲时段 0.15元<br>高峰时段 0.30元</td>
+      </tr>
+      <tr>
+        <th>百万tokens输入（缓存未命中）</th>
+        <td>空闲时段 1元<br>高峰时段 2元</td>
+        <td>空闲时段 4.5元<br>高峰时段 9.0元</td>
+      </tr>
+      <tr>
+        <th>百万tokens输出</th>
+        <td>空闲时段 4元<br>高峰时段 8元</td>
+        <td>空闲时段 13.5元<br>高峰时段 27.0元</td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>
