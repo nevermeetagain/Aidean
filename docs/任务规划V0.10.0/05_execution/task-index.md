@@ -14,7 +14,7 @@
 | [TASK-006](tasks/TASK-006.md) | S0 | e2e-skeleton 实跑：本地复现 ci.yml e2e-skeleton 全步骤（PG16+Redis7、迁移重放、seed、build、:3000、smoke+walking-skeleton）+ Actions 首轮绿 run（U-25） | Hark(主Agent) | Agent-Guard | opus | 中/5h | — | L0 | — | 未开工（Hark 核心） |
 | [TASK-098](tasks/TASK-098.md) | S10 | 快照写入器加固：空 items 不下架、分批 upsert 与事务超时、同 hash 并发返回既有快照 | 外部Agent | Agent-Data | sonnect | 小/2h | — | L0 | — | 未开工 |
 | [TASK-099](tasks/TASK-099.md) | S12 | llmtest 观测落库前置：reliability_observations 幂等键口径 + entityId/窗口口径裁定（文档与单测，不建迁移） | 外部Agent | Agent-API | sonnect | 小/2h | — | L0 | — | 未开工 |
-| [TASK-050](tasks/TASK-050.md) | S0 | CI verify 收尾：本地按 ci.yml 顺序复现 verify job 全部步骤 + coverage 目录入 .gitignore | 外部Agent | Agent-Guard | sonnect | 小/1h | — | L0 | — | 未开工 |
+| [TASK-050](tasks/TASK-050.md) | S0 | CI verify 收尾：本地按 ci.yml 顺序复现 verify job 全部步骤 + coverage 目录入 .gitignore | 外部Agent | Agent-Guard | sonnect | 小/1h | — | L0 | — | 已完成（助手C e0e35c6，见 EVD-050） |
 | [TASK-008](tasks/TASK-008.md) | S0 | OIDC 种子 wechat-rag 回调白名单按端口裁决对齐（保留 BotHot 3200；AideanBot 3333 按 P-2 补录） | 外部Agent | Agent-Data | haiku | 小/1h | — | L0 | P-2 | 条件·待裁决 |
 | [TASK-084](tasks/TASK-084.md) | S6 | 核验：天梯页无页脚 + 台账 #19 admin 配置治理收口状态 | 外部Agent | Agent-Guard | haiku | 小/2h | 006 | L1 | — | 已完成·e2e 待复跑（助手B；需 C 改根配置收录 e2e 根 spec，见 EVD-084/deviation.md） |
 | [TASK-055](tasks/TASK-055.md) | S4 | 种子：系统配置新增 pricing.fxUsdCny 默认行（值取 U-15 裁决） | 外部Agent | Agent-Data | haiku | 小/1h | 047 | L1 | U-15 | 条件·待裁决 |
@@ -34,7 +34,7 @@
 | [TASK-036](tasks/TASK-036.md) | S5 | S5 文档同步：API 文档登记搜索端点 + UI/界面交互文档补搜索 | 外部Agent | Agent-Docs | haiku | 小/2h | 035 | L6 | U-5 | 已完成（助手B） |
 | [TASK-039](tasks/TASK-039.md) | S6 | 千级模型天梯量级基线（只测量，不优化） | 外部Agent | Agent-Guard | sonnect | 中/6h | 006 | L1 | — | 已完成·基线待复跑（助手B，无 PG/Redis 环境，见 EVD-039/deviation.md） |
 | [TASK-040](tasks/TASK-040.md) | S7 | 需求文档 v1.15 对齐代码事实与用户裁决 | Hark(主Agent) | Agent-Docs | opus | 中/4h | — | L3 | — | 未开工（Hark 核心） |
-| [TASK-041](tasks/TASK-041.md) | S7 | 台账拆分 + 勾选滞后补录 + CHANGELOG 补录 finalize 里程碑 | 外部Agent | Agent-Docs | sonnect | 中/5h | 040 | L4 | — | 未开工 |
+| [TASK-041](tasks/TASK-041.md) | S7 | 台账拆分 + 勾选滞后补录 + CHANGELOG 补录 finalize 里程碑 | 外部Agent | Agent-Docs | sonnect | 中/5h | 040 | L4 | — | 已完成（助手C；未完成事项目录 v2.37 主表 + 回执分册 00–04，finalize tasks.md 补勾 15/17，CHANGELOG 补 finalize，见 EVD-041） |
 | [TASK-051](tasks/TASK-051.md) | S7 | 统一需求追溯矩阵入库 + 台账内部状态矛盾消解（#17/#36） | Hark(主Agent) | Agent-Docs | opus | 中/3h | 041 | L5 | — | 未开工（Hark 核心） |
 | [TASK-042](tasks/TASK-042.md) | S8 | 备份/恢复演练脚本（pg_dump→restore→逐表行数比对） | 外部Agent | Agent-Guard | sonnect | 中/5h | 006 | L2 | U-3 | 条件·待裁决 |
 | [TASK-083](tasks/TASK-083.md) | S8 | 上线前 seed 演示数据人工审核门禁（清单生成 + 审核记录校验） | 外部Agent | Agent-Guard | sonnect | 小/3h | 042 | L3 | U-3 | 条件·待裁决 |

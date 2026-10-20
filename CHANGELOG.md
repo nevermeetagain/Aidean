@@ -5,6 +5,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), dates in YYYY-M
 
 ## [Unreleased] — 2026-10-12
 
+### Added — 管理端信息架构收尾与运营盲区补齐（`finalize-admin-ia-and-ops-gaps`，2026-10-13 起；TASK-041 于 2026-10-20 补录）
+- **导航三级化（S1/S3）**：`lib/admin-navigation-core.ts` 的 `buildAdminNav` 支持 板块→分组→叶 三级（`NavGroupVM.sections`），`filterNavByPerms` 逐级剪枝（无可见叶的分组/板块整体剔除）；`DEFAULT_ADMIN_NAV` 兜底树与 seed 同构（7 板块 / 33 叶，`admin-navigation-core.spec.ts`）；`AdminSidebar.tsx` 三级渲染 + 深链自动展开祖先分组。
+- **7 板块默认树（S2）**：新增 `prisma/seed-admin-nav-default.ts` 与 `lib/admin-nav-default-tree.ts`（只增不减、URL 不变，34 入口零缺失断言）；菜单页「应用推荐分组（7 板块）」按钮（ConfirmDialog 二次确认）+ `POST /api/v1/admin/menus/apply-default`（`admin.menus.write`，落审计）。注：spec 2.1.2「检测到手工编排即跳过」未按原卡实现，现为「停用多余自定义入口」，tasks.md 保留未勾。
+- **用户凭据只读 + 吊销（S4）**：`GET /api/v1/admin/users/[id]/credentials`（三类凭据脱敏聚合）、`POST …/credentials/revoke`（已停用 → 409 `CREDENTIAL_NOT_REVOCABLE`，审计 `admin.credential.revoke`）；用户详情抽屉「密钥与渠道」区（`UsersTable.tsx`）。
+- **在途冻结款视图（S5）**：`GET /api/v1/admin/holds`（status/userId/from/to 过滤 + 分页，`admin.wallets.read`）；钱包页「在途冻结」页签（`HoldsPanel.tsx` / `WalletsTabs.tsx`）。
+- **OrdersManager 弹窗归一（S6）**：`window.prompt/confirm` 三处改 ConfirmDialog / 带原因 Dialog（文件内 0 处原生弹窗）。
+- **报表独立页（S2r，B1）**：`ReportsBoard` 增 `variant`（概览 compact / 专属页 full），新增 `/admin/reports`。
+- **CMS 补齐（S7/S8，B3/B4）**：官方静态资讯迁入 `NewsItem`（`seed-official-news.ts` slug 幂等）；`partners.marquee` / 关于正文两配置键 + `HomeSectionsEditor`。
+- **RSC 守卫与报表权限码（S9，B2）**：新增 `admin.reports.read`；`/admin/menus`、`/admin/logs`、`/admin/reports` 页级 `hasPermission` 重定向；MODERATOR 不见金额；数字口径锚统一（D-1/D-2）。
+- **台账治理（TASK-041）**：《未完成事项目录》v2.37 拆为主表 + `docs/plans/未完成事项回执/` 00–04 分册；`finalize-admin-ia-and-ops-gaps/tasks.md` v1.1 按代码实查补勾 15 项（证据逐项附路径）。证据：`docs/任务规划V0.10.0/06_validation/evidence/EVD-041/`。
+
 ### Added — 管理端信息架构重构启动 · S1 侧边栏展开态修复（`restructure-admin-nav-rbac-cms`）
 - **规格冻结**：新增三件套 `docs/specs/restructure-admin-nav-rbac-cms/{spec,tasks,checklist}.md`，锁定用户裁决 **A2**（接口级 RBAC，`requireAdminApi(permission?)` 后端逐接口强制）+ **B2**（独立 `Role/Permission/RolePermission/UserRoleAssignment` 多对多）+ 站点可见即可改全量 + 记录/日志体系；切为 S0-S8 垂直切片，含事实锚点表 F0001-F0010、并行/串行调度与独占热点、Top 风险登记。
 - **S1 修复**：`AdminSidebar.tsx` 将 `openGroups` 持久化至 `localStorage('aidean-admin-open-groups')`，新增 `groupIndexForPath` 使路由命中的分组自动展开（冷启动/直访深层页当前项必在 DOM），并删除 `${collapsed ? "" : ""}` 死三元。根治「直达默认收起分组页（如 `/admin/orders`）当前项不可见」。

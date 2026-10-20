@@ -1,0 +1,22 @@
+import re,os,collections,urllib.parse,sys,glob
+os.chdir('/workspace/work/aidean-linec')
+def slug(h):
+    h=h.strip().lower(); h=re.sub(r'[^\w\- ]','',h); return h.replace(' ','-')
+def heads(p):
+    s=collections.Counter(); out=set()
+    for l in open(p,encoding='utf-8'):
+        m=re.match(r'^#{1,6}\s+(.*)',l)
+        if m:
+            b=slug(m.group(1)); n=s[b]; s[b]+=1; out.add(b if n==0 else f'{b}-{n}')
+    return out
+fs=sys.argv[1:]
+bad=0;n=0
+for f in fs:
+    for m in re.finditer(r'\]\(([^)\s#]*)(#[^)\s]*)?\)',open(f,encoding='utf-8').read()):
+        path,anc=m.groups()
+        if path.startswith(('http','mailto:')): continue
+        tp=os.path.normpath(os.path.join(os.path.dirname(f),urllib.parse.unquote(path))) if path else f
+        n+=1
+        if not os.path.exists(tp): bad+=1; print('NOFILE',f,'->',path); continue
+        if anc and tp.endswith('.md') and urllib.parse.unquote(anc[1:]) not in heads(tp): bad+=1; print('NOANCHOR',f,'->',path+anc)
+print(f'checked {n} relative links in {len(fs)} files; broken {bad}')

@@ -1,6 +1,6 @@
 # Tasks · 管理端信息架构收尾与运营盲区补齐（原子化任务书）
 
-> change-id: `finalize-admin-ia-and-ops-gaps` | 版本: v1.0 | 创建: 2026-10-13
+> change-id: `finalize-admin-ia-and-ops-gaps` | 版本: v1.1 | 创建: 2026-10-13 | 更新: 2026-10-20 | 变更: TASK-041 按 main 代码实查补勾 15 项（每项附证据路径）；0.1.1（无 baseline 证据）与 2.1.2（实现口径不同）保留未勾并注明原因
 > 层级图例（L1→L4）与合规规则见 [_template/tasks.md](../_template/tasks.md)。
 > 本文件对应交付格式 §10 第 6–11 节。契约真源见 [spec.md](./spec.md) §4-§5。**未过 BLOCKING（B1–B4）的切片只写到 L2，不下发实现。**
 
@@ -27,6 +27,7 @@
 ### Task 0.1 复核并留证当前基线 【目标: 证明 S1-S8 后系统全绿 | 依赖: 无 | 产出: 基线证据】
 
 - [ ] #### SubTask 0.1.1 跑类型/单测/文档门禁/端到端基线
+  - 【TASK-041 核对（2026-10-20）】未补勾：卡面产出 `evidence/baseline.md` 在仓内不存在（docs/specs/finalize-admin-ia-and-ops-gaps/ 下无 evidence/），无法按证据补勾
   - 【目标】采集现状绿测数字，作为后续回归对照（无基线禁排"优化"任务，§9.1）。
   - 【范围】只读执行，不改任何代码：`pnpm --filter web exec tsc --noEmit`、`pnpm --filter web vitest run`、`node scripts/check-docs-facts.mjs`、`pnpm exec playwright test`（admin 子集）。
   - 【验收】tsc 0 error；vitest 全绿；docs-facts 14/14；admin e2e ≥ 前序 52 passed；记录三处数字锚（admin 页 30 / 路由域 35 / 概览+29 叶）。
@@ -45,7 +46,8 @@
 
 ### Task 1.1 扩展建树纯函数 【目标: buildAdminNav 支持三级 | 依赖: 0.1.1 | 产出: 改 core + 单测】
 
-- [ ] #### SubTask 1.1.1 改类型与 buildAdminNav 三级聚合
+- [x] #### SubTask 1.1.1 改类型与 buildAdminNav 三级聚合
+  - 【补勾证据（TASK-041，2026-10-20，按 main 代码实查）】`apps/web/lib/admin-navigation-core.ts:21,65-79`（NavGroupVM.sections + level===3 聚合）；单测 `lib/admin-navigation-core.spec.ts`
   - 【目标】输出 `sections[]→groups[]→leaves[]` 三级 VM，向后兼容两级数据。
   - 【范围】改 `apps/web/lib/admin-navigation-core.ts`：`AdminNavVM` 增加 `sections`（或让 `groups` 携带 `children: NavGroupVM[]`）；`buildAdminNav` 识别 `level===1`(板块,isDropdown)→`level===2`(分组,isDropdown)→`level===3`(叶,有 path)；保留旧 `level===1 组 + level===2 叶` 的两级数据仍能渲染（兼容分支）。**禁止改** 现有导出符号名以外语义。
   - 【验收】新增单测：给定三级 rows 输入，`buildAdminNav` 产出三级；给定两级 rows，产出等价旧结构；无 path 节点跳过；sortOrder 升序稳定。
@@ -57,7 +59,8 @@
   - 【档位】opus（改冻结的建树契约语义，牵动全局）。
   - 【规模】中。
 
-- [ ] #### SubTask 1.1.2 三级 RBAC 剪枝
+- [x] #### SubTask 1.1.2 三级 RBAC 剪枝
+  - 【补勾证据（TASK-041，2026-10-20，按 main 代码实查）】`admin-navigation-core.ts:93-120` filterNavByPerms 逐级剪枝（sections 剪空→分组剔除）；单测 `lib/admin-nav-default-tree.spec.ts:75`「全部门槛的分组整组剪除」
   - 【目标】`filterNavByPerms` 按三级剪枝：叶无权限→隐藏；分组无可见叶→隐藏；板块无可见分组→隐藏。
   - 【范围】同文件 `filterNavByPerms`；wildcard 仍全可见；空壳逐级丢弃。
   - 【验收】单测：非通配角色仅持部分叶权限时，空的分组/板块不出现；overview 不受影响。
@@ -70,7 +73,8 @@
 
 ### Task 1.2 侧栏三级渲染与展开 【目标: AdminSidebar 渲染三级并逐级可展开 | 依赖: 1.1.2 | 产出: 改组件】
 
-- [ ] #### SubTask 1.2.1 三级手风琴渲染
+- [x] #### SubTask 1.2.1 三级手风琴渲染
+  - 【补勾证据（TASK-041，2026-10-20，按 main 代码实查）】`apps/web/components/admin/AdminSidebar.tsx:248` 渲染 group.sections 三级；e2e `e2e/admin/menus.spec.ts`
   - 【目标】板块头→分组头→叶 三级缩进 + 展开/收起；概览仍独立置顶。
   - 【范围】改 `apps/web/components/admin/AdminSidebar.tsx:161-236` 渲染块（当前两级）→ 嵌套三级；沿用 `NavIcon`/`ACTIVE_CLS`/`IDLE_CLS`；移动端 `forceExpanded` 恒展开逻辑保留。
   - 【验收】视觉：三级缩进清晰；键盘可达（原生 button/link）；收起态图标列仍可用；现 admin e2e 导航类用例不破。
@@ -81,7 +85,8 @@
   - 【档位】sonnect（渲染实现，契约已由 1.1 冻结）。
   - 【规模】中。
 
-- [ ] #### SubTask 1.2.2 展开态持久化兼容三级 + 深链自动展开
+- [x] #### SubTask 1.2.2 展开态持久化兼容三级 + 深链自动展开
+  - 【补勾证据（TASK-041，2026-10-20，按 main 代码实查）】`AdminSidebar.tsx:45-51,55,96-119`（groupIndexForPath 命中 sections 子叶 → 深链自动展开；OPEN_GROUPS_KEY 读旧值 JSON.parse 容错）；localStorage 迁移的人工核验未单独留证
   - 【目标】`openGroups`/localStorage 存档兼容三级 key 结构，旧存档不崩；直访深层叶自动展开所属分组与板块。
   - 【范围】改 `AdminSidebar.tsx:59-77`（`groupIndexForPath` 扩到三级命中路径回填；`OPEN_GROUPS_KEY` 值结构升级并容错旧值）。
   - 【验收】旧 localStorage 值存在时不报错并安全迁移；冷启动直访最深层叶，其两级祖先均展开在 DOM 内。
@@ -100,7 +105,8 @@
 
 ### Task 2.1 设计并落默认三级树 【目标: 出厂 = 7 板块 | 依赖: 1.2.2 | 产出: 新 seed 脚本】
 
-- [ ] #### SubTask 2.1.1 新建 `seed-admin-nav-default.ts`（三级 7 板块）
+- [x] #### SubTask 2.1.1 新建 `seed-admin-nav-default.ts`（三级 7 板块）
+  - 【补勾证据（TASK-041，2026-10-20，按 main 代码实查）】`apps/web/prisma/seed-admin-nav-default.ts`（7 板块/33 叶/34 入口断言）；`lib/admin-nav-default-tree.ts` + spec:25-57
   - 【目标】按 §2.3 板块划分产出三级种子树，30 叶零丢失（不改 URL，只重组层级与归属）。
   - 【范围】新建 `apps/web/prisma/seed-admin-nav-default.ts`（不改旧 `seed-navigation-menu.ts`）。板块（level1）：①数据报表 ②模型与采集 ③用户与权限 ④交易与财务 ⑤渠道与子平台 ⑥内容运营 ⑦站点与系统；概览独立置顶。叶 href 全部沿用现值（见 spec §2.1 表）。
   - 【验收】跑脚本后 `buildAdminNav` 得 7 板块；`EXPECTED_HREFS` 覆盖 31 入口零缺失（复用旧脚本覆盖断言思路）。
@@ -112,6 +118,7 @@
   - 【规模】中。
 
 - [ ] #### SubTask 2.1.2 不覆盖检测（安全切换核心）
+  - 【TASK-041 核对（2026-10-20）】未补勾：代码口径与本卡不同——`lib/admin/apply-default-nav.ts` 为「只增不减 + 停用多余自定义入口」，未实现「检测到手工编排即跳过」；需 spec 所有者裁定是否改卡或补实现
   - 【目标】仅当 ADMIN 菜单仍等于出厂 menuCode 集合时才 upsert 重组；检测到自定义即跳过并打印提示。
   - 【范围】seed 脚本主流程前置判定：读现 `NavigationMenu(scope=ADMIN)` 的 menuCode 集合 vs 出厂集合；不等→`console.warn`「检测到手工编排，已跳过；请在菜单页点『应用推荐分组』」并 `return`。
   - 【验收】两条用例：(a) 空/等于出厂集合库→重排成功；(b) 含额外/改名 menuCode 的库→跳过、数据不变。
@@ -124,7 +131,8 @@
 
 ### Task 2.2 菜单页「应用推荐分组」按钮 【目标: 管理员可主动应用默认板块 | 依赖: 2.1.2 | 产出: MenuManager + 端点】
 
-- [ ] #### SubTask 2.2.1 服务端应用默认端点 + 客户端按钮（二次确认）
+- [x] #### SubTask 2.2.1 服务端应用默认端点 + 客户端按钮（二次确认）
+  - 【补勾证据（TASK-041，2026-10-20，按 main 代码实查）】`components/admin/MenuManager.tsx:72-83,168`（「应用推荐分组（7 板块）」+ 二次确认）；`app/api/v1/admin/menus/apply-default/route.ts`（requireAdminApi admin.menus.write）；e2e `e2e/admin/menus.spec.ts`
   - 【目标】提供「应用推荐分组」动作，复用 2.1.2 同一不覆盖/显式确认逻辑。
   - 【范围】`apps/web/components/admin/MenuManager.tsx` 加按钮（走 ConfirmDialog，禁 window.*）；对应 `app/api/v1/admin/menus/*` 端点新增 action（`requireAdminApi("admin.menus.write")`），落 AuditLog；保存后 `revalidateTag` 失效侧栏缓存。
   - 【验收】点击→二次确认→应用 7 板块；自定义库需显式确认才覆盖；缓存失效侧栏即时更新。
@@ -143,7 +151,8 @@
 
 ### Task 3.1 补全兜底树与注释 【目标: 兜底 = 31 入口 | 依赖: 1.2.2 | 产出: 改 core + 注释】
 
-- [ ] #### SubTask 3.1.1 DEFAULT_ADMIN_NAV 补 5 叶 + 对齐三级结构
+- [x] #### SubTask 3.1.1 DEFAULT_ADMIN_NAV 补 5 叶 + 对齐三级结构
+  - 【补勾证据（TASK-041，2026-10-20，按 main 代码实查）】`lib/admin-navigation-core.spec.ts:93`「DEFAULT_ADMIN_NAV = 7 板块三级树（33 叶经 sections，与 seed 同构）」
   - 【目标】兜底树含 prices/logs/oidc/menus/roles，且与 S1 三级 VM 形状一致。
   - 【范围】改 `admin-navigation-core.ts:83-128`：补齐缺失 5 叶；按板块/分组/叶三级重排；注释「26」改实数。
   - 【验收】`DEFAULT_ADMIN_NAV` 展开后入口集合 == seed `EXPECTED_HREFS`（31）；`admin-navigation.spec.ts` 增断言。
@@ -163,7 +172,8 @@
 
 ### Task 4.1 credentials 聚合读端点 【目标: 脱敏查看 | 依赖: 0.1.1 | 产出: GET 端点 + 脱敏单测】
 
-- [ ] #### SubTask 4.1.1 实现 GET credentials 聚合
+- [x] #### SubTask 4.1.1 实现 GET credentials 聚合
+  - 【补勾证据（TASK-041，2026-10-20，按 main 代码实查）】`app/api/v1/admin/users/[id]/credentials/route.ts`；单测 `lib/features/auth/__tests__/admin-credentials.spec.ts:39-77`（脱敏/空态/403）
   - 【目标】返回尾号/状态/末用时间，绝不明文回显密钥值。
   - 【范围】新建 `app/api/v1/admin/users/[id]/credentials/route.ts`；`requireAdminApi("admin.users.read")`；查 `prisma.apiKey/stationUserKey/customChannel` where userId；映射 masked（复用现控制台脱敏函数，若无可提 `lib`）；响应严格对齐 §4①。
   - 【验收】单测断言响应不含 `secret`/`key`/`token` 明文；跨用户 userId 越权返回 403；空态返回空数组。
@@ -177,13 +187,15 @@
 
 ### Task 4.2 吊销写端点 + 抽屉展示 【目标: 可吊销且审计 | 依赖: 4.1.1 | 产出: POST + UI】
 
-- [ ] #### SubTask 4.2.1 POST revoke（幂等 + 审计）
+- [x] #### SubTask 4.2.1 POST revoke（幂等 + 审计）
+  - 【补勾证据（TASK-041，2026-10-20，按 main 代码实查）】`app/api/v1/admin/users/[id]/credentials/revoke/route.ts:6-7,61`（409 CREDENTIAL_NOT_REVOCABLE + AuditLog admin.credential.revoke）；单测 admin-credentials.spec.ts:85+
   - 【范围】新建 `.../credentials/revoke/route.ts`；`requireAdminApi("admin.users.write")`；状态机（已吊销→409 `CREDENTIAL_NOT_REVOCABLE`）；写 `AuditLog(action="admin.credential.revoke")`。
   - 【验收】重复吊销 409；越权 403；成功落审计；单测覆盖三态。
   - 【验证命令】`pnpm --filter web vitest run`。
   - 【依赖】4.1.1。【并行性】S4 内串行。【档位】sonnect。【规模】中。
 
-- [ ] #### SubTask 4.2.2 用户详情抽屉「密钥与渠道」区
+- [x] #### SubTask 4.2.2 用户详情抽屉「密钥与渠道」区
+  - 【补勾证据（TASK-041，2026-10-20，按 main 代码实查）】`components/admin/UsersTable.tsx:36,79,107`（详情抽屉 credentials 只读区 + 吊销确认）
   - 【范围】用户详情抽屉组件加只读区 + 吊销按钮（ConfirmDialog）；消费 4.1/4.2 端点；UX 五态对齐 §4⑥。
   - 【验收】渲染脱敏列表；吊销二次确认；无权限态隐藏入口。
   - 【验证命令】`pnpm exec playwright test`。
@@ -197,7 +209,8 @@
 
 ### Task 5.1 holds 分页读端点 【目标: 按状态分页 | 依赖: 0.1.1, (可选迁移) | 产出: GET holds】
 
-- [ ] #### SubTask 5.1.1 GET /admin/holds（可选建索引）
+- [x] #### SubTask 5.1.1 GET /admin/holds（可选建索引）
+  - 【补勾证据（TASK-041，2026-10-20，按 main 代码实查）】`app/api/v1/admin/holds/route.ts`；单测 `lib/features/auth/__tests__/admin-holds.spec.ts:38-124`（分页/过滤/400/空态/403）；未建新迁移
   - 【目标】提供按状态+时间分页的冻结款列表；索引按需。
   - 【范围】新建 `app/api/v1/admin/holds/route.ts`，`requireAdminApi("admin.wallets.read")`，分页 `status/userId/from/to` 过滤，响应 `{items,total,page,pageSize}`。`BalanceHold` 已有 `@@index([status, expiresAt])`；若 EXPLAIN 证实走不了此索引→补 `@@index([status, createdAt])` 归入唯一迁移 `2026xxxx_admin_ops_indexes`。
   - 【验收】EXPLAIN 核验查询走索引或可接受；分页契约齐；越权 403。
@@ -205,7 +218,8 @@
   - 【产出】端点 + 测试（+ 可选迁移）。
   - 【依赖】0.1.1。【并行性】与 S4 并行；若建迁移则版本号**独占串行**（§7.1）。【档位】sonnect。【规模】中。
 
-- [ ] #### SubTask 5.1.2 冻结款视图（页签）
+- [x] #### SubTask 5.1.2 冻结款视图（页签）
+  - 【补勾证据（TASK-041，2026-10-20，按 main 代码实查）】`components/admin/HoldsPanel.tsx` + `WalletsTabs.tsx` + `app/(admin)/admin/wallets/page.tsx`（钱包页「在途冻结」页签）
   - 【范围】钱包页或订单页加「在途冻结」只读页签消费 5.1.1；异常 hold 的释放动作复用既有 capture/reverse 链并审计（不新造资金逻辑）。
   - 【验收】列表可分页可过滤；释放走既有链 + 审计；UX 五态。
   - 【验证命令】`pnpm exec playwright test`。
@@ -219,7 +233,8 @@
 
 ### Task 6.1 归一原生弹窗 【目标: 移除 window.* | 依赖: 0.1.1 | 产出: 改 OrdersManager】
 
-- [ ] #### SubTask 6.1.1 替换 :91/:95/:97 三处
+- [x] #### SubTask 6.1.1 替换 :91/:95/:97 三处
+  - 【补勾证据（TASK-041，2026-10-20，按 main 代码实查）】`grep -c "window\.(prompt|confirm|alert)" apps/web/components/admin/OrdersManager.tsx` = 0；`:91` 注释 CLOSE/FLAG→ConfirmDialog、REVERSE→带原因 Dialog；e2e `e2e/admin/orders.spec.ts`
   - 【范围】改 `apps/web/components/admin/OrdersManager.tsx:91`（冲正原因→带输入框的对话框）、`:95`/`:97`（标记异常/关单→ConfirmDialog）；复用项目既有对话框/message 组件（对齐 N6 轮其它 6 个管理器口径）。
   - 【验收】文件内 0 处 `window.prompt|confirm|alert`（grep 断言）；三动作仍可发起且落审计；移动端不阻塞。
   - 【验证命令】`Select-String -Path apps/web/components/admin/OrdersManager.tsx -Pattern "window\.(prompt|confirm|alert)"` 应 0 命中；`pnpm exec playwright test`。
@@ -234,7 +249,8 @@
 
 ### Task 2r.1 报表页与组件复用 【目标: /admin/reports 可用且与概览共用 | 依赖: 0.1.1 | 产出: 新页 + 抽组件】
 
-- [ ] #### SubTask 2r.1.1 抽出 ReportsBoard 为可复用 + 概览保留精简 KPI
+- [x] #### SubTask 2r.1.1 抽出 ReportsBoard 为可复用 + 概览保留精简 KPI
+  - 【补勾证据（TASK-041，2026-10-20，按 main 代码实查）】`components/admin/ReportsBoard.tsx:10-11,77`（variant full/compact）；`app/(admin)/admin/page.tsx:93` 用 compact
   - 【目标】把现有挂在 `/admin` 概览的 `ReportsBoard` 重构为可传参（compact/full 两模）组件；概览页用 compact（4 KPI 卡），专属页用 full（趋势图+Top+时间切换）。
   - 【范围】改 `apps/web/components/admin/ReportsBoard.tsx`（加 `variant` prop，缺省 full 保持向后兼容）；改 `app/(admin)/admin/page.tsx` 用 compact。禁改 `reports-core.ts` 数据层。
   - 【验收】概览渲染精简版不倒退；tsc 0；现报表单测（reports.spec）不破。
@@ -244,7 +260,8 @@
   - 【允许修改】`ReportsBoard.tsx`、`app/(admin)/admin/page.tsx`。
   - 【档位】sonnect。【规模】中。
 
-- [ ] #### SubTask 2r.1.2 新建 `/admin/reports` 专属页
+- [x] #### SubTask 2r.1.2 新建 `/admin/reports` 专属页
+  - 【补勾证据（TASK-041，2026-10-20，按 main 代码实查）】`app/(admin)/admin/reports/page.tsx`；e2e `e2e/admin/reports.spec.ts`
   - 【目标】独立页承载 full 版报表，预留导出/多维扩展位。
   - 【范围】新建 `app/(admin)/admin/reports/page.tsx`（`generateMetadata` + `force-dynamic` + 渲 full ReportsBoard）；权限入场守门同概览。
   - 【验收】`/admin/reports` 可访问、渲染完整报表；无权限（S9 后）重定向。

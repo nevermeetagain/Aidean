@@ -1,0 +1,76 @@
+# EVD-041 verify（2026-10-20 18:25:18 CST，基线 origin/main@7c3eb98）
+
+## $ node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs
+[铁律1] docs rule PASS：apps/ 下无实体 .md（README.md 豁免）。
+[铁律-数字] 数字真源断言 PASS（锚=文档，代码=实测）：schema model=73, enum=37, admin API 域=38, admin 页面=34, Next.js=15.0.x
+✅ schema-models: schema.prisma model 数 = 73（TASK-047 新增 FxDailyRate 日汇率快照 72→73；前次 M-002 TASK-058 68→72） → expected=73, actual=73
+✅ seed-models: seed.ts 模型条数（modelsData 静态条目 + DEMO_MODEL_COUNT 生成器）≥ 50（下限式，R-83 T1：模型数不限由后台配置） → expected=>=50, actual=1000
+✅ seed-no-official: seed.ts 中无 OFFICIAL/官方测试（provenance 修复后） → expected=0, actual=0
+✅ lib-features-count: lib/features 子目录数 = 23（TASK-033 新增 lib/features/search 22→23，R10-01；前次 TASK-090 收口 18→22，含 lib/features/pricing 等新增目录） → expected=23, actual=23
+✅ aidean-ui-refs: @aidean/ui 在 apps/web/components 的 import 数 = 70（TASK-064 新增 ChangeFeed/MonitoringPanel 68→70；前次 TASK-074 BenchmarkDialog 67→68） → expected=70, actual=70
+✅ route-count: apps/web route.ts 文件数（含 app/ 全域）= 163（TASK-063 新增 admin/monitoring 4 端点 159→163，R10-01；前次 TASK-081 158→159） → expected=163, actual=163
+✅ page-count: apps/web page.tsx 文件数 = 58（TASK-064 新增 (admin)/admin/monitoring/page.tsx 57→58） → expected=58, actual=58
+✅ next-version: Next.js 版本 = 15.x → expected=15.x, actual=15.x
+✅ spec-count: spec 文件总数 = 188（TASK-080 新增 cache-billing.spec.ts 187→188；前次 TASK-048 新增 effective-price-normalization.spec.ts 186→187；前次 TASK-065 新增 e2e/admin/monitoring.spec.ts 185→186，R10-01；前次 TASK-035 新增 e2e/web/search.spec.ts 184→185） → expected=188, actual=188
+✅ queryraw-biz: apps/web 业务代码 $queryRaw/$executeRaw = 0 → expected=0, actual=0
+✅ batch-count: admin batch 路由数 = 15 → expected=15, actual=15
+✅ db-doc-product-fields: 《数据库文档》products 行已登记 display_name 与 ProductCategory（DB 模型变更文档同步） → expected=2/2, actual=2/2
+✅ category-label-single-source: apps/web 中硬编码「label: "特供"」式分类映射 = 0（文案唯一来源 lib/product-label.ts） → expected=0, actual=0
+✅ usage-stats-anchor-pair: 《API架构设计方案》含 usage-stats-architecture 锚 且《API接口文档》含其回链（铁律 2 双向互引） → expected=2/2, actual=2/2
+
+All 14 assertions passed.
+exit=0
+
+## $ git grep -n "未完成事项目录.md#" -- docs   # 带锚引用
+docs/archive/research/aidean-closure_evidence.json:12:    { "id": "V6", "entity": "migrations", "claim": "共 5 个迁移，空库重放证据仅覆盖 0000+0001", "source": "apps/web/prisma/migrations/; 未完成事项目录.md#17", "source_type": "mixed", "confidence": "high", "verified": true },
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.1.0/05_execution/tasks/TASK-041.md":41:- [ ] `grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.1.0/_generator/tasks_data.py":544:     accept=["check-docs-rule exit 0", "check-docs-facts 全 PASS", "`grep -rn \"未完成事项目录.md#\" docs` 链接全部可解析（脚本或人工抽查 10 条）"],
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.10.0/05_execution/tasks/TASK-041.md":46:- [ ] `grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.10.0/20_\345\211\251\344\275\231\345\217\257\346\211\247\350\241\214\345\244\247\347\272\262.md":365:  - 6.1.4.5 验收：check-docs-rule exit 0；check-docs-facts 全 PASS；`grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.10.0/21_Agent\344\273\273\345\212\241\344\271\246/P2-\345\256\214\346\225\264\344\273\273\345\212\241\344\271\246-\346\225\260\346\215\256\344\270\216\346\226\207\346\241\243\347\272\277.md":351:- [ ] `grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.10.0/21_Agent\344\273\273\345\212\241\344\271\246/\345\244\226\351\203\250\345\212\251\346\211\213-\345\215\225\344\272\272\344\273\273\345\212\241\344\271\246.md":1210:- [ ] `grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.10.0/_generator/base_v010.py":544:     accept=["check-docs-rule exit 0", "check-docs-facts 全 PASS", "`grep -rn \"未完成事项目录.md#\" docs` 链接全部可解析（脚本或人工抽查 10 条）"],
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.2.0/05_execution/tasks/TASK-041.md":44:- [ ] `grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.2.0/_generator/base_v010.py":544:     accept=["check-docs-rule exit 0", "check-docs-facts 全 PASS", "`grep -rn \"未完成事项目录.md#\" docs` 链接全部可解析（脚本或人工抽查 10 条）"],
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.3.0/05_execution/tasks/TASK-041.md":44:- [ ] `grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.4.0/05_execution/tasks/TASK-041.md":44:- [ ] `grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.4.0/20_\345\211\251\344\275\231\345\217\257\346\211\247\350\241\214\345\244\247\347\272\262.md":537:  - 6.1.2.5 验收：check-docs-rule exit 0；check-docs-facts 全 PASS；`grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.4.0/_generator/base_v010.py":544:     accept=["check-docs-rule exit 0", "check-docs-facts 全 PASS", "`grep -rn \"未完成事项目录.md#\" docs` 链接全部可解析（脚本或人工抽查 10 条）"],
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.5.0/05_execution/tasks/TASK-041.md":44:- [ ] `grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.5.0/_generator/base_v010.py":544:     accept=["check-docs-rule exit 0", "check-docs-facts 全 PASS", "`grep -rn \"未完成事项目录.md#\" docs` 链接全部可解析（脚本或人工抽查 10 条）"],
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.7.0/05_execution/tasks/TASK-041.md":46:- [ ] `grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.7.0/20_\345\211\251\344\275\231\345\217\257\346\211\247\350\241\214\345\244\247\347\272\262.md":636:  - 6.1.4.5 验收：check-docs-rule exit 0；check-docs-facts 全 PASS；`grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.7.0/21_Agent\344\273\273\345\212\241\344\271\246/P2-\345\256\214\346\225\264\344\273\273\345\212\241\344\271\246-\346\225\260\346\215\256\344\270\216\346\226\207\346\241\243\347\272\277.md":954:- [ ] `grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.7.0/_generator/base_v010.py":544:     accept=["check-docs-rule exit 0", "check-docs-facts 全 PASS", "`grep -rn \"未完成事项目录.md#\" docs` 链接全部可解析（脚本或人工抽查 10 条）"],
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.8.0/05_execution/tasks/TASK-041.md":46:- [ ] `grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.8.0/20_\345\211\251\344\275\231\345\217\257\346\211\247\350\241\214\345\244\247\347\272\262.md":666:  - 6.1.5.5 验收：check-docs-rule exit 0；check-docs-facts 全 PASS；`grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.8.0/21_Agent\344\273\273\345\212\241\344\271\246/P2-\345\256\214\346\225\264\344\273\273\345\212\241\344\271\246-\346\225\260\346\215\256\344\270\216\346\226\207\346\241\243\347\272\277.md":955:- [ ] `grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.8.0/_generator/base_v010.py":544:     accept=["check-docs-rule exit 0", "check-docs-facts 全 PASS", "`grep -rn \"未完成事项目录.md#\" docs` 链接全部可解析（脚本或人工抽查 10 条）"],
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.9.0/05_execution/tasks/TASK-041.md":46:- [ ] `grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.9.0/20_\345\211\251\344\275\231\345\217\257\346\211\247\350\241\214\345\244\247\347\272\262.md":458:  - 6.1.5.5 验收：check-docs-rule exit 0；check-docs-facts 全 PASS；`grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.9.0/21_Agent\344\273\273\345\212\241\344\271\246/P2-\345\256\214\346\225\264\344\273\273\345\212\241\344\271\246-\346\225\260\346\215\256\344\270\216\346\226\207\346\241\243\347\272\277.md":540:- [ ] `grep -rn "未完成事项目录.md#" docs` 链接全部可解析（脚本或人工抽查 10 条）
+"docs/\344\273\273\345\212\241\350\247\204\345\210\222V0.9.0/_generator/base_v010.py":544:     accept=["check-docs-rule exit 0", "check-docs-facts 全 PASS", "`grep -rn \"未完成事项目录.md#\" docs` 链接全部可解析（脚本或人工抽查 10 条）"],
+exit=0（命中仅为各版任务书里本条验收标准的文字本身，全仓无指向本表的带锚 markdown 链接；12 处无锚链接见下节）
+
+## 相对链接与锚点可解析性（主表 + 分册 + plans/README；linec-tools/linkcheck.py，GitHub 锚规则）
+checked 112 relative links in 8 files; broken 0
+
+## 拆分完整性：原 v2.36 非空行均在 主表∪分册 中（逐行多重集比对）
+原非空行 486；字节级未原样出现 10 行；去掉相对链接深度（分册下移一级，"../" 前缀 13 处重写）后仍不一致 1 行
+  · > 版本: v2.36 | 更新: 2026-10-19 | 变更: **V0.9.0 TASK-013 R-01 价格历史唯一约束缺陷闭环文档同步（§7.35）**——登记早前 #63（迁移 `20260925170000`）为 `mod …
+（唯一差异行为 v2.36 版本头改写为「前次（v2.36 …）」前缀，正文不变）
+
+## 文件体积
+ 37601 docs/plans/未完成事项目录.md
+ 31720 docs/plans/未完成事项回执/00-版本沿革.md
+ 31991 docs/plans/未完成事项回执/01-7.4至7.11.md
+ 30494 docs/plans/未完成事项回执/02-7.12至7.22.md
+ 33006 docs/plans/未完成事项回执/03-7.23至7.29.md
+  9957 docs/plans/未完成事项回执/04-7.33至7.35.md
+  6231 docs/plans/未完成事项回执/README.md
+181000 total
+原 v2.36：159692 字节
+
+## finalize tasks.md 勾选
+补勾前 [ ]=17 [x]=9；补勾后 [ ]=2 [x]=24
+OrdersManager 原生弹窗命中=0
