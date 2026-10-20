@@ -30,7 +30,7 @@ describe("admin-nav-default-tree（S2.1 出厂三级 7 板块默认树）", () =
     expect(OVERVIEW.href).toBe("/admin");
   });
 
-  it("buildAdminNav(toNavRows()) 得 7 板块三级树，叶总数 = 32", () => {
+  it("buildAdminNav(toNavRows()) 得 7 板块三级树，叶总数 = 33", () => {
     const nav = buildAdminNav(toNavRows());
     expect(nav.overview?.href).toBe("/admin");
     expect(nav.groups).toHaveLength(7);
@@ -38,7 +38,7 @@ describe("admin-nav-default-tree（S2.1 出厂三级 7 板块默认树）", () =
     const leavesViaSections = nav.groups.flatMap((g) => (g.sections ?? []).flatMap((s) => s.children ?? []));
     const directLeaves = nav.groups.flatMap((g) => g.leaves);
     expect(directLeaves).toHaveLength(0);
-    expect(leavesViaSections).toHaveLength(32);
+    expect(leavesViaSections).toHaveLength(33);
     // 每个板块都至少有一个分组
     for (const g of nav.groups) expect((g.sections ?? []).length).toBeGreaterThan(0);
   });
@@ -47,10 +47,11 @@ describe("admin-nav-default-tree（S2.1 出厂三级 7 板块默认树）", () =
     const dup = EXPECTED_HREFS.filter((h, i) => EXPECTED_HREFS.indexOf(h) !== i);
     expect(dup).toEqual([]);
     for (const legacy of LEGACY_HREFS) expect(EXPECTED_HREFS).toContain(legacy);
-    // 较旧集合新增且仅新增 /admin/reports 与 /admin/feature-flags（S2 功能开关入口）
+    // 较旧集合新增：/admin/reports、/admin/feature-flags（S2 功能开关）、/admin/monitoring（TASK-094 监控入口）
     expect(EXPECTED_HREFS).toContain("/admin/reports");
     expect(EXPECTED_HREFS).toContain("/admin/feature-flags");
-    expect(EXPECTED_HREFS.length).toBe(LEGACY_HREFS.length + 2);
+    expect(EXPECTED_HREFS).toContain("/admin/monitoring");
+    expect(EXPECTED_HREFS.length).toBe(LEGACY_HREFS.length + 3);
   });
 
   it("menuCode 全局唯一（板块/分组/叶/概览无重名）", () => {
@@ -58,7 +59,7 @@ describe("admin-nav-default-tree（S2.1 出厂三级 7 板块默认树）", () =
     expect(dup).toEqual([]);
   });
 
-  it("关键叶保留权限门槛（reports/logs/prices/oidc/menus/roles/feature-flags）", () => {
+  it("关键叶保留权限门槛（reports/logs/prices/oidc/menus/roles/feature-flags/monitoring）", () => {
     const permsBy = new Map<string, string[] | undefined>();
     for (const s of SECTIONS) for (const g of s.groups) for (const l of g.leaves) permsBy.set(l.href, l.perms);
     expect(permsBy.get("/admin/reports")).toEqual(["admin.reports.read"]);
@@ -68,6 +69,7 @@ describe("admin-nav-default-tree（S2.1 出厂三级 7 板块默认树）", () =
     expect(permsBy.get("/admin/feature-flags")).toEqual(["admin.configs.read"]);
     expect(permsBy.get("/admin/menus")).toEqual(["admin.menus.read"]);
     expect(permsBy.get("/admin/roles")).toEqual(["admin.roles.read"]);
+    expect(permsBy.get("/admin/monitoring")).toEqual(["admin.sync.read"]);
   });
 
  it("仅 isStaff（无额外权限码）：设门槛叶隐藏、未设门槛叶可见；全部门槛的分组整组剪除", () => {
@@ -80,7 +82,7 @@ describe("admin-nav-default-tree（S2.1 出厂三级 7 板块默认树）", () =
       ]),
     );
     // 设权限门槛的叶隐藏
-    for (const gated of ["/admin/reports", "/admin/logs", "/admin/prices", "/admin/oidc-clients", "/admin/feature-flags", "/admin/menus", "/admin/roles"]) {
+    for (const gated of ["/admin/reports", "/admin/logs", "/admin/prices", "/admin/oidc-clients", "/admin/feature-flags", "/admin/menus", "/admin/roles", "/admin/monitoring"]) {
       expect(visibleHrefs.has(gated)).toBe(false);
     }
     // 未设门槛的叶对所有 isStaff 可见

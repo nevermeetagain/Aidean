@@ -1,0 +1,97 @@
+TASK-094 · 后台导航登记「模型源监控」：admin-nav 新增 /admin/monitoring 叶 —— 验证证据
+时间: 2026-10-20T06:25Z（UTC）｜执行者: 助手 A｜卡面: docs/任务规划V0.10.0/05_execution/tasks/TASK-094.md v0.10
+基线 HEAD: 390bbb57（TASK-064，= mirror/main）
+复核工作树: E:/Code/Aidean-check64（detached @390bbb57，独立 node_modules；共享树被并行助手并发改动，故隔离复核）
+
+== 1. 交付文件（卡面允许范围 + 两处邻接同步，见 §5）==
+- apps/web/lib/admin-nav-default-tree.ts            同步与发现组新增叶 adm_monitoring（+1 行）
+- apps/web/lib/admin-nav-default-tree.spec.ts       叶总数 33 / EXPECTED_HREFS 含 monitoring / 只增不减 +3 / perms 断言 / gated 列表
+- apps/web/lib/admin-navigation-core.spec.ts        邻接硬编码断言 32→33（偏差 D1，非逻辑改动）
+- apps/web/prisma/seed-admin-nav-default.ts         仅头注释「32 叶/33 入口」→「33 叶/34 入口」（偏差 D2）
+- docs/任务规划V0.10.0/06_validation/evidence/EVD-094/verify.txt + admin-nav-monitoring-1280.png
+
+== 2. 实现口径（卡面逐条）==
+1) 新增叶（紧随 adm_sync，位于 adm_grp_collect「同步与发现」，order=2）：
+   { code: "adm_monitoring", name: "模型源监控", href: "/admin/monitoring", icon: <心跳线>, perms: ["admin.sync.read"] }
+2) 只增不减：既有 href 全部沿用，仅追加；叶数 32→33，buildAdminNav 覆盖入口 33→34。
+3) 权限门槛：perms 经 toNavRows/apply-default-nav 落为 requiredPermissions；
+   filterNavByPerms(nav, { wildcard:false, codes:[] }) 对无 admin.sync.read 的 isStaff 隐藏该叶；
+   若某分组内全部门槛叶均不可见，则整组剪除（既有语义，未改）。
+4) 落库入口：lib/admin/apply-default-nav.ts（与面板「应用推荐分组」同一实现，按 menuCode upsert 幂等）。
+5) 兜底：DEFAULT_ADMIN_NAV 由同一棵树生成（buildAdminNav(toNavRows())），缺库/空表时不回退到 32 叶旧树。
+
+== 3. 验证命令与结果（工作树实测，2026-10-20 14:14–14:23）==
+$ pnpm --filter web exec vitest run lib/admin-nav
+  → Test Files 2 passed (2)；Tests 20 passed (20)
+     lib/admin-nav-default-tree.spec.ts (7) / lib/admin-navigation-core.spec.ts (13)
+
+$ pnpm --filter web exec vitest run（全量）
+  → Test Files 139 passed | 2 skipped (141)
+    Tests 1377 passed | 5 skipped (1382)
+    Start at 14:15:45，Duration 10.17s
+
+$ pnpm --filter web exec tsc --noEmit
+  → exit 0（无输出）
+
+$ pnpm --filter web exec next lint
+  → exit 0；唯一 warning 为既有 components/common/SafeImage.tsx <img>（非本卡引入）
+
+$ pnpm --filter web exec tsx prisma/seed-admin-nav-default.ts
+  → upsert=56 停用旧遗留=0
+    OK 板块=7 叶=33 覆盖=34/34（buildAdminNav 断言 7 板块 / 33 叶 / 34 入口 href 零缺失）
+
+$ node scripts/check-docs-facts.mjs
+  → All 14 assertions passed（route=163 / page=58 / spec=184 / ui-refs=70 / schema=73 / lib-features=23 等）
+
+$ node scripts/check-docs-rule.mjs
+  → [铁律1] PASS；[铁律-数字] PASS（schema model=73, enum=37, admin API 域=38, admin 页面=34, Next.js=15.0.x）
+
+$ cd apps/web && npx next build
+  → exit 0；BUILD_ID=bmVxrEluxBVnbT3G1NDF7（2026-10-20 14:17:53）
+
+$ node <一次性脚本>（Prisma 直查，凭 apps/web/.env 的 DATABASE_URL；脚本用后即删，未入库）
+  → ADMIN_NAV_ROW {"menuCode":"adm_monitoring","name":"模型源监控","level":3,"path":"/admin/monitoring",
+                    "parentCode":"adm_grp_collect","isActive":true,"isVisible":true,"sortOrder":1,
+                    "requiredPermissions":["admin.sync.read"]}
+  → ADMIN_NAV_COUNTS level1=10 / level2=15 / level3=33（ADMIN scope）
+  → ADMIN_NAV_DUP 1（menuCode 唯一，无重复行）
+
+== 4. 运行取证（真实登录 + 真实菜单渲染）==
+环境：next start -p 3000（PID 46644，14:18 启动，Ready）；先 node apps/web/scripts/clear-rl.mjs 清 rl:login:*。
+步骤：POST /api/v1/auth/login（admin@aidean.com）取 aidean_token/aidean_refresh → 注入 Cookie → GET /admin（200）。
+断言：getByRole("link", { name: "模型源监控" }) 可见，取值
+       NAV_LEAF {"text":"模型源监控","href":"/admin/monitoring"}
+截图：admin-nav-monitoring-1280.png（1280×900，94,511 B，2026-10-20 14:21:04）
+       侧栏「同步与发现」组内依次为 同步管理 / 模型源监控 / 市场发现，叶可见且可点。
+备注：首跑 20s 超时未命中，根因为 getAdminNav 的 unstable_cache(tag="admin-nav", revalidate=60) 仍持旧树；
+      过期后复跑命中。属缓存时序，非实现缺陷（菜单保存/revalidateTag 路径不受影响）。
+
+== 5. 偏差与风险登记 ==
+D1 apps/web/lib/admin-navigation-core.spec.ts：原硬编码「32 叶」断言在本卡后必失败，同步为 33（仅数字与用例标题）。
+   理由：保持全量 vitest 绿；不改任何生产逻辑。卡面「允许修改」未列此文件，故登记。
+D2 apps/web/prisma/seed-admin-nav-default.ts：仅头注释 32/33 → 33/34，保持文档与实测一致（无逻辑改动）。
+D3 卡面步骤 3「pnpm db:seed 后菜单表含该行」未按字面执行。实测 `db:seed` = `tsx prisma/seed.ts`：
+   其 navigationMenusData 为站点 7 项，且在写入前执行 `prisma.navigationMenu.deleteMany()`（无 scope 过滤），
+   会先清空 ADMIN 三级树再重建站点菜单——若照做将丢失本卡新增叶乃至整棵 7 板块树（apps/web/prisma/seed.ts:395）。
+   故改用 ADMIN 树唯一落库入口 prisma/seed-admin-nav-default.ts（幂等 upsert），并以 Prisma 直查证明行存在（§3 末）。
+R1（遗留风险，非本卡引入）：`pnpm db:seed` 对 ADMIN 导航具破坏性（deleteMany 无 scope 过滤）；
+   任何环境重建数据后必须补跑 seed-admin-nav-default.ts，否则 /admin 侧栏退化为兜底树/站点菜单。
+   已在本证据登记，供后续卡（导航/种子治理）统一处置。
+
+== 6. 范围核对 ==
+$ git diff --name-only
+  apps/web/lib/admin-nav-default-tree.ts
+  apps/web/lib/admin-nav-default-tree.spec.ts
+  apps/web/lib/admin-navigation-core.spec.ts
+  apps/web/prisma/seed-admin-nav-default.ts
+  （+ 本目录新增 verify.txt / admin-nav-monitoring-1280.png）
+无 apps/web/app/**、无 .example/history/**、无 contracts/**、无跨代规划目录改动。
+
+== 7. 验收对照 ==
+[x] `pnpm --filter web exec vitest run lib/admin-nav` 全绿               → 2 files / 20 tests passed
+[x] 仅 isStaff 用户不可见该叶（权限门槛生效）
+    → spec 用例「仅 isStaff（无额外权限码）：设门槛叶隐藏、未设门槛叶可见；全部门槛的分组整组剪除」通过；
+      DB 中 requiredPermissions=["admin.sync.read"]；实测 admin 渲染可见（§4）
+[x] `node scripts/check-docs-facts.mjs` exit 0                          → 14/14 passed
+[x] diff 仅落在允许范围（+D1/D2 邻接同步，已登记）                      → §6
+[x] 菜单表含该行且唯一                                                  → §3（level=3 / parent=adm_grp_collect / dup=1）
