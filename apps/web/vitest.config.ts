@@ -10,7 +10,8 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["lib/**/*.spec.ts"],
+    // TASK-101：仓库根 scripts/crawl 的采集脚本单测一并纳入 web 全局门禁（脚本经 apps/web 的依赖运行）
+    include: ["lib/**/*.spec.ts", "../../scripts/crawl/__tests__/*.spec.ts"],
     // 15s：auth 首调 RS256 generateKeyPair（无 REDIS_URL 时进程内生成）在低速机/冷机
     // 可达 5~6s，默认 5s 会把慢初始化误判为死锁超时（2026-10-01 实测 12 例假失败）。
     testTimeout: 15000,
