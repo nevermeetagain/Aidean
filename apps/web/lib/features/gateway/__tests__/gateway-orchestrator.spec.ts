@@ -649,3 +649,68 @@ describe("WP-BE02 用量沉淀与细粒度 token", () => {
     expect(result.meta.billingPath).toBe("PACKAGE");
   });
 });
+
+// ---------- TASK-048：归一价消费 · 无价 skip-candidate（R9-01）· 免费模型跳过余额校验（U-23）----------
+
+describe("TASK-048 网关消费归一价", () => {
+  it("R9-01：付费候选无价（不可归一 → prices=[]）→ 不预扣、不调上游，降级 free 候选成功", async () => {
+    const noPrice = { ...requestedModel, prices: [] };
+    repoStub.findModelByCode.mockResolvedValue(noPrice);
+    repoStub.findModelsByIds.mockResolvedValue(new Map([["m-req", noPrice], ["m-free", freeModel]]));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(okFetchOnce({ choices: [{ message: { content: "free ok" } }], usage: { prompt_tokens: 3, completion_tokens: 2 } }))
+    );
+    const result = await gatewayOrchestrator.executeChat("u-1", chatBody(), "req-np");
+    expect(billingStub.hold).not.toHaveBeenCalled();
+    expect(billingStub.captureHold).not.toHaveBeenCalled();
+    expect(fetchGlobal()).toHaveBeenCalledTimes(1); // 只打到 free 候选的站点
+    expect(result.meta.billingPath).toBe("FREE_QUOTA");
+  });
+
+  it("R9-01：唯一候选无价 → 全链失败 30003，上游零调用、零预扣（绝不按 0 放行）", async () => {
+    const noPrice = { ...requestedModel, prices: [] };
+    repoStub.findModelByCode.mockResolvedValue(noPrice);
+    repoStub.loadRouteConfig.mockResolvedValue({ tierMappings: [], priorities: [], free: [] });
+    repoStub.findModelsByIds.mockResolvedValue(new Map([["m-req", noPrice]]));
+    vi.stubGlobal("fetch", vi.fn());
+    await expect(gatewayOrchestrator.executeChat("u-1", chatBody(), "req-np2")).rejects.toMatchObject({
+      code: ERROR_CODES.GATEWAY_ALL_FAILED,
+    });
+    expect(fetchGlobal()).not.toHaveBeenCalled();
+    expect(billingStub.hold).not.toHaveBeenCalled();
+  });
+
+  it("U-23：归一价为 0 的免费模型 → 跳过余额校验（不 hold/capture/void），PLATFORM 零扣费仍写用量", async () => {
+    const zero = { ...requestedModel, prices: [{ priceInput: "0", priceOutput: "0", priceCache: null, billingCurrency: "CNY", isFree: true }] };
+    repoStub.findModelByCode.mockResolvedValue(zero);
+    repoStub.findModelsByIds.mockResolvedValue(new Map([["m-req", zero], ["m-free", freeModel]]));
+    billingStub.hold.mockRejectedValue(new ApiError(ERROR_CODES.INSUFFICIENT_BALANCE, "余额不足")); // 若误触余额校验会被拒
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(okFetchOnce({ choices: [{ message: { content: "ok" } }], usage: { prompt_tokens: 1000, completion_tokens: 10 } }))
+    );
+    const result = await gatewayOrchestrator.executeChat("u-1", chatBody(), "req-free0");
+    expect(billingStub.hold).not.toHaveBeenCalled();
+    expect(billingStub.captureHold).not.toHaveBeenCalled();
+    expect(billingStub.voidHold).not.toHaveBeenCalled();
+    expect(result.meta.billingPath).toBe("PLATFORM");
+    expect(result.meta.modelId).toBe("m-req");
+    expect(result.meta.quotaMinor).toBe(0n);
+    expect(repoStub.insertUsageLog).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ quotaMinor: 0n, promptTokens: 1000 }));
+  });
+
+  it("R9-03：请求时刻 now 透传到 findModelByCode / findModelsByIds（预扣与结算同一生效价）", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(okFetchOnce({ choices: [{ message: { content: "ok" } }], usage: { prompt_tokens: 1, completion_tokens: 1 } })));
+    const now = new Date("2026-11-03T04:05:06.000Z");
+    await gatewayOrchestrator.executeChat("u-1", chatBody(), "req-now", now);
+    expect(repoStub.findModelByCode.mock.calls[0][2]).toBe(now);
+    expect(repoStub.findModelsByIds.mock.calls[0][2]).toBe(now);
+  });
+
+  it("归一价（USD 1/M × fx 7.1 → 7.1 元/M）：100 万输入 token 预扣输入侧 = 710 分", () => {
+    const m = { maxOutputTokens: 1, prices: [{ priceInput: "7.1", priceOutput: "0", billingCurrency: "CNY", isFree: false }] };
+    const body = { model: "x", messages: [{ role: "user" as const, content: "a".repeat(4_000_000) }], max_tokens: 1 };
+    expect(estimatePrepayMinor(m, body, null)).toBe(710n);
+  });
+});

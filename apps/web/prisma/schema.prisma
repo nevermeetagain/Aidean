@@ -459,7 +459,7 @@ model ModelPrice {
 
   billingMode     BillingMode @default(PER_TOKEN) @map("billing_mode")
   billingCurrency String      @default("CNY") @map("billing_currency")
-  billingUnit     String      @default("per_1k_tokens") @map("billing_unit") // D5 修复：计价粒度（per_1k_tokens / per_million_tokens / per_request 等）
+  billingUnit     String      @default("per_million_tokens") @map("billing_unit") // 计价粒度（per_million_tokens / per_1m_tokens / per_1k_tokens / per_token）；TASK-048 起默认每百万 Token，计费按此归一
 
   originalCurrency    String?  @map("original_currency")
   originalPriceInput  Decimal? @map("original_price_input") @db.Decimal(19, 6)

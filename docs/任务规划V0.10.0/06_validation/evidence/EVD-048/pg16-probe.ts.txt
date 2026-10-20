@@ -1,0 +1,38 @@
+import { prisma } from "/workspace/work/Aidean/apps/web/lib/db/prisma";
+import { resolveEffectivePrice } from "/workspace/work/Aidean/apps/web/lib/features/pricing/effective-price";
+import { gatewayRepository } from "/workspace/work/Aidean/apps/web/lib/features/gateway/repository";
+import { estimatePrepayMinor } from "/workspace/work/Aidean/apps/web/lib/features/gateway/service";
+import { clearDailyFxCache } from "/workspace/work/Aidean/apps/web/lib/features/pricing/fx";
+import { readFileSync } from "node:fs";
+async function main() {
+  const at = new Date();
+  const g = await prisma.$queryRawUnsafe<any[]>(`select billing_currency c, billing_unit u, source_type::text s, count(*)::int n from model_prices where is_current group by 1,2,3 order by 1,2,3`);
+  console.log("census after seed+migrate:", JSON.stringify(g));
+  // 迁移 UPDATE 回放：造 3 条旧口径行（USD OFFICIAL per_1k / CNY OFFICIAL per_1k / USD CRAWLER per_1k）
+  const ms = await prisma.aiModel.findMany({ where: { nameDisplay: { in: ["GPT-4o", "Qwen-Max", "o1"] } }, select: { id: true, nameDisplay: true, modelCode: true } });
+  const id = (n: string) => ms.find((m) => m.nameDisplay === n)!;
+  await prisma.modelPrice.updateMany({ where: { modelId: { in: ms.map((m) => m.id) } }, data: { billingUnit: "per_1k_tokens" } });
+  await prisma.modelPrice.updateMany({ where: { modelId: id("o1").id }, data: { sourceType: "CRAWLER", priceInput: "0.015", priceOutput: "0.06" } });
+  const sql = readFileSync("prisma/migrations/20261020010000_model_prices_unit_per_million/migration.sql", "utf8").split(";").map((x) => x.replace(/^\s*--.*$/gm, "").trim()).filter(Boolean)[0];
+  const upd = await prisma.$executeRawUnsafe(sql);
+  console.log("migration UPDATE replay rows:", upd);
+  const after = await prisma.modelPrice.findMany({ where: { modelId: { in: ms.map((m) => m.id) }, isCurrent: true }, select: { modelId: true, billingCurrency: true, billingUnit: true, sourceType: true, priceInput: true } });
+  console.log("units after:", JSON.stringify(after.map((r) => ({ m: ms.find((x) => x.id === r.modelId)!.nameDisplay, ...r, priceInput: String(r.priceInput) }))));
+  // 无汇率 → fail-closed
+  await prisma.fxDailyRate.deleteMany({});
+  clearDailyFxCache();
+  console.log("no-fx GPT-4o read:", await resolveEffectivePrice(id("GPT-4o").id, at));
+  console.log("no-fx GPT-4o gateway prices:", JSON.stringify((await gatewayRepository.findModelByCode(prisma, id("GPT-4o").modelCode, at))?.prices));
+  const d = at.toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" });
+  await prisma.fxDailyRate.create({ data: { base: "USD", quote: "CNY", rateDate: new Date(`${d}T00:00:00Z`), rate: "7.1", source: "probe", sourceUrl: "https://example.invalid/probe", fetchedAt: new Date() } as any });
+  clearDailyFxCache();
+  for (const n of ["GPT-4o", "Qwen-Max", "o1"]) {
+    const ep = await resolveEffectivePrice(id(n).id, at);
+    const gw = await gatewayRepository.findModelByCode(prisma, id(n).modelCode, at);
+    const usd = await resolveEffectivePrice(id(n).id, at, undefined, { currency: "USD" });
+    const body = { model: "x", messages: [{ role: "user" as const, content: "a".repeat(4_000_000) }], max_tokens: 1 };
+    console.log(n, "CNY", ep?.priceInput, "/", ep?.priceOutput, "| USD", usd?.priceInput, "| gw", JSON.stringify(gw?.prices), "| hold 1M in tokens(分)", String(estimatePrepayMinor({ maxOutputTokens: 1, prices: gw!.prices }, body, null)));
+  }
+  await prisma.$disconnect();
+}
+main().catch((e) => { console.error(e); process.exit(1); });

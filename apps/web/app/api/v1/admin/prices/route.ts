@@ -116,7 +116,7 @@ export const POST = withApi(async (req: Request) => {
       priceCache: d.priceCache ?? null,
       pricePerRequest: d.pricePerRequest ?? null,
       billingMode: d.billingMode,
-      billingUnit: d.billingUnit ?? "per_1k_tokens",
+      billingUnit: d.billingUnit ?? "per_million_tokens",
       billingCurrency: d.billingCurrency ?? "CNY",
       notes: d.notes ?? "后台录入",
       sourceType: "OFFICIAL",

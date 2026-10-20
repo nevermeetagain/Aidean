@@ -1,7 +1,17 @@
 import type { PrismaClient } from "@prisma/client";
 import { prisma } from "../../db/prisma";
 import { gatewayFormatToChannelEnum, KEY_COOLDOWN_MINUTES, KEY_FAILURE_THRESHOLD, type GatewayFormat } from "@aidean/shared";
-import { EFFECTIVE_PRICE_CANDIDATE_TAKE, effectivePriceWhere, pickEffectivePrice } from "../pricing/effective-price";
+import { PRICE_NORMALIZATION, type FxRates } from "@aidean/shared";
+import {
+  EFFECTIVE_PRICE_CANDIDATE_TAKE,
+  EFFECTIVE_PRICE_SELECT,
+  effectivePriceWhere,
+  needsFx,
+  normalizePriceRow,
+  pickEffectivePrice,
+  type PriceRowLike,
+} from "../pricing/effective-price";
+import { getDailyFx } from "../pricing/fx";
 
 /**
  * gateway 网关域 repository（Task G.2.1）：网关域全部数据访问。
@@ -17,30 +27,43 @@ export interface RouteConfigRow {
   free: { modelId: string; quotaTokens: number; refreshCycle: "DAY" | "WEEK" | "MONTH" }[];
 }
 
-/** 生效价候选行的 select（选择所需字段 + 计费读取的 priceInput/priceOutput/billingCurrency） */
-const EFFECTIVE_PRICE_ROW_SELECT = {
-  priceInput: true,
-  priceOutput: true,
-  billingCurrency: true,
-  isCurrent: true,
-  sourceType: true,
-  effectiveFrom: true,
-  effectiveUntil: true,
-} as const;
+/** 网关消费的生效价（TASK-048：已归一为结算币种 CNY / 每百万 Token，十进制串） */
+export interface GatewayEffectivePrice {
+  priceInput: string;
+  priceOutput: string;
+  priceCache: string | null;
+  billingCurrency: "CNY";
+  /** 输入/输出归一价均为 0（U-23：免费模型跳过余额校验与预扣） */
+  isFree: boolean;
+}
+
+/** 测试注入点：汇率加载（缺省读当日汇率快照） */
+let loadFx: (at: Date) => Promise<FxRates | null> = getDailyFx;
+export function __setGatewayFxLoaderForTest(fn: ((at: Date) => Promise<FxRates | null>) | null): void {
+  loadFx = fn ?? getDailyFx;
+}
 
 /**
- * TASK-027：候选价格行 → 至多 1 条生效价（保持 service 既有消费形状 {priceInput, priceOutput, billingCurrency}[]）。
- * 原 Decimal 对象原样透传，不做 Number 转换（精度由 service 既有计费路径决定）。
+ * TASK-027/048：候选价格行 → 至多 1 条生效价，并归一到结算币种（CNY / 每百万 Token）。
+ * 无价或不可归一（未知币种/单位、跨币种缺汇率）→ prices=[]：service 在 PLATFORM 路径按 skip-candidate 处理，绝不按 0 放行。
  */
-function collapseToEffectivePrice<
-  P extends { priceInput: unknown; priceOutput: unknown; billingCurrency: string; isCurrent: boolean; sourceType: string; effectiveFrom: Date; effectiveUntil: Date | null },
-  M extends { prices: P[] },
->(model: M, at: Date): Omit<M, "prices"> & { prices: { priceInput: P["priceInput"]; priceOutput: P["priceOutput"]; billingCurrency: string }[] } {
+function collapseToEffectivePrice<P extends PriceRowLike, M extends { prices: P[] }>(
+  model: M,
+  at: Date,
+  fx: FxRates | null,
+): Omit<M, "prices"> & { prices: GatewayEffectivePrice[] } {
   const picked = pickEffectivePrice(model.prices, at);
-  const prices = picked
-    ? [{ priceInput: picked.effective.priceInput, priceOutput: picked.effective.priceOutput, billingCurrency: picked.effective.billingCurrency }]
+  const n = picked ? normalizePriceRow(picked.effective, PRICE_NORMALIZATION.settlementCurrency, fx) : null;
+  const prices: GatewayEffectivePrice[] = n
+    ? [{ priceInput: n.priceInput, priceOutput: n.priceOutput, priceCache: n.priceCache, billingCurrency: "CNY", isFree: n.isFree }]
     : [];
   return { ...model, prices };
+}
+
+/** 一批模型的候选行里只要有跨币种行，就读一次当日汇率（同一请求链路内计费与展示同值） */
+async function fxFor(rows: { prices: PriceRowLike[] }[], at: Date): Promise<FxRates | null> {
+  const all = rows.flatMap((r) => r.prices);
+  return needsFx(all, PRICE_NORMALIZATION.settlementCurrency) ? loadFx(at) : null;
 }
 
 export const gatewayRepository = {
@@ -120,11 +143,12 @@ export const gatewayRepository = {
           where: effectivePriceWhere(at),
           take: EFFECTIVE_PRICE_CANDIDATE_TAKE,
           orderBy: { effectiveFrom: "desc" },
-          select: EFFECTIVE_PRICE_ROW_SELECT,
+          select: EFFECTIVE_PRICE_SELECT,
         },
       },
     });
-    return row ? collapseToEffectivePrice(row, at) : null;
+    if (!row) return null;
+    return collapseToEffectivePrice(row, at, await fxFor([row], at));
   },
 
   /** 批量按 id 取模型（路由链候选解析，保持入参顺序） */
@@ -141,11 +165,12 @@ export const gatewayRepository = {
           where: effectivePriceWhere(at),
           take: EFFECTIVE_PRICE_CANDIDATE_TAKE,
           orderBy: { effectiveFrom: "desc" },
-          select: EFFECTIVE_PRICE_ROW_SELECT,
+          select: EFFECTIVE_PRICE_SELECT,
         },
       },
     });
-    return new Map(rows.map((r) => [r.id, collapseToEffectivePrice(r, at)]));
+    const fx = await fxFor(rows, at);
+    return new Map(rows.map((r) => [r.id, collapseToEffectivePrice(r, at, fx)]));
   },
 
   /** 服务某模型且可直连调用的站点（baseUrl 非空；rating 降序） */

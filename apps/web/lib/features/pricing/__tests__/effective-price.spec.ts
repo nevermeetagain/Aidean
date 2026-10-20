@@ -112,7 +112,7 @@ describe("gatewayRepository 收敛（TASK-027，无 DB）", () => {
     const findMany = vi.fn().mockResolvedValue([model, { ...model, id: "m2", prices: [] }]);
     const client = { aiModel: { findFirst, findMany } } as never;
     const one = await gatewayRepository.findModelByCode(client, "c", at);
-    expect(one?.prices).toEqual([{ priceInput: rows[1].priceInput, priceOutput: rows[1].priceOutput, billingCurrency: "CNY" }]);
+    expect(one?.prices).toEqual([{ priceInput: "0", priceOutput: "0", priceCache: null, billingCurrency: "CNY", isFree: true }]);
     expect(findFirst.mock.calls[0][0].select.prices.where).toEqual(effectivePriceWhere(at));
     const map = await gatewayRepository.findModelsByIds(client, ["m1", "m2"], at);
     expect(String(map.get("m1")?.prices[0].priceInput)).toBe("0");
@@ -133,12 +133,20 @@ describe("toEffectivePriceDto（TASK-027）", () => {
       promotionEndsAt: "2026-11-08T00:00:00.000Z",
       basePriceInput: "2",
       basePriceOutput: "8.5",
+      currency: "CNY",
+      unit: "per_million_tokens",
+      sourceCurrency: "CNY",
+      sourceUnit: "per_million_tokens",
+      sourcePriceInput: "1",
+      sourcePriceOutput: "4",
+      fxRate: null,
+      fxDate: null,
     });
     expect(EffectivePriceSchema.strict().safeParse(dto).success).toBe(true);
   });
   it("非优惠：base*/promotionEndsAt 为 null；Decimal 精度经 toString 保留（不经 Number）", () => {
     const tiny = { ...current, priceInput: dec("0.000001"), priceOutput: dec("1234567890123.123456") };
-    const dto = toEffectivePriceDto("m1", pickEffectivePrice([tiny], D("2026-11-02T00:00:00Z"))!);
+    const dto = toEffectivePriceDto("m1", pickEffectivePrice([tiny], D("2026-11-02T00:00:00Z"))!)!;
     expect(dto.priceInput).toBe("0.000001");
     expect(dto.priceOutput).toBe("1234567890123.123456");
     expect(dto.priceCache).toBe("0.5");
@@ -162,5 +170,24 @@ describe("resolveEffectivePrice（TASK-027 查询形状）", () => {
     expect(effectivePriceWhere(at).OR[1]).toEqual({ sourceType: "PROMOTION", effectiveFrom: { lte: at }, effectiveUntil: { gt: at } });
     expect(dto?.isPromotion).toBe(true);
     expect(await resolveEffectivePrice("m2", at, client)).toBeNull();
+  });
+});
+
+describe("gatewayRepository 归一（TASK-048，无 DB）", () => {
+  it("USD 行按注入汇率归一为 CNY/M；汇率缺失 → prices=[]（skip-candidate）", async () => {
+    const { gatewayRepository, __setGatewayFxLoaderForTest } = await import("../../gateway/repository");
+    const at = new Date("2026-11-02T04:00:00.000Z");
+    const usdRow = { ...current, billingCurrency: "USD", billingUnit: "per_1k_tokens", priceInput: dec("0.005"), priceOutput: dec("0.015") };
+    const model = { id: "m1", modelCode: "c", nameDisplay: "n", maxOutputTokens: null, prices: [usdRow] };
+    const client = { aiModel: { findFirst: vi.fn().mockResolvedValue(model), findMany: vi.fn().mockResolvedValue([model]) } } as never;
+    __setGatewayFxLoaderForTest(async () => ({ date: "2026-11-02", usdCny: "7.1" }));
+    expect((await gatewayRepository.findModelByCode(client, "c", at))?.prices).toEqual([
+      { priceInput: "35.5", priceOutput: "106.5", priceCache: "3550", billingCurrency: "CNY", isFree: false },
+    ]);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    __setGatewayFxLoaderForTest(async () => null);
+    expect((await gatewayRepository.findModelsByIds(client, ["m1"], at)).get("m1")?.prices).toEqual([]);
+    warn.mockRestore();
+    __setGatewayFxLoaderForTest(null);
   });
 });

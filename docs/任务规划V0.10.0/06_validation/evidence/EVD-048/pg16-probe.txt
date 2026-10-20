@@ -1,0 +1,10 @@
+census after seed+migrate: [{"c":"CNY","u":"per_1k_tokens","s":"1","n":34},{"c":"USD","u":"per_1k_tokens","s":"4","n":1},{"c":"USD","u":"per_million_tokens","s":"1","n":965}]
+migration UPDATE replay rows: 1
+units after: [{"m":"GPT-4o","modelId":"01a158ab-9e3b-7290-91ee-1949c6498b7f","billingCurrency":"USD","billingUnit":"per_million_tokens","sourceType":"OFFICIAL","priceInput":"5"},{"m":"o1","modelId":"01a158ab-9e5d-70b0-8dd6-8f15073bc242","billingCurrency":"USD","billingUnit":"per_1k_tokens","sourceType":"CRAWLER","priceInput":"0.015"},{"m":"Qwen-Max","modelId":"01a158ab-a0c1-7353-9745-c9d23b647ede","billingCurrency":"CNY","billingUnit":"per_1k_tokens","sourceType":"OFFICIAL","priceInput":"0.02"}]
+[pricing] 价格行不可归一（fx_missing）：USD/per_million_tokens → CNY
+no-fx GPT-4o read: null
+[pricing] 价格行不可归一（fx_missing）：USD/per_million_tokens → CNY
+no-fx GPT-4o gateway prices: []
+GPT-4o CNY 35.5 / 106.5 | USD 5 | gw [{"priceInput":"35.5","priceOutput":"106.5","priceCache":null,"billingCurrency":"CNY","isFree":false}] | hold 1M in tokens(分) 3550
+Qwen-Max CNY 20 / 60 | USD 2.816901 | gw [{"priceInput":"20","priceOutput":"60","priceCache":null,"billingCurrency":"CNY","isFree":false}] | hold 1M in tokens(分) 2000
+o1 CNY 106.5 / 426 | USD 15 | gw [{"priceInput":"106.5","priceOutput":"426","priceCache":null,"billingCurrency":"CNY","isFree":false}] | hold 1M in tokens(分) 10650

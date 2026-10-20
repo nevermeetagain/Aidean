@@ -145,7 +145,7 @@ export const gatewayService = {
     requestedCode: string,
     now: Date = new Date()
   ): Promise<{ chain: RouteCandidateWithModel[]; requestedModelId: string }> {
-    const requested = await gatewayRepository.findModelByCode(prismaClient(), requestedCode);
+    const requested = await gatewayRepository.findModelByCode(prismaClient(), requestedCode, now);
     if (!requested) throw new ApiError(ERROR_CODES.GATEWAY_NO_ROUTE, "无可用路由");
 
     const config = await gatewayRepository.loadRouteConfig(prismaClient(), userId);
@@ -167,7 +167,7 @@ export const gatewayService = {
     const chain = buildRouteChain(config, requested.id, freeAvailable);
 
     // 模型详情补全（保持链序；链首已查过，缺则回填）
-    const modelMap = await gatewayRepository.findModelsByIds(prismaClient(), chain.map((c) => c.modelId));
+    const modelMap = await gatewayRepository.findModelsByIds(prismaClient(), chain.map((c) => c.modelId), now);
     if (!modelMap.has(requested.id)) modelMap.set(requested.id, requested);
 
     const withModel: RouteCandidateWithModel[] = [];
@@ -673,7 +673,7 @@ function estimateStreamCompletionTokens(
 export function estimatePrepayMinor(
   model: {
     maxOutputTokens: number | null;
-    prices: { priceInput: unknown; priceOutput: unknown; billingCurrency: string }[];
+    prices: { priceInput: unknown; priceOutput: unknown; billingCurrency: string; isFree?: boolean }[];
   },
   body: GatewayChat,
   rule: { markupRate: unknown; tokenMultiplier: unknown } | null
@@ -926,13 +926,15 @@ interface PassthroughContext {
   holdKey: string;
   /** 本代计费路径（PLATFORM=预扣捕获；FREE_QUOTA/PACKAGE=免扣写用量） */
   billingPath: UsageBillingPathKey;
+  /** 本代零扣费（免费额度/套餐/评估豁免/归一价为 0 的免费模型）：不预扣、不捕获 */
+  chargeless?: boolean;
   /** 命中站点 id（usage_log 站点归因；仅平台路由链产生，渠道代理不进入透传） */
   stationId: string | null;
   cand: {
     modelId: string;
     freeCycle?: "DAY" | "WEEK" | "MONTH";
     /** 当期价（计费/估算兜底依据，即 RouteCandidateWithModel.model 的 prices 投影） */
-    model: { maxOutputTokens: number | null; prices: { priceInput: unknown; priceOutput: unknown; billingCurrency: string }[] };
+    model: { maxOutputTokens: number | null; prices: { priceInput: unknown; priceOutput: unknown; billingCurrency: string; isFree?: boolean }[] };
   };
   rule: { markupRate: unknown; tokenMultiplier: unknown } | null;
   stream: Awaited<ReturnType<typeof callUpstreamStream>>;
@@ -987,7 +989,7 @@ async function executeChatPassthrough(ctx: PassthroughContext): Promise<GatewayC
   const settle = async (aborted: boolean): Promise<void> => {
     const usage = meter.settle();
     let quotaMinor = 0n;
-    if (billingPath === "PLATFORM") {
+    if (billingPath === "PLATFORM" && !ctx.chargeless) {
       const price = cand.model.prices[0];
       if (price) {
         const markup = Number(rule?.markupRate ?? 1);
@@ -1312,7 +1314,17 @@ export const gatewayOrchestrator = {
         // eval:<id> 总额（¥2/模型 × N），网关 PLATFORM 路径不再 hold/capture——用户只见一笔
         // 评估费，需求 §3.3「对比测评按次从余额扣费（¥2/模型/次）」的产品语义由评估域独占落地。
         // usage_log 仍写（可观测性：tokens/station/latency 归因），quotaMinor 恒 0。
-        const chargeless = isFree || isPackage || opts?.billingExempt === true;
+        // TASK-048：PLATFORM 计费只认归一后的生效价（CNY / 每百万 Token）。
+        //   无价或不可归一（未知币种/单位、跨币种缺当日汇率）→ skip-candidate（R9-01：绝不按 0 放行），降级链续行；
+        //   归一价输入输出均为 0 → 免费模型（U-23）：跳过余额校验与预扣，零扣费仍写用量。
+        const effPrice = cand.model.prices[0];
+        const priceFree = effPrice?.isFree === true;
+        const chargeless = isFree || isPackage || opts?.billingExempt === true || priceFree;
+        if (!chargeless && !effPrice) {
+          lastError = "price_unavailable";
+          lastPath = billingPath;
+          break;
+        }
 
         const triedAt = new Date();
         const keys = await gatewayRepository.listAvailableKeys(prismaClient(), station.id, triedAt);
@@ -1361,6 +1373,7 @@ export const gatewayOrchestrator = {
                 requestId,
                 holdKey,
                 billingPath,
+                chargeless,
                 stationId: station.id,
                 cand,
                 rule,

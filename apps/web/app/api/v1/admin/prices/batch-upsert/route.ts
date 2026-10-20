@@ -117,7 +117,7 @@ async function upsertRow(
       priceCache: row.priceCache ?? null,
       pricePerRequest: row.pricePerRequest ?? null,
       billingMode: row.billingMode ?? "PER_TOKEN",
-      billingUnit: row.billingUnit ?? "per_1k_tokens",
+      billingUnit: row.billingUnit ?? "per_million_tokens",
       billingCurrency: row.billingCurrency ?? "CNY",
       notes: row.notes ?? "后台批量录入",
       sourceType: "OFFICIAL",

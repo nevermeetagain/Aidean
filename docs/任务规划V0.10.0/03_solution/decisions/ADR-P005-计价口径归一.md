@@ -1,6 +1,6 @@
 # ADR-P005 · 计价口径归一（币种 CNY + 每百万 Token）
 
-> 版本: v0.3 | 更新: 2026-10-20 | 变更: **ACCEPTED**——U-15 用户裁决（26_用户裁决记录.md）落地为 §v0.3 决策，取代 v0.2 的「固定汇率配置键 pricing.fxUsdCny」。前次 v0.2（2026-10-14 首次落档，PROPOSED）
+> 版本: v0.4 | 更新: 2026-10-20 | 变更: v0.4 增补 §v0.4 存量单位订正与网关接线（TASK-048，依据 EVD-049/EVD-048）。前次 v0.3：**ACCEPTED**——U-15 用户裁决（26_用户裁决记录.md）落地为 §v0.3 决策，取代 v0.2 的「固定汇率配置键 pricing.fxUsdCny」。前次 v0.2（2026-10-14 首次落档，PROPOSED）
 
 ## v0.3 决策（ACCEPTED，2026-10-20，以本节为准）
 1. **展示币种按 IP**：中国大陆（国家码 CN）→ CNY；其他地区（含港澳台）与未知 → USD。部署层国家头读取顺序 `GEO_COUNTRY_HEADERS`，不做外网 GeoIP（TASK-102 接线）。
@@ -21,6 +21,21 @@
 
 > V0.9.0 承接说明（2026-10-19）：本文件正文为 **V0.8.0 原文**（基线 c2da219），其中「待裁决 B-0'/APPROVE/U-22」「未开工」等表述均指当时；**当前事实以 `25_执行记录.md`、`17g_V0.8.0到V0.9.0差异.md`、`05_execution/task-index.md` 为准**（B-0' 已裁决 A'；089/026/082/027/056/058/060/057 已完成）。契约唯一源仍为 `docs/任务规划V0.5.0/contracts/`。
 
+
+## v0.4 增补（TASK-048，2026-10-20）：存量单位订正与网关接线
+
+**事实（EVD-049 盘点 + EVD-048 抽样）**：`model_prices.billing_unit` 默认值 `per_1k_tokens` 与实际数值不符且口径混合——
+非爬虫 USD 行（seed/后台，如 GPT-4o 5/15、o1 15/60）数值是官方 **$/百万 Token**；非爬虫 CNY 行（Qwen-Max 0.02/0.06、ERNIE-4.0 0.03/0.09）是官方 **¥/千 Token**；
+爬虫行由适配器显式标注（OpenRouter 每 token 价 ×1000 = per_1k 属实；AA/llmstats = per_1m）。旧网关不看币种与单位，一律按「元/百万」扣：USD 行少扣约 7 倍，per_1k 行少扣 1000 倍。
+
+**决策**：
+1. 迁移 `20261020010000_model_prices_unit_per_million`：仅把「非爬虫 ∧ USD ∧ per_1k_tokens」改标 `per_million_tokens`（数值不变）；CNY 与爬虫行不动；列默认值改为 `per_million_tokens`；后台新建/批量写入缺省单位同步改为 `per_million_tokens`；seed 按币种显式写单位。
+2. 计费与展示唯一入口 `normalizePriceRow`（`lib/features/pricing/effective-price.ts`）：按行 `billingCurrency × billingUnit` 调 `normalizeUnitPrice`，网关恒归一到结算币种 CNY / 每百万 Token，读侧按目标币种（默认 CNY，展示币种由 102 传入）。
+3. fail-closed：未知币种/单位、跨币种缺当日汇率（`getDailyFx` 回退 ≤3 天）→ 网关 `prices=[]`，PLATFORM 路径 skip-candidate（R9-01，绝不按 0 放行），读侧返回 null（显示待核）。
+4. U-23：归一价输入输出均为 0 → 免费模型，跳过余额校验与预扣，零扣费仍写用量。
+5. R9-03：`resolveRouteChain` 把请求时刻 `now` 透传给 `findModelByCode/findModelsByIds`，预扣与结算同一生效价。
+
+**影响**：CNY per_1k 行与 USD 行的实扣金额上升到官方价水平（例：Qwen-Max ¥20/M 输入，旧为 ¥0.02/M；GPT-4o 在 fx=7.1 时 ¥35.5/M，旧为 ¥5/M）。上线前须确认当日汇率已采集（TASK-101），否则 USD 计价模型会因 fail-closed 暂不可调用。
 
 ## 状态
 PROPOSED。结构性决策（单一归一函数、计费与展示同口径、不可归一 fail-closed）由本规划提出；**汇率取值（5 / 7.2 / 后台可配）与是否追溯存量账单属用户裁决 U-15**，未裁决前 TASK-048/053/054 不下发。

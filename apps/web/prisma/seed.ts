@@ -502,6 +502,7 @@ async function main() {
         priceInput: m.priceInput,
         priceOutput: m.priceOutput,
         billingCurrency: m.priceCurrency,
+        billingUnit: m.priceCurrency === 'USD' ? 'per_million_tokens' : 'per_1k_tokens', // TASK-048（EVD-049）：USD 行为官方 $/百万 Token，CNY 行为官方 ¥/千 Token
         isCurrent: true,
         effectiveFrom: new Date(),
       }

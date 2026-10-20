@@ -2,7 +2,7 @@
 
 /**
  * 模型定价管理（S7.1 定价孤岛激活）：
- * ModelPrice 当前价列表（元/千 token 口径直接展示 Decimal）+ 搜索 + 编辑 + 为无当前价模型新建。
+ * ModelPrice 当前价列表（原币/每百万 token 口径直接展示 Decimal（TASK-048 起默认 per_million_tokens））+ 搜索 + 编辑 + 为无当前价模型新建。
  * 只读口径下（canWrite=false）隐藏编辑/新建。金额非分单位（Decimal 19,6），按原值展示。
  * TASK-029：新增「限时优惠」子表 Tab（PromotionsPanel）；当前价行「添加优惠」直达新建对话框（预选模型）。
  */
@@ -54,7 +54,7 @@ const emptyForm: PriceForm = {
   priceOutput: "",
   priceCache: "",
   pricePerRequest: "",
-  billingUnit: "per_1k_tokens",
+  billingUnit: "per_million_tokens",
   billingCurrency: "CNY",
   notes: "",
 };
@@ -118,7 +118,7 @@ export function PricesManager({ canWrite = false }: { canWrite?: boolean }) {
       priceOutput: p.priceOutput ?? "",
       priceCache: p.priceCache ?? "",
       pricePerRequest: p.pricePerRequest ?? "",
-      billingUnit: p.billingUnit ?? "per_1k_tokens",
+      billingUnit: p.billingUnit ?? "per_million_tokens",
       billingCurrency: p.billingCurrency ?? "CNY",
       notes: p.notes ?? "",
     });
@@ -166,7 +166,7 @@ export function PricesManager({ canWrite = false }: { canWrite?: boolean }) {
       priceOutput: outVal,
       priceCache: cacheVal,
       pricePerRequest: reqVal,
-      billingUnit: form.billingUnit.trim() || "per_1k_tokens",
+      billingUnit: form.billingUnit.trim() || "per_million_tokens",
       billingCurrency: (form.billingCurrency.trim() || "CNY").toUpperCase(),
       notes: form.notes.trim() || null,
     };
