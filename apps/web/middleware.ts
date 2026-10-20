@@ -13,22 +13,40 @@
  * - fail-closed：JWKS 拉取失败/无 Cookie/验签任何异常 → 视为未登录重定向，不 crash。
  * - matcher 分流：/admin/* 未登录 → /admin/login（/admin/login 自身放行防重定向环）；
  *   /user/* 未登录 → /login。均携带原始路径+查询串供登录成功后回跳。
+ * - TASK-102 展示币种头：所有经 middleware 放行的请求附加 `x-display-currency`（CNY/USD，按部署层国家头
+ *   解析，覆盖客户端自带值；不做外网 GeoIP；只影响展示，不参与扣费）。为此 matcher 扩至站点页与 API
+ *   （排除静态资源）；非 /user、/admin 路径只加头直接放行，**登录守卫逻辑与作用范围不变**。
  */
 import { createRemoteJWKSet } from "jose/jwks/remote";
 import { jwtVerify } from "jose/jwt/verify";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { AUTH_AUDIENCE_SELF, AUTH_ISSUER, AUTH_ISSUERS_ACCEPTED, COOKIE_ACCESS } from "./lib/features/auth/constants";
+import { withDisplayCurrencyHeader } from "./lib/currency";
 
 const jwks = createRemoteJWKSet(new URL("/.well-known/jwks.json", AUTH_ISSUER), {
   cooldownDuration: 60_000,
 });
 
+/** TASK-102：放行时附加展示币种请求头（仅新增头，不改放行/拦截判定） */
+function passWithCurrency(req: NextRequest): NextResponse {
+  return NextResponse.next({ request: { headers: withDisplayCurrencyHeader(req.headers) } });
+}
+
+/** 登录守卫作用范围（与原 matcher 一致）：/user/*、/admin/* */
+function isGuardedPath(pathname: string): boolean {
+  return pathname === "/user" || pathname.startsWith("/user/") || pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
+  // TASK-102：守卫范围外（站点页 / API）只加展示币种头后放行
+  if (!isGuardedPath(pathname)) {
+    return passWithCurrency(req);
+  }
   // 登录页自身放行（否则未登录访问 /admin/login 会被重定向成环）
   if (pathname === "/admin/login") {
-    return NextResponse.next();
+    return passWithCurrency(req);
   }
 
   const token = req.cookies.get(COOKIE_ACCESS)?.value;
@@ -75,9 +93,10 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     return res;
   }
 
-  return NextResponse.next();
+  return passWithCurrency(req);
 }
 
 export const config = {
-  matcher: ["/user/:path*", "/admin/:path*"],
+  // 原守卫范围 /user、/admin 保持；TASK-102 追加其余路径（排除 _next 静态资源与带扩展名的文件）以写展示币种头
+  matcher: ["/user/:path*", "/admin/:path*", "/((?!_next/static|_next/image|favicon\\.ico|.*\\.[a-zA-Z0-9]+$).*)"],
 };

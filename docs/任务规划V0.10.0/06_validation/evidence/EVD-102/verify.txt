@@ -1,0 +1,33 @@
+$ pnpm --filter web exec vitest run lib/currency lib/features/auth/__tests__/middleware.spec.ts
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+ RUN  v2.1.9 /workspace/work/aidean-lineb/apps/web
+ ✓ lib/features/auth/__tests__/middleware.spec.ts > middleware RS256/JWKS 守卫 > 有效 RS256 access → 放行（200，无重定向）
+ ✓ lib/features/auth/__tests__/middleware.spec.ts > middleware RS256/JWKS 守卫 > 过期 access → 307 /login?redirect=…
+ ✓ lib/features/auth/__tests__/middleware.spec.ts > middleware RS256/JWKS 守卫 > kid 不在 JWKS（伪造/跨环境令牌）→ 307
+ ✓ lib/features/auth/__tests__/middleware.spec.ts > middleware RS256/JWKS 守卫 > refresh 令牌混入 access 位（缺 tier/ver claims）→ 307
+ ✓ lib/features/auth/__tests__/middleware.spec.ts > middleware RS256/JWKS 守卫 > 匿名访问 /admin/* → 307 /admin/login?redirect=…（而非 /login）
+ ✓ lib/features/auth/__tests__/middleware.spec.ts > middleware RS256/JWKS 守卫 > 匿名访问 /admin/login 自身放行（防重定向环）
+ ✓ lib/features/auth/__tests__/middleware.spec.ts > middleware RS256/JWKS 守卫 > JWKS 拉取失败且无缓存公钥 → fail-closed 307（不 crash）
+ ✓ lib/features/auth/__tests__/middleware.spec.ts > middleware RS256/JWKS 守卫 > 匿名访问 /user/* → 307 /login（原语义保持）
+ ✓ lib/features/auth/__tests__/middleware.spec.ts > middleware RS256/JWKS 守卫 > RC-02：伪造 Host（0.0.0.0）→ /user/* Location origin 恒为 AUTH_ISSUER
+ ✓ lib/features/auth/__tests__/middleware.spec.ts > middleware RS256/JWKS 守卫 > RC-02：伪造 Host（0.0.0.0）+ /admin 分流 → /admin/login origin 恒为 AUTH_ISSUER
+ ✓ lib/currency/__tests__/display-currency.spec.ts > resolveDisplayCurrencyFromHeaders > CN → CNY（cf-ipcountry）
+ ✓ lib/currency/__tests__/display-currency.spec.ts > resolveDisplayCurrencyFromHeaders > 小写 cn 同样 → CNY（x-vercel-ip-country）
+ ✓ lib/currency/__tests__/display-currency.spec.ts > resolveDisplayCurrencyFromHeaders > US → USD
+ ✓ lib/currency/__tests__/display-currency.spec.ts > resolveDisplayCurrencyFromHeaders > JP → USD（其他地区）；HK/TW 亦按契约 → USD
+ ✓ lib/currency/__tests__/display-currency.spec.ts > resolveDisplayCurrencyFromHeaders > 缺头 → USD
+ ✓ lib/currency/__tests__/display-currency.spec.ts > resolveDisplayCurrencyFromHeaders > 非法值（T1/空/数字/超长/XX 未知）→ 视为缺失 → USD
+ ✓ lib/currency/__tests__/display-currency.spec.ts > resolveDisplayCurrencyFromHeaders > 多头优先级：cf-ipcountry > x-vercel-ip-country > x-geo-country
+ ✓ lib/currency/__tests__/display-currency.spec.ts > resolveDisplayCurrencyFromHeaders > 高优先级头非法时回落下一个合法头
+ ✓ lib/currency/__tests__/display-currency.spec.ts > resolveDisplayCurrencyFromHeaders > 支持普通对象头（Node IncomingHttpHeaders 形态）
+ ✓ lib/currency/__tests__/display-currency.spec.ts > readDisplayCurrency / withDisplayCurrencyHeader > 优先读 middleware 写入的 x-display-currency
+ ✓ lib/currency/__tests__/display-currency.spec.ts > readDisplayCurrency / withDisplayCurrencyHeader > x-display-currency 缺失或非法时回退国家头
+ ✓ lib/currency/__tests__/display-currency.spec.ts > readDisplayCurrency / withDisplayCurrencyHeader > withDisplayCurrencyHeader 覆盖客户端伪造的 x-display-currency
+ ✓ lib/currency/__tests__/display-currency.spec.ts > middleware 接线（站点页只加币种头，不触发登录守卫） > /pricing：放行（200 next），并以 x-middleware-request-x-display-currency 下发 CNY
+ ✓ lib/currency/__tests__/display-currency.spec.ts > middleware 接线（站点页只加币种头，不触发登录守卫） > /models/x：境外 → USD；客户端伪造头被覆盖
+ ✓ lib/currency/__tests__/display-currency.spec.ts > middleware 接线（站点页只加币种头，不触发登录守卫） > /user/* 未登录仍 307 → /login（登录守卫逻辑不变）
+ Test Files  2 passed (2)
+      Tests  25 passed (25)
+   Start at  11:06:07
+   Duration  11.32s (transform 1.20s, setup 0ms, collect 3.87s, tests 277ms, environment 1ms, prepare 1.29s)
+exit=0
