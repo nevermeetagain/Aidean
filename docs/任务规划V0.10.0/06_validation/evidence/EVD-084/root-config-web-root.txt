@@ -1,0 +1,12 @@
+$ pnpm exec playwright test --project=web-root --workers=1 --reporter=list
+# 2026-10-20 21:05:22 CST; :3000 = next start（生产构建，HEAD 111caab）；PG16.14 :55439/aidean_e2e；Redis :6390
+
+Running 3 tests using 1 worker
+
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+  ✓  1 [web-root] › e2e/ladder-no-footer.spec.ts:19:9 › ladder-no-footer › ladder-no-footer /models：SSR 与水合后均无页脚 (4.3s)
+  ✓  2 [web-root] › e2e/ladder-no-footer.spec.ts:19:9 › ladder-no-footer › ladder-no-footer /ladder：SSR 与水合后均无页脚 (2.0s)
+  ✓  3 [web-root] › e2e/ladder-no-footer.spec.ts:32:7 › ladder-no-footer › ladder-no-footer 对照 /providers：非天梯页正常渲染页脚 (1.8s)
+
+  3 passed (14.6s)
+exit=0

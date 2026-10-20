@@ -11,7 +11,7 @@ import { defineConfig, devices } from '@playwright/test';
  * 响应：HTML报告输出到 playwright-report/
  *
  * [C-N4 2026-09-09 员工C] 配置唯一性说明：本文件是**全量 e2e 的唯一生效配置**
- * （testDir ./e2e；projects: web/admin/admin-setup/mobile/smoke/flows；baseURL 固定 3000，
+ * （testDir ./e2e；projects: web/admin/admin-setup/mobile/smoke/web-root/flows；baseURL 固定 3000，
  * 符合「只能 3000 端口」门禁铁律；webServer 保持注释，测试不得私拉服务）。
  * [TASK-037 2026-10-20] e2e/playwright.config.ts 降级为兼容 re-export（仅供旧脚本/守卫引用），
  * package.json test:e2e 与 CI 均改用本文件；flows project 承载 e2e/tests 全量（排除 smoke 重复），
@@ -116,6 +116,17 @@ export default defineConfig({
       name: 'smoke',
       testDir: './e2e/tests',
       testMatch: /smoke\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+      },
+    },
+
+    // 根目录散落用例（TASK-084 跟进）：e2e/ 顶层 spec 不在上述任一 testDir 内，单独收录（游客态，无需登录）。
+    {
+      name: 'web-root',
+      testDir: './e2e',
+      testMatch: /ladder-no-footer\.spec\.ts$/,
+      testIgnore: ['web/**', 'admin/**', 'tests/**'],
       use: {
         ...devices['Desktop Chrome'],
       },
