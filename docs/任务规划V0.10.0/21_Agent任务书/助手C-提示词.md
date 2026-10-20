@@ -23,4 +23,4 @@ e2e/playwright.config.ts 与根 playwright.config.ts；e2e/web/models.spec.ts；
 每张卡：卡面验证命令 exit 0 → 证据写入 EVD-xxx/ → 全局门禁五项不退化（docs rule 0；facts 全过；guard 4/4；web tsc、lint 0；web test 0 failed 且通过数 ≥ 开工时 origin/main 的通过数）→ 推送后确认 HEAD == origin/main。
 线验收：pnpm test:e2e 使用唯一的根配置且全绿；台账没有内部矛盾；RTM 入库；文档与 26 号裁决一致。037 要尽早推送，A 和 B 的 e2e 都在等它。
 
-每张卡交付时按交接任务书 §7 的模板汇报。现在从第一张卡开始。
+每张卡交付时按交接任务书 §7 的模板汇报。如果你此前按旧交接书在做：061 已完成不要重做，098 归 Hark 不要做，从本线还没完成的第一张卡继续。现在开始。
