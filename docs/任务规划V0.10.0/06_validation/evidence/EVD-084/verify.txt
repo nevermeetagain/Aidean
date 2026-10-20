@@ -1,0 +1,25 @@
+== 卡面验证命令（原样）==
+$ pnpm test:e2e -g ladder-no-footer
+    - user-agent: Playwright/1.62.1 (arm64; debian 13) node/22.23
+    - accept: */*
+    - accept-encoding: gzip,deflate,br
+    at apiRequestContext.get: connect ECONNREFUSED ::1:3000
+    at globalSetup (/workspace/work/aidean-lineb/e2e/global-setup.ts:11:27)
+ ELIFECYCLE  Command failed with exit code 1.
+exit=1
+
+== 辅助取证：临时探针配置（不入库，testDir=e2e 根）列出本 spec 用例 ==
+$ pnpm exec playwright test --config .pw-list-084.config.ts --list
+Listing tests:
+  [probe] › ladder-no-footer.spec.ts:19:9 › ladder-no-footer › ladder-no-footer /models：SSR 与水合后均无页脚
+  [probe] › ladder-no-footer.spec.ts:19:9 › ladder-no-footer › ladder-no-footer /ladder：SSR 与水合后均无页脚
+  [probe] › ladder-no-footer.spec.ts:32:7 › ladder-no-footer › ladder-no-footer 对照 /providers：非天梯页正常渲染页脚
+Total: 3 tests in 1 file
+exit=0
+
+== 补充：根配置是否收录本 spec（不经 globalSetup 的 --list）==
+$ pnpm exec playwright test --config playwright.config.ts --list -g ladder-no-footer
+Error: No tests found
+Listing tests:
+Total: 0 tests in 0 files
+exit=1
