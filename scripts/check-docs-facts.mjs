@@ -110,9 +110,9 @@ const assertions = [
   },
   {
     id: "route-count",
-    desc: "apps/web route.ts 文件数（含 app/ 全域）= 159（TASK-081 新增 admin/prices/batch-upsert 158→159，R10-01；前次 TASK-033 157→158）",
+    desc: "apps/web route.ts 文件数（含 app/ 全域）= 163（TASK-063 新增 admin/monitoring 4 端点 159→163，R10-01；前次 TASK-081 158→159）",
     check: () => String(walk("apps/web/app", (n) => n === "route.ts").length),
-    expect: "159",
+    expect: "163",
   },
   {
     id: "page-count",
@@ -132,10 +132,10 @@ const assertions = [
   },
   {
     id: "spec-count",
-    desc: "spec 文件总数 = 183（TASK-081 新增 lib/features/auth/__tests__/admin-prices-batch.spec 182→183，R10-01；前次 TASK-070 181→182）",
+    desc: "spec 文件总数 = 184（TASK-063 新增 lib/monitoring/__tests__/admin-routes.spec 183→184，R10-01；前次 TASK-081 新增 lib/features/auth/__tests__/admin-prices-batch.spec 182→183）",
     check: () =>
       String(walk("e2e", (n) => n.endsWith(".spec.ts")).length + walk("apps/web", (n) => n.endsWith(".spec.ts")).length),
-    expect: "183",
+    expect: "184",
   },
   {
     id: "queryraw-biz",

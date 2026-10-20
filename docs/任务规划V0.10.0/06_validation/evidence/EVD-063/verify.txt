@@ -1,0 +1,70 @@
+TASK-063 · 管理端监控 API 4 端点（sources / sources:{key} / run / changes）— 验证证据
+时间: 2026-10-20T05:40Z（UTC）｜执行者: 助手 A｜卡面: docs/任务规划V0.10.0/05_execution/tasks/TASK-063.md v0.10
+基线 HEAD: 409cff0a（TASK-062）
+
+== 1. 交付文件（均在允许修改范围）==
+- apps/web/app/api/v1/admin/monitoring/sources/route.ts                 GET 源列表
+- apps/web/app/api/v1/admin/monitoring/sources/[key]/route.ts           PATCH 启停/cadence
+- apps/web/app/api/v1/admin/monitoring/sources/[key]/run/route.ts       POST 手动触发（202）
+- apps/web/app/api/v1/admin/monitoring/changes/route.ts                 GET 变更分页
+- apps/web/app/api/v1/admin/monitoring/_lib/serialize.ts                私有 DTO 序列化（不参与 route 计数）
+- apps/web/lib/monitoring/__tests__/admin-routes.spec.ts                18 例
+- scripts/check-docs-facts.mjs（仅 R10-01 计数期望：route 159→163、spec 183→184）
+
+== 2. 实现口径（卡面逐条）==
+1) 鉴权：读端点 requireAdminApi("admin.sync.read")，写端点 ("admin.sync.write")；
+   复用既有权限码（E9-09，无新增码）。未登录 10004→401、越权 10008→403 由 ApiError 映射。
+2) GET sources：仅 deletedAt=null，orderBy key asc；DTO 不含内部 id（审计用 id 不外泄）；
+   lastRunAt Date→ISO，null 保留；响应 AdminMonitoringSourceListResponse.parse 收口。
+3) PATCH sources/{key}：
+   - body 用 AdminMonitoringSourcePatchBody（strict + refine 至少一字段）→ 非白名单字段/空体 400；
+   - 仅未软删 key 命中，否则 MONITOR_SOURCE_NOT_FOUND(20004, 404)；
+   - 只写 enabled/cadenceCron（端点不可改，DESIGN-004 §8 防 SSRF 跳板）；
+   - 成功后 writeAudit(tableName=monitoring_sources, action=2, recordId=源 uuid,
+     changedFields=实际提交字段, oldData/newData=enabled+cadenceCron, requestId 透传)；
+   - lastStatus/lastRunAt 由调度器维护，本端点不触碰；响应 MonitoringSourceSchema.parse。
+4) POST run：
+   - authRequired=true → MONITOR_SOURCE_CREDENTIAL_MISSING(50012, 503)，不取锁不外连
+     （TASK-070 改写后本版本仅公开页源，无 keyed collector）；
+   - Redis SETNX lock:monitor:run:{key} TTL=300s；已被占用（null）→ 10006(429)；
+   - 未配置 REDIS_URL（getRedis()=null）→ fail-open 直受理（与 lib/db/redis 可失组件口径一致）；
+   - 成功 202 + AdminMonitoringRunResponse（accepted=true / sourceKey / lockTtlSeconds=300），
+     x-request-id 透传入站值；本端点按设计只受理并占锁，实际采集由 monitor_catalogs.ts 执行。
+5) GET changes：
+   - AdminMonitoringChangeQuery：page≥1 默认 1、pageSize 1..50 默认 20、sourceKey/kind/since(ISO datetime)；
+     越界/日期格式错误 → 400；
+   - where：source.key / kind / detectedAt.gte；orderBy detectedAt desc + id desc（同毫秒分页稳定）；
+   - Decimal→原币十进制字符串；仅 price_changed 携带 priceUnit/before/after/deltaPct（discriminatedUnion），
+     其余 kind 不带价格键；totalPages=ceil(total/pageSize)（total=0 → 0）；
+   - 响应 AdminMonitoringChangeListResponse.parse 收口；未知 kind / price_changed 缺价直接抛错→50000（不伪造默认值）。
+
+== 3. 验证命令与结果 ==
+$ pnpm --filter web exec vitest run lib/monitoring/__tests__/admin-routes.spec.ts
+  → Test Files 1 passed | Tests 18 passed（401/403/20004/50012/202/429/分页过滤/白名单/审计/契约 parse）
+$ pnpm --filter web exec tsc --noEmit → exit 0
+$ pnpm --filter web run lint → exit 0（唯一既有 warning: components/common/SafeImage.tsx <img>）
+$ node scripts/check-docs-facts.mjs → 1 assertion failed
+  ✅ route-count: expected=163, actual=163
+  ❌ spec-count: expected=184, actual=185
+  原因：并行助手 B 的 TASK-035 未跟踪文件 e2e/web/search.spec.ts 仍在共享工作树（git status 显示 ??），
+  非本卡代码问题；提交后在 detached 工作树复核：All 14 assertions passed（route=163, spec=184）。
+$ powershell -ExecutionPolicy Bypass -NoProfile -File scripts/check-gates.ps1 → exit 0（7/7 PASS：
+  deps/build/tsc/prisma/barrel/button-antipattern/store）
+$ pnpm --filter web exec vitest run → Test Files 139 passed | 2 skipped；Tests 1377 passed | 5 skipped | 0 failed
+  （较 TASK-081 的 1359+5 增加本卡 18 例，无回归）
+
+== 4. 限制与偏离登记 ==
+1) 共享工作树 facts spec-count 多 1：并行助手 B 的 e2e/web/search.spec.ts 未跟踪；已在 detached 工作树
+   （E:/Code/Aidean-check63 @127e9bdc）复核 14/14 通过，共享树失败已归因。
+2) POST run 为「受理 + 占锁」语义（卡面与契约只要求 202/429/50012），不在此请求内同步执行采集；
+   采集仍由 scripts/crawl/monitor_catalogs.ts 调度侧执行（DESIGN-004 §3）。
+3) 本卡不新增数据库迁移，真实 DB 不做联调；路由单测以桩覆盖 SQL 形状（where/orderBy/skip/take/select）。
+4) API接口文档 §4 端点清单未在本卡允许修改范围（TASK-090 已登记 20004/50012 错误码），故仅实现不改文档。
+
+== 5. 变更范围核对 ==
+$ git status --short（本卡相关）
+  ?? apps/web/app/api/v1/admin/monitoring/
+  ?? apps/web/lib/monitoring/__tests__/admin-routes.spec.ts
+  M  scripts/check-docs-facts.mjs
+其余 M/??（docs/任务规划V0.5.0/README.md、packages/shared contract specs、EVD-087、e2e/web/search.spec.ts、
+.openclaw* 等）属其他并行助手，未纳入本卡提交。
