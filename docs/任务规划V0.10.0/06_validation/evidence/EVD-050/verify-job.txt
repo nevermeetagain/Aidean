@@ -1,0 +1,845 @@
+# TASK-050：本地复现 ci.yml verify job
+# 时间：2026-10-20T14:58:14
+# OS：Windows-11-10.0.26100-SP0
+# node：v24.12.0
+# pnpm：9.15.9
+# env：CHECKPOINT_DISABLE=1；DATABASE_URL=postgresql://placeholder:***@127.0.0.1:5432/placeholder?schema=public；CI=1
+# 说明：actions/checkout、pnpm/action-setup、actions/setup-node 由 CI 提供；本地以现有工作树与 Node/pnpm 版本复现 run 行。
+
+=== Install dependencies ===
+$ pnpm install --frozen-lockfile
+Scope: all 5 workspace projects
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+apps/web postinstall$ prisma generate
+apps/web postinstall: Environment variables loaded from .env
+apps/web postinstall: Prisma schema loaded from prisma\schema.prisma
+apps/web postinstall: ✔ Generated Prisma Client (v6.19.3) to .\..\..\node_modules\.pnpm\@prisma+client@6.19.3_prisma@6.19.3_magicast@0.3.5_typescript@5.5.4__typescript@5.5.4\node_modules\@prisma\client in 202ms
+apps/web postinstall: Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+apps/web postinstall: Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+apps/web postinstall: Done
+Done in 1.6s using pnpm v9.15.9
+exit=0
+
+=== Docs rule (铁律 1) ===
+$ node scripts/check-docs-rule.mjs
+[铁律1] docs rule PASS：apps/ 下无实体 .md（README.md 豁免）。
+[铁律-数字] 数字真源断言 PASS（锚=文档，代码=实测）：schema model=73, enum=37, admin API 域=38, admin 页面=34, Next.js=15.0.x
+exit=0
+
+=== Docs facts (基线不变量) ===
+$ node scripts/check-docs-facts.mjs
+✅ schema-models: schema.prisma model 数 = 73（TASK-047 新增 FxDailyRate 日汇率快照 72→73；前次 M-002 TASK-058 68→72） → expected=73, actual=73
+✅ seed-models: seed.ts 模型条数（modelsData 静态条目 + DEMO_MODEL_COUNT 生成器）≥ 50（下限式，R-83 T1：模型数不限由后台配置） → expected=>=50, actual=1000
+✅ seed-no-official: seed.ts 中无 OFFICIAL/官方测试（provenance 修复后） → expected=0, actual=0
+✅ lib-features-count: lib/features 子目录数 = 23（TASK-033 新增 lib/features/search 22→23，R10-01；前次 TASK-090 收口 18→22，含 lib/features/pricing 等新增目录） → expected=23, actual=23
+✅ aidean-ui-refs: @aidean/ui 在 apps/web/components 的 import 数 = 70（TASK-064 新增 ChangeFeed/MonitoringPanel 68→70；前次 TASK-074 BenchmarkDialog 67→68） → expected=70, actual=70
+✅ route-count: apps/web route.ts 文件数（含 app/ 全域）= 163（TASK-063 新增 admin/monitoring 4 端点 159→163，R10-01；前次 TASK-081 158→159） → expected=163, actual=163
+✅ page-count: apps/web page.tsx 文件数 = 58（TASK-064 新增 (admin)/admin/monitoring/page.tsx 57→58） → expected=58, actual=58
+✅ next-version: Next.js 版本 = 15.x → expected=15.x, actual=15.x
+✅ spec-count: spec 文件总数 = 185（TASK-035 新增 e2e/web/search.spec.ts 184→185，R10-01；前次 TASK-063 新增 lib/monitoring/__tests__/admin-routes.spec 183→184） → expected=185, actual=185
+✅ queryraw-biz: apps/web 业务代码 $queryRaw/$executeRaw = 0 → expected=0, actual=0
+✅ batch-count: admin batch 路由数 = 15 → expected=15, actual=15
+✅ db-doc-product-fields: 《数据库文档》products 行已登记 display_name 与 ProductCategory（DB 模型变更文档同步） → expected=2/2, actual=2/2
+✅ category-label-single-source: apps/web 中硬编码「label: "特供"」式分类映射 = 0（文案唯一来源 lib/product-label.ts） → expected=0, actual=0
+✅ usage-stats-anchor-pair: 《API架构设计方案》含 usage-stats-architecture 锚 且《API接口文档》含其回链（铁律 2 双向互引） → expected=2/2, actual=2/2
+
+All 14 assertions passed.
+exit=0
+
+=== Guard rails ===
+$ node scripts/guard/run-all.mjs
+
+=== root-pollution（根目录污染） ===
+  [PASS] 根级 tracked 文件（14 个）全部 ∈ 基线（14 项），无提交型污染。
+  [PASS] 未发现新增/游离的根级文件（未跟踪非忽略集合为空）。
+
+=== root-pollution: SUMMARY ===
+  failures=0 warnings=0
+RESULT: PASS (root-pollution)
+
+=== secret-scan（密钥/凭据明文扫描） ===
+  [PASS] 扫描源码/配置文本文件 727 个；按作用域豁免 7754 个（文档/底稿/示例/测试/lock/守卫自身）。
+  [PASS] 在作用域内未发现私钥头 / AKIA / sk- 令牌 / password= 明文凭据。
+
+=== secret-scan: SUMMARY ===
+  failures=0 warnings=0
+RESULT: PASS (secret-scan)
+
+=== module-boundary（模块边界） ===
+  [PASS] A) packages/** 扫描 82 个源文件，反向依赖 apps/** 违规 0 处。
+  [WARN] 例外(components→db) @ apps/web/components/home/ProductSection.tsx 引用 "../../lib/db/prisma"：既存 Server Component 直读 DB（过渡实现），登记例外并上报
+  [PASS] B) apps/web/components/** 扫描 114 个组件文件：新增越界 0 处，既存例外 1 处。
+  [PASS] 模块边界成立：无新增越界（另有 1 处既存例外已上报）。
+
+=== module-boundary: SUMMARY ===
+  failures=0 warnings=1
+RESULT: PASS (with 1 warning(s)) (module-boundary)
+
+=== port-consistency（端口区间一致性） ===
+  [PASS] 入口 apps/web dev/start 显式端口：合规（未显式指定端口→Next 默认 3000）。
+  [PASS] 入口 e2e/playwright baseURL/webServer 端口：端口 3000 全部 ∈ [3000,3100]。
+  [PASS] 入口 根 playwright baseURL/webServer 端口：端口 3000 全部 ∈ [3000,3100]。
+  [PASS] 入口 Dockerfile PORT/EXPOSE：端口 3000 全部 ∈ [3000,3100]。
+  [PASS] 入口 auth AUTH_ISSUER / AUTH_ISSUER_CONTAINER：端口 3000 全部 ∈ [3000,3100]。
+  [PASS] seed 回调端口 3200 ∈ aideanFleet [3100,3200]（已裁决）。
+  [PASS] seed 回调端口 3000 ∈ aidean [3000,3100]（已裁决）。
+  [PASS] 区间登记表 aideanSelf = [3000,3100]，与端口铁律一致。
+
+=== port-consistency: SUMMARY ===
+  failures=0 warnings=0
+RESULT: PASS (port-consistency)
+
+=== run-all: AGGREGATE ===
+  PASS root-pollution.mjs (exit 0)
+  PASS secret-scan.mjs (exit 0)
+  PASS module-boundary.mjs (exit 0)
+  PASS port-consistency.mjs (exit 0)
+RESULT: PASS (4/4 守卫通过)
+exit=0
+
+=== Contract tests ===
+$ node scripts/contract/gen-contract-tests.mjs
+[gen-contract-tests] 生成 3 个契约 spec：码表 27 码 / HTTP 映射 12 条 / §4 登记 27 行 / 域 30 / AUTHZ deny 4 条 → packages/shared/src/__tests__/contract/
+exit=0
+
+$ git add -A packages/shared/src/__tests__/contract
+warning: in the working copy of 'packages/shared/src/__tests__/contract/envelope.generated.spec.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/shared/src/__tests__/contract/errors.generated.spec.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/shared/src/__tests__/contract/identity.generated.spec.ts', LF will be replaced by CRLF the next time Git touches it
+exit=0
+
+$ git diff --cached --exit-code HEAD -- packages/shared/src/__tests__/contract
+
+exit=0
+
+=== Prisma generate ===
+$ pnpm --filter web exec prisma generate
+Prisma schema loaded from prisma\schema.prisma
+
+✔ Generated Prisma Client (v6.19.3) to .\..\..\node_modules\.pnpm\@prisma+client@6.19.3_prisma@6.19.3_magicast@0.3.5_typescript@5.5.4__typescript@5.5.4\node_modules\@prisma\client in 217ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+
+Environment variables loaded from .env
+exit=0
+
+=== Typecheck (shared) ===
+$ pnpm --filter @aidean/shared exec tsc --noEmit
+
+exit=0
+
+=== Typecheck (web) ===
+$ pnpm --filter web exec tsc --noEmit
+
+exit=0
+
+=== Lint (web) ===
+$ pnpm --filter web lint
+
+> web@0.1.0 lint E:\Code\Aidean\apps\web
+> next lint
+
+
+./components/common/SafeImage.tsx
+19:14  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+exit=0
+
+=== Unit tests (shared) ===
+$ pnpm --filter @aidean/shared test
+
+> @aidean/shared@0.1.0 test E:\Code\Aidean\packages\shared
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mE:/Code/Aidean/packages/shared[39m
+
+ [32m✓[39m src/__tests__/contract/envelope.generated.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/__tests__/money.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/__tests__/envelope.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/__tests__/auth.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/__tests__/provider-pricing.spec.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/__tests__/contract/errors.generated.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/admin-permissions.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/__tests__/contract/identity.generated.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/__tests__/billing.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/__tests__/search.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/__tests__/errors.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/__tests__/user.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/__tests__/pricing-config.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/__tests__/product-intro.spec.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/__tests__/ladder.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/__tests__/gateway.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/__tests__/schemas.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/__tests__/favorites.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/__tests__/feature-flags.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/promotion.spec.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/monitoring.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/price-batch.spec.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/__tests__/price-normalization.spec.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m23 passed[39m[22m[90m (23)[39m
+[2m      Tests [22m [1m[32m243 passed[39m[22m[90m (243)[39m
+[2m   Start at [22m 14:58:26
+[2m   Duration [22m 1.49s[2m (transform 1.48s, setup 0ms, collect 6.52s, tests 156ms, environment 4ms, prepare 9.57s)[22m
+
+exit=0
+
+=== Unit tests (ui) ===
+$ pnpm --filter @aidean/ui test
+
+> @aidean/ui@0.1.0 test E:\Code\Aidean\packages\ui
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mE:/Code/Aidean/packages/ui[39m
+
+ [32m✓[39m src/lib/__tests__/cn.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m   Start at [22m 14:58:28
+[2m   Duration [22m 515ms[2m (transform 24ms, setup 0ms, collect 28ms, tests 5ms, environment 0ms, prepare 106ms)[22m
+
+exit=0
+
+=== Unit tests (web) ===
+$ pnpm --filter web test
+
+> web@0.1.0 test E:\Code\Aidean\apps\web
+> vitest run
+
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mE:/Code/Aidean/apps/web[39m
+
+ [32m✓[39m lib/features/gateway/__tests__/stream-parse.spec.ts [2m([22m[2m24 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m lib/sync/writers/catalog-snapshot.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m lib/security/__tests__/url-policy.spec.ts [2m([22m[2m87 tests[22m[2m)[22m[90m 91[2mms[22m[39m
+ [32m✓[39m lib/features/billing/__tests__/refund-reconcile.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m lib/features/billing/__tests__/capture.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/features/billing/__tests__/billing.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m lib/features/billing/__tests__/hold.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/oidc-redlines.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 297[2mms[22m[39m
+ [32m✓[39m lib/features/package/__tests__/redemption.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-configs.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m lib/features/ladder/__tests__/ladder-effective-price.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-vendors.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-products.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/gateway-adapters.spec.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 49[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/stream-passthrough.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 40[2mms[22m[39m
+ [32m✓[39m lib/features/evaluation/__tests__/evaluation-service.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/gateway-svc.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/gateway-orchestrator.spec.ts [2m([22m[2m25 tests[22m[2m)[22m[90m 135[2mms[22m[39m
+ [32m✓[39m lib/features/apikey/__tests__/channel-aggregate.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m lib/features/favorites/__tests__/favorites-api.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+ [32m✓[39m lib/monitoring/__tests__/offerings-route.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-models.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-users.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m lib/monitoring/__tests__/admin-routes.spec.ts [2m([22m[2m18 tests[22m[2m)[22m[90m 36[2mms[22m[39m
+ [32m✓[39m lib/monitoring/public-pricing/__tests__/public-pricing.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m lib/monitoring/catalog/__tests__/collectors.spec.ts [2m([22m[2m41 tests[22m[2m)[22m[90m 44[2mms[22m[39m
+ [32m✓[39m lib/features/ladder/__tests__/ladder.spec.ts [2m([22m[2m24 tests[22m[2m)[22m[33m 399[2mms[22m[39m
+   [33m[2m✓[22m[39m GET /api/v1/ladder（withApi 包装路由）[2m > [22m非法 type=skills 收敛为 code=20002 信封（榜单类型非法），data=null 且携带 x-request-id [33m365[2mms[22m[39m
+ [32m✓[39m lib/monitoring/diff/__tests__/persist.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-promotions.spec.ts [2m([22m[2m27 tests[22m[2m)[22m[33m 570[2mms[22m[39m
+   [33m[2m✓[22m[39m TASK-096 写侧加固（review-ext12 D2/D3/D10/D11）[2m > [22mPOST 连续 5 次 P2034 → 400「并发写入冲突」，不写审计（review-096 S1：抖动退避 + 5 次） [33m499[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/writer-prices-benchmarks.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/routes-gateway.spec.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 184[2mms[22m[39m
+ [32m✓[39m lib/monitoring/diff/__tests__/detect.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m lib/features/apikey/__tests__/routes-apikey.spec.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 169[2mms[22m[39m
+ [32m✓[39m lib/admin-navigation-core.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m lib/features/pricing/__tests__/effective-price.spec.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/sync-orchestrator.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-delete-routes.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m lib/features/apikey/__tests__/apikey.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-guard.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 121[2mms[22m[39m
+ [32m✓[39m lib/features/user/__tests__/user-svc.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-prices-batch.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+ [32m✓[39m lib/discovery/llmtest.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/features/billing/__tests__/adjust.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/usage-stats.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/order-disposition.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32m✓[39m lib/features/apikey/__tests__/station-keys-catalog.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 109[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/email-code.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 484[2mms[22m[39m
+ [2m[90m↓[39m[22m lib/sync/writers/__tests__/persist-prices.int.spec.ts [2m([22m[2m2 tests[22m[2m | [22m[33m2 skipped[39m[2m)[22m
+ [32m✓[39m lib/features/auth/__tests__/admin-logs.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-credentials.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-batch-new.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-packages.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-feature-flags.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m lib/features/admin/__tests__/run-due-route.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 49[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-routes.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/partner-codes.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/routes-auth.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 499[2mms[22m[39m
+   [33m[2m✓[22m[39m auth routes[2m > [22m② POST register 成功走 service spy 路径 → 种双 HttpOnly Cookie 并回 user 信封 [33m424[2mms[22m[39m
+ [32m✓[39m lib/__tests__/site-content-s4.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m lib/features/admin/__tests__/api-stations-route.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 633[2mms[22m[39m
+   [33m[2m✓[22m[39m api-stations route[2m > [22mGET lists stations with pagination [33m551[2mms[22m[39m
+ [32m✓[39m lib/features/user/__tests__/routes-user.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 67[2mms[22m[39m
+ [32m✓[39m lib/features/admin/__tests__/change-log-coverage.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m lib/features/admin/__tests__/free-quotas-route.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 543[2mms[22m[39m
+   [33m[2m✓[22m[39m free-quotas admin route[2m > [22mGET lists free quotas with pagination [33m458[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-prices.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/middleware.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 46[2mms[22m[39m
+ [32m✓[39m lib/features/ladder/__tests__/ladder-store.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m lib/features/admin/__tests__/evaluations-route.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 607[2mms[22m[39m
+   [33m[2m✓[22m[39m evaluations route[2m > [22mGET lists evaluations with pagination [33m487[2mms[22m[39m
+ [32m✓[39m lib/features/search/__tests__/search.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/backchannel-logout.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 97[2mms[22m[39m
+ [32m✓[39m lib/monitoring/__tests__/model-detail-ui.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m lib/features/news/__tests__/admin-news.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/quanzil.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m lib/features/upstream/__tests__/official-catalog.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [2m[90m↓[39m[22m lib/features/pricing/__tests__/effective-price.int.spec.ts [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [32m✓[39m lib/features/admin/__tests__/tier-mappings-route.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 531[2mms[22m[39m
+   [33m[2m✓[22m[39m tier-mappings admin route[2m > [22mGET lists tier mappings with pagination [33m508[2mms[22m[39m
+ [32m✓[39m lib/features/billing/__tests__/reverse.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/features/admin/__tests__/new-domain-batch.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m lib/features/evaluation/__tests__/routes-evaluations.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 1025[2mms[22m[39m
+ [32m✓[39m lib/admin-nav-default-tree.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/features/system/__tests__/readiness.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m lib/discovery/__tests__/pipeline.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-config-seed-parity.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-batch.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/channel-pick.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-holds.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/auth-service.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 1999[2mms[22m[39m
+   [33m[2m✓[22m[39m authService.login[2m > [22m⑤ 登录成功返回 profile [33m461[2mms[22m[39m
+   [33m[2m✓[22m[39m authService.login[2m > [22m⑦ 密码错误与用户不存在同码同文案（防枚举一致性） [33m455[2mms[22m[39m
+   [33m[2m✓[22m[39m authService.login[2m > [22m⑨ 凭据正确但账号停用 → 10005 '账号已被禁用或锁定' [33m416[2mms[22m[39m
+ [32m✓[39m lib/sync/writers/__tests__/persist-prices.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/arena-ai.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-orders.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m lib/features/news/__tests__/site-pages.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 37[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/cross-validator.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 2[2mms[22m[39m
+ [32m✓[39m lib/features/flags/__tests__/flags.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/aggregation-adapters.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 2459[2mms[22m[39m
+   [33m[2m✓[22m[39m ArtificialAnalysisAdapter[2m > [22mtestConnection() 返回 false 当 API 不可达 [33m626[2mms[22m[39m
+   [33m[2m✓[22m[39m EpochAIAdapter[2m > [22mfetch() API 失败时返回空数组 [33m1258[2mms[22m[39m
+ [32m✓[39m lib/features/news/__tests__/markdown.spec.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 35[2mms[22m[39m
+ [32m✓[39m lib/admin/promotions-ui.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 29[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/redeem-route.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 30[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/site-content.spec.ts [2m([22m[2m22 tests[22m[2m)[22m[90m 30[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/oauth-redirect-origin.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/permissions.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-oidc.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m lib/features/admin/__tests__/field-ownership.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-zod-messages.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/session-tokens.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 2386[2mms[22m[39m
+   [33m[2m✓[22m[39m 双令牌签发与验签（RS256）[2m > [22m① signAccess 载荷含 tier/ver/jti 且 sub=userId，RS256 + iss/aud 可验回 [33m379[2mms[22m[39m
+   [33m[2m✓[22m[39m 双令牌签发与验签（RS256）[2m > [22m④ access 令牌混入 refresh 位（无 typ/jti 形态）→ verifyRefresh null；篡改签名 → null [33m585[2mms[22m[39m
+   [33m[2m✓[22m[39m 双令牌签发与验签（RS256）[2m > [22m⑤ 签发对可互相验回：pair 的 access/refresh 同 sub 且 refresh jti 唯一锚点回传 [33m502[2mms[22m[39m
+   [33m[2m✓[22m[39m getSession / requireUserApi[2m > [22m⑧ 有有效 access Cookie → 解析出 {userId,tier} [33m310[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/lmsys.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/admin/__tests__/reports.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-benchmarks.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+[90mstdout[2m | lib/features/auth/__tests__/mailer.spec.ts[2m > [22m[2msendCodeMail[2m > [22m[2mSMTP 未配置时返回 false 且不抛错
+[22m[39m[email-code] SMTP 未配置，验证码（仅服务端日志可见）：user@example.com -> 123456
+
+ [32m✓[39m lib/features/auth/__tests__/admin-benchmarks-import.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/mailer.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 128[2mms[22m[39m
+ [32m✓[39m lib/features/ranking/__tests__/update-ranking-script.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m lib/navigation-sync.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/session-guard.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 52[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/sync-orchestrator.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m lib/features/news/__tests__/seed-official-news.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-sync.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-redemptions.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m lib/features/flags/__tests__/route-gate.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/redirect.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m lib/features/admin/__tests__/announcements-route.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 444[2mms[22m[39m
+   [33m[2m✓[22m[39m announcements route[2m > [22mPOST creates announcement with required fields [33m439[2mms[22m[39m
+ [32m✓[39m lib/features/announcements/__tests__/read.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m lib/features/home/__tests__/site-sections.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/huggingface.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-batch-disable.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m lib/features/system/__tests__/ready-route.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m lib/features/admin/__tests__/script-executor.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 38[2mms[22m[39m
+ [32m✓[39m lib/features/ranking/__tests__/formula-parser.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m lib/product-label.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/usage-window.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 651[2mms[22m[39m
+   [33m[2m✓[22m[39m PRESET_RANGE_DAYS 与服务端 USAGE_STATS_RANGE_DAYS 同口径（7/30/90） [33m646[2mms[22m[39m
+ [32m✓[39m lib/intelligence/__tests__/intelligence.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/refresh-replay-alert.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/features/admin/script-validation.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/sync-dedup.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/login-rate-limit-bypass.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m lib/features/ladder/__tests__/price-views.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/security/__tests__/url-policy-outbound.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m lib/features/pricing/__tests__/fx.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32m✓[39m lib/admin/load-guard.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/sync-changes.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m lib/sync/sources/registry.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/features/ranking/__tests__/recap.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/tier-order.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/sync-batches-route.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-errors.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 2[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m139 passed[39m[22m[2m | [22m[33m2 skipped[39m[90m (141)[39m
+[2m      Tests [22m [1m[32m1377 passed[39m[22m[2m | [22m[33m5 skipped[39m[90m (1382)[39m
+[2m   Start at [22m 14:58:29
+[2m   Duration [22m 7.46s[2m (transform 17.18s, setup 0ms, collect 83.60s, tests 16.51s, environment 29ms, prepare 34.67s)[22m
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m① 未登录 POST gateway/chat → HTTP 401 + 信封 code=10004
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m② 登录后 chat body 非法（缺 messages）→ 40000 且编排未触达
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m③ chat 成功 → 直通响应（无信封）+ 计费事实头部 + x-request-id 透传
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m⑪ Bearer 平台 API Key → 200 免 cookie；userId 取 Key 归属；计费事实头不变
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m⑫ x-api-key（Anthropic 形态）→ 200 同通道
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m⑬ 伪造 Key → 401/10004 且编排未触达
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m⑭ 吊销 Key → 401/10004 即时生效
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m⑮ 无 gateway:chat 权限 → 403/10008
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m⑯ Key 超限 → 429/10006（提示语含重试语义）
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m⑰ Responses API 接入 → 归一为 openai 调编排（instructions→system）+ 响应回写 response 体裁
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m⑱ Gemini generateContent 接入 → 归一为 openai + 响应回写 candidates/usageMetadata 体裁
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/sync/__tests__/sync-orchestrator.spec.ts[2m > [22m[2mSyncOrchestrator[2m > [22m[2mR-43: CrossValidator 接线[2m > [22m[2m额外 adapter fetch 失败时不阻塞主流程
+[22m[39m[CrossValidator] adapter "test-adapter" fetch failed: Error: fetch failed
+    at TestAdapter.fetch [90m(E:\Code\Aidean\apps\web\[39mlib\sync\__tests__\sync-orchestrator.spec.ts:51:33[90m)[39m
+    at SyncOrchestrator.execute [90m(E:\Code\Aidean\apps\web\[39mlib\sync\sync-orchestrator.ts:94:49[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at [90mE:\Code\Aidean\apps\web\[39mlib\sync\__tests__\sync-orchestrator.spec.ts:245:22
+    at file:///E:/Code/Aidean/node_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:533:5
+    at runTest (file:///E:/Code/Aidean/node_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1056:11)
+    at runSuite (file:///E:/Code/Aidean/node_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15)
+    at runSuite (file:///E:/Code/Aidean/node_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15)
+    at runSuite (file:///E:/Code/Aidean/node_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15)
+    at runFiles (file:///E:/Code/Aidean/node_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1262:5)
+
+[90mstderr[2m | lib/features/evaluation/__tests__/routes-evaluations.spec.ts[2m > [22m[2mPOST /api/v1/evaluations[2m > [22m[2m① 未登录 → 401（requireUserApi 抛 10004）
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+
+[90mstderr[2m | lib/features/evaluation/__tests__/routes-evaluations.spec.ts[2m > [22m[2mPOST /api/v1/evaluations[2m > [22m[2m① 未登录 → 401（requireUserApi 抛 10004）
+[22m[39m{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+
+[90mstderr[2m | lib/features/evaluation/__tests__/routes-evaluations.spec.ts[2m > [22m[2mPOST /api/v1/evaluations[2m > [22m[2m② 免费用户（NORMAL）→ service 抛 403 付费用户能力
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+
+[90mstderr[2m | lib/features/evaluation/__tests__/routes-evaluations.spec.ts[2m > [22m[2mPOST /api/v1/evaluations[2m > [22m[2m② 免费用户（NORMAL）→ service 抛 403 付费用户能力
+[22m[39m{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+
+[90mstderr[2m | lib/features/evaluation/__tests__/routes-evaluations.spec.ts[2m > [22m[2mPOST /api/v1/evaluations[2m > [22m[2m③ 参数非法（模型数 1）→ 40000 信封，不触 service
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+
+[90mstderr[2m | lib/features/auth/__tests__/middleware.spec.ts[2m > [22m[2mmiddleware RS256/JWKS 守卫[2m > [22m[2m过期 access → 307 /login?redirect=…
+[22m[39m{"tag":"auth-guard","code":"ERR_JWT_EXPIRED","iss":null}
+
+[90mstderr[2m | lib/features/auth/__tests__/middleware.spec.ts[2m > [22m[2mmiddleware RS256/JWKS 守卫[2m > [22m[2mkid 不在 JWKS（伪造/跨环境令牌）→ 307
+[22m[39m{"tag":"auth-guard","code":"ERR_JWKS_NO_MATCHING_KEY","iss":null}
+
+[90mstderr[2m | lib/features/auth/__tests__/middleware.spec.ts[2m > [22m[2mmiddleware RS256/JWKS 守卫[2m > [22m[2mJWKS 拉取失败且无缓存公钥 → fail-closed 307（不 crash）
+[22m[39m{"tag":"auth-guard","code":"ERR_JOSE_GENERIC","iss":null}
+
+[90mstderr[2m | lib/features/evaluation/__tests__/routes-evaluations.spec.ts[2m > [22m[2mPOST /api/v1/evaluations[2m > [22m[2m③ 参数非法（模型数 1）→ 40000 信封，不触 service
+[22m[39m{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+
+[90mstderr[2m | lib/features/auth/__tests__/backchannel-logout.spec.ts[2m > [22m[2mback-channel logout（ADR-0003 L4.1）[2m > [22m[2m④ 广播目标不可达 → 登出主流程不受影响，Cookie 清理头照常返回
+[22m[39m[oauth] back-channel logout 异常: client=aidean-bot
+
+[90mstderr[2m | lib/features/evaluation/__tests__/routes-evaluations.spec.ts[2m > [22m[2mPOST /api/v1/evaluations[2m > [22m[2m④ 创建成功 → 信封 {evaluation, idempotent}；tier 与幂等键透传
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+
+[90mstderr[2m | lib/features/evaluation/__tests__/routes-evaluations.spec.ts[2m > [22m[2mPOST /api/v1/evaluations[2m > [22m[2m④ 创建成功 → 信封 {evaluation, idempotent}；tier 与幂等键透传
+[22m[39m{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+
+[90mstderr[2m | lib/features/system/__tests__/ready-route.spec.ts[2m > [22m[2mGET /api/v1/system/ready · 路由 HTTP 层[2m > [22m[2mDB 不可达 → 503 + 信封 code=50010 / message '依赖不可用: db'
+[22m[39m{"tag":"ready-probe","dep":"db","reason":"error","name":"Error"}
+
+[90mstderr[2m | lib/features/system/__tests__/ready-route.spec.ts[2m > [22m[2mGET /api/v1/system/ready · 路由 HTTP 层[2m > [22m[2mRedis 不可达（DB 可达）→ 503 + code=50010 / message '依赖不可用: redis'
+[22m[39m{"tag":"ready-probe","dep":"redis","reason":"error","name":"Error"}
+
+exit=0
+
+=== Production build ===
+$ pnpm --filter web build
+
+> web@0.1.0 build E:\Code\Aidean\apps\web
+> next build && node scripts/postbuild-standalone.mjs
+
+  ▲ Next.js 15.0.0
+  - Environments: .env.local, .env
+  - Experiments (use with caution):
+    · staleTimes
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+
+./components/common/SafeImage.tsx
+19:14  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/29) ...
+   Generating static pages (7/29) 
+   Generating static pages (14/29) 
+   Generating static pages (21/29) 
+ ✓ Generating static pages (29/29)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                              Size     First Load JS
+┌ ○ /                                                    807 B           141 kB
+├ ○ /_not-found                                          900 B           100 kB
+├ ƒ /.well-known/jwks.json                               571 B          99.9 kB
+├ ƒ /.well-known/openid-configuration                    572 B          99.9 kB
+├ ○ /about                                               738 B           140 kB
+├ ƒ /admin                                               191 B           117 kB
+├ ƒ /admin/announcements                                 5.34 kB         113 kB
+├ ƒ /admin/api-stations                                  4.89 kB         113 kB
+├ ƒ /admin/audit-logs                                    176 B           112 kB
+├ ƒ /admin/benchmarks                                    5.66 kB         114 kB
+├ ƒ /admin/capabilities                                  1.72 kB         110 kB
+├ ƒ /admin/configs                                       12.3 kB         152 kB
+├ ƒ /admin/discovery                                     5.29 kB         113 kB
+├ ƒ /admin/evaluations                                   4.71 kB         113 kB
+├ ƒ /admin/feature-flags                                 4.15 kB         112 kB
+├ ƒ /admin/free-quotas                                   4.96 kB         113 kB
+├ ƒ /admin/intelligence                                  2.46 kB         110 kB
+├ ○ /admin/login                                         2 kB            141 kB
+├ ƒ /admin/logs                                          3.25 kB         115 kB
+├ ƒ /admin/menus                                         4.57 kB         113 kB
+├ ƒ /admin/models                                        6.48 kB         114 kB
+├ ƒ /admin/monitoring                                    7.61 kB         116 kB
+├ ƒ /admin/news                                          16.5 kB         156 kB
+├ ƒ /admin/oidc-clients                                  4.39 kB         112 kB
+├ ƒ /admin/orders                                        2.29 kB         114 kB
+├ ƒ /admin/packages                                      5.9 kB          114 kB
+├ ƒ /admin/partner-keys                                  4.77 kB         113 kB
+├ ƒ /admin/prices                                        9.2 kB          117 kB
+├ ƒ /admin/products                                      8.39 kB         116 kB
+├ ƒ /admin/protocols                                     1.74 kB         110 kB
+├ ƒ /admin/providers                                     5.67 kB         114 kB
+├ ƒ /admin/redemptions                                   6.74 kB         115 kB
+├ ƒ /admin/reports                                       176 B           108 kB
+├ ƒ /admin/roles                                         4.51 kB         144 kB
+├ ƒ /admin/scripts                                       5.79 kB         114 kB
+├ ƒ /admin/sync                                          5.8 kB          114 kB
+├ ƒ /admin/tier-mappings                                 4.54 kB         112 kB
+├ ƒ /admin/users                                         6.91 kB         115 kB
+├ ƒ /admin/vendors                                       5.46 kB         113 kB
+├ ƒ /admin/wallets                                       2.8 kB          114 kB
+├ ƒ /announcements                                       202 B           109 kB
+├ ƒ /api/v1/admin/announcements                          570 B          99.9 kB
+├ ƒ /api/v1/admin/announcements/[id]                     570 B          99.9 kB
+├ ƒ /api/v1/admin/announcements/batch                    572 B          99.9 kB
+├ ƒ /api/v1/admin/api-stations                           572 B          99.9 kB
+├ ƒ /api/v1/admin/api-stations/[id]                      570 B          99.9 kB
+├ ƒ /api/v1/admin/api-stations/[id]/billing              571 B          99.9 kB
+├ ƒ /api/v1/admin/api-stations/[id]/keys                 571 B          99.9 kB
+├ ƒ /api/v1/admin/api-stations/[id]/keys/[keyId]         570 B          99.9 kB
+├ ƒ /api/v1/admin/api-stations/batch                     571 B          99.9 kB
+├ ƒ /api/v1/admin/audit-logs                             571 B          99.9 kB
+├ ƒ /api/v1/admin/benchmarks                             571 B          99.9 kB
+├ ƒ /api/v1/admin/benchmarks/[id]                        571 B          99.9 kB
+├ ƒ /api/v1/admin/benchmarks/batch                       571 B          99.9 kB
+├ ƒ /api/v1/admin/benchmarks/import                      571 B          99.9 kB
+├ ƒ /api/v1/admin/capabilities                           572 B          99.9 kB
+├ ƒ /api/v1/admin/configs                                571 B          99.9 kB
+├ ƒ /api/v1/admin/discovery/candidates                   572 B          99.9 kB
+├ ƒ /api/v1/admin/discovery/candidates/[id]              571 B          99.9 kB
+├ ƒ /api/v1/admin/discovery/candidates/[id]/promote      571 B          99.9 kB
+├ ƒ /api/v1/admin/discovery/pipeline                     572 B          99.9 kB
+├ ƒ /api/v1/admin/evaluations                            571 B          99.9 kB
+├ ƒ /api/v1/admin/evaluations/[id]                       571 B          99.9 kB
+├ ƒ /api/v1/admin/evaluations/batch                      572 B          99.9 kB
+├ ƒ /api/v1/admin/feature-flags                          571 B          99.9 kB
+├ ƒ /api/v1/admin/feature-flags/[id]                     571 B          99.9 kB
+├ ƒ /api/v1/admin/free-quotas                            571 B          99.9 kB
+├ ƒ /api/v1/admin/free-quotas/[id]                       571 B          99.9 kB
+├ ƒ /api/v1/admin/free-quotas/batch                      571 B          99.9 kB
+├ ƒ /api/v1/admin/holds                                  571 B          99.9 kB
+├ ƒ /api/v1/admin/intelligence/reports                   571 B          99.9 kB
+├ ƒ /api/v1/admin/intelligence/snapshots                 571 B          99.9 kB
+├ ƒ /api/v1/admin/intelligence/snapshots/[id]            571 B          99.9 kB
+├ ƒ /api/v1/admin/ladder/config                          571 B          99.9 kB
+├ ƒ /api/v1/admin/logs/scripts                           570 B          99.9 kB
+├ ƒ /api/v1/admin/logs/security                          572 B          99.9 kB
+├ ƒ /api/v1/admin/logs/usage                             571 B          99.9 kB
+├ ƒ /api/v1/admin/menus                                  571 B          99.9 kB
+├ ƒ /api/v1/admin/menus/[id]                             572 B          99.9 kB
+├ ƒ /api/v1/admin/menus/apply-default                    571 B          99.9 kB
+├ ƒ /api/v1/admin/models                                 571 B          99.9 kB
+├ ƒ /api/v1/admin/models/[id]                            571 B          99.9 kB
+├ ƒ /api/v1/admin/models/batch                           571 B          99.9 kB
+├ ƒ /api/v1/admin/monitoring/changes                     571 B          99.9 kB
+├ ƒ /api/v1/admin/monitoring/sources                     572 B          99.9 kB
+├ ƒ /api/v1/admin/monitoring/sources/[key]               571 B          99.9 kB
+├ ƒ /api/v1/admin/monitoring/sources/[key]/run           571 B          99.9 kB
+├ ƒ /api/v1/admin/news                                   571 B          99.9 kB
+├ ƒ /api/v1/admin/news/[id]                              571 B          99.9 kB
+├ ƒ /api/v1/admin/news/batch                             571 B          99.9 kB
+├ ƒ /api/v1/admin/oidc-clients                           571 B          99.9 kB
+├ ƒ /api/v1/admin/oidc-clients/[id]                      572 B          99.9 kB
+├ ƒ /api/v1/admin/orders                                 571 B          99.9 kB
+├ ƒ /api/v1/admin/package-orders                         571 B          99.9 kB
+├ ƒ /api/v1/admin/package-orders/[id]                    571 B          99.9 kB
+├ ƒ /api/v1/admin/packages                               571 B          99.9 kB
+├ ƒ /api/v1/admin/packages/[id]                          571 B          99.9 kB
+├ ƒ /api/v1/admin/packages/batch                         571 B          99.9 kB
+├ ƒ /api/v1/admin/partner-keys                           571 B          99.9 kB
+├ ƒ /api/v1/admin/partner-keys/[id]                      571 B          99.9 kB
+├ ƒ /api/v1/admin/partner-keys/batch                     571 B          99.9 kB
+├ ƒ /api/v1/admin/prices                                 572 B          99.9 kB
+├ ƒ /api/v1/admin/prices/[id]                            571 B          99.9 kB
+├ ƒ /api/v1/admin/prices/batch-upsert                    571 B          99.9 kB
+├ ƒ /api/v1/admin/prices/promotions                      571 B          99.9 kB
+├ ƒ /api/v1/admin/prices/promotions/[id]                 571 B          99.9 kB
+├ ƒ /api/v1/admin/products                               571 B          99.9 kB
+├ ƒ /api/v1/admin/products/[id]                          572 B          99.9 kB
+├ ƒ /api/v1/admin/products/batch                         571 B          99.9 kB
+├ ƒ /api/v1/admin/protocols                              571 B          99.9 kB
+├ ƒ /api/v1/admin/providers                              571 B          99.9 kB
+├ ƒ /api/v1/admin/providers/[id]                         571 B          99.9 kB
+├ ƒ /api/v1/admin/providers/[id]/offerings               571 B          99.9 kB
+├ ƒ /api/v1/admin/providers/[id]/offerings/[offeringId]  571 B          99.9 kB
+├ ƒ /api/v1/admin/providers/batch                        571 B          99.9 kB
+├ ƒ /api/v1/admin/ranking-weights                        571 B          99.9 kB
+├ ƒ /api/v1/admin/recharge-orders/[id]                   571 B          99.9 kB
+├ ƒ /api/v1/admin/redemption-codes                       571 B          99.9 kB
+├ ƒ /api/v1/admin/redemption-codes/[id]                  571 B          99.9 kB
+├ ƒ /api/v1/admin/redemption-codes/batch                 572 B          99.9 kB
+├ ƒ /api/v1/admin/redemption-codes/batches               571 B          99.9 kB
+├ ƒ /api/v1/admin/redemption-codes/batches/[id]/disable  572 B          99.9 kB
+├ ƒ /api/v1/admin/reports/overview                       571 B          99.9 kB
+├ ƒ /api/v1/admin/roles                                  572 B          99.9 kB
+├ ƒ /api/v1/admin/roles/[id]                             571 B          99.9 kB
+├ ƒ /api/v1/admin/scripts                                571 B          99.9 kB
+├ ƒ /api/v1/admin/scripts/[id]                           571 B          99.9 kB
+├ ƒ /api/v1/admin/scripts/[id]/executions                572 B          99.9 kB
+├ ƒ /api/v1/admin/scripts/[id]/trigger                   571 B          99.9 kB
+├ ƒ /api/v1/admin/scripts/run-due                        571 B          99.9 kB
+├ ƒ /api/v1/admin/sync/batches                           571 B          99.9 kB
+├ ƒ /api/v1/admin/sync/batches/[id]                      571 B          99.9 kB
+├ ƒ /api/v1/admin/sync/changes                           572 B          99.9 kB
+├ ƒ /api/v1/admin/sync/changes/[id]/revert               571 B          99.9 kB
+├ ƒ /api/v1/admin/tier-mappings                          572 B          99.9 kB
+├ ƒ /api/v1/admin/tier-mappings/[id]                     572 B          99.9 kB
+├ ƒ /api/v1/admin/tier-mappings/batch                    572 B          99.9 kB
+├ ƒ /api/v1/admin/users                                  571 B          99.9 kB
+├ ƒ /api/v1/admin/users/[id]                             571 B          99.9 kB
+├ ƒ /api/v1/admin/users/[id]/credentials                 571 B          99.9 kB
+├ ƒ /api/v1/admin/users/[id]/credentials/revoke          571 B          99.9 kB
+├ ƒ /api/v1/admin/users/[id]/roles                       572 B          99.9 kB
+├ ƒ /api/v1/admin/users/batch                            572 B          99.9 kB
+├ ƒ /api/v1/admin/vendors                                572 B          99.9 kB
+├ ƒ /api/v1/admin/vendors/[id]                           572 B          99.9 kB
+├ ƒ /api/v1/admin/vendors/batch                          572 B          99.9 kB
+├ ƒ /api/v1/admin/wallets                                572 B          99.9 kB
+├ ƒ /api/v1/admin/wallets/adjust                         571 B          99.9 kB
+├ ƒ /api/v1/auth/email/code                              572 B          99.9 kB
+├ ƒ /api/v1/auth/email/verify                            572 B          99.9 kB
+├ ƒ /api/v1/auth/login                                   571 B          99.9 kB
+├ ƒ /api/v1/auth/logout                                  572 B          99.9 kB
+├ ƒ /api/v1/auth/me                                      572 B          99.9 kB
+├ ƒ /api/v1/auth/refresh                                 572 B          99.9 kB
+├ ƒ /api/v1/auth/register                                570 B          99.9 kB
+├ ƒ /api/v1/billing/ledger                               572 B          99.9 kB
+├ ƒ /api/v1/billing/recharge-orders                      571 B          99.9 kB
+├ ƒ /api/v1/billing/recharge-orders/[id]/mock-pay        571 B          99.9 kB
+├ ƒ /api/v1/billing/recharge-orders/[id]/notify          572 B          99.9 kB
+├ ƒ /api/v1/billing/wallet                               572 B          99.9 kB
+├ ƒ /api/v1/evaluations                                  572 B          99.9 kB
+├ ƒ /api/v1/evaluations/[id]                             571 B          99.9 kB
+├ ƒ /api/v1/evaluations/demo                             571 B          99.9 kB
+├ ƒ /api/v1/gateway/chat                                 572 B          99.9 kB
+├ ƒ /api/v1/internal/billing/wallet                      571 B          99.9 kB
+├ ƒ /api/v1/ladder                                       571 B          99.9 kB
+├ ƒ /api/v1/mock-upstream/[...path]                      571 B          99.9 kB
+├ ƒ /api/v1/models                                       571 B          99.9 kB
+├ ƒ /api/v1/models/[id]                                  572 B          99.9 kB
+├ ƒ /api/v1/models/[id]/offerings                        571 B          99.9 kB
+├ ƒ /api/v1/models/[id]/stations                         571 B          99.9 kB
+├ ƒ /api/v1/partner/codes                                571 B          99.9 kB
+├ ƒ /api/v1/partner/codes/status                         572 B          99.9 kB
+├ ƒ /api/v1/redemption/redeem                            572 B          99.9 kB
+├ ƒ /api/v1/search                                       572 B          99.9 kB
+├ ƒ /api/v1/system/features                              572 B          99.9 kB
+├ ƒ /api/v1/system/health                                571 B          99.9 kB
+├ ƒ /api/v1/system/navigation                            571 B          99.9 kB
+├ ƒ /api/v1/system/ready                                 571 B          99.9 kB
+├ ƒ /api/v1/user/api-keys                                572 B          99.9 kB
+├ ƒ /api/v1/user/api-keys/[id]                           572 B          99.9 kB
+├ ƒ /api/v1/user/channels                                571 B          99.9 kB
+├ ƒ /api/v1/user/custom-channels                         571 B          99.9 kB
+├ ƒ /api/v1/user/custom-channels/[id]                    571 B          99.9 kB
+├ ƒ /api/v1/user/favorites                               571 B          99.9 kB
+├ ƒ /api/v1/user/favorites/[id]                          571 B          99.9 kB
+├ ƒ /api/v1/user/priorities                              572 B          99.9 kB
+├ ƒ /api/v1/user/quota-usage                             571 B          99.9 kB
+├ ƒ /api/v1/user/station-keys                            572 B          99.9 kB
+├ ƒ /api/v1/user/station-keys/[id]                       571 B          99.9 kB
+├ ƒ /api/v1/user/station-keys/stations                   569 B          99.9 kB
+├ ƒ /api/v1/user/tier-mappings                           571 B          99.9 kB
+├ ƒ /api/v1/user/usage                                   571 B          99.9 kB
+├ ƒ /api/v1/user/usage/breakdown                         572 B          99.9 kB
+├ ƒ /api/v1/user/usage/stats                             572 B          99.9 kB
+├ ƒ /api/v1/wechat/qrcode                                570 B          99.9 kB
+├ ○ /apple-icon.png                                      0 B                0 B
+├ ○ /docs                                                2.76 kB         142 kB
+├ ○ /evaluations                                         1.95 kB         110 kB
+├ ƒ /evaluations/[id]                                    2.21 kB         111 kB
+├ ƒ /evaluations/new                                     2.69 kB         142 kB
+├ ○ /icon.png                                            0 B                0 B
+├ ○ /ladder                                              150 B           159 kB
+├ ○ /login                                               2.88 kB         151 kB
+├ ○ /models                                              149 B           159 kB
+├ ƒ /models/[slug]                                       7.07 kB         127 kB
+├ ○ /news                                                2.07 kB         142 kB
+├ ƒ /news/[slug]                                         202 B           109 kB
+├ ƒ /oauth/authorize                                     571 B          99.9 kB
+├ ƒ /oauth/consent                                       571 B          99.9 kB
+├ ƒ /oauth/dev/callback                                  572 B          99.9 kB
+├ ƒ /oauth/introspect                                    571 B          99.9 kB
+├ ƒ /oauth/revoke                                        572 B          99.9 kB
+├ ƒ /oauth/token                                         571 B          99.9 kB
+├ ƒ /oauth/userinfo                                      571 B          99.9 kB
+├ ○ /opengraph-image.png                                 0 B                0 B
+├ ○ /partners                                            738 B           140 kB
+├ ○ /pricing                                             202 B           109 kB
+├ ○ /products                                            202 B           109 kB
+├ ƒ /products/[slug]                                     202 B           109 kB
+├ ○ /providers                                           202 B           109 kB
+├ ○ /register                                            2.88 kB         151 kB
+├ ○ /roadmap                                             202 B           109 kB
+├ ƒ /user/balance                                        5.3 kB          126 kB
+└ ƒ /user/console                                        18.2 kB         176 kB
++ First Load JS shared by all                            99.3 kB
+  ├ chunks/7167-8dbc8cc33c2db398.js                      44.7 kB
+  ├ chunks/d9f66b3b-f03a77af58839975.js                  52.6 kB
+  └ other shared chunks (total)                          2.05 kB
+
+
+ƒ Middleware                                             130 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+[postbuild] copied apps/web\.next\static -> apps/web\.next\standalone\apps\web\.next\static
+[postbuild] copied apps/web\public -> apps/web\.next\standalone\apps\web\public
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (238kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ⚠ Compiled with warnings
+
+../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_magicast@0.3.5_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/runtime/wasm-engine-edge.js
+A Node.js API is used (setImmediate at line: 12) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+
+Import trace for requested module:
+../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_magicast@0.3.5_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/runtime/wasm-engine-edge.js
+../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_magicast@0.3.5_typescript@5.5.4__typescript@5.5.4/node_modules/.prisma/client/wasm.js
+../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_magicast@0.3.5_typescript@5.5.4__typescript@5.5.4/node_modules/.prisma/client/default.js
+../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_magicast@0.3.5_typescript@5.5.4__typescript@5.5.4/node_modules/@prisma/client/default.js
+./lib/db/prisma.ts
+./lib/features/auth/constants.ts
+
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+[ladder/stations] SSR 取数失败，降级空排行： PrismaClientInitializationError: 
+Invalid `prisma.aPIStation.findMany()` invocation:
+
+
+Authentication failed against database server, the provided database credentials for `(not available)` are not valid.
+
+Please make sure to provide valid database credentials for the database server at the configured address.
+    at ei.handleRequestError (E:\Code\Aidean\node_modules\.pnpm\@prisma+client@6.19.3_prisma@6.19.3_magicast@0.3.5_typescript@5.5.4__typescript@5.5.4\node_modules\@prisma\client\runtime\library.js:121:7568)
+    at ei.handleAndLogRequestError (E:\Code\Aidean\node_modules\.pnpm\@prisma+client@6.19.3_prisma@6.19.3_magicast@0.3.5_typescript@5.5.4__typescript@5.5.4\node_modules\@prisma\client\runtime\library.js:121:6593)
+    at ei.request (E:\Code\Aidean\node_modules\.pnpm\@prisma+client@6.19.3_prisma@6.19.3_magicast@0.3.5_typescript@5.5.4__typescript@5.5.4\node_modules\@prisma\client\runtime\library.js:121:6300)
+    at async a (E:\Code\Aidean\node_modules\.pnpm\@prisma+client@6.19.3_prisma@6.19.3_magicast@0.3.5_typescript@5.5.4__typescript@5.5.4\node_modules\@prisma\client\runtime\library.js:130:9551)
+    at async Object.getStationsForMatrix (E:\Code\Aidean\apps\web\.next\server\chunks\8473.js:1:3975)
+    at async Object.getRanking (E:\Code\Aidean\apps\web\.next\server\chunks\8473.js:1:11003)
+    at async h (E:\Code\Aidean\apps\web\.next\server\app\(site)\ladder\page.js:1:5592)
+    at async Promise.all (index 0)
+    at async g (E:\Code\Aidean\apps\web\.next\server\app\(site)\ladder\page.js:1:6391) {
+  clientVersion: '6.19.3',
+  errorCode: undefined,
+  retryable: undefined
+}
+[ladder/models] SSR 取数失败，降级空排行： PrismaClientInitializationError: 
+Invalid `prisma.aiModel.findMany()` invocation:
+
+
+Authentication failed against database server, the provided database credentials for `(not available)` are not valid.
+
+Please make sure to provide valid database credentials for the database server at the configured address.
+    at ei.handleRequestError (E:\Code\Aidean\node_modules\.pnpm\@prisma+client@6.19.3_prisma@6.19.3_magicast@0.3.5_typescript@5.5.4__typescript@5.5.4\node_modules\@prisma\client\runtime\library.js:121:7568)
+    at ei.handleAndLogRequestError (E:\Code\Aidean\node_modules\.pnpm\@prisma+client@6.19.3_prisma@6.19.3_magicast@0.3.5_typescript@5.5.4__typescript@5.5.4\node_modules\@prisma\client\runtime\library.js:121:6593)
+    at ei.request (E:\Code\Aidean\node_modules\.pnpm\@prisma+client@6.19.3_prisma@6.19.3_magicast@0.3.5_typescript@5.5.4__typescript@5.5.4\node_modules\@prisma\client\runtime\library.js:121:6300)
+    at async a (E:\Code\Aidean\node_modules\.pnpm\@prisma+client@6.19.3_prisma@6.19.3_magicast@0.3.5_typescript@5.5.4__typescript@5.5.4\node_modules\@prisma\client\runtime\library.js:130:9551)
+    at async Object.getModelsForMatrix (E:\Code\Aidean\apps\web\.next\server\chunks\8473.js:1:2676)
+    at async Object.getRanking (E:\Code\Aidean\apps\web\.next\server\chunks\8473.js:1:11003)
+    at async m (E:\Code\Aidean\apps\web\.next\server\app\(site)\models\page.js:1:4706)
+    at async Promise.all (index 0)
+    at async c (E:\Code\Aidean\apps\web\.next\server\app\(site)\models\page.js:1:5030) {
+  clientVersion: '6.19.3',
+  errorCode: undefined,
+  retryable: undefined
+}
+[providers] SSR 取数失败，降级空提供商列表： 
+Invalid `prisma.modelProvider.findMany()` invocation:
+
+
+Authentication failed against database server, the provided database credentials for `(not available)` are not valid.
+
+Please make sure to provide valid database credentials for the database server at the configured address.
+exit=0
+
+=== SUMMARY ===
+PASS Install dependencies
+PASS Docs rule (铁律 1)
+PASS Docs facts (基线不变量)
+PASS Guard rails
+PASS Contract tests
+PASS Prisma generate
+PASS Typecheck (shared)
+PASS Typecheck (web)
+PASS Lint (web)
+PASS Unit tests (shared)
+PASS Unit tests (ui)
+PASS Unit tests (web)
+PASS Production build
+RESULT: PASS

@@ -1,0 +1,5 @@
+# tracked diff (card scope)
+.gitignore
+
+# evidence (same commit)
+docs/任务规划V0.10.0/06_validation/evidence/EVD-050/

@@ -17,6 +17,7 @@ next-env.d.ts
 # ── 测试 ──
 test-results*
 playwright-report/
+apps/web/coverage/
 
 # ── 系统 ──
 .DS_Store
