@@ -1,8 +1,8 @@
 # 任务索引（task-index）
 
-> 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
+> 版本: v0.10 | 更新: 2026-10-20 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
 
-总计 **52** 张原子任务卡｜Hark(主Agent) **18** 张｜外部Agent **34** 张｜档位：haiku 10 / opus 18 / sonnect 24｜fable 0（仅在推翻冻结契约时启用）
+总计 **51** 张原子任务卡｜Hark(主Agent) **18** 张｜外部Agent **33** 张｜档位：haiku 9 / opus 18 / sonnect 24｜fable 0（仅在推翻冻结契约时启用）
 
 执行者口径：用户指令「核心任务+高难度任务（尤其 UI 设计与实现）由主 Agent 完成，中等及简单任务发布后由其他 Agent 完成」。本轮仅规划，实施需用户另行批准（见 15_前提与局限.md）。
 
@@ -10,7 +10,6 @@
 |---|---|---|---|---|---|---|---|---|---|---|
 | [TASK-086](tasks/TASK-086.md) | S0 | 已移出卡独立复核：V0.8.0 判镜像落地的 22 张卡逐卡跑原验证命令并裁决 PASS/FAIL/UNKNOWN（补 e2e/真库/运行态证据） | Hark(主Agent) | Agent-Guard | opus | 中/6h | — | L0 | — | 未开工（Hark 核心） |
 | [TASK-092](tasks/TASK-092.md) | S3 | UI 运行态验收：S2 功能开关页/入口隐藏/403 态 + S3 收藏按钮/控制台 Tab/筛选全选/价格档位（截图 + 五态核对） | Hark(主Agent) | Agent-Guard | opus | 中/4h | 086 | L1 | — | 未开工（Hark 核心） |
-| [TASK-087](tasks/TASK-087.md) | S7 | V0.5.0 规划树文件名 mojibake 修复（24 个双编码文件名 git mv 为正字 + 引用修正） | 外部Agent | Agent-Docs | haiku | 小/2h | — | L0 | — | 未开工 |
 | [TASK-088](tasks/TASK-088.md) | S7 | 治理登记：目录结构文档登记 V0.8.0 树 + task-index 状态回写（依 EVD-086/091/092） + docs/执行过程.md 归档拆分 | 外部Agent | Agent-Docs | haiku | 小/2h | 086 | L1 | — | 未开工 |
 | [TASK-006](tasks/TASK-006.md) | S0 | e2e-skeleton 实跑：本地复现 ci.yml e2e-skeleton 全步骤（PG16+Redis7、迁移重放、seed、build、:3000、smoke+walking-skeleton）+ Actions 首轮绿 run（U-25） | Hark(主Agent) | Agent-Guard | opus | 中/5h | — | L0 | — | 未开工（Hark 核心） |
 | [TASK-098](tasks/TASK-098.md) | S10 | 快照写入器加固：空 items 不下架、分批 upsert 与事务超时、同 hash 并发返回既有快照 | 外部Agent | Agent-Data | sonnect | 小/2h | — | L0 | — | 未开工 |

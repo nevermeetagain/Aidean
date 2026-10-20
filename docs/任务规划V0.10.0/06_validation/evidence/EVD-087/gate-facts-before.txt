@@ -1,0 +1,16 @@
+鉁?schema-models: schema.prisma model 鏁?= 72锛圡-002 妯″瀷婧愮洃鎺?TASK-058 鏂板 MonitoringSource/CatalogSnapshot/ProviderModelObservation/CatalogChangeEvent锛?8鈫?2锛涘墠娆?S3 RBAC 64鈫?8锛?鈫?expected=72, actual=72
+鉁?seed-models: seed.ts 妯″瀷鏉℃暟锛坢odelsData 闈欐€佹潯鐩?+ DEMO_MODEL_COUNT 鐢熸垚鍣級鈮?50锛堜笅闄愬紡锛孯-83 T1锛氭ā鍨嬫暟涓嶉檺鐢卞悗鍙伴厤缃級 鈫?expected=>=50, actual=1000
+鉁?seed-no-official: seed.ts 涓棤 OFFICIAL/瀹樻柟娴嬭瘯锛坧rovenance 淇鍚庯級 鈫?expected=0, actual=0
+鉁?lib-features-count: lib/features 瀛愮洰褰曟暟 = 22锛圫7.4 announcements 璧?17鈫?8锛汿ASK-090 鏀跺彛浠ヤ唬鐮佸疄娴嬪悓姝?18鈫?2锛屽惈 lib/features/pricing 绛夋柊澧炵洰褰曪級 鈫?expected=22, actual=22
+鉁?aidean-ui-refs: @aidean/ui 鍦?apps/web/components 鐨?import 鏁?= 68锛圱ASK-074 鏂板 BenchmarkDialog 67鈫?8锛孯10-01锛涘墠娆?TASK-029 65鈫?7锛?鈫?expected=68, actual=68
+鉁?route-count: apps/web route.ts 鏂囦欢鏁帮紙鍚?app/ 鍏ㄥ煙锛? 157锛圱ASK-066 鏂板 models/[id]/offerings 156鈫?57锛孯10-01锛涘墠娆?TASK-095 154鈫?56锛?鈫?expected=157, actual=157
+鉁?page-count: apps/web page.tsx 鏂囦欢鏁?= 57锛圱ASK-090 鏀跺彛浠ヤ唬鐮佸疄娴嬪悓姝?56鈫?7锛?鈫?expected=57, actual=57
+鉁?next-version: Next.js 鐗堟湰 = 15.x 鈫?expected=15.x, actual=15.x
+鉁?spec-count: spec 鏂囦欢鎬绘暟 = 179锛圱ASK-061 鏂板 monitoring/diff/{detect,persist}.spec 177鈫?79锛孯10-01锛涘墠娆?TASK-067/074 176鈫?77锛?鈫?expected=179, actual=179
+鉁?queryraw-biz: apps/web 涓氬姟浠ｇ爜 $queryRaw/$executeRaw = 0 鈫?expected=0, actual=0
+鉁?batch-count: admin batch 璺敱鏁?= 15 鈫?expected=15, actual=15
+鉁?db-doc-product-fields: 銆婃暟鎹簱鏂囨。銆媝roducts 琛屽凡鐧昏 display_name 涓?ProductCategory锛圖B 妯″瀷鍙樻洿鏂囨。鍚屾锛?鈫?expected=2/2, actual=2/2
+鉁?category-label-single-source: apps/web 涓‖缂栫爜銆宭abel: "鐗逛緵"銆嶅紡鍒嗙被鏄犲皠 = 0锛堟枃妗堝敮涓€鏉ユ簮 lib/product-label.ts锛?鈫?expected=0, actual=0
+鉁?usage-stats-anchor-pair: 銆夾PI鏋舵瀯璁捐鏂规銆嬪惈 usage-stats-architecture 閿?涓斻€夾PI鎺ュ彛鏂囨。銆嬪惈鍏跺洖閾撅紙閾佸緥 2 鍙屽悜浜掑紩锛?鈫?expected=2/2, actual=2/2
+
+All 14 assertions passed.

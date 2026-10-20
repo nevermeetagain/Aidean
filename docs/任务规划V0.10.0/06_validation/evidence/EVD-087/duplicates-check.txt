@@ -1,0 +1,10 @@
+SAME architecture.md
+SAME decisions/ADR-P002-功能开关失败策略与权限复用.md
+SAME decisions/ADR-P003-价格当前行部分唯一索引.md
+SAME decisions/ADR-P004-需求文档与代码口径对齐.md
+SAME decisions/ADR-P005-计价口径归一.md
+SAME decisions/ADR-P006-端口区间口径.md
+SAME decisions/ADR-P007-第三方数据源条款凭证与监控表.md
+SAME design/DESIGN-001-功能开关运行时.md
+SAME design/DESIGN-002-限时优惠计费.md
+SAME design/DESIGN-003-生效价解析器.md

@@ -1,0 +1,1 @@
+[閾佸緥1] docs rule PASS锛歛pps/ 涓嬫棤瀹炰綋 .md锛圧EADME.md 璞佸厤锛夈€?[閾佸緥-鏁板瓧] 鏁板瓧鐪熸簮鏂█ PASS锛堥敋=鏂囨。锛屼唬鐮?瀹炴祴锛夛細schema model=72, enum=37, admin API 鍩?37, admin 椤甸潰=33, Next.js=15.0.x

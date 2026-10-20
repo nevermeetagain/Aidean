@@ -1,0 +1,279 @@
+
+> web@0.1.0 test E:\Code\Aidean\apps\web
+> vitest run
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mE:/Code/Aidean/apps/web[39m
+
+ [32m✓[39m lib/features/gateway/__tests__/stream-parse.spec.ts [2m([22m[2m24 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m lib/security/__tests__/url-policy.spec.ts [2m([22m[2m87 tests[22m[2m)[22m[90m 96[2mms[22m[39m
+ [32m✓[39m lib/features/billing/__tests__/refund-reconcile.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m lib/features/billing/__tests__/capture.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m lib/features/billing/__tests__/billing.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m lib/features/billing/__tests__/hold.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/features/apikey/__tests__/channel-aggregate.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/oidc-redlines.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 379[2mms[22m[39m
+   [33m[2m✓[22m[39m R3 host-only Cookie：登录种下的 Set-Cookie 不含 Domain=（禁父域共享登录态）[2m > [22m真 login 路由成功 → 序列化 Set-Cookie 无 `Domain=`，且 HttpOnly + SameSite=lax（效果层） [33m301[2mms[22m[39m
+ [32m✓[39m lib/features/package/__tests__/redemption.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m lib/features/ladder/__tests__/ladder-effective-price.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/gateway-adapters.spec.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m lib/features/evaluation/__tests__/evaluation-service.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/gateway-svc.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-configs.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 33[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/stream-passthrough.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 43[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-vendors.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m lib/features/favorites/__tests__/favorites-api.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 31[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-models.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-products.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 47[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/gateway-orchestrator.spec.ts [2m([22m[2m25 tests[22m[2m)[22m[90m 130[2mms[22m[39m
+ [32m✓[39m lib/monitoring/__tests__/offerings-route.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 30[2mms[22m[39m
+ [32m✓[39m lib/monitoring/diff/__tests__/detect.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-users.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 42[2mms[22m[39m
+ [32m✓[39m lib/monitoring/catalog/__tests__/collectors.spec.ts [2m([22m[2m41 tests[22m[2m)[22m[90m 42[2mms[22m[39m
+ [32m✓[39m lib/features/ladder/__tests__/ladder.spec.ts [2m([22m[2m24 tests[22m[2m)[22m[33m 550[2mms[22m[39m
+   [33m[2m✓[22m[39m GET /api/v1/ladder（withApi 包装路由）[2m > [22m非法 type=skills 收敛为 code=20002 信封（榜单类型非法），data=null 且携带 x-request-id [33m506[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-promotions.spec.ts [2m([22m[2m27 tests[22m[2m)[22m[33m 460[2mms[22m[39m
+   [33m[2m✓[22m[39m TASK-096 写侧加固（review-ext12 D2/D3/D10/D11）[2m > [22mPOST 连续 5 次 P2034 → 400「并发写入冲突」，不写审计（review-096 S1：抖动退避 + 5 次） [33m370[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/writer-prices-benchmarks.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m① 未登录 POST gateway/chat → HTTP 401 + 信封 code=10004
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+ [32m✓[39m lib/admin-navigation-core.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m② 登录后 chat body 非法（缺 messages）→ 40000 且编排未触达
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m③ chat 成功 → 直通响应（无信封）+ 计费事实头部 + x-request-id 透传
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m⑪ Bearer 平台 API Key → 200 免 cookie；userId 取 Key 归属；计费事实头不变
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m⑫ x-api-key（Anthropic 形态）→ 200 同通道
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m⑬ 伪造 Key → 401/10004 且编排未触达
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m⑭ 吊销 Key → 401/10004 即时生效
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m⑮ 无 gateway:chat 权限 → 403/10008
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m⑯ Key 超限 → 429/10006（提示语含重试语义）
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m⑰ Responses API 接入 → 归一为 openai 调编排（instructions→system）+ 响应回写 response 体裁
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+[90mstderr[2m | lib/features/gateway/__tests__/routes-gateway.spec.ts[2m > [22m[2mgateway routes[2m > [22m[2m⑱ Gemini generateContent 接入 → 归一为 openai + 响应回写 candidates/usageMetadata 体裁
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+{"tag":"feature-flags","reason":"load-failed-fail-open","name":"TypeError"}
+
+ [32m✓[39m lib/features/gateway/__tests__/routes-gateway.spec.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 191[2mms[22m[39m
+ [32m✓[39m lib/features/apikey/__tests__/routes-apikey.spec.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 238[2mms[22m[39m
+[90mstderr[2m | lib/sync/__tests__/sync-orchestrator.spec.ts[2m > [22m[2mSyncOrchestrator[2m > [22m[2mR-43: CrossValidator 接线[2m > [22m[2m额外 adapter fetch 失败时不阻塞主流程
+[22m[39m[CrossValidator] adapter "test-adapter" fetch failed: Error: fetch failed
+    at TestAdapter.fetch [90m(E:\Code\Aidean\apps\web\[39mlib\sync\__tests__\sync-orchestrator.spec.ts:51:33[90m)[39m
+    at SyncOrchestrator.execute [90m(E:\Code\Aidean\apps\web\[39mlib\sync\sync-orchestrator.ts:94:49[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at [90mE:\Code\Aidean\apps\web\[39mlib\sync\__tests__\sync-orchestrator.spec.ts:245:22
+    at file:///E:/Code/Aidean/node_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:533:5
+    at runTest (file:///E:/Code/Aidean/node_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1056:11)
+    at runSuite (file:///E:/Code/Aidean/node_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15)
+    at runSuite (file:///E:/Code/Aidean/node_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15)
+    at runSuite (file:///E:/Code/Aidean/node_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15)
+    at runFiles (file:///E:/Code/Aidean/node_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1262:5)
+
+ [32m✓[39m lib/sync/__tests__/sync-orchestrator.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m lib/features/pricing/__tests__/effective-price.spec.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 41[2mms[22m[39m
+ [32m✓[39m lib/features/apikey/__tests__/apikey.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m lib/features/billing/__tests__/adjust.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-delete-routes.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/routes-auth.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 827[2mms[22m[39m
+   [33m[2m✓[22m[39m auth routes[2m > [22m② POST register 成功走 service spy 路径 → 种双 HttpOnly Cookie 并回 user 信封 [33m656[2mms[22m[39m
+ [32m✓[39m lib/features/user/__tests__/user-svc.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/usage-stats.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/order-disposition.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 36[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-guard.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 172[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-batch-new.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-logs.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-packages.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/email-code.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 602[2mms[22m[39m
+ [32m✓[39m lib/features/apikey/__tests__/station-keys-catalog.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 127[2mms[22m[39m
+[90mstderr[2m | lib/features/evaluation/__tests__/routes-evaluations.spec.ts[2m > [22m[2mPOST /api/v1/evaluations[2m > [22m[2m① 未登录 → 401（requireUserApi 抛 10004）
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+
+ [2m[90m↓[39m[22m lib/sync/writers/__tests__/persist-prices.int.spec.ts [2m([22m[2m2 tests[22m[2m | [22m[33m2 skipped[39m[2m)[22m
+ [32m✓[39m lib/features/auth/__tests__/admin-credentials.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 31[2mms[22m[39m
+ [32m✓[39m lib/monitoring/diff/__tests__/persist.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-feature-flags.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+ [32m✓[39m lib/features/admin/__tests__/run-due-route.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 85[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-routes.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/partner-codes.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m lib/sync/writers/catalog-snapshot.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m lib/features/admin/__tests__/api-stations-route.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 884[2mms[22m[39m
+   [33m[2m✓[22m[39m api-stations route[2m > [22mGET lists stations with pagination [33m800[2mms[22m[39m
+ [32m✓[39m lib/features/user/__tests__/routes-user.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 64[2mms[22m[39m
+ [32m✓[39m lib/features/admin/__tests__/change-log-coverage.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m lib/__tests__/site-content-s4.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+[90mstderr[2m | lib/features/auth/__tests__/middleware.spec.ts[2m > [22m[2mmiddleware RS256/JWKS 守卫[2m > [22m[2m过期 access → 307 /login?redirect=…
+[22m[39m{"tag":"auth-guard","code":"ERR_JWT_EXPIRED","iss":null}
+
+[90mstderr[2m | lib/features/auth/__tests__/middleware.spec.ts[2m > [22m[2mmiddleware RS256/JWKS 守卫[2m > [22m[2mkid 不在 JWKS（伪造/跨环境令牌）→ 307
+[22m[39m{"tag":"auth-guard","code":"ERR_JWKS_NO_MATCHING_KEY","iss":null}
+
+ [32m✓[39m lib/features/admin/__tests__/free-quotas-route.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 664[2mms[22m[39m
+   [33m[2m✓[22m[39m free-quotas admin route[2m > [22mGET lists free quotas with pagination [33m566[2mms[22m[39m
+[90mstderr[2m | lib/features/auth/__tests__/middleware.spec.ts[2m > [22m[2mmiddleware RS256/JWKS 守卫[2m > [22m[2mJWKS 拉取失败且无缓存公钥 → fail-closed 307（不 crash）
+[22m[39m{"tag":"auth-guard","code":"ERR_JOSE_GENERIC","iss":null}
+
+ [32m✓[39m lib/features/admin/__tests__/evaluations-route.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 635[2mms[22m[39m
+   [33m[2m✓[22m[39m evaluations route[2m > [22mGET lists evaluations with pagination [33m542[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/middleware.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 150[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-prices.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m lib/features/ladder/__tests__/ladder-store.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 33[2mms[22m[39m
+ [32m✓[39m lib/monitoring/__tests__/model-detail-ui.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+[90mstderr[2m | lib/features/auth/__tests__/backchannel-logout.spec.ts[2m > [22m[2mback-channel logout（ADR-0003 L4.1）[2m > [22m[2m④ 广播目标不可达 → 登出主流程不受影响，Cookie 清理头照常返回
+[22m[39m[oauth] back-channel logout 异常: client=aidean-bot
+
+ [32m✓[39m lib/features/auth/__tests__/backchannel-logout.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 90[2mms[22m[39m
+ [2m[90m↓[39m[22m lib/features/pricing/__tests__/effective-price.int.spec.ts [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [32m✓[39m lib/discovery/llmtest.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m lib/features/upstream/__tests__/official-catalog.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m lib/features/news/__tests__/admin-news.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 30[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/quanzil.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m lib/features/admin/__tests__/tier-mappings-route.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 762[2mms[22m[39m
+   [33m[2m✓[22m[39m tier-mappings admin route[2m > [22mGET lists tier mappings with pagination [33m700[2mms[22m[39m
+ [32m✓[39m lib/features/billing/__tests__/reverse.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m lib/admin-nav-default-tree.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m lib/features/admin/__tests__/new-domain-batch.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/aggregation-adapters.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 2538[2mms[22m[39m
+   [33m[2m✓[22m[39m ArtificialAnalysisAdapter[2m > [22mtestConnection() 返回 false 当 API 不可达 [33m629[2mms[22m[39m
+   [33m[2m✓[22m[39m EpochAIAdapter[2m > [22mfetch() API 失败时返回空数组 [33m1267[2mms[22m[39m
+ [32m✓[39m lib/features/system/__tests__/readiness.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m lib/discovery/__tests__/pipeline.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-batch.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/channel-pick.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/cross-validator.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m lib/sync/writers/__tests__/persist-prices.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/arena-ai.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m lib/features/news/__tests__/markdown.spec.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 41[2mms[22m[39m
+ [32m✓[39m lib/features/news/__tests__/site-pages.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 36[2mms[22m[39m
+ [32m✓[39m lib/features/flags/__tests__/flags.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-config-seed-parity.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-holds.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/auth-service.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 2764[2mms[22m[39m
+   [33m[2m✓[22m[39m authService.register[2m > [22m① 注册成功：users+wallets 同建（balanceMinor=0n、userId 一致），返回 NORMAL tier [33m320[2mms[22m[39m
+   [33m[2m✓[22m[39m authService.register[2m > [22m② P2002 唯一冲突 → ApiError(10002,'邮箱已被注册') [33m315[2mms[22m[39m
+   [33m[2m✓[22m[39m authService.login[2m > [22m⑤ 登录成功返回 profile [33m651[2mms[22m[39m
+   [33m[2m✓[22m[39m authService.login[2m > [22m⑦ 密码错误与用户不存在同码同文案（防枚举一致性） [33m617[2mms[22m[39m
+   [33m[2m✓[22m[39m authService.login[2m > [22m⑨ 凭据正确但账号停用 → 10005 '账号已被禁用或锁定' [33m574[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/redeem-route.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-orders.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m lib/admin/promotions-ui.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 34[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/permissions.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/site-content.spec.ts [2m([22m[2m22 tests[22m[2m)[22m[90m 44[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/oauth-redirect-origin.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-zod-messages.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-oidc.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-benchmarks.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+[90mstdout[2m | lib/features/auth/__tests__/mailer.spec.ts[2m > [22m[2msendCodeMail[2m > [22m[2mSMTP 未配置时返回 false 且不抛错
+[22m[39m[email-code] SMTP 未配置，验证码（仅服务端日志可见）：user@example.com -> 123456
+
+ [32m✓[39m lib/features/admin/__tests__/field-ownership.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/mailer.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 159[2mms[22m[39m
+ [32m✓[39m lib/admin/__tests__/reports.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/lmsys.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/session-guard.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 93[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/sync-orchestrator.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m lib/navigation-sync.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m lib/features/news/__tests__/seed-official-news.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-benchmarks-import.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m lib/features/ranking/__tests__/update-ranking-script.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/redirect.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m lib/features/announcements/__tests__/read.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m lib/features/admin/__tests__/announcements-route.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 579[2mms[22m[39m
+   [33m[2m✓[22m[39m announcements route[2m > [22mPOST creates announcement with required fields [33m573[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-redemptions.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m lib/features/flags/__tests__/route-gate.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-sync.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m lib/features/admin/__tests__/script-executor.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 42[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/huggingface.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-batch-disable.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/sync-changes.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m lib/features/home/__tests__/site-sections.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+[90mstderr[2m | lib/features/system/__tests__/ready-route.spec.ts[2m > [22m[2mGET /api/v1/system/ready · 路由 HTTP 层[2m > [22m[2mDB 不可达 → 503 + 信封 code=50010 / message '依赖不可用: db'
+[22m[39m{"tag":"ready-probe","dep":"db","reason":"error","name":"Error"}
+
+ [32m✓[39m lib/features/auth/__tests__/refresh-replay-alert.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+[90mstderr[2m | lib/features/system/__tests__/ready-route.spec.ts[2m > [22m[2mGET /api/v1/system/ready · 路由 HTTP 层[2m > [22m[2mRedis 不可达（DB 可达）→ 503 + code=50010 / message '依赖不可用: redis'
+[22m[39m{"tag":"ready-probe","dep":"redis","reason":"error","name":"Error"}
+
+ [32m✓[39m lib/features/system/__tests__/ready-route.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m lib/features/gateway/__tests__/usage-window.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 873[2mms[22m[39m
+   [33m[2m✓[22m[39m PRESET_RANGE_DAYS 与服务端 USAGE_STATS_RANGE_DAYS 同口径（7/30/90） [33m868[2mms[22m[39m
+ [32m✓[39m lib/product-label.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m lib/features/ranking/__tests__/formula-parser.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m lib/intelligence/__tests__/intelligence.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/sync-dedup.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m lib/security/__tests__/url-policy-outbound.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m lib/features/admin/script-validation.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 35[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/login-rate-limit-bypass.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m lib/features/ranking/__tests__/recap.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m lib/features/ladder/__tests__/price-views.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m lib/sync/__tests__/sync-batches-route.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m lib/admin/load-guard.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+[90mstderr[2m | lib/features/evaluation/__tests__/routes-evaluations.spec.ts[2m > [22m[2mPOST /api/v1/evaluations[2m > [22m[2m① 未登录 → 401（requireUserApi 抛 10004）
+[22m[39m{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+
+[90mstderr[2m | lib/features/evaluation/__tests__/routes-evaluations.spec.ts[2m > [22m[2mPOST /api/v1/evaluations[2m > [22m[2m② 免费用户（NORMAL）→ service 抛 403 付费用户能力
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+
+ [32m✓[39m lib/features/gateway/__tests__/tier-order.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m lib/sync/sources/registry.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/admin-errors.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 2[2mms[22m[39m
+[90mstderr[2m | lib/features/evaluation/__tests__/routes-evaluations.spec.ts[2m > [22m[2mPOST /api/v1/evaluations[2m > [22m[2m② 免费用户（NORMAL）→ service 抛 403 付费用户能力
+[22m[39m{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+
+[90mstderr[2m | lib/features/evaluation/__tests__/routes-evaluations.spec.ts[2m > [22m[2mPOST /api/v1/evaluations[2m > [22m[2m③ 参数非法（模型数 1）→ 40000 信封，不触 service
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+
+[90mstderr[2m | lib/features/evaluation/__tests__/routes-evaluations.spec.ts[2m > [22m[2mPOST /api/v1/evaluations[2m > [22m[2m③ 参数非法（模型数 1）→ 40000 信封，不触 service
+[22m[39m{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+
+[90mstderr[2m | lib/features/evaluation/__tests__/routes-evaluations.spec.ts[2m > [22m[2mPOST /api/v1/evaluations[2m > [22m[2m④ 创建成功 → 信封 {evaluation, idempotent}；tier 与幂等键透传
+[22m[39m{"tag":"feature-flags","reason":"cache-channel-unavailable-direct-fallback","name":"Error"}
+
+[90mstderr[2m | lib/features/evaluation/__tests__/routes-evaluations.spec.ts[2m > [22m[2mPOST /api/v1/evaluations[2m > [22m[2m④ 创建成功 → 信封 {evaluation, idempotent}；tier 与幂等键透传
+[22m[39m{"tag":"feature-flags","reason":"load-failed-fail-open","name":"PrismaClientInitializationError"}
+
+ [32m✓[39m lib/features/evaluation/__tests__/routes-evaluations.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 16351[2mms[22m[39m
+   [33m[2m✓[22m[39m POST /api/v1/evaluations[2m > [22m① 未登录 → 401（requireUserApi 抛 10004） [33m4124[2mms[22m[39m
+   [33m[2m✓[22m[39m POST /api/v1/evaluations[2m > [22m② 免费用户（NORMAL）→ service 抛 403 付费用户能力 [33m4081[2mms[22m[39m
+   [33m[2m✓[22m[39m POST /api/v1/evaluations[2m > [22m③ 参数非法（模型数 1）→ 40000 信封，不触 service [33m4072[2mms[22m[39m
+   [33m[2m✓[22m[39m POST /api/v1/evaluations[2m > [22m④ 创建成功 → 信封 {evaluation, idempotent}；tier 与幂等键透传 [33m4068[2mms[22m[39m
+ [32m✓[39m lib/features/auth/__tests__/session-tokens.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 32738[2mms[22m[39m
+   [33m[2m✓[22m[39m 双令牌签发与验签（RS256）[2m > [22m① signAccess 载荷含 tier/ver/jti 且 sub=userId，RS256 + iss/aud 可验回 [33m4259[2mms[22m[39m
+   [33m[2m✓[22m[39m 双令牌签发与验签（RS256）[2m > [22m③ refresh 含 typ:'refresh'/jti/ver，7d TTL [33m4098[2mms[22m[39m
+   [33m[2m✓[22m[39m 双令牌签发与验签（RS256）[2m > [22m④ access 令牌混入 refresh 位（无 typ/jti 形态）→ verifyRefresh null；篡改签名 → null [33m8138[2mms[22m[39m
+   [33m[2m✓[22m[39m 双令牌签发与验签（RS256）[2m > [22m⑤ 签发对可互相验回：pair 的 access/refresh 同 sub 且 refresh jti 唯一锚点回传 [33m8116[2mms[22m[39m
+   [33m[2m✓[22m[39m 双令牌签发与验签（RS256）[2m > [22m⑥ 篡改 access 签名 → verifyAccess null（RS256 非对称：无私钥不可伪造） [33m4054[2mms[22m[39m
+   [33m[2m✓[22m[39m getSession / requireUserApi[2m > [22m⑧ 有有效 access Cookie → 解析出 {userId,tier} [33m4056[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m134 passed[39m[22m[2m | [22m[33m2 skipped[39m[90m (136)[39m
+[2m      Tests [22m [1m[32m1312 passed[39m[22m[2m | [22m[33m5 skipped[39m[90m (1317)[39m
+[2m   Start at [22m 11:36:58
+[2m   Duration [22m 36.74s[2m (transform 18.65s, setup 0ms, collect 92.99s, tests 65.15s, environment 35ms, prepare 35.65s)[22m
+

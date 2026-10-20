@@ -1,0 +1,19 @@
+bash.exe : C:\Users\EDY\AppData\Local\Temp\opencode\baseline-087.sh: line 1: 锘?!/usr/bin/env: No such file or directory
+所在位置 行:1 字符: 1
++ & "D:\SoftWare\Git\bin\bash.exe" "C:\Users\EDY\AppData\Local\Temp\ope ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Users\EDY\Ap...le or directory:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+## locale
+LANG=
+LC_CTYPE="C.UTF-8"
+LC_NUMERIC="C.UTF-8"
+## git HEAD
+bcaa161d3ea2ccb01e5c2025272d0eb000085ff2
+docs(V0.10.0): 27 閲嶅垝鍒嗚鎺モ€斺€?61 宸茬敱澶栭儴瀹屾垚锛孒ark 鏀瑰鏌ワ紱098 褰?Hark
+## mojibake filename count (acceptance command)
+24
+grep exit=0
+## total tracked files
+283
