@@ -1,0 +1,28 @@
+# EVD-067 · 模型详情「在哪里可调用」多源上架区块  (2026-10-20T01:33:39Z)
+## 纯逻辑/静态渲染单测
+ ✓ lib/monitoring/__tests__/model-detail-ui.spec.ts (9 tests) 14ms
+      Tests  9 passed (9)
+
+## 浏览器运行态（Playwright chromium，PG16 种子）
+offerings state: offerings-ready rows: 3 relay chips(desktop table+hidden mobile list): 2 (=1 relay source)
+bench state: bench-list ; dialog opened (bench-dialog) ; closed by Esc: true
+samples state: samples-ready ; placeholder「即将上线」gone: true
+mobile(390x844) cards: 3
+no-observation model(llama-3-1-405b): offerings-empty ; samples: samples-empty
+截图：offerings-desktop.png / offerings-mobile.png
+修正：首轮截图发现摘要「最低输入价」取到中转源 → 改为仅在身份已验证源中取（全为中转才取中转并标注），复跑通过。
+
+## 全局回归（含 next build）
+web tsc exit=0
+web lint exit=0
+rule exit=0
+All 14 assertions passed.
+RESULT: PASS (4/4 守卫通过)
+contract drift exit=0
+ Test Files  132 passed | 2 skipped (134)
+      Tests  1292 passed | 5 skipped (1297)
+next build exit=0
+
+## 说明
+- e2e 用例由 TASK-075（外部助手）编写；本卡以浏览器运行态脚本 + 截图取证。
+- 价格原币原单位展示，无 ¥ 换算（U-15 未决）。

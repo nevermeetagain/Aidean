@@ -1,0 +1,26 @@
+# EVD-074 · 基准弹窗 + 历史测评示例  (2026-10-20T01:33:39Z)
+## 占位文案
+grep exit=1 (期望 1)
+
+## 单测
+ ✓ lib/monitoring/__tests__/model-detail-ui.spec.ts (9 tests) 14ms
+      Tests  9 passed (9)
+
+## 浏览器运行态
+bench state: bench-list ; dialog opened (bench-dialog) ; closed by Esc: true
+samples state: samples-ready ; placeholder「即将上线」gone: true
+mobile(390x844) cards: 3
+no-observation model(llama-3-1-405b): offerings-empty ; samples: samples-empty
+截图：bench-dialog.png / samples.png
+修正：基准名改用 benchmarkType（原用 sourceName 导致弹窗标题显示「平台演示数据」）。
+
+## 全局回归
+web tsc exit=0
+web lint exit=0
+rule exit=0
+All 14 assertions passed.
+RESULT: PASS (4/4 守卫通过)
+contract drift exit=0
+ Test Files  132 passed | 2 skipped (134)
+      Tests  1292 passed | 5 skipped (1297)
+next build exit=0

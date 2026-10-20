@@ -1,0 +1,35 @@
+const { chromium } = require("/workspace/work/Aidean/node_modules/.pnpm/playwright@1.62.1/node_modules/playwright");
+(async () => {
+  require("fs").mkdirSync("/tmp/shots", { recursive: true });
+  const browser = await chromium.launch();
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  page.setDefaultTimeout(100000);
+  await page.goto("http://localhost:3000/models/claude-3-5-haiku", { waitUntil: "networkidle" });
+  await page.waitForSelector("[data-testid=offerings-ready], [data-testid=offerings-empty], [data-testid=offerings-error]");
+  console.log("offerings state:", await page.locator("[data-testid^=offerings-]").first().getAttribute("data-testid"), "rows:", await page.locator("[data-testid=offerings-row]").count(), "relay:", await page.locator("[data-testid=offerings-relay-unverified]").count());
+  await page.locator("#providers").scrollIntoViewIfNeeded(); await page.waitForTimeout(800);
+  await page.locator("#providers").screenshot({ path: "/tmp/shots/offerings-desktop.png" });
+  const benchState = await page.locator("[data-testid=bench-list], [data-testid=bench-empty]").first().getAttribute("data-testid");
+  console.log("bench state:", benchState);
+  if (benchState === "bench-list") {
+    await page.locator("[data-testid=bench-open]").first().click();
+    await page.waitForSelector("[data-testid=bench-dialog]");
+    await page.locator("[role=dialog]").first().screenshot({ path: "/tmp/shots/bench-dialog.png" });
+    await page.keyboard.press("Escape"); await page.waitForTimeout(300);
+    console.log("dialog closed by Esc:", (await page.locator("[data-testid=bench-dialog]").count()) === 0);
+  }
+  await page.locator("#samples").scrollIntoViewIfNeeded(); await page.waitForTimeout(800);
+  console.log("samples state:", await page.locator("[data-testid^=samples-]").first().getAttribute("data-testid"));
+  await page.locator("#samples").screenshot({ path: "/tmp/shots/samples.png" });
+  console.log("placeholder gone:", !(await page.content()).includes("即将上线"));
+  const m = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
+  await m.goto("http://localhost:3000/models/claude-3-5-haiku", { waitUntil: "networkidle" });
+  await m.waitForSelector("[data-testid=offerings-ready]");
+  await m.locator("#providers").scrollIntoViewIfNeeded(); await m.waitForTimeout(800);
+  await m.locator("#providers").screenshot({ path: "/tmp/shots/offerings-mobile.png" });
+  console.log("mobile cards:", await m.locator("[data-testid=offerings-card]").count());
+  await page.goto("http://localhost:3000/models/llama-3-1-405b", { waitUntil: "networkidle" });
+  await page.waitForSelector("[data-testid=offerings-empty], [data-testid=offerings-ready]");
+  console.log("no-observation model:", await page.locator("[data-testid^=offerings-]").first().getAttribute("data-testid"), "samples:", await page.locator("[data-testid^=samples-]").first().getAttribute("data-testid"));
+  await browser.close();
+})().catch((e) => { console.error(e.message.slice(0, 400)); process.exit(1); });

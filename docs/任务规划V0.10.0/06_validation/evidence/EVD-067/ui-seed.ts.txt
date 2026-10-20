@@ -1,0 +1,32 @@
+import { prisma } from "./lib/db/prisma";
+async function main() {
+  const cur = await prisma.modelPrice.findMany({ where: { isCurrent: true, billingMode: "PER_TOKEN", priceInput: { gt: 0.5 } }, orderBy: { priceInput: "asc" }, take: 3, include: { model: { select: { slug: true } } } });
+  const now = Date.now();
+  await prisma.modelPrice.deleteMany({ where: { sourceType: "PROMOTION" } });
+  const mk = (c: (typeof cur)[0], pi: string, po: string, from: number, until: number, notes: string) =>
+    prisma.modelPrice.create({ data: { modelId: c.modelId, priceInput: pi, priceOutput: po, billingMode: c.billingMode, billingUnit: c.billingUnit, billingCurrency: c.billingCurrency, isCurrent: false, sourceType: "PROMOTION", sourceName: "admin-manual", effectiveFrom: new Date(from), effectiveUntil: new Date(until), notes } as never });
+  await mk(cur[0], "0", "0", now - 3600e3, now + 3 * 86400e3, "限时免费体验");
+  await mk(cur[1], (Number(cur[1].priceInput) / 2).toFixed(4), (Number(cur[1].priceOutput) / 2).toFixed(4), now - 3600e3, now + 7 * 86400e3, "双11 五折");
+  await mk(cur[2], "0.1", "0.2", now + 2 * 86400e3, now + 9 * 86400e3, "预告");
+  console.log(JSON.stringify(cur.map((c) => c.model.slug)));
+  // TASK-066/067：为 claude-3-5-haiku 造 3 源观测（含 relay）；TASK-074：造一条含该模型的公开测评示例
+  const m = await prisma.aiModel.findUniqueOrThrow({ where: { slug: "claude-3-5-haiku" }, select: { id: true, modelCode: true } });
+  const other = await prisma.aiModel.findFirstOrThrow({ where: { slug: { not: "claude-3-5-haiku" }, deletedAt: null }, select: { id: true } });
+  const sources = await prisma.monitoringSource.findMany({ where: { key: { in: ["openrouter", "aihubmix", "quanzil"] } } });
+  const norm = m.modelCode.toLowerCase().split("/").pop()!;
+  await prisma.providerModelObservation.deleteMany({ where: { normalizedModelId: norm } });
+  for (const s of sources) {
+    const price = s.key === "openrouter" ? ["0.8", "4"] : s.key === "aihubmix" ? ["0.88", "4.4"] : ["0.4", "2"];
+    await prisma.providerModelObservation.create({ data: { sourceId: s.id, externalModelId: (s.key === "openrouter" ? "anthropic/" : "") + norm, normalizedModelId: norm, isListed: s.key !== "aihubmix" || true, priceUnit: "usd_per_1m_tokens", priceInput: price[0], priceOutput: price[1], firstSeenAt: new Date(now - 30 * 86400e3), lastSeenAt: new Date(now - 3 * 3600e3) } as never });
+  }
+  const admin = await prisma.user.findFirstOrThrow({ where: { email: "admin@aidean.com" }, select: { id: true } });
+  await prisma.evaluation.deleteMany({ where: { title: "演示：七言绝句·秋" } });
+  await prisma.evaluation.create({ data: { userId: admin.id, title: "演示：七言绝句·秋", prompt: "以秋天为题写一首七言绝句，并用一句话解释意境。", evalType: "comparison", status: 2, isPaid: false, completedAt: new Date(now - 86400e3), winnerModelId: m.id,
+    evaluationModels: { create: [
+      { modelId: m.id, response: "金风拂槛桂香浮，雁字横空过远楼。\n一夜西窗听落叶，满庭明月不知秋。\n\n意境：以动写静，月色之盛反衬秋意已深。", latencyMs: 1830, tokensTotal: 212, score: 8.6 },
+      { modelId: other.id, response: "秋风萧瑟叶飘零，独上高楼望远汀。\n雁过长空声渐杳，一川烟水入寒青。\n\n意境：登高望远，借雁声写孤寂。", latencyMs: 2410, tokensTotal: 198, score: 8.1 },
+    ] } } as never });
+  console.log("seeded observations:", sources.length, "norm:", norm);
+  await prisma.$disconnect();
+}
+main();

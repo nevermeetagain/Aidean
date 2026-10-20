@@ -5,7 +5,7 @@
 //   空 generateStaticParams 在 build 期只登记不取数，CI 无 DB 不阻断；
 //   原注释所称「build 期查库失败」由 loadModel 的 try/catch 降级兜底（沿用列表页范式）。
 // B1：loadModel 经 React cache() 包装——generateMetadata 与 page 同请求共享一次查询。
-import { cache, use } from "react";
+import { cache, Suspense, use } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -17,6 +17,9 @@ import { prisma } from "../../../../lib/db/prisma";
 import { ladderRepository } from "../../../../lib/features/ladder/repository";
 import { resolveEffectivePrice } from "../../../../lib/features/pricing/effective-price";
 import { PriceTag } from "../../../../components/common/PriceTag";
+import { ModelOfferings } from "../../../../components/models/ModelOfferings";
+import { BenchmarkList, type BenchmarkView } from "../../../../components/models/BenchmarkDialog";
+import { EvaluationExamples, EvaluationExamplesSkeleton, type EvaluationExample } from "../../../../components/models/EvaluationExamples";
 
 /** 页面缓存窗口（秒）：模型价格/评分按天级更新，3600s 新鲜度可接受 */
 export const revalidate = 300; // TASK-097：优惠起止无写事件触发，页缓存上限压到 5 分钟（Redis 已按价格边界对齐）
@@ -27,6 +30,7 @@ export const generateStaticParams = async () => [];
 const TOC_ITEMS = [
   { id: "intro", label: "基本介绍" },
   { id: "params", label: "参数信息" },
+  { id: "providers", label: "在哪里可调用" },
   { id: "bench", label: "基准测试" },
   { id: "samples", label: "测评示例" },
 ] as const;
@@ -52,6 +56,62 @@ async function loadEffectivePrice(modelId: string) {
   }
 }
 
+/**
+ * TASK-074：包含本模型的公开测评示例（isPaid=false、已完成、未删除），最近 3 条；查询失败 → error 态（不阻断详情页）。
+ * 与 /api/v1/evaluations/demo 同一「公开示例」口径（isPaid=false），仅追加「含本模型」过滤。
+ */
+async function loadExamples(modelId: string): Promise<EvaluationExample[] | null> {
+  try {
+    const rows = await prisma.evaluation.findMany({
+      where: { isPaid: false, deletedAt: null, status: 2, evaluationModels: { some: { modelId } } },
+      orderBy: { completedAt: "desc" },
+      take: 3,
+      select: {
+        id: true,
+        title: true,
+        prompt: true,
+        completedAt: true,
+        winnerModelId: true,
+        evaluationModels: {
+          orderBy: { createdAt: "asc" },
+          select: {
+            modelId: true,
+            response: true,
+            latencyMs: true,
+            tokensTotal: true,
+            score: true,
+            model: { select: { nameDisplay: true, slug: true } },
+          },
+        },
+      },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      prompt: r.prompt,
+      completedAt: r.completedAt ? r.completedAt.toISOString() : null,
+      winnerModelId: r.winnerModelId,
+      answers: r.evaluationModels.map((m) => ({
+        modelId: m.modelId,
+        modelName: m.model.nameDisplay,
+        modelSlug: m.model.slug,
+        response: m.response,
+        latencyMs: m.latencyMs,
+        tokensTotal: m.tokensTotal,
+        score: m.score,
+      })),
+    }));
+  } catch (error) {
+    console.error(`[models] 测评示例取数失败：`, error);
+    return null;
+  }
+}
+
+async function ExamplesSection({ modelId }: { modelId: string }) {
+  const examples = await loadExamples(modelId);
+  return <EvaluationExamples examples={examples ?? []} currentModelId={modelId} error={examples === null} />;
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const model = await loadModel(slug);
@@ -68,14 +128,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 const BADGE_CLS =
   "inline-flex items-center rounded-full border border-[var(--border)] bg-muted px-2.5 py-0.5 text-xs text-slate-600";
-
-/** 核验状态徽标：verifiedStatus=1 已核验（绿）、=0 演示/未核验（琥珀） */
-const VERIFIED_CLS =
-  "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium";
-const VERIFIED_BADGE: Record<number, { label: string; cls: string }> = {
-  0: { label: "演示数据", cls: "border-amber-300 bg-amber-50 text-amber-700" },
-  1: { label: "✓ 已核验", cls: "border-emerald-300 bg-emerald-50 text-emerald-700" },
-};
 
 const PROTOCOL_LABELS: Record<string, string> = {
   OPENAI: "OpenAI 兼容",
@@ -157,6 +209,22 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
   // 「限时免费」须输入与输出同为 0（与 /pricing、后台口径一致，review-029 M1）
   const promoFree = !!effective?.isPromotion && Number(effective.priceInput) === 0 && Number(effective.priceOutput) === 0;
   const score = model.scores[0];
+  // TASK-074：基准 → 可序列化视图（弹窗组件为客户端组件）
+  const benchViews: BenchmarkView[] = model.benchmarks.map((b) => ({
+    id: b.id,
+    name: b.benchmarkType, // 基准名用 benchmarkType（如 MMLU）；sourceName 是数据来源，弹窗内单列
+    subType: b.benchmarkSubType ?? null,
+    sourceLabel: SOURCE_LABELS[String(b.sourceType)] ?? String(b.sourceType),
+    sourceName: b.sourceName ?? null,
+    sourceUrl: b.sourceUrl ?? null,
+    sourceVersion: b.sourceVersion ?? null,
+    totalScore: Number(b.totalScore),
+    percentile: b.scorePercentile !== null && b.scorePercentile !== undefined ? Number(b.scorePercentile) : null,
+    testDate: b.testDate ? b.testDate.toISOString() : null,
+    sampleCount: b.sampleCount ?? null,
+    verified: Number(b.verifiedStatus) === 1,
+    scores: scoreEntries(b.scores),
+  }));
   const protocolLabel = PROTOCOL_LABELS[String(model.protocol)] ?? String(model.protocol);
 
   const paramCells: ParamCell[] = [
@@ -300,14 +368,16 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
             </section>
           </RevealOnScroll>
 
-          {/* 提供商挂载信息 */}
-          {model.offerings && model.offerings.length > 0 && (
-            <RevealOnScroll>
-              <section id="providers" aria-labelledby="providers-title" className="scroll-mt-24">
-                <h2 id="providers-title" className="text-xl font-bold text-foreground">
-                  提供商与折扣价
-                </h2>
-                <div className="mt-4 space-y-4">
+          {/* 在哪里可调用（TASK-067）：平台挂载与折扣价（人工维护的 ProviderModelOffering）+ 多源上架观测（模型源监控） */}
+          <RevealOnScroll>
+            <section id="providers" aria-labelledby="providers-title" className="scroll-mt-24">
+              <h2 id="providers-title" className="text-xl font-bold text-foreground">
+                在哪里可调用
+              </h2>
+              {model.offerings && model.offerings.length > 0 ? (
+                <>
+                <h3 className="mt-4 text-sm font-semibold text-slate-600">平台挂载与折扣价</h3>
+                <div className="mt-3 space-y-4">
                   {model.offerings.map((o) => {
                     const ratio = Number(o.provider.rechargeRatio);
                     const mult = Number(o.defaultMultiplier);
@@ -360,9 +430,14 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
                     );
                   })}
                 </div>
-              </section>
-            </RevealOnScroll>
-          )}
+                </>
+              ) : null}
+              <h3 id="offerings" className="mt-6 scroll-mt-24 text-sm font-semibold text-slate-600">多源上架观测</h3>
+              <div className="mt-3">
+                <ModelOfferings modelId={model.id} />
+              </div>
+            </section>
+          </RevealOnScroll>
 
           {/* bench 基准测试 */}
           <RevealOnScroll>
@@ -370,54 +445,8 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
               <h2 id="bench-title" className="text-xl font-bold text-foreground">
                 基准测试
               </h2>
-              {model.benchmarks.length === 0 ? (
-                <p className="mt-4 rounded-md border border-[var(--border)] bg-[var(--card)] px-4 py-6 text-center text-sm text-slate-500">
-                  暂无基准数据
-                </p>
-              ) : (
-                <ul className="mt-4 space-y-3">
-                  {model.benchmarks.map((bench) => {
-                    const entries = scoreEntries(bench.scores);
-                    const sourceLabel =
-                      SOURCE_LABELS[String(bench.sourceType)] ?? String(bench.sourceType);
-                    return (
-                      <li
-                        key={bench.id}
-                        className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm"
-                      >
-                        <div className="flex flex-wrap items-baseline justify-between gap-2">
-                          <p className="text-sm font-semibold text-slate-700">
-                            <span className={BADGE_CLS}>{sourceLabel}</span>
-                            <span className={`${VERIFIED_CLS} ${VERIFIED_BADGE[Number(bench.verifiedStatus) ?? 0]?.cls ?? VERIFIED_BADGE[0].cls}`}>{VERIFIED_BADGE[Number(bench.verifiedStatus) ?? 0]?.label ?? VERIFIED_BADGE[0].label}</span>
-                            <span className="ml-2">{bench.sourceName ?? bench.benchmarkType}</span>
-                          </p>
-                          <p className="text-sm font-bold text-primary">
-                            总分 {Number(bench.totalScore).toFixed(1)}
-                          </p>
-                        </div>
-                        {entries.length > 0 ? (
-                          <table className="mt-3 w-full max-w-md text-left text-xs">
-                            <thead>
-                              <tr className="text-slate-400">
-                                <th scope="col" className="py-1 font-medium">指标</th>
-                                <th scope="col" className="py-1 font-medium">得分</th>
-                              </tr>
-                            </thead>
-                            <tbody className="text-slate-600">
-                              {entries.map(([metric, value]) => (
-                                <tr key={metric} className="border-t border-[var(--border)]">
-                                  <td className="py-1">{metric}</td>
-                                  <td className="py-1">{value}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        ) : null}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
+              <p className="mt-1 text-xs text-slate-400">点击基准名查看分项指标、来源与核验状态。</p>
+              <BenchmarkList items={benchViews} />
             </section>
           </RevealOnScroll>
 
@@ -427,9 +456,10 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
               <h2 id="samples-title" className="text-xl font-bold text-foreground">
                 测评示例
               </h2>
-              <p className="mt-4 rounded-md border border-dashed border-[var(--border)] bg-muted px-4 py-8 text-center text-sm text-slate-500">
-                测评示例功能即将上线（Phase 4）
-              </p>
+              <p className="mt-1 text-xs text-slate-400">同一道题多个模型的真实回答并排对比（来自公开测评示例）。</p>
+              <Suspense fallback={<EvaluationExamplesSkeleton />}>
+                <ExamplesSection modelId={model.id} />
+              </Suspense>
             </section>
           </RevealOnScroll>
         </div>
