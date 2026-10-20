@@ -1,5 +1,7 @@
 # TASK-070：密钥源目录采集：SiliconFlow /v1/models、DeepSeek /models 等官方/托管目录（缺凭证时健康=credential_missing）
 
+> **2026-10-20 变更（27_核心与非核心重划分）**：改写——不使用 API Key，改为采集 SiliconFlow / DeepSeek 等公开定价页与文档页（遵守条款与 robots，不抓需登录页）；执行者改为助手 A
+
 > 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
 
 > 执行者：**外部Agent** ｜ 所有权 Agent：**Agent-API** ｜ 建议档位：**sonnect** ｜ **条件卡：待 U-M1（keyed 源 API Key 提供与保管）裁决后下发**

@@ -1,5 +1,7 @@
 # TASK-072：Artificial Analysis Data API v2 适配器重写（/api/v2/language/models/free，x-api-key，署名字段）
 
+> **2026-10-20 变更（27_核心与非核心重划分）**：取消——U-M2=B，不申请 AA Key
+
 > 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
 
 > 执行者：**外部Agent** ｜ 所有权 Agent：**Agent-API** ｜ 建议档位：**sonnect** ｜ **条件卡：待 U-M2（Artificial Analysis key 与条款）裁决后下发**
