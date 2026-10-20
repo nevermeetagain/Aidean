@@ -1,0 +1,10 @@
+$ pnpm exec playwright test e2e/tests/promotion-billing.spec.ts --config e2e/playwright.config.ts --workers=1 --reporter=list
+# 2026-10-20 21:00:03 CST; :3000 = next start（生产构建，HEAD b909643）；PG16.14 :55439/aidean_e2e；Redis :6390
+
+Running 2 tests using 1 worker
+
+  ✓  1 [flows] › e2e/tests/promotion-billing.spec.ts:151:7 › promotion-billing · 限时优惠价直接影响网关计费（TASK-030） › 优惠价 0 → 免费（U-23）：零余额也可调用；充值用户余额不变且 usage quotaMinor=0 (449ms)
+  ✓  2 [flows] › e2e/tests/promotion-billing.spec.ts:206:7 › promotion-billing · 限时优惠价直接影响网关计费（TASK-030） › 删除优惠 → 恢复原价：按归一原价逐分扣费，钱包/流水/usage 一致；零余额用户不再放行 (260ms)
+
+  2 passed (3.4s)
+exit=0
