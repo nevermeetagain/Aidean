@@ -1,0 +1,57 @@
+TASK-081 · 后台价格批量写入 POST /api/v1/admin/prices/batch-upsert（requestId 幂等）— 验证证据
+时间: 2026-10-20T05:05Z（UTC）｜执行者: 助手 A｜卡面: docs/任务规划V0.10.0/05_execution/tasks/TASK-081.md v0.10
+基线 HEAD: cf435d4d（TASK-070 fix）
+
+== 1. 交付文件（均在允许修改范围）==
+- apps/web/app/api/v1/admin/prices/batch-upsert/route.ts       端点：逐行独立事务 upsert + 行审计 + 部分成功
+- apps/web/app/api/v1/admin/prices/batch-upsert/idempotency.ts requestId 幂等（Redis + audit_logs 回执）
+- apps/web/lib/features/auth/__tests__/admin-prices-batch.spec.ts  6 例
+- scripts/check-docs-facts.mjs  route 158→159、spec 182→183（R10-01 仅计数）
+- docs/任务规划V0.10.0/06_validation/evidence/EVD-081/verify.txt（本文件）
+
+== 2. 实现口径（卡面逐条）==
+1) 鉴权：requireAdminApi("admin.models.write")；非 admin → 403（10008）。
+2) 契约：PriceBatchUpsertSchema（body.requestId uuid 幂等键；rows 1..500；行 .strict()；价格拒空值）；
+   响应 PriceBatchUpsertResponseSchema（total = created + updated + failed.length）。
+3) 逐行独立事务：有 isCurrent 价 → update（billingMode 未显式给出时保留原值；价格/缓存价/按次价为整行口径）；
+   无当前价 → create（billingMode 缺省 PER_TOKEN、billingUnit 缺省 per_1k_tokens、billingCurrency 缺省 CNY、
+   sourceType=OFFICIAL、sourceName=admin-batch、isCurrent=true、effectiveFrom=批次时刻）。
+4) 逐行同事务写 audit_logs（create action=1 / update action=2，old/new 值 + x-request-id）。
+5) 部分成功（E9-05）：单行异常记 failed[]（index=请求 rows 下标、modelId、code、message），不回滚已成功行；
+   模型不存在 → 40000；当前价并发唯一冲突（P2002）→ 40000「请重试」；其他 → 50000。
+6) 写后失效：created+updated>0 时调用 invalidatePriceViews() 一次（TASK-097 两层失效）。
+
+== 3. requestId 幂等（无新表/无迁移）==
+- Redis（REDIS_URL 存在时）：SETNX PENDING(TTL 300s) 挡并发双击；完成后缓存首次响应 7d；
+  重放直接回放；同 requestId 在途 → 429（10006）。
+- audit_logs 回执（始终写）：tableName=model_prices_batch、recordId=requestId、action=1、newData=首次响应；
+  Redis 缺失/过期后按回执回放（顺序重放幂等），无数据库迁移（铁律：库只由 Hark 改）。
+- 口径说明：仓库无通用幂等表；本实现复用既有 Redis 包装（lib/db/redis）与 audit_logs（requestId 字段），
+  未新建表/列/索引。Redis 包装 fail-open → 退化为回执判重；并发极端窗口由 ModelPrice 部分唯一索引兜底（冲突行 failed）。
+- 回执的 recordId = 批量幂等键；AuditLog.requestId 仍存 HTTP x-request-id，二者不混用。
+
+== 4. 单测（6 例，全绿）==
+$ pnpm --filter web exec vitest run lib/features/auth/__tests__/admin-prices-batch.spec.ts
+  ✓ 6 tests passed（1 file）｜exit 0
+  ① 全成功 3 行：创建 2 更新 1；新建缺省 PER_TOKEN、显式 PER_REQUEST 透传；更新不含 billingMode 键（保留原值）；
+    行审计 3 条 + 回执 1 条；invalidatePriceViews 恰 1 次。
+  ② 部分失败：rows=[ok, missing, ok] → created=2、failed=[{index:1,code:40000,message:"模型不存在"}]、total 守恒。
+  ③ 重放：同 requestId 第二次 → replayed=true、不重复写价/审计、不重复失效。
+  ④ 501 行 → 400，且不触库（无 $transaction/create）。
+  ⑤ 越权 → 403，不触库。
+  ⑥ 同 requestId 在途（Redis PENDING）→ 429（10006），不重复写。
+
+== 5. 验证命令 ==
+$ pnpm --filter web exec tsc --noEmit      → exit 0
+$ pnpm --filter web run lint               → exit 0（唯一既有 warning: components/common/SafeImage.tsx <img>）
+$ node scripts/check-docs-facts.mjs        → 干净树复核 All 14 assertions passed（route=159、spec=183）
+  说明：共享工作树当前含并行助手未跟踪文件 e2e/web/search.spec.ts（非本卡改动范围），
+  使本地实测 spec=184；本卡提交后于 detached worktree（仅含本卡提交）复核 spec=183。
+$ git diff --name-only                     → 本卡仅 scripts/check-docs-facts.mjs（计数）；新增文件 2 个在允许路径
+  未触碰他人工作树文件（docs/任务规划V0.5.0/README.md、EVD-087 等为并行助手未提交变更）。
+
+== 6. 合规与偏离登记 ==
+1) 端点未写入 docs/architecture/API接口文档.md：卡面「允许修改」不含 docs，遵循卡面（文档登记由文档线/后续卡承接）。
+2) 幂等回执落 audit_logs 的 model_prices_batch 表名（批次级审计回执），不影响既有 audit 读侧；
+   如需专用幂等表，应另立卡并由 Hark 改库。
+3) 批量 upsert 的缓存价/按次价按「整行口径」写入：行未给 priceCache/pricePerRequest 时置 null（与单行编辑一致）。
