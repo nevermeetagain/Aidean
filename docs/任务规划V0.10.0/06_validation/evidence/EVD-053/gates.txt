@@ -1,0 +1,36 @@
+== 全局门禁（2026-10-20 20:12:47 CST，HEAD 基于 accbc1f）==
+---- rule
+$ node scripts/check-docs-rule.mjs
+[铁律1] docs rule PASS：apps/ 下无实体 .md（README.md 豁免）。
+[铁律-数字] 数字真源断言 PASS（锚=文档，代码=实测）：schema model=73, enum=37, admin API 域=38, admin 页面=34, Next.js=15.0.x
+exit=0
+---- facts
+✅ batch-count: admin batch 路由数 = 15 → expected=15, actual=15
+✅ db-doc-product-fields: 《数据库文档》products 行已登记 display_name 与 ProductCategory（DB 模型变更文档同步） → expected=2/2, actual=2/2
+✅ category-label-single-source: apps/web 中硬编码「label: "特供"」式分类映射 = 0（文案唯一来源 lib/product-label.ts） → expected=0, actual=0
+✅ usage-stats-anchor-pair: 《API架构设计方案》含 usage-stats-architecture 锚 且《API接口文档》含其回链（铁律 2 双向互引） → expected=2/2, actual=2/2
+All 14 assertions passed.
+exit=0
+---- guard
+  PASS root-pollution.mjs (exit 0)
+  PASS secret-scan.mjs (exit 0)
+  PASS module-boundary.mjs (exit 0)
+  PASS port-consistency.mjs (exit 0)
+RESULT: PASS (4/4 守卫通过)
+exit=0
+---- tsc
+$ pnpm --filter web exec tsc --noEmit
+exit=0
+---- lint
+> web@0.1.0 lint /workspace/work/aidean-lineb/apps/web
+> next lint
+./components/common/SafeImage.tsx
+19:14  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+exit=0
+---- test
+ Test Files  144 passed | 2 skipped (146)
+      Tests  1442 passed | 5 skipped (1447)
+exit=0
+
+== 推送前 rebase 复核（2026-10-20 20:17:46 CST）：origin/main 前进到 7fe1ad1（apps/ 与 packages/ 零变更，web tsc/lint/test 结果同上）；rule/facts/guard 复跑通过 ==

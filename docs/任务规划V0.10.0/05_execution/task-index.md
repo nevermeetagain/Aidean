@@ -23,7 +23,7 @@
 | [TASK-080](tasks/TASK-080.md) | S4 | 缓存命中 token 计价（priceCache / discountCache）接入网关扣费 | Hark(主Agent) | Agent-API | opus | 中/6h | 048 | L2 | U-15 | 已完成（EVD-080） |
 | [TASK-081](tasks/TASK-081.md) | S4 | 后台价格批量写入 POST /api/v1/admin/prices/batch-upsert（requestId 幂等） | 外部Agent | Agent-API | sonnect | 中/5h | — | L0 | — | 未开工 |
 | [TASK-049](tasks/TASK-049.md) | S4 | 存量价格行口径盘点脚本（只读：币种×计价单位×来源） | 外部Agent | Agent-Guard | sonnect | 小/3h | — | L0 | — | 已完成（助手C；PG16 实测 USD/CNY×per_1k_tokens×OFFICIAL 两组=1000 行；发现 F-049-01 seed USD 行单位标签与数值差 1000×，已由 TASK-048 迁移订正，复跑见 EVD-049/census-post-048.md） |
-| [TASK-053](tasks/TASK-053.md) | S4 | UI：价格页/详情页统一 ¥/M 展示（附原币原价注记） | Hark(主Agent) | Agent-App | opus | 中/6h | 048 | L3 | U-15 | 条件·待裁决 |
+| [TASK-053](tasks/TASK-053.md) | S4 | UI：价格页/详情页统一 ¥/M 展示（附原币原价注记） | Hark(主Agent) | Agent-App | opus | 中/6h | 048 | L3 | U-15 | 已完成（助手B，U-15 口径：CN ¥/M、其他 $/M，EVD-053） |
 | [TASK-030](tasks/TASK-030.md) | S4 | 计费集成 e2e：优惠窗口内按优惠价扣费、窗外按原价 | 外部Agent | Agent-Guard | sonnect | 中/6h | 006 | L1 | — | 未开工 |
 | [TASK-031](tasks/TASK-031.md) | S4 | S4 文档同步：API 文档登记优惠端点 + 网关计费时序契约补生效价规则 | 外部Agent | Agent-Docs | haiku | 小/2h | 030 | L2 | — | 未开工 |
 | [TASK-054](tasks/TASK-054.md) | S4 | S4b 文档同步：计价口径归一（网关计费时序契约 + API 文档 + 术语表） | 外部Agent | Agent-Docs | haiku | 小/2h | 053, 031 | L4 | U-15 | 条件·待裁决 |

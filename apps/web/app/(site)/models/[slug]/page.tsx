@@ -15,14 +15,20 @@ import { CompareAddButton } from "../../../../components/site/CompareAddButton";
 import { FavoriteButton } from "../../../../components/site/FavoriteButton";
 import { prisma } from "../../../../lib/db/prisma";
 import { ladderRepository } from "../../../../lib/features/ladder/repository";
-import { resolveEffectivePrice } from "../../../../lib/features/pricing/effective-price";
-import { PriceTag } from "../../../../components/common/PriceTag";
+import { normalizePriceRow, resolveEffectivePrice } from "../../../../lib/features/pricing/effective-price";
+import { getDailyFx } from "../../../../lib/features/pricing/fx";
+import { getRequestDisplayCurrency } from "../../../../lib/currency/server";
+import { PriceTag, formatPriceValue } from "../../../../components/common/PriceTag";
+import type { EffectivePrice, SupportedCurrency } from "@aidean/shared";
 import { ModelOfferings } from "../../../../components/models/ModelOfferings";
 import { BenchmarkList, type BenchmarkView } from "../../../../components/models/BenchmarkDialog";
 import { EvaluationExamples, EvaluationExamplesSkeleton, type EvaluationExample } from "../../../../components/models/EvaluationExamples";
 
-/** 页面缓存窗口（秒）：模型价格/评分按天级更新，3600s 新鲜度可接受 */
-export const revalidate = 300; // TASK-097：优惠起止无写事件触发，页缓存上限压到 5 分钟（Redis 已按价格边界对齐）
+/**
+ * 缓存口径（TASK-053 / U-15）：价格块按访问者展示币种（TASK-102 x-display-currency）渲染，页面须按请求动态生成；
+ * 原 ISR（revalidate=300）会把首个访问者的币种缓存给所有地区。模型主体查询仍经 React cache() 同请求去重。
+ */
+export const dynamic = "force-dynamic";
 
 /** dynamic 路由按需渲染：不预生成任何 slug（build 期零查库） */
 export const generateStaticParams = async () => [];
@@ -46,14 +52,83 @@ const loadModel = cache(async (slug: string) => {
   }
 });
 
-/** TASK-029：生效价 DTO（含优惠标记/原价/截止）；解析失败 → null，页面回落 prices[0] 且不显示徽标（契约⑥ error 态） */
-async function loadEffectivePrice(modelId: string) {
+/** 展示用归一价（与 EffectivePrice 同形的最小字段集） */
+type DisplayPrice = Pick<
+  EffectivePrice,
+  | "priceInput"
+  | "priceOutput"
+  | "priceCache"
+  | "isPromotion"
+  | "promotionEndsAt"
+  | "basePriceInput"
+  | "basePriceOutput"
+  | "currency"
+  | "sourceCurrency"
+  | "sourceUnit"
+  | "sourcePriceInput"
+  | "sourcePriceOutput"
+  | "fxRate"
+  | "fxDate"
+>;
+
+type CurrentPriceRow = Parameters<typeof normalizePriceRow>[0];
+
+/**
+ * TASK-029 + TASK-053：生效价（展示币种归一，含优惠标记/原价/截止）。
+ * - resolveEffectivePrice 返回 null（缺当日汇率 / 无法归一）→ null → 页面显示「价格待核」（不显示 0）；
+ * - review-029 S4：解析抛错时回落 isCurrent 当前价（同样经 normalizePriceRow 归一到展示币种），且不显示优惠徽标；
+ *   回落也不可归一 → null（价格待核）。
+ */
+async function loadDisplayPrice(modelId: string, current: CurrentPriceRow, currency: SupportedCurrency, at: Date): Promise<DisplayPrice | null> {
   try {
-    return await resolveEffectivePrice(modelId);
+    return await resolveEffectivePrice(modelId, at, undefined, { currency });
   } catch (error) {
     console.error(`[models] 生效价解析失败，回落当前价：`, error);
-    return null;
+    try {
+      const fx = await getDailyFx(at).catch(() => null);
+      const n = normalizePriceRow(current, currency, fx);
+      if (!n) return null;
+      return {
+        priceInput: n.priceInput,
+        priceOutput: n.priceOutput,
+        priceCache: n.priceCache,
+        isPromotion: false,
+        promotionEndsAt: null,
+        basePriceInput: null,
+        basePriceOutput: null,
+        currency: n.currency,
+        sourceCurrency: n.sourceCurrency,
+        sourceUnit: n.sourceUnit,
+        sourcePriceInput: n.sourcePriceInput,
+        sourcePriceOutput: n.sourcePriceOutput,
+        fxRate: n.fxRate,
+        fxDate: n.fxDate,
+      };
+    } catch {
+      return null;
+    }
   }
+}
+
+const SOURCE_UNIT_LABEL: Record<string, string> = { per_1k_tokens: "/K", per_token: "/Token" };
+
+/** 源币种 ≠ 展示币种时并列官方原币原价（不隐藏原价） */
+function SourcePriceNote({ price, raw }: { price: DisplayPrice; raw: string | null | undefined }) {
+  if (!price.sourceCurrency || price.sourceCurrency === price.currency || raw === null || raw === undefined || Number(raw) === 0) return null;
+  const unit = price.sourceUnit && SOURCE_UNIT_LABEL[price.sourceUnit] ? SOURCE_UNIT_LABEL[price.sourceUnit] : "/M";
+  return (
+    <span data-testid="price-source-note" className="text-[11px] text-slate-500">
+      （官方 {formatPriceValue(raw, price.sourceCurrency)} {unit}）
+    </span>
+  );
+}
+
+function PricePending() {
+  return (
+    <span data-testid="price-pending" className="text-amber-700" title="当日汇率快照缺失或价格无法归一，待核实后展示">
+      价格待核
+    </span>
+  );
 }
 
 /**
@@ -209,11 +284,11 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
   }
 
   const price = model.prices[0];
-  const effective = price ? await loadEffectivePrice(model.id) : null;
-  const priceCurrency = price?.billingCurrency ?? "CNY";
-  // 单位随价格行 billingUnit 展示（原硬编码「¥/M Tokens」与 per_1k_tokens 存量行不符；统一 ¥/M 归一属 TASK-053/U-15）
-  const UNIT_LABEL: Record<string, string> = { per_1k_tokens: "/K Tokens", per_1m_tokens: "/M Tokens", per_million_tokens: "/M Tokens" };
-  const priceUnit = price?.billingUnit ? (UNIT_LABEL[price.billingUnit] ?? `/${price.billingUnit}`) : undefined;
+  const displayCurrency = await getRequestDisplayCurrency();
+  const effective = price ? await loadDisplayPrice(model.id, price, displayCurrency, new Date()) : null;
+  // TASK-053：主价恒为展示币种 / 每百万 Token（EffectivePrice 归一字段），原币原价走次级注记
+  const priceCurrency = effective?.currency ?? displayCurrency;
+  const priceUnit = "/M Tokens";
   // 「限时免费」须输入与输出同为 0（与 /pricing、后台口径一致，review-029 M1）
   const promoFree = !!effective?.isPromotion && Number(effective.priceInput) === 0 && Number(effective.priceOutput) === 0;
   const score = model.scores[0];
@@ -335,43 +410,64 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
                 ) : null}
                 <p className="flex flex-wrap items-baseline gap-1.5">
                   <span>输入价格：</span>
-                  {price ? (
-                    <PriceTag
-                      value={effective?.priceInput ?? String(price.priceInput)}
-                      currency={priceCurrency}
-                      unit={priceUnit}
-                      isPromotion={effective?.isPromotion ?? false}
-                      basePrice={effective?.basePriceInput ?? null}
-                      promotionEndsAt={effective?.promotionEndsAt ?? null}
-                      free={promoFree}
-                    />
-                  ) : (
+                  {!price ? (
                     "未公开"
+                  ) : effective ? (
+                    <>
+                      <PriceTag
+                        value={effective.priceInput}
+                        currency={priceCurrency}
+                        unit={priceUnit}
+                        isPromotion={effective.isPromotion}
+                        basePrice={effective.basePriceInput ?? null}
+                        promotionEndsAt={effective.promotionEndsAt ?? null}
+                        free={promoFree}
+                      />
+                      <SourcePriceNote price={effective} raw={effective.sourcePriceInput} />
+                    </>
+                  ) : (
+                    <PricePending />
                   )}
                 </p>
                 <p className="flex flex-wrap items-baseline gap-1.5">
                   <span>输出价格：</span>
-                  {price ? (
-                    <PriceTag
-                      value={effective?.priceOutput ?? String(price.priceOutput)}
-                      currency={priceCurrency}
-                      unit={priceUnit}
-                      isPromotion={effective?.isPromotion ?? false}
-                      basePrice={effective?.basePriceOutput ?? null}
-                      showBadge={false}
-                    />
-                  ) : (
+                  {!price ? (
                     "未公开"
+                  ) : effective ? (
+                    <>
+                      <PriceTag
+                        value={effective.priceOutput}
+                        currency={priceCurrency}
+                        unit={priceUnit}
+                        isPromotion={effective.isPromotion}
+                        basePrice={effective.basePriceOutput ?? null}
+                        showBadge={false}
+                      />
+                      <SourcePriceNote price={effective} raw={effective.sourcePriceOutput} />
+                    </>
+                  ) : (
+                    <PricePending />
                   )}
                 </p>
                 <p className="flex flex-wrap items-baseline gap-1.5">
                   <span>缓存价格：</span>
-                  {price && price.priceCache !== null ? (
-                    <PriceTag value={effective?.priceCache ?? String(price.priceCache)} currency={priceCurrency} unit={priceUnit} />
-                  ) : (
+                  {!price || price.priceCache === null ? (
                     "未公开"
+                  ) : effective ? (
+                    effective.priceCache !== null && effective.priceCache !== undefined ? (
+                      <PriceTag value={effective.priceCache} currency={priceCurrency} unit={priceUnit} />
+                    ) : (
+                      "未公开"
+                    )
+                  ) : (
+                    <PricePending />
                   )}
                 </p>
+                {effective?.fxRate && effective.sourceCurrency !== effective.currency ? (
+                  <p data-testid="fx-note" className="text-[11px] text-slate-500">
+                    按当日汇率 1 USD = {effective.fxRate} CNY（{effective.fxDate}，每日一次）换算；实际扣费按账户余额币种结算。
+                  </p>
+                ) : null}
               </div>
             </section>
           </RevealOnScroll>
