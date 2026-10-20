@@ -10,7 +10,7 @@
 099 → 070（改写：不用 Key，采集公开定价页） → 081 → 062（TASK-061 已在 origin/main，无需等待） → 063 → 064 → 094 →〔等助手 C 推送 TASK-037〕→ 065
 
 【你独占可改的文件】
-lib/discovery/llmtest*；lib/monitoring/keyed/**（070，可更名 public-pricing/）；app/api/v1/admin/prices/batch-upsert/**；scripts/crawl/monitor_catalogs.ts；app/api/v1/admin/monitoring/**；lib/monitoring/__tests__/admin-routes.spec.ts；app/(admin)/admin/monitoring/**；components/admin/monitoring/**；lib/admin-nav-default-tree*；e2e/**/monitoring*（路径均以 apps/web/ 为根，scripts/ 与 e2e/ 除外）
+lib/discovery/llmtest*；lib/monitoring/public-pricing/**（070）；app/api/v1/admin/prices/batch-upsert/**；scripts/crawl/monitor_catalogs.ts；app/api/v1/admin/monitoring/**；lib/monitoring/__tests__/admin-routes.spec.ts；app/(admin)/admin/monitoring/**；components/admin/monitoring/**；lib/admin-nav-default-tree*；e2e/**/monitoring*（路径均以 apps/web/ 为根，scripts/ 与 e2e/ 除外）
 
 【硬规则】
 - 一卡一提交，信息格式 type(TASK-xxx): 摘要；每完成一张立刻推送。推送前必须 git pull --rebase origin main，然后重跑全局门禁，再 git push origin main。禁止强推、改写历史、--no-verify。
