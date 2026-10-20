@@ -1,0 +1,9 @@
+Listing tests:
+  [admin] › admin\monitoring.spec.ts:104:7 › 模型源监控（TASK-065） › fixture 模式离线跑采集脚本（MONITOR_FIXTURE_DIR，不联网不写库）
+  [admin] › admin\monitoring.spec.ts:125:7 › 模型源监控（TASK-065） › ready：管理员手动运行 openrouter 后，变更流出现 listed 事件
+  [admin] › admin\monitoring.spec.ts:208:7 › 模型源监控（TASK-065） › empty：源与变更均为空时展示空态
+  [admin] › admin\monitoring.spec.ts:225:7 › 模型源监控（TASK-065） › loading：源列表响应未归前展示加载态
+  [admin] › admin\monitoring.spec.ts:241:7 › 模型源监控（TASK-065） › error：源列表接口失败展示错误态与重试入口
+  [admin] › admin\monitoring.spec.ts:259:9 › 模型源监控（TASK-065） › 未授权用户 › forbidden：MODERATOR 无角色分配时展示无权限态
+  [admin-setup] › admin\auth-setup.spec.ts:19:6 › admin认证 - 登录并保存状态
+Total: 7 tests in 2 files

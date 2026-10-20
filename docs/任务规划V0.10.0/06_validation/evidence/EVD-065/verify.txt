@@ -1,0 +1,71 @@
+TASK-065 E2E：后台监控页五态 + 手动运行后变更流出现 listed 事件（fixture 源）——验证证据
+时间: 2026-10-20 16:30 (+08)｜UTC 08:30｜执行者: 助手 A｜卡面: docs/任务规划V0.10.0/05_execution/tasks/TASK-065.md v0.10
+基线 HEAD: e0e35c6b（TASK-050，mirror/main）｜复核工作树: E:/Code/Aidean-check64（detached @e0e35c6b，独立 node_modules）
+
+== 1. 交付文件（卡面允许范围）==
+- e2e/admin/monitoring.spec.ts（新建，299 行，6 用例，serial；根 playwright.config.ts 的 admin 项目依赖 admin-setup）
+- scripts/check-docs-facts.mjs（仅 R10-01 计数：spec-count 185→186 及描述，未改逻辑）
+- docs/任务规划V0.10.0/06_validation/evidence/EVD-065/（verify.txt + 4 份命令输出 + 1 张运行截图）
+
+== 2. 环境口径（一次性、隔离，未触碰开发库与主树）==
+- PG 18.1 自建集群：.scratch/pg065，127.0.0.1:55435（trust/root），库 aidean_e2e
+- prisma migrate deploy：全部迁移应用成功（含 20261015000000_model_source_monitoring、20261020000000_fx_daily_rates）
+- seed 全部 exit 0：seed.ts（vendors=32 / aiModels=1000 / monitoringSources=5）、seed-rbac（权限 60 / 系统角色 3 / 用户分配 1）、
+  seed-navigation-menu（ADMIN 叶 32，覆盖 32/32）、seed-admin-nav-default（upsert=56，板块 7 / 叶 33 / 覆盖 34/34）
+- pnpm --filter web build → exit 0；next start -p 3000（PID 37868）
+- REDIS_URL=""：本机无 Redis（6379 未监听），getRedis() 返回 null；/api/v1/system/ready 因硬依赖 Redis 返回 503（仅探针受限），
+  登录、监控 API、五态渲染均经真实 HTTP 验证可用
+- MONITOR_FIXTURE_DIR=apps/web/lib/monitoring/catalog/__tests__/fixtures（openrouter.json 33512B / aihubmix.json 41497B /
+  quanzil.json 69748B / FETCHED_AT.txt=2026-10-19T04:23:19Z）
+
+== 3. 口径与偏差（D1/D2，均为卡面约束下的显式选择）==
+D1（run 端点只受理）：TASK-063 的 run 路由语义为 202 + Redis SETNX 锁（无 REDIS_URL 时 fail-open），真实采集由独立进程
+monitor_catalogs.ts 执行；且 TASK-062 的 MONITOR_FIXTURE_DIR 仅对 --dry-run 生效、不写库。故本卡分两段验证：
+  (1) 用例 1：spawn 离线跑脚本（cwd=apps/web，node + tsx cli，MONITOR_FIXTURE_DIR），断言 "3 source(s) ok / 0 failed"，
+      证明 fixture 链路可用、不联网、不写库；
+  (2) ready 用例：点击「手动运行」并断言 202 提示「已触发」后，用 Prisma 写入与 writeSource() 等价的行
+      （CatalogSnapshot + ProviderModelObservation upsert + kind=listed 的 CatalogChangeEvent + lastRunAt/lastStatus/lastCount），
+      模拟调度侧落库，由页面 5s 轮询读到新变更——断言运行按钮恢复、状态=成功、变更流首条为 e2e/monitoring-listed 且 kind=上架。
+  该口径仅用于测试造数，未改产品代码；写入带唯一 rawSha256 与 (snapshotId, normalizedModelId, kind) 唯一键，重复执行幂等。
+D2（登录助手）：e2e/fixtures.ts 仅提供 waitForPageReady / apiClient，无登录助手；故登录复用 TASK-037 收敛后的根配置
+admin-setup storageState（.auth/admin-auth.json），forbidden 用例则清空 storageState 走真实 UI 登录。
+
+== 4. 五态覆盖（卡面要求 ≥ ready/forbidden/empty，实际覆盖全五态）==
+- ready：真实源列表 + 变更流；手动运行 openrouter → listed 事件进入变更流
+- empty：page.route 注入空 sources 与空 changes → monitoring-empty
+- loading：挂起源列表响应 → monitoring-loading；释放后转 ready
+- error：sources 500 → monitoring-error（含注入文案与重试入口）
+- forbidden：MODERATOR + 删除全部 UserRoleAssignment（isStaff 但无 admin 权限）→ 真实登录 → monitoring-forbidden，ready 计数 0
+全部 testid 取自 packages/shared 的 MONITORING_UX_STATES，未在测试内硬编码新选择器。
+
+== 5. 验证命令与结果（完整输出见同目录 .txt）==
+$ npx playwright test e2e/admin/monitoring.spec.ts --config playwright.config.ts --reporter=list
+  → 7 passed (11.1s)，exit 0（含 admin-setup 依赖 1；本 spec 6 用例全部通过）
+    admin-setup 1.3s｜fixture 332ms｜ready 6.0s｜empty 304ms｜loading 410ms｜error 298ms｜forbidden 1.3s
+    （另两次复跑：7 passed / 10.8s，7 passed / 11.4s，结果稳定）
+$ npx playwright test e2e/admin/monitoring.spec.ts --config playwright.config.ts --list
+  → Total: 7 tests in 2 files（本 spec 6 个用例，满足「--list 计数 +≥3」）
+$ node scripts/check-docs-facts.mjs
+  → All 14 assertions passed.，exit 0（spec-count actual=186 = expected=186）
+$ node scripts/check-docs-rule.mjs
+  → [铁律1] PASS；[铁律-数字] PASS（schema model=73, enum=37, admin API 域=38, admin 页面=34, Next.js=15.0.x）
+
+== 6. diff 范围核对 ==
+$ git status --porcelain
+ M scripts/check-docs-facts.mjs
+?? e2e/admin/monitoring.spec.ts
+?? docs/任务规划V0.10.0/06_validation/evidence/EVD-065/
+$ git diff --name-only → scripts/check-docs-facts.mjs（仅计数/描述行）
+→ 全部落在「允许修改」内；未触碰 migrations / 冻结契约 / 历代规划 / AGENTS.md。
+
+== 7. 运行取证截图 ==
+monitoring-ready-1280.png：/admin/monitoring ready 态（1280×900，fullPage）
+  → 监控源 6 行（OpenRouter 最近运行 2026-10-20 16:1x、状态「成功」、1 条；Hugging Face Hub / llmtest 为停用）
+  → 变更流 2 条「上架 e2e/monitoring-listed」（openrouter，分页 1-2/2），类型/来源筛选可见
+  → 断言输出：SHOT_OK sources=6 changeItems=2
+
+== 8. 环境备注 ==
+- 本轮发现并修复工作区 node_modules 损坏（next/react 等 118 个包目录为空，pnpm install 因交互确认 purge 而挂起）：
+  以 pnpm install --frozen-lockfile --config.confirm-modules-purge=false 完整重建（11.4s，postinstall prisma generate 成功），
+  build 与 Playwright 随之恢复。该操作仅影响本地依赖，不产生提交。
+- 测试数据全部落在一次性库 aidean_e2e（55435）；取证完成后已停止 next start(:3000) 与 PG 集群(:55435)，并清理临时日志。

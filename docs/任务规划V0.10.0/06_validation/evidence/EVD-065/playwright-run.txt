@@ -1,0 +1,16 @@
+
+Running 7 tests using 1 worker
+
+  ✓  1 [admin-setup] › e2e\admin\auth-setup.spec.ts:19:6 › admin认证 - 登录并保存状态 (1.3s)
+  ✓  2 [admin] › e2e\admin\monitoring.spec.ts:104:7 › 模型源监控（TASK-065） › fixture 模式离线跑采集脚本（MONITOR_FIXTURE_DIR，不联网不写库） (332ms)
+  ✓  3 [admin] › e2e\admin\monitoring.spec.ts:125:7 › 模型源监控（TASK-065） › ready：管理员手动运行 openrouter 后，变更流出现 listed 事件 (6.0s)
+  ✓  4 [admin] › e2e\admin\monitoring.spec.ts:208:7 › 模型源监控（TASK-065） › empty：源与变更均为空时展示空态 (304ms)
+  ✓  5 [admin] › e2e\admin\monitoring.spec.ts:225:7 › 模型源监控（TASK-065） › loading：源列表响应未归前展示加载态 (410ms)
+  ✓  6 [admin] › e2e\admin\monitoring.spec.ts:241:7 › 模型源监控（TASK-065） › error：源列表接口失败展示错误态与重试入口 (298ms)
+  ✓  7 [admin] › e2e\admin\monitoring.spec.ts:259:9 › 模型源监控（TASK-065） › 未授权用户 › forbidden：MODERATOR 无角色分配时展示无权限态 (1.3s)
+
+  7 passed (11.1s)
+(node:47588) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:43684) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
