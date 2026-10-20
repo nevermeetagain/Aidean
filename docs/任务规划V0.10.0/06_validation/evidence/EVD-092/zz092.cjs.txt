@@ -1,0 +1,85 @@
+// TASK-092：018 功能开关 / 023 收藏 / 078 天梯筛选 —— 3 页 × 5 态运行态截图（桌面 1440 + 移动 390）
+const { chromium } = require("/workspace/work/Aidean/node_modules/.pnpm/playwright@1.62.1/node_modules/playwright");
+const OUT = process.env.OUT; const B = "http://localhost:3000";
+const ADMIN = { email: "admin@aidean.com", password: "Admin123!@#" }, USER = { email: "test@aidean.com", password: "Test123!@#" };
+const results = [];
+const rec = (page, state, verdict, note, shots) => { results.push({ page, state, verdict, note, shots }); console.log([page, state, verdict, note, shots.join(",")].join(" | ")); };
+async function ctx(browser, mobile, cred) {
+  const c = await browser.newContext(mobile ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } : { viewport: { width: 1440, height: 900 } });
+  if (cred) { const r = await c.request.post(B + "/api/v1/auth/login", { data: cred }); if (r.status() !== 200) throw new Error("login " + r.status()); }
+  return c;
+}
+const delay = (ms) => async (route) => { await new Promise((r) => setTimeout(r, ms)); await route.continue().catch(() => {}); };
+const fail = async (route) => route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ code: 50000, message: "注入错误（运行态验收）", data: null, requestId: "x" }) });
+const emptyList = (shape) => async (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ code: 0, message: "ok", data: shape, requestId: "x" }) });
+async function shot(page, name, sel) { const p = OUT + "/" + name + ".png"; if (sel) { const el = page.locator(sel).first(); await el.scrollIntoViewIfNeeded().catch(() => {}); } await page.screenshot({ path: p, fullPage: false }); return name + ".png"; }
+async function flag(adminCtx, code, on) {
+  const r = await adminCtx.request.get(B + "/api/v1/admin/feature-flags"); const items = (await r.json()).data.items; const f = items.find((x) => x.flagCode === code);
+  const p = await adminCtx.request.patch(B + "/api/v1/admin/feature-flags/" + f.id, { data: { isEnabled: on } }); if (p.status() !== 200) throw new Error("flag patch " + p.status());
+}
+async function has(page, testid, timeout = 15000) { try { await page.locator('[data-testid="' + testid + '"]').first().waitFor({ state: "attached", timeout }); return true; } catch { return false; } }
+
+(async () => {
+  const browser = await chromium.launch();
+  const admin = await ctx(browser, false, ADMIN);
+  for (const mobile of [false, true]) {
+    const sfx = mobile ? "m390" : "d1440";
+    // ---------- 018 功能开关后台 /admin/feature-flags ----------
+    { const c = await ctx(browser, mobile, ADMIN); const pg = await c.newPage(); pg.setDefaultTimeout(60000);
+      await pg.route("**/api/v1/admin/feature-flags", delay(4000)); await pg.goto(B + "/admin/feature-flags"); const ok = await has(pg, "flags-loading", 8000);
+      rec("018-flags", "loading", ok ? "PASS" : "FAIL", "GET 延迟 4s", [await shot(pg, "018-flags-loading-" + sfx)]); await pg.unroute("**/api/v1/admin/feature-flags");
+      await pg.route("**/api/v1/admin/feature-flags", fail); await pg.goto(B + "/admin/feature-flags"); const e = await has(pg, "flags-error");
+      rec("018-flags", "error", e ? "PASS" : "FAIL", "GET 注入 500", [await shot(pg, "018-flags-error-" + sfx)]); await pg.unroute("**/api/v1/admin/feature-flags");
+      await pg.route("**/api/v1/admin/feature-flags", emptyList({ items: [] })); await pg.goto(B + "/admin/feature-flags"); const em = await has(pg, "flags-empty");
+      rec("018-flags", "empty", em ? "PASS" : "FAIL", "GET 返回 items=[]", [await shot(pg, "018-flags-empty-" + sfx)]); await pg.unroute("**/api/v1/admin/feature-flags");
+      await pg.goto(B + "/admin/feature-flags"); await has(pg, "flag-toggle-chat.support");
+      await pg.locator('[data-testid="flag-toggle-chat.support"]').click(); await pg.waitForTimeout(500);
+      const dlg = pg.locator("[role=dialog] button", { hasText: /确认|确定/ }); if (await dlg.count()) await dlg.first().click();
+      const s = await has(pg, "flags-saved"); rec("018-flags", "success", s ? "PASS" : "FAIL", "切换 chat.support → 内联「已保存」", [await shot(pg, "018-flags-success-" + sfx)]);
+      await flag(admin, "chat.support", true); await c.close(); }
+    { const c = await ctx(browser, mobile, USER); const pg = await c.newPage(); await pg.goto(B + "/admin/feature-flags"); await pg.waitForLoadState("networkidle");
+      const u = pg.url(); rec("018-flags", "forbidden", /\/admin\/login\?denied=1|\/admin$|\/admin\?/.test(u) ? "PASS" : "FAIL", "非管理员直链 → " + u.replace(B, ""), [await shot(pg, "018-flags-forbidden-" + sfx)]); await c.close(); }
+
+    // ---------- 023 收藏：控制台 /console?tab=favorites + 详情页收藏按钮 ----------
+    { const c = await ctx(browser, mobile, USER); const pg = await c.newPage(); pg.setDefaultTimeout(60000);
+      const FAV = "**/api/v1/user/favorites?*";
+      await pg.route(FAV, delay(4000)); await pg.goto(B + "/user/console?tab=favorites"); const l = await has(pg, "favs-loading", 10000);
+      rec("023-favorites", "loading", l ? "PASS" : "FAIL", "列表延迟 4s", [await shot(pg, "023-favs-loading-" + sfx)]); await pg.unroute(FAV);
+      await pg.route(FAV, fail); await pg.goto(B + "/user/console?tab=favorites"); const e = await has(pg, "favs-error");
+      rec("023-favorites", "error", e ? "PASS" : "FAIL", "列表注入 500", [await shot(pg, "023-favs-error-" + sfx)]); await pg.unroute(FAV);
+      await pg.goto(B + "/user/console?tab=favorites"); const em = await has(pg, "favs-empty");
+      rec("023-favorites", "empty", em ? "PASS" : "FAIL", "种子用户无收藏（真实空）", [await shot(pg, "023-favs-empty-" + sfx)]);
+      await pg.goto(B + "/models/gpt-4o"); await pg.waitForLoadState("networkidle");
+      const btn = pg.locator('[data-testid="fav-toggle"]').first(); if (await btn.count()) { await btn.click(); await has(pg, "fav-active", 8000); }
+      const detailShot = await shot(pg, "023-fav-button-active-" + sfx, '[data-testid="fav-active"]');
+      await pg.goto(B + "/user/console?tab=favorites"); const s = await has(pg, "favs-list");
+      rec("023-favorites", "success", s ? "PASS" : "FAIL", "详情页点收藏 → 实心星；控制台列表可见", [detailShot, await shot(pg, "023-favs-success-" + sfx)]);
+      // 清理：删除收藏
+      const lst = await c.request.get(B + "/api/v1/user/favorites?page=1&pageSize=50"); for (const it of ((await lst.json()).data?.items ?? [])) await c.request.delete(B + "/api/v1/user/favorites/" + it.id);
+      await flag(admin, "favorites.enabled", false);
+      await pg.goto(B + "/user/console?tab=favorites"); const d = await has(pg, "favs-disabled");
+      const anon = await ctx(browser, mobile, null); const ap = await anon.newPage(); await flag(admin, "favorites.enabled", true);
+      await ap.goto(B + "/models/gpt-4o"); await ap.waitForLoadState("networkidle"); const lg = await has(ap, "fav-login", 8000);
+      rec("023-favorites", "forbidden", d && lg ? "PASS" : "FAIL", "开关关闭直链 → favs-disabled；匿名详情页 → fav-login", [await shot(pg, "023-favs-forbidden-" + sfx), await shot(ap, "023-fav-login-" + sfx, '[data-testid="fav-login"]')]);
+      await anon.close(); await c.close(); }
+
+    // ---------- 078 天梯五维筛选 /models（「全选」位于各维度下拉内：先点「协议」再点 ladder-filter-all-protocol） ----------
+    { const c = await ctx(browser, mobile, null); const pg = await c.newPage(); pg.setDefaultTimeout(60000);
+      const openProto = async () => { const b = pg.getByRole("button", { name: /^协议/ }).first(); await b.click(); await pg.getByTestId("ladder-filter-all-protocol").waitFor({ state: "visible", timeout: 10000 }); };
+      await pg.goto(B + "/models"); await pg.waitForLoadState("networkidle");
+      await openProto(); await pg.getByTestId("ladder-filter-all-protocol").click(); await pg.waitForTimeout(1500);
+      const url = pg.url().replace(B, ""); const checked = await pg.getByTestId("ladder-filter-all-protocol").isChecked().catch(() => false);
+      rec("078-ladder-filter", "success", /protocol=/.test(url) && checked ? "PASS" : "FAIL", "协议「全选」→ 全选框 checked=" + checked + "，URL=" + url, [await shot(pg, "078-filter-success-" + sfx)]);
+      await pg.route("**/api/v1/ladder?*", delay(4000)); await pg.getByTestId("ladder-filter-all-protocol").click(); const lp = await has(pg, "ladder-pending", 3000);
+      rec("078-ladder-filter", "loading", lp ? "PASS" : "FAIL", "全不选触发请求（延迟 4s）→ ladder-pending", [await shot(pg, "078-filter-loading-" + sfx)]); await pg.waitForTimeout(4500); await pg.unroute("**/api/v1/ladder?*");
+      await pg.route("**/api/v1/ladder?*", fail); await pg.getByTestId("ladder-filter-all-protocol").click(); await pg.waitForTimeout(2000);
+      rec("078-ladder-filter", "error", "OBSERVE", "筛选请求注入 500（契约未定义 LadderFilter 错误态 testid；截图记录实际表现）", [await shot(pg, "078-filter-error-" + sfx)]); await pg.unroute("**/api/v1/ladder?*");
+      await pg.route("**/api/v1/ladder?*", emptyList({ items: [], total: 0, offset: 0, limit: 20, rows: [], columns: [] })); await pg.getByTestId("ladder-filter-all-protocol").click(); await pg.waitForTimeout(2000);
+      rec("078-ladder-filter", "empty", "OBSERVE", "筛选结果为空（契约未定义 testid；截图记录实际表现）", [await shot(pg, "078-filter-empty-" + sfx)]); await pg.unroute("**/api/v1/ladder?*");
+      await flag(admin, "ladder.model", false); await pg.goto(B + "/models"); const fd = await has(pg, "feature-disabled", 8000); await flag(admin, "ladder.model", true);
+      rec("078-ladder-filter", "forbidden", fd ? "PASS" : "FAIL", "ladder.model 关闭 → feature-disabled", [await shot(pg, "078-filter-forbidden-" + sfx)]);
+      await c.close(); }
+  }
+  require("fs").writeFileSync(OUT + "/results.json", JSON.stringify(results, null, 2));
+  await browser.close();
+})().catch(async (e) => { console.error("FATAL", e.message.slice(0, 500)); process.exit(1); });

@@ -1,0 +1,276 @@
+[
+  {
+    "page": "018-flags",
+    "state": "loading",
+    "verdict": "PASS",
+    "note": "GET 延迟 4s",
+    "shots": [
+      "018-flags-loading-d1440.png"
+    ]
+  },
+  {
+    "page": "018-flags",
+    "state": "error",
+    "verdict": "PASS",
+    "note": "GET 注入 500",
+    "shots": [
+      "018-flags-error-d1440.png"
+    ]
+  },
+  {
+    "page": "018-flags",
+    "state": "empty",
+    "verdict": "PASS",
+    "note": "GET 返回 items=[]",
+    "shots": [
+      "018-flags-empty-d1440.png"
+    ]
+  },
+  {
+    "page": "018-flags",
+    "state": "success",
+    "verdict": "PASS",
+    "note": "切换 chat.support → 内联「已保存」",
+    "shots": [
+      "018-flags-success-d1440.png"
+    ]
+  },
+  {
+    "page": "018-flags",
+    "state": "forbidden",
+    "verdict": "PASS",
+    "note": "非管理员直链 → /admin/login?denied=1",
+    "shots": [
+      "018-flags-forbidden-d1440.png"
+    ]
+  },
+  {
+    "page": "023-favorites",
+    "state": "loading",
+    "verdict": "PASS",
+    "note": "列表延迟 4s",
+    "shots": [
+      "023-favs-loading-d1440.png"
+    ]
+  },
+  {
+    "page": "023-favorites",
+    "state": "error",
+    "verdict": "PASS",
+    "note": "列表注入 500",
+    "shots": [
+      "023-favs-error-d1440.png"
+    ]
+  },
+  {
+    "page": "023-favorites",
+    "state": "empty",
+    "verdict": "PASS",
+    "note": "种子用户无收藏（真实空）",
+    "shots": [
+      "023-favs-empty-d1440.png"
+    ]
+  },
+  {
+    "page": "023-favorites",
+    "state": "success",
+    "verdict": "PASS",
+    "note": "详情页点收藏 → 实心星；控制台列表可见",
+    "shots": [
+      "023-fav-button-active-d1440.png",
+      "023-favs-success-d1440.png"
+    ]
+  },
+  {
+    "page": "023-favorites",
+    "state": "forbidden",
+    "verdict": "PASS",
+    "note": "开关关闭直链 → favs-disabled；匿名详情页 → fav-login",
+    "shots": [
+      "023-favs-forbidden-d1440.png",
+      "023-fav-login-d1440.png"
+    ]
+  },
+  {
+    "page": "078-ladder-filter",
+    "state": "success",
+    "verdict": "PASS",
+    "note": "协议「全选」→ 全选框 checked=true，URL=/models?type=models&modelType=REASONING&protocol=ANTHROPIC%2COPENAI%2CRESPONSES%2CGOOGLE%2CCUSTOM&benchmark=composite",
+    "shots": [
+      "078-filter-success-d1440.png"
+    ]
+  },
+  {
+    "page": "078-ladder-filter",
+    "state": "loading",
+    "verdict": "PASS",
+    "note": "全不选触发请求（延迟 4s）→ ladder-pending",
+    "shots": [
+      "078-filter-loading-d1440.png"
+    ]
+  },
+  {
+    "page": "078-ladder-filter",
+    "state": "error",
+    "verdict": "OBSERVE",
+    "note": "筛选请求注入 500（契约未定义 LadderFilter 错误态 testid；截图记录实际表现）",
+    "shots": [
+      "078-filter-error-d1440.png"
+    ]
+  },
+  {
+    "page": "078-ladder-filter",
+    "state": "empty",
+    "verdict": "OBSERVE",
+    "note": "筛选结果为空（契约未定义 testid；截图记录实际表现）",
+    "shots": [
+      "078-filter-empty-d1440.png"
+    ]
+  },
+  {
+    "page": "078-ladder-filter",
+    "state": "forbidden",
+    "verdict": "PASS",
+    "note": "ladder.model 关闭 → feature-disabled",
+    "shots": [
+      "078-filter-forbidden-d1440.png"
+    ]
+  },
+  {
+    "page": "018-flags",
+    "state": "loading",
+    "verdict": "PASS",
+    "note": "GET 延迟 4s",
+    "shots": [
+      "018-flags-loading-m390.png"
+    ]
+  },
+  {
+    "page": "018-flags",
+    "state": "error",
+    "verdict": "PASS",
+    "note": "GET 注入 500",
+    "shots": [
+      "018-flags-error-m390.png"
+    ]
+  },
+  {
+    "page": "018-flags",
+    "state": "empty",
+    "verdict": "PASS",
+    "note": "GET 返回 items=[]",
+    "shots": [
+      "018-flags-empty-m390.png"
+    ]
+  },
+  {
+    "page": "018-flags",
+    "state": "success",
+    "verdict": "PASS",
+    "note": "切换 chat.support → 内联「已保存」",
+    "shots": [
+      "018-flags-success-m390.png"
+    ]
+  },
+  {
+    "page": "018-flags",
+    "state": "forbidden",
+    "verdict": "PASS",
+    "note": "非管理员直链 → /admin/login?denied=1",
+    "shots": [
+      "018-flags-forbidden-m390.png"
+    ]
+  },
+  {
+    "page": "023-favorites",
+    "state": "loading",
+    "verdict": "PASS",
+    "note": "列表延迟 4s",
+    "shots": [
+      "023-favs-loading-m390.png"
+    ]
+  },
+  {
+    "page": "023-favorites",
+    "state": "error",
+    "verdict": "PASS",
+    "note": "列表注入 500",
+    "shots": [
+      "023-favs-error-m390.png"
+    ]
+  },
+  {
+    "page": "023-favorites",
+    "state": "empty",
+    "verdict": "PASS",
+    "note": "种子用户无收藏（真实空）",
+    "shots": [
+      "023-favs-empty-m390.png"
+    ]
+  },
+  {
+    "page": "023-favorites",
+    "state": "success",
+    "verdict": "PASS",
+    "note": "详情页点收藏 → 实心星；控制台列表可见",
+    "shots": [
+      "023-fav-button-active-m390.png",
+      "023-favs-success-m390.png"
+    ]
+  },
+  {
+    "page": "023-favorites",
+    "state": "forbidden",
+    "verdict": "PASS",
+    "note": "开关关闭直链 → favs-disabled；匿名详情页 → fav-login",
+    "shots": [
+      "023-favs-forbidden-m390.png",
+      "023-fav-login-m390.png"
+    ]
+  },
+  {
+    "page": "078-ladder-filter",
+    "state": "success",
+    "verdict": "PASS",
+    "note": "协议「全选」→ 全选框 checked=true，URL=/models?type=models&modelType=REASONING&protocol=ANTHROPIC%2COPENAI%2CRESPONSES%2CGOOGLE%2CCUSTOM&benchmark=composite",
+    "shots": [
+      "078-filter-success-m390.png"
+    ]
+  },
+  {
+    "page": "078-ladder-filter",
+    "state": "loading",
+    "verdict": "PASS",
+    "note": "全不选触发请求（延迟 4s）→ ladder-pending",
+    "shots": [
+      "078-filter-loading-m390.png"
+    ]
+  },
+  {
+    "page": "078-ladder-filter",
+    "state": "error",
+    "verdict": "OBSERVE",
+    "note": "筛选请求注入 500（契约未定义 LadderFilter 错误态 testid；截图记录实际表现）",
+    "shots": [
+      "078-filter-error-m390.png"
+    ]
+  },
+  {
+    "page": "078-ladder-filter",
+    "state": "empty",
+    "verdict": "OBSERVE",
+    "note": "筛选结果为空（契约未定义 testid；截图记录实际表现）",
+    "shots": [
+      "078-filter-empty-m390.png"
+    ]
+  },
+  {
+    "page": "078-ladder-filter",
+    "state": "forbidden",
+    "verdict": "PASS",
+    "note": "ladder.model 关闭 → feature-disabled",
+    "shots": [
+      "078-filter-forbidden-m390.png"
+    ]
+  }
+]
