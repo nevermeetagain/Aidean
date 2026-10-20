@@ -202,6 +202,32 @@ const assertions = [
     },
     expect: "2/2",
   },
+  {
+    id: "rtm-row-count",
+    desc: "《需求追溯矩阵》REQ 行数 = V0.10.0 03a RTM 行数（TASK-051 入库，grep -c \"^| REQ-\"）",
+    check: () => {
+      const re = /^\| REQ-/;
+      const rtm = countPatternLines("docs/product/requirements/需求追溯矩阵.md", re);
+      const src = countPatternLines("docs/任务规划V0.10.0/03a_统一需求追溯矩阵.md", re);
+      return rtm === src ? `${rtm}` : `${rtm}≠${src}`;
+    },
+    expect: "158",
+  },
+  {
+    id: "rtm-gap-has-task",
+    desc: "《需求追溯矩阵》中「未实现/部分实现」行均有任务号或「暂不执行」理由（TASK-051）",
+    check: () => {
+      const rows = readFile("docs/product/requirements/需求追溯矩阵.md").split("\n").filter((l) => /^\| REQ-/.test(l));
+      const bad = rows.filter((l) => {
+        const cols = l.split(/(?<!\\)\|/).map((c) => c.trim());
+        const status = cols.find((c) => /未实现|部分实现/.test(c));
+        if (!status) return false;
+        return !/TASK-\d{3}|\b\d{3}\b/.test(cols.slice(-3).join(" ")) && !l.includes("暂不执行");
+      });
+      return String(bad.length);
+    },
+    expect: "0",
+  },
 ];
 
 let failed = 0;

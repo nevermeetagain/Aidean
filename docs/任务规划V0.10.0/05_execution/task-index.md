@@ -35,7 +35,7 @@
 | [TASK-039](tasks/TASK-039.md) | S6 | 千级模型天梯量级基线（只测量，不优化） | 外部Agent | Agent-Guard | sonnect | 中/6h | 006 | L1 | — | 已完成·基线待复跑（助手B，无 PG/Redis 环境，见 EVD-039/deviation.md） |
 | [TASK-040](tasks/TASK-040.md) | S7 | 需求文档 v1.15 对齐代码事实与用户裁决 | Hark(主Agent) | Agent-Docs | opus | 中/4h | — | L3 | — | 未开工（Hark 核心） |
 | [TASK-041](tasks/TASK-041.md) | S7 | 台账拆分 + 勾选滞后补录 + CHANGELOG 补录 finalize 里程碑 | 外部Agent | Agent-Docs | sonnect | 中/5h | 040 | L4 | — | 已完成（助手C；未完成事项目录 v2.37 主表 + 回执分册 00–04，finalize tasks.md 补勾 15/17，CHANGELOG 补 finalize，见 EVD-041） |
-| [TASK-051](tasks/TASK-051.md) | S7 | 统一需求追溯矩阵入库 + 台账内部状态矛盾消解（#17/#36） | Hark(主Agent) | Agent-Docs | opus | 中/3h | 041 | L5 | — | 未开工（Hark 核心） |
+| [TASK-051](tasks/TASK-051.md) | S7 | 统一需求追溯矩阵入库 + 台账内部状态矛盾消解（#17/#36） | Hark(主Agent) | Agent-Docs | opus | 中/3h | 041 | L5 | — | 已完成（助手C；需求追溯矩阵 v1.0 入库 158 行 + 台账 #17/#36 对账单一 ✅ + facts 16 项，见 EVD-051） |
 | [TASK-042](tasks/TASK-042.md) | S8 | 备份/恢复演练脚本（pg_dump→restore→逐表行数比对） | 外部Agent | Agent-Guard | sonnect | 中/5h | 006 | L2 | U-3 | 条件·待裁决 |
 | [TASK-083](tasks/TASK-083.md) | S8 | 上线前 seed 演示数据人工审核门禁（清单生成 + 审核记录校验） | 外部Agent | Agent-Guard | sonnect | 小/3h | 042 | L3 | U-3 | 条件·待裁决 |
 | [TASK-052](tasks/TASK-052.md) | S8 | RC-02 遗留文档闭环：发布环境契约 + 发布回滚与恢复验收 | 外部Agent | Agent-Docs | sonnect | 小/4h | 042 | L7 | U-3 | 条件·待裁决 |
