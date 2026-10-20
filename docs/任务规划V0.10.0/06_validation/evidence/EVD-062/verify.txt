@@ -1,0 +1,58 @@
+TASK-062 · 调度脚本 monitor_catalogs.ts（按源 collector→writer→diff，单源失败不影响他源）— 验证证据
+时间: 2026-10-20T05:30Z（UTC）｜执行者: 助手 A｜卡面: docs/任务规划V0.10.0/05_execution/tasks/TASK-062.md v0.10
+基线 HEAD: 183e29a0（TASK-081）
+
+== 1. 交付文件（均在允许修改范围）==
+- scripts/crawl/monitor_catalogs.ts（新建，约 480 行）
+  薄封装：真源全在 apps/web/lib（catalog、public-pricing、sync/writers/catalog-snapshot、monitoring/diff），
+  脚本只做「选源 → 逐源 try/catch → 写快照/事件 → 记 lastRun* → 汇总退出码」。
+
+== 2. 实现口径（卡面逐条）==
+1) 参数：--source <key|all>（默认 all）、--dry-run、--limit N、--help/-h。
+   未知参数 / --source 缺值 / --limit 非正整数 → stderr + exit 1。
+2) 源选择：写库与真实 dry-run 从 monitoring_sources 读 enabled=true 且 deleted_at IS NULL；authRequired=true
+   的源跳过并打 [skip]（U-M1：当前无凭证体系）。--source 指定未注册/未启用 → exit 1。
+3) 逐源执行：每源 try/catch；成功 → lastStatus=ok、lastCount=n、lastError=null、lastRunAt=now；
+   失败 → lastStatus=failed、lastCount=null、lastError=message(≤2000)、lastRunAt=now，stderr 打
+   `[failed] <key>: <原因>`，继续下一源。至少一源成功 → exit 0（部分成功）；全部失败 → exit 1。
+4) fixtures 离线：MONITOR_FIXTURE_DIR + --dry-run 时完全不触 DB/网络（DB 模块动态 import，help/离线路径不加载），
+   按 catalog/{key}.json 输出 openrouter/aihubmix/quanzil 三源计数；FETCHED_AT.txt 首行作 fetchedAt。
+5) 写库流程（catalog 与 public-pricing 共用）：
+   collect/normalize → sha256(原文) → persistCatalogSnapshot（TASK-059，同哈希幂等/空目录守卫）→
+   读「写入前」上一快照观测与全目录首见集合 → detect（TASK-061）→ persistCatalogChangeEvents。
+   同哈希（idempotent）不产事件；空目录守卫抛错计 failed，不把整源打成下架。
+6) public-pricing：safeFetch（SSRF 策略）+ readCappedText(4MB) + blockedPageReason（登录/反爬标记即停该源）+
+   robots.txt best-effort 守卫（User-agent: */aidean 的 Disallow 前缀命中即抛 robots_disallowed；
+   robots 404/不可达不阻断）；parse 0 条或 ok:false → 该源 failed（不以空列表冒充成功）。
+7) --limit N 仅 dry-run 生效（预览条数）；写库模式给出 --limit 直接拒绝：截断观测会让未列出的现有模型被 writer 误下架。
+8) robots 检查仅作用于 public-pricing（公开 JSON 目录源不加额外请求）。
+
+== 3. 验证命令与结果 ==
+（根未安装 tsx；使用 apps/web/node_modules/.bin 的 tsx v4.23.12 注入 PATH，命令语义等价 npx tsx）
+$ npx tsx scripts/crawl/monitor_catalogs.ts --help → exit 0（打印用法/环境变量/退出码）
+$ MONITOR_FIXTURE_DIR=apps/web/lib/monitoring/catalog/__tests__/fixtures \
+  npx tsx scripts/crawl/monitor_catalogs.ts --source all --dry-run → exit 0
+  [fixture] fetchedAt=2026-10-19T04:23:19.000Z
+  openrouter: 20 / aihubmix: 20 / quanzil: 18
+  === total: 3 source(s) ok / 0 failed / 58 item(s) ===
+$ ... --source openrouter --dry-run → exit 0（openrouter: 20，total 1/0/20）
+$ ... --source all --dry-run --limit 5 → exit 0（5/5/5，total 15）
+$ ... --source siliconflow-pricing --dry-run → exit 1（[failed] fixture 模式仅支持 catalog 源；0 ok / 1 failed）
+$ MONITOR_FIXTURE_DIR=.scratch/062/fixtures-bad ... --source all --dry-run → exit 1
+  [failed] openrouter / aihubmix / quanzil 各一行 JSON 解析错误（全失败退出码 1 且 stderr 含每源错误）
+$ npx tsx scripts/crawl/monitor_catalogs.ts --bogus → exit 1（未知参数）
+$ npx tsx scripts/crawl/monitor_catalogs.ts --source all --limit 5 → exit 1（写库模式拒绝 limit）
+$ pnpm --filter web exec tsc --noEmit → exit 0
+$ pnpm --filter web run lint → exit 0（唯一既有 warning: components/common/SafeImage.tsx <img>）
+$ node scripts/check-docs-facts.mjs → 本卡未改 route/page/spec，计数期望不变；
+  干净树（183e29a0）14 断言通过；共享工作树因并行助手未跟踪 e2e/web/search.spec.ts 实测 spec=184（非本卡范围）。
+
+== 4. 限制与偏离登记 ==
+1) 本地 shared-postgres 未应用 002_monitoring 迁移（无 monitoring_sources 表），真实写库路径未在本环境执行：
+   `--source quanzil --dry-run`（真实 DB）在 findMany 处报「table does not exist」退出 1。
+   写库链路复用 TASK-059/061 已交付并经单测的 writer/diff/persist，本卡仅装配与状态更新；待部署库迁移后按
+   `npx tsx scripts/crawl/monitor_catalogs.ts --source all` 执行。登记为环境限制，非代码缺陷。
+2) public-pricing 两源（siliconflow-pricing / deepseek-pricing）尚未在 seed/DB 登记（TASK-070 允许路径不含 seed）；
+   写库模式暂不会选中它们，待 seed 登记后自动纳入（脚本按 key 自动路由 catalog/public-pricing collector）。
+3) --limit 仅 dry-run（见 §2-7），与卡面「--limit N」的字面范围一致但语义收窄，登记偏离原因。
+4) 根无 tsx 依赖：验证以 apps/web 的 tsx 注入 PATH；CI 有 npx tsx 时命令不变。
