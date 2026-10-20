@@ -1,0 +1,67 @@
+# EVD-099 · llmtest 观测幂等键口径（stationIdByDomain + entityId=站点id + 上海自然日窗口，不建迁移）  (2026-10-20T04:01:32Z)
+
+## 基线
+HEAD(本卡起点)=7bf9764d（= mirror/main@84397a2c + 助手 B「feat(TASK-032) 0021b355」rebase 后的重落版；本卡代码提交父即为 7bf9764d）。
+本卡为纯映射层口径修正，不改契约 / 不改库 / 不改 Hark 独占文件。
+
+## 推送基线整合（pull --rebase 快进保障）
+作业期间 mirror/main 连续前进：bcaa161d →（Hark fix TASK-061 review 55993f37）→（Hark feat TASK-098 cb49b70e）→（Hark feat TASK-047 计价/币种/日汇率 84397a2c）。
+本地另有助手 B「feat(TASK-032)」提交（0021b355，含 packages/shared/src/index.ts 追加 export）。
+按任务书 §硬规则「推送前必须 git pull --rebase origin main」执行 `git pull --rebase --autostash mirror main`：
+- 0021b355 干净重落至 84397a2c 之上 → 7bf9764d；HEAD..mirror/main 为空（可快进）。
+- 尽管 TASK-032 与 TASK-047 都各向 packages/shared/src/index.ts 追加 export，rebase 三方合并未冲突（追加位置不同）。
+- autostash 保护了工作树内他人未提交的 `docs/任务规划V0.5.0/README.md`（TASK-087 线）与我的未提交 llmtest 改动，rebase 后原样恢复。
+整合后在最终待推树重跑全局门禁（见下），结果全绿。
+
+## 卡面验证命令（TASK-099「验证命令」原文）
+pnpm --filter web exec vitest run lib/discovery/llmtest && pnpm --filter web exec tsc --noEmit
+
+    ✓ lib/discovery/llmtest.spec.ts (9 tests) 4ms
+    Test Files  1 passed (1)
+         Tests  9 passed (9)
+    VITEST_EXIT=0
+    TSC_EXIT=0
+
+## 口径修正实现（对应卡面「目标」四条 + Execution Steps）
+1. 批量签名 `mapLlmtestItemsToObservations(items, { at?, stationIdByDomain: ReadonlyMap<string,string> })`：
+   域名→站点 id 由调用方注入，模块内不引 prisma（对齐卡面「模块内不引 prisma」）。
+2. entityId 只用「站点 id」（APIStation.id，uuid 文本）；不再用域名。
+   有效域名但 stationIdByDomain 无对应站点 id → 跳过并计入返回 `skipped[]`（去重）；无 url/非法域名 → 静默跳过、不入 skipped。
+   返回 `{ observations, skipped }`（ReliabilityObservation 无 meta 列，域名不入库，只回报对账）。
+3. 观测窗口按 Asia/Shanghai 自然日（UTC+8，自 1991 无夏令时）：windowStart = 上海日 00:00（= UTC 前一日 16:00）。
+   `shanghaiDay(at)`：shifted=at+8h，floor 到日，再折回 UTC 瞬间。单测覆盖跨 UTC 日界（见下）。
+4. 落库幂等键 (entityType, entityId, windowStart) 在 DB 侧缺唯一索引 → 本卡不建迁移（M-002：仅 Hark 改库），
+   登记待 Hark 数据库线补（原 TASK-071 前置；071 已按 U-M3 取消 → 移交 Hark）。文件头注释已写明。
+
+## 验收标准逐条
+- [x] llmtest 单测全绿：vitest run lib/discovery/llmtest → 9 passed（候选映射 5 例不变 + 观测 4 例按 TASK-099 口径重写），VITEST_EXIT=0。
+- [x] web tsc exit 0：TSC_EXIT=0。
+- [x] diff 仅落在「允许修改」范围（见下）：仅 `llmtest-observations.ts` + `llmtest.spec.ts` + 本 EVD 目录。
+- [x] 观测单测覆盖「有/无映射、跨 UTC 日边界的上海日」：
+      · 有映射 → entityId=站点 id；无 stationId 注入 → null；无 url → null。
+      · 上海日跨 UTC：2026-10-18T20:00Z（上海 10-19 04:00）→ 窗口 [10-18T16:00Z, 10-19T16:00Z)；2026-10-19T16:30Z（上海 10-20 00:30）→ [10-19T16:00Z, 10-20T16:00Z)。
+      · 批量：缺映射域名 → skipped=['api.orphan.cn']；无 url 不入 skipped；按站点 id 去重保留 windowEnd 更晚（st-foo 取 09:00Z/success=8；st-qux 无 last_alive_at → 上海日末 SH_END）。
+
+## 全局门禁（每卡不退化，跑在最终待推树 7bf9764d+本卡改动）
+prisma generate      exit=0（047 改 schema，先同步生成客户端再门禁）
+check-docs-rule      exit=0（铁律1 + 数字真源 PASS：schema model=73, enum=37, admin API 域=37, admin 页面=33, Next.js=15.0.x）
+check-docs-facts     All 14 assertions passed / exit=0（spec=179, schema-models=73[047 已同步], route=157, page=57, lib-features=22, aidean-ui=68, batch=15）
+web tsc --noEmit     exit=0
+web lint             exit=0（唯一 warning：components/common/SafeImage.tsx `<img>`，既有，非本卡）
+guard run-all        RESULT: PASS (7/7)，GUARD_EXIT=0
+web test             Test Files 135 passed | 2 skipped (137)；Tests 1325 passed | 5 skipped (1330)；0 failed
+                     = 含 Hark 047（fx.spec +5）+ 助手 B 032（shared，不计入 web）+ 本卡 099（llmtest 8→9，net +1）；≥ 当前 mirror/main(84397a2c) 基线，无退化。
+（占位 DATABASE_URL 下 feature-flags load-failed-fail-open / CrossValidator fetch failed 为既有预期噪声，非失败）
+
+## diff 范围（git status --porcelain，本卡只提交前两项 + EVD-099）
+ M apps/web/lib/discovery/llmtest-observations.ts
+ M apps/web/lib/discovery/llmtest.spec.ts
+（M docs/任务规划V0.5.0/README.md、?? EVD-087/ 属助手 TASK-087 线，本卡不纳入提交）
+未触：prisma/schema、migrations、packages/shared、contracts、check-docs-facts、AGENTS.md、Hark 独占文件。
+spec-count 未变（本卡仅改既有 llmtest.spec.ts，不新增 .spec 文件）→ 无需动 check-docs-facts.mjs。
+
+## 偏离/勘误说明
+1. 幂等键唯一索引缺失：本卡遵 M-002「不建迁移」，仅在返回结构（skipped[]）与文件头注释固化口径，DB 级跨批幂等唯一索引登记待 Hark 数据库线补（071 取消后移交）。
+2. 环境曾出现「vitest not found / Cannot find module 'bcryptjs'」瞬时现象：系并行助手在共享 checkout 触发 pnpm install 的半损态；apps/web 实际用 @node-rs/bcrypt（package.json 无 bcryptjs 依赖）。install 完成后自愈，本卡门禁实测全绿。
+3. 我的 llmtest.spec.ts 一次改写曾被某并行 rebase 回退（cbd19a2c 期表现为工作树回到 073 旧版）；已重新按 TASK-099 口径落定并通过验证。
+4. web 单测基线：交接书 §1 写 1292（陈旧）；061 实测 1294(+18=1312)。本卡最终树实测 1325 passed / 0 failed，按「数字以实测为准」记录，≥ origin/main，不触发停止条件。

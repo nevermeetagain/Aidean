@@ -65,31 +65,35 @@ describe('llmtest 站点采集映射 (L3)', () => {
   });
 });
 
-describe('llmtest 观测入时序 (TASK-073 · ReliabilityObservation 写入载荷)', () => {
+describe('llmtest 观测入时序 (TASK-073/099 · ReliabilityObservation 写入载荷)', () => {
+  // TASK-099：窗口按 Asia/Shanghai 自然日（UTC+8）。AT 上海时间 = 10-19 21:45 → 上海日 [10-18T16:00Z, 10-19T16:00Z)。
   const AT = new Date('2026-10-19T13:45:00Z');
-  const DAY_START = new Date('2026-10-19T00:00:00.000Z');
-  const DAY_END = new Date('2026-10-20T00:00:00.000Z');
+  const SH_START = new Date('2026-10-18T16:00:00.000Z');
+  const SH_END = new Date('2026-10-19T16:00:00.000Z');
 
-  it('缺字段：仅 url → 观测成形（计数 0/空指标 null、窗口=采集日）；无有效域名 → null', () => {
-    const obs = mapLlmtestItemToObservation({ url: 'https://api.foo.cn/v1' }, { at: AT });
+  it('entityId 只用站点 id；无 stationId 注入 → null；无有效域名 → null；窗口=上海自然日', () => {
+    const obs = mapLlmtestItemToObservation({ url: 'https://api.foo.cn/v1' }, { at: AT, stationId: 'st-foo' });
     expect(obs).not.toBeNull();
     expect(obs!.entityType).toBe('station');
-    expect(obs!.entityId).toBe('api.foo.cn');
+    expect(obs!.entityId).toBe('st-foo'); // TASK-099：站点 id，非域名
     expect(obs!.successCount).toBe(0);
     expect(obs!.failureCount).toBe(0);
     expect(obs!.uptimePercent).toBeNull();
     expect(obs!.errorRate).toBeNull();
-    expect(obs!.windowStart).toEqual(DAY_START);
-    expect(obs!.windowEnd).toEqual(DAY_END);
+    expect(obs!.windowStart).toEqual(SH_START);
+    expect(obs!.windowEnd).toEqual(SH_END);
+    // 有效域名但未注入站点 id → null（skipped 由批量函数记录）
+    expect(mapLlmtestItemToObservation({ url: 'https://api.foo.cn/v1' }, { at: AT })).toBeNull();
     // 无有效域名（无 url）→ null，与候选映射同口径
-    expect(mapLlmtestItemToObservation({ name: 'NoUrl' }, { at: AT })).toBeNull();
+    expect(mapLlmtestItemToObservation({ name: 'NoUrl' }, { at: AT, stationId: 'st-x' })).toBeNull();
   });
 
-  it('isAlive=false → errorRate=1（覆盖失败率）；score 优先 uptime、缺 score 按通过率派生', () => {
+  it('isAlive=false → errorRate=1；score 优先 uptime、缺 score 按通过率派生；entityId=站点 id', () => {
     const dead = mapLlmtestItemToObservation(
       { url: 'https://api.bar.cn', score: 40, isAlive: false, total_checks: 10, pass_count: 3 },
-      { at: AT },
+      { at: AT, stationId: 'st-bar' },
     );
+    expect(dead!.entityId).toBe('st-bar');
     expect(dead!.uptimePercent).toBe(40); // score 优先
     expect(dead!.successCount).toBe(3);
     expect(dead!.failureCount).toBe(7);
@@ -97,26 +101,50 @@ describe('llmtest 观测入时序 (TASK-073 · ReliabilityObservation 写入载�
 
     const derived = mapLlmtestItemToObservation(
       { url: 'https://api.baz.cn', total_checks: 10, pass_count: 6 }, // 无 score、isAlive 非 false
-      { at: AT },
+      { at: AT, stationId: 'st-baz' },
     );
     expect(derived!.uptimePercent).toBe(60); // 通过率派生 6/10*100
     expect(derived!.errorRate).toBeCloseTo(0.4); // 4/10
   });
 
-  it('重复采集：mapLlmtestItemsToObservations 按域名去重，保留 windowEnd 更晚（last_alive_at 更新）的一条', () => {
-    const list = mapLlmtestItemsToObservations(
+  it('上海自然日窗口跨 UTC：上海墙钟日界（非 UTC 日界）', () => {
+    // 2026-10-18T20:00Z = 上海 10-19 04:00 → 归上海日 10-19 → [10-18T16:00Z, 10-19T16:00Z)
+    const a = mapLlmtestItemToObservation(
+      { url: 'https://api.foo.cn' },
+      { at: new Date('2026-10-18T20:00:00Z'), stationId: 'st-foo' },
+    );
+    expect(a!.windowStart).toEqual(new Date('2026-10-18T16:00:00.000Z'));
+    expect(a!.windowEnd).toEqual(new Date('2026-10-19T16:00:00.000Z'));
+    // 2026-10-19T16:30Z = 上海 10-20 00:30 → 归上海日 10-20 → [10-19T16:00Z, 10-20T16:00Z)
+    const b = mapLlmtestItemToObservation(
+      { url: 'https://api.foo.cn' },
+      { at: new Date('2026-10-19T16:30:00Z'), stationId: 'st-foo' },
+    );
+    expect(b!.windowStart).toEqual(new Date('2026-10-19T16:00:00.000Z'));
+    expect(b!.windowEnd).toEqual(new Date('2026-10-20T16:00:00.000Z'));
+  });
+
+  it('批量：有效域名缺站点 id → skipped；无 url 静默跳过不入 skipped；按站点 id 去重保留 windowEnd 更晚', () => {
+    const stationIdByDomain = new Map<string, string>([
+      ['api.foo.cn', 'st-foo'],
+      ['api.qux.cn', 'st-qux'],
+    ]);
+    const res = mapLlmtestItemsToObservations(
       [
         { url: 'https://api.foo.cn', total_checks: 10, pass_count: 5, last_alive_at: '2026-10-19T05:00:00Z' },
-        { url: 'https://www.api.foo.cn/x', total_checks: 10, pass_count: 8, last_alive_at: '2026-10-19T09:00:00Z' }, // 同域、更晚
-        { url: 'https://api.qux.cn', total_checks: 4, pass_count: 4 }, // 无 last_alive_at → dayEnd
+        { url: 'https://www.api.foo.cn/x', total_checks: 10, pass_count: 8, last_alive_at: '2026-10-19T09:00:00Z' }, // 归一后同域、更晚
+        { url: 'https://api.qux.cn', total_checks: 4, pass_count: 4 }, // 无 last_alive_at → SH_END
+        { url: 'https://api.orphan.cn' }, // 有效域名但无站点 id 映射 → skipped
+        { name: 'no url' }, // 无 url → 静默跳过，不入 skipped
       ],
-      { at: AT },
+      { at: AT, stationIdByDomain },
     );
-    expect(list).toHaveLength(2);
-    const foo = list.find((o) => o.entityId === 'api.foo.cn')!;
-    expect(foo.windowEnd).toEqual(new Date('2026-10-19T09:00:00.000Z')); // 取更晚 last_alive_at
+    expect(res.skipped).toEqual(['api.orphan.cn']);
+    expect(res.observations).toHaveLength(2);
+    const foo = res.observations.find((o) => o.entityId === 'st-foo')!;
+    expect(foo.windowEnd).toEqual(new Date('2026-10-19T09:00:00.000Z')); // 取更晚 last_alive_at（落在上海日内）
     expect(foo.successCount).toBe(8);
-    const qux = list.find((o) => o.entityId === 'api.qux.cn')!;
-    expect(qux.windowEnd).toEqual(DAY_END); // last_alive_at 缺 → 采集日末
+    const qux = res.observations.find((o) => o.entityId === 'st-qux')!;
+    expect(qux.windowEnd).toEqual(SH_END); // last_alive_at 缺 → 上海日末
   });
 });
