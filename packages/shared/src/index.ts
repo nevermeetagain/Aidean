@@ -37,6 +37,7 @@ export * from "./utils/money";
 export * from "./utils/billing";
 export * from "./utils/pricing-config";
 export * from "./utils/provider-pricing";
+export * from "./utils/price-normalization";
 
 // 全项目唯一错误码源（ADR-P001 / TASK-001）；apps/web 侧仅允许重导出（TASK-002）。
 export * from "./errors";

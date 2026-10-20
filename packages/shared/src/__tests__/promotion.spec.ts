@@ -67,9 +67,12 @@ describe("EffectivePriceSchema（TASK-026）", () => {
       EffectivePriceSchema.safeParse({ ...ep, isPromotion: false, promotionEndsAt: null, basePriceInput: null, basePriceOutput: null }).success,
     ).toBe(true);
   });
-  it("键集合 = 冻结契约 v0.1 的 8 键（防与 contracts/01-api.contract.ts §S4 漂移；v0.2 归一字段由 TASK-047 追加）", () => {
+  it("键集合 = 冻结契约 v0.1 的 8 键 + TASK-047（ADR-P005 v0.3）归一 8 键（防与 contracts/01-api.contract.ts §S4 漂移）", () => {
     expect([...(EffectivePriceSchema.keyof().options as string[])].sort()).toEqual(
-      ["basePriceInput", "basePriceOutput", "isPromotion", "modelId", "priceCache", "priceInput", "priceOutput", "promotionEndsAt"].sort(),
+      [
+        "basePriceInput", "basePriceOutput", "isPromotion", "modelId", "priceCache", "priceInput", "priceOutput", "promotionEndsAt",
+        "currency", "unit", "sourceCurrency", "sourceUnit", "sourcePriceInput", "sourcePriceOutput", "fxRate", "fxDate",
+      ].sort(),
     );
   });
   it("keyof() 不含 markupRate/tokenMultiplier 及任何 markup/multiplier 键（价格透明 · 敏感字段一票否决）", () => {

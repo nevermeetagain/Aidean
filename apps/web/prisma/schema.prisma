@@ -2348,3 +2348,21 @@ model CatalogChangeEvent {
   @@index([sourceId, kind, detectedAt(sort: Desc)], map: "cce_source_kind_detected_idx")
   @@map("catalog_change_events")
 }
+
+// TASK-047（ADR-P005 v0.3，U-15）：日汇率快照——每天只用一个汇率（日期按 Asia/Shanghai）。
+// 写：TASK-101 scripts/crawl/fx_daily.ts（幂等 upsert，同日同币对一行）；读：lib/features/pricing/fx.ts。
+model FxDailyRate {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  rateDate  DateTime @map("rate_date") @db.Date
+  base      String   @db.VarChar(3) // 'USD'
+  quote     String   @db.VarChar(3) // 'CNY'
+  rate      Decimal  @db.Decimal(18, 8) // 1 base = rate quote；CHECK > 0
+  source    String   @db.VarChar(40)
+  sourceUrl String   @map("source_url")
+  fetchedAt DateTime @map("fetched_at") @db.Timestamp(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(3)
+
+  @@unique([rateDate, base, quote], map: "fx_daily_rates_date_pair_key")
+  @@index([base, quote, rateDate(sort: Desc)], map: "fx_daily_rates_pair_date_idx")
+  @@map("fx_daily_rates")
+}

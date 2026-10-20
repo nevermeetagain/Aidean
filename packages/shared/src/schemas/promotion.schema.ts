@@ -7,10 +7,12 @@
 // 生效规则（单一口径，DESIGN-002 §1）：at 时刻存在 sourceType=PROMOTION 且 effectiveFrom<=at<effectiveUntil
 //   的行（取 effectiveFrom 最新）→ 用之；否则 isCurrent=true 行。同一模型优惠窗口不得重叠（写侧 → 40000）。
 //
-// 范围说明（TASK-026 · V0.9.0 执行裁定 E9-02）：契约 v0.2 中 EffectivePrice 的
-//   currency/unit/sourceCurrency/sourceUnit/sourcePrice*/fxRate 与 PRICE_NORMALIZATION/FxConfigSchema
-//   为「TASK-047 增补（ADR-P005）」，受 U-15（汇率口径）条件约束，本卡不落地；TASK-047 在本文件内追加。
+// TASK-047（改写，2026-10-20，ADR-P005 v0.3）：EffectivePrice 追加归一字段（currency/unit/sourceCurrency/
+//   sourceUnit/sourcePrice*/fxRate/fxDate）。为不破坏现有生产者，追加字段为 optional：TASK-048 起由生效价解析器
+//   全量填充；priceInput/priceOutput 在归一后即为 currency / 每百万 Token 的值。固定汇率配置键 pricing.fxUsdCny
+//   已被 U-15 裁决取代（日汇率快照，见 utils/price-normalization.ts），不再落地。
 import { z } from "zod";
+import { SUPPORTED_CURRENCIES } from "../utils/price-normalization";
 
 const Iso = z.string().datetime();
 /** 非负十进制字符串（¥/M Tokens）；"0" = 免费 */
@@ -55,6 +57,15 @@ export const EffectivePriceSchema = z.object({
   promotionEndsAt: Iso.nullable(),
   basePriceInput: DecimalStr.nullable(), // 优惠生效时的原价，供前台划线展示；非优惠时 null
   basePriceOutput: DecimalStr.nullable(),
+  // ---- TASK-047 归一字段（optional，048 起必填充）
+  currency: z.enum(SUPPORTED_CURRENCIES).optional(),
+  unit: z.literal("per_million_tokens").optional(),
+  sourceCurrency: z.enum(SUPPORTED_CURRENCIES).optional(),
+  sourceUnit: z.string().optional(),
+  sourcePriceInput: DecimalStr.optional(),
+  sourcePriceOutput: DecimalStr.optional(),
+  fxRate: DecimalStr.nullable().optional(),
+  fxDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
 });
 
 export type PromotionPriceCreate = z.infer<typeof PromotionPriceCreateSchema>;

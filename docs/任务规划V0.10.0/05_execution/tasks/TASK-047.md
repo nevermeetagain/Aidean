@@ -1,5 +1,7 @@
 # TASK-047：计价口径归一契约：币种 CNY + 每百万 Token + 汇率配置键（EffectivePrice 扩展）
 
+> **2026-10-20 改写（27_核心与非核心重划分 / ADR-P005 v0.3）**：按 U-15 裁决改为「IP 定展示币种 + 日汇率快照」；交付物改为 `packages/shared/src/utils/price-normalization.ts`、`promotion.schema.ts` 追加字段、表 `fx_daily_rates`（迁移 `20261020000000_fx_daily_rates`）与读取 `apps/web/lib/features/pricing/fx.ts`；不再新增 `pricing.fxUsdCny` 配置键（admin-config/pricing-config 不改）。执行者：Hark。证据 EVD-047。
+
 > 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
 
 > 执行者：**Hark(主Agent)** ｜ 所有权 Agent：**Agent-Contract** ｜ 建议档位：**opus** ｜ **条件卡：待 U-15（汇率口径）裁决后下发**

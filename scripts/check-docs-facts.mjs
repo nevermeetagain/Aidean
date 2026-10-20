@@ -59,9 +59,9 @@ const countPatternLines = (rel, re) => readFile(rel).split("\n").filter((l) => r
 const assertions = [
   {
     id: "schema-models",
-    desc: "schema.prisma model 数 = 72（M-002 模型源监控 TASK-058 新增 MonitoringSource/CatalogSnapshot/ProviderModelObservation/CatalogChangeEvent，68→72；前次 S3 RBAC 64→68）",
+    desc: "schema.prisma model 数 = 73（TASK-047 新增 FxDailyRate 日汇率快照 72→73；前次 M-002 TASK-058 68→72）",
     check: () => String(countPatternLines("apps/web/prisma/schema.prisma", /^model /)),
-    expect: "72",
+    expect: "73",
   },
   {
     id: "seed-models",
@@ -132,10 +132,10 @@ const assertions = [
   },
   {
     id: "spec-count",
-    desc: "spec 文件总数 = 179（TASK-061 新增 monitoring/diff/{detect,persist}.spec 177→179，R10-01；前次 TASK-067/074 176→177）",
+    desc: "spec 文件总数 = 180（TASK-047 新增 lib/features/pricing/__tests__/fx.spec 179→180，R10-01；前次 TASK-061 177→179）",
     check: () =>
       String(walk("e2e", (n) => n.endsWith(".spec.ts")).length + walk("apps/web", (n) => n.endsWith(".spec.ts")).length),
-    expect: "179",
+    expect: "180",
   },
   {
     id: "queryraw-biz",

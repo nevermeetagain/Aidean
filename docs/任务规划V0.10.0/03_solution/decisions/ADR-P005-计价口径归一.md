@@ -1,5 +1,20 @@
 # ADR-P005 · 计价口径归一（币种 CNY + 每百万 Token）
 
+> 版本: v0.3 | 更新: 2026-10-20 | 变更: **ACCEPTED**——U-15 用户裁决（26_用户裁决记录.md）落地为 §v0.3 决策，取代 v0.2 的「固定汇率配置键 pricing.fxUsdCny」。前次 v0.2（2026-10-14 首次落档，PROPOSED）
+
+## v0.3 决策（ACCEPTED，2026-10-20，以本节为准）
+1. **展示币种按 IP**：中国大陆（国家码 CN）→ CNY；其他地区（含港澳台）与未知 → USD。部署层国家头读取顺序 `GEO_COUNTRY_HEADERS`，不做外网 GeoIP（TASK-102 接线）。
+2. **日汇率快照**：表 `fx_daily_rates`，每天（Asia/Shanghai 自然日）每币对一行；采集 TASK-101（公开免费源、幂等）。读取 `lib/features/pricing/fx.ts#getDailyFx`：当日缺失可回退最近一日（≤3 天，stale=true），否则 null → fail-closed。同一天计费与展示读同一行。
+3. **唯一归一函数** `normalizeUnitPrice({value, sourceCurrency, sourceUnit, targetCurrency, fx})`（packages/shared），BigInt 定点精确运算，结果 6 位小数半入；单位别名 per_million_tokens/per_1m_tokens/per_1k_tokens/per_token。本函数无汇率字面量。
+4. **结算口径**：实际扣费按账户余额币种（现为 CNY）结算 → 网关以 targetCurrency=CNY 归一；展示以访客币种归一。两者都取同一个日快照，故同日同模型「展示 ¥ 价 = 扣费单价」。
+5. **原价可见**：EffectivePrice 追加 currency/unit/sourceCurrency/sourceUnit/sourcePrice*/fxRate/fxDate（optional，TASK-048 起全量填充）。
+6. **fail-closed 不变**：未知币种/单位、汇率缺失/≤0 → PriceNormalizationError，网关跳过该候选（降级链继续，最终 30002），读侧「价格待核」。
+7. **免费模型（U-23=B）**：归一后输入与输出单价均为 0 的模型跳过余额校验（TASK-048 落地）。
+8. 取代项：`pricing.fxUsdCny` 配置键与 TASK-055 种子行不再落地（TASK-101 取代）；TASK-069 发现引擎改读日快照。
+
+---
+以下为 v0.2 原文（历史）。
+
 > 版本: v0.2 | 更新: 2026-10-14 | 变更: 首次落档（任务规划V0.2.0）——提议状态（PROPOSED），汇率数值待 U-15 裁决
 
 > V0.10.0 承接说明（2026-10-19）：本文件正文承接 V0.9.0（及更早）原文，其中「未开工/待回补」等表述均指当时；**当前事实以 `25_执行记录.md`、`17h_V0.9.0到V0.10.0差异.md`、`05_execution/task-index.md` 为准**（外部 12 卡已完成并审查；007 由 085 满足；新增 095–099）。
