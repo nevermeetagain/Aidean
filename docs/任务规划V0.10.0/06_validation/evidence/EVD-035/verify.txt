@@ -1,0 +1,39 @@
+== TASK-035 卡面验证命令 ==
+$ pnpm exec playwright test e2e/web/search.spec.ts --config playwright.config.ts --project=web --workers=1
+
+第 1 次（13:41 CST，dev :3000 + PG16 shared-postgres:5435）：
+  ok 1 桌面1440 种子模型名命中：按模型分组展示并 Enter 键盘跳转到详情页 (3.1s)
+  ok 2 桌面1440 无结果：面板内空态提示且不弹窗 (1.2s)
+  ok 3 桌面1440 Esc 关闭面板 (1.7s)
+  ok 4 移动390 抽屉内搜索入口可用并展示命中 (1.4s)
+  4 passed (8.5s)
+
+第 2 次复跑（13:53 CST，重启后 dev :3000）：
+  ok 1 (2.9s) / ok 2 (1.4s) / ok 3 (1.0s) / ok 4 (852ms)
+  4 passed (6.9s)
+
+E2E_EXIT=0（两次均 0，无 test.skip，无 mock 网络：搜索数据为库内真实已发布实体）
+
+== 卡面验收标准核对 ==
+- 验证命令 exit 0：PASS（上）
+- diff 仅落在允许修改范围：见 deviation.md 与提交 diff 清单（e2e/web/search.spec.ts + EVD-035/** +
+  scripts/check-docs-facts.mjs 计数同步，依交接任务书 §3.3 / E10-03）
+
+== 全局门禁五项（2026-10-20 13:40~13:58 CST）==
+1. node scripts/check-docs-rule.mjs        -> exit 0（铁律1 PASS；数字真源断言 PASS）
+2. node scripts/check-docs-facts.mjs       -> exit 0，14/14（spec-count 期望 184→185，
+   desc: TASK-035 新增 e2e/web/search.spec.ts 184→185，R10-01；前次 TASK-063 183→184）
+3. node scripts/guard/run-all.mjs          -> 4/4（root-pollution / secret-scan / module-boundary / port-consistency）
+4. pnpm --filter web exec tsc --noEmit     -> exit 0
+   pnpm --filter web lint                  -> exit 0（仅存量警告 SafeImage.tsx no-img-element，非本卡引入）
+5. pnpm --filter web test                  -> exit 0：Test Files 139 passed | 2 skipped；
+   Tests 1377 passed | 5 skipped | 0 failed（= EVD-063 记录的基线 1377，无退化）
+
+== 契约测试漂移 ==
+node scripts/contract/gen-contract-tests.mjs && git diff --exit-code packages/shared/src/__tests__/contract
+-> exit 0（生成器只覆盖 envelope/errors/identity，与 search 无关，无漂移）
+
+== 运行态截图（实跑 :3000，非 mock）==
+- desktop-1440-header.png        顶栏含「全站搜索」入口
+- desktop-1440-search-panel.png  输入 demo-model 后结果面板（库内真实种子模型）
+- mobile-390-search.png          390 视口抽屉内搜索命中
