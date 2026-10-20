@@ -1,8 +1,8 @@
 # 任务索引（task-index）
 
-> 版本: v0.10 | 更新: 2026-10-20 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
+> 版本: v0.10 | 更新: 2026-10-20 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts）；TASK-087/037 收尾）
 
-总计 **51** 张原子任务卡｜Hark(主Agent) **18** 张｜外部Agent **33** 张｜档位：haiku 9 / opus 18 / sonnect 24｜fable 0（仅在推翻冻结契约时启用）
+总计 **50** 张原子任务卡｜Hark(主Agent) **18** 张｜外部Agent **32** 张｜档位：haiku 9 / opus 18 / sonnect 23｜fable 0（仅在推翻冻结契约时启用）
 
 执行者口径：用户指令「核心任务+高难度任务（尤其 UI 设计与实现）由主 Agent 完成，中等及简单任务发布后由其他 Agent 完成」。本轮仅规划，实施需用户另行批准（见 15_前提与局限.md）。
 
@@ -32,7 +32,6 @@
 | [TASK-034](tasks/TASK-034.md) | S5 | UI：顶栏搜索（桌面框 + 移动端展开 + 键盘导航） | Hark(主Agent) | Agent-App | opus | 中/8h | 033 | L3 | U-5 | 条件·待裁决 |
 | [TASK-035](tasks/TASK-035.md) | S5 | e2e：搜索（命中/无结果/键盘跳转/移动端） | 外部Agent | Agent-Guard | sonnect | 小/3h | 034, 006 | L4 | U-5 | 条件·待裁决 |
 | [TASK-036](tasks/TASK-036.md) | S5 | S5 文档同步：API 文档登记搜索端点 + UI/界面交互文档补搜索 | 外部Agent | Agent-Docs | haiku | 小/2h | 035 | L6 | U-5 | 条件·待裁决 |
-| [TASK-037](tasks/TASK-037.md) | S6 | e2e 配置口径收敛：根 playwright.config.ts 唯一（138+64 例并表） | 外部Agent | Agent-Guard | sonnect | 中/5h | 006 | L1 | — | 未开工 |
 | [TASK-039](tasks/TASK-039.md) | S6 | 千级模型天梯量级基线（只测量，不优化） | 外部Agent | Agent-Guard | sonnect | 中/6h | 006 | L1 | — | 未开工 |
 | [TASK-040](tasks/TASK-040.md) | S7 | 需求文档 v1.15 对齐代码事实与用户裁决 | Hark(主Agent) | Agent-Docs | opus | 中/4h | — | L3 | — | 未开工（Hark 核心） |
 | [TASK-041](tasks/TASK-041.md) | S7 | 台账拆分 + 勾选滞后补录 + CHANGELOG 补录 finalize 里程碑 | 外部Agent | Agent-Docs | sonnect | 中/5h | 040 | L4 | — | 未开工 |

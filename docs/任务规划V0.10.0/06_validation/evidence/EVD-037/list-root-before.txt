@@ -1,0 +1,152 @@
+Listing tests:
+  [web] › web\aidean-closed-loop.spec.ts:16:7 › Aidean 阶段一主闭环 › 天梯榜支持表格/柱状图双视图切换且详情入口可达
+  [web] › web\aidean-closed-loop.spec.ts:53:7 › Aidean 阶段一主闭环 › 详情 -> 对比篮 -> 测评入口 -> 充值入口链路可达（EVAL-01 现役口径）
+  [web] › web\api-auth-contract.spec.ts:48:7 › 认证与管理端 API 契约 › 登录接口返回标准成功结构并设置 token cookie
+  [web] › web\api-auth-contract.spec.ts:65:7 › 认证与管理端 API 契约 › 管理端接口拒绝伪造 Bearer token
+  [web] › web\api-auth-contract.spec.ts:75:7 › 认证与管理端 API 契约 › 管理端用户接口拒绝伪造 Bearer token
+  [web] › web\api-auth-contract.spec.ts:84:7 › 认证与管理端 API 契约 › 用户流水接口在未登录时拒绝返回数据
+  [web] › web\api-auth-contract.spec.ts:92:7 › 认证与管理端 API 契约 › 用户数据接口走登录态并只回本人作用域数据
+  [web] › web\api-auth-contract.spec.ts:111:7 › 认证与管理端 API 契约 › 用户资源接口匿名拒绝、登录态可达
+  [web] › web\auth.spec.ts:29:7 › 登录页面 › 登录页正常渲染
+  [web] › web\auth.spec.ts:40:7 › 登录页面 › 空表单提交显示验证错误
+  [web] › web\auth.spec.ts:52:7 › 登录页面 › 错误凭证登录失败
+  [web] › web\auth.spec.ts:66:7 › 登录页面 › 注册链接可点击
+  [web] › web\auth.spec.ts:83:7 › 注册页面 › 注册页正常渲染
+  [web] › web\auth.spec.ts:91:7 › 注册页面 › 注册表单验证
+  [web] › web\docs-about-products.spec.ts:39:9 › 帮助中心 › 帮助中心页面正常加载
+  [web] › web\docs-about-products.spec.ts:39:9 › 帮助文档 › 帮助文档页面正常加载
+  [web] › web\docs-about-products.spec.ts:39:9 › 定价方案 › 定价方案页面正常加载
+  [web] › web\docs-about-products.spec.ts:39:9 › API文档 › API文档页面正常加载
+  [web] › web\docs-about-products.spec.ts:62:9 › 联系我们 › 联系我们页面正常加载
+  [web] › web\docs-about-products.spec.ts:62:9 › 合作 › 合作页面正常加载
+  [web] › web\docs-about-products.spec.ts:62:9 › 招聘 › 招聘页面正常加载
+  [web] › web\docs-about-products.spec.ts:86:9 › AI员工 › AI员工页面正常加载
+  [web] › web\docs-about-products.spec.ts:86:9 › 知识库 › 知识库页面正常加载
+  [web] › web\docs-about-products.spec.ts:86:9 › 解决方案 › 解决方案页面正常加载
+  [web] › web\docs-about-products.spec.ts:86:9 › 业务咨询 › 业务咨询页面正常加载
+  [web] › web\docs-about-products.spec.ts:98:7 › 产品总览语义路径 › /sphere 产品页卡片使用三产品语义路径
+  [web] › web\docs-about-products.spec.ts:115:7 › 其他Web页面 › 对比页面加载
+  [web] › web\docs-about-products.spec.ts:123:7 › 其他Web页面 › 评测页面加载
+  [web] › web\favorites.spec.ts:81:7 › favorites：收藏→控制台可见→取消→未登录引导→他人越权 › ① + ②：登录收藏模型→控制台出现→取消后消失
+  [web] › web\favorites.spec.ts:122:7 › favorites：收藏→控制台可见→取消→未登录引导→他人越权 › ③：未登录点击收藏 → 跳 /login?redirect=<站内回跳>
+  [web] › web\favorites.spec.ts:137:7 › favorites：收藏→控制台可见→取消→未登录引导→他人越权 › ④：他人 DELETE 本人收藏行 → 40000（越权即『不存在』，防枚举）
+  [web] › web\home.spec.ts:33:7 › 首页 › 首屏呈现三产品主入口且均可达
+  [web] › web\home.spec.ts:54:7 › 首页 › 首页正常加载
+  [web] › web\home.spec.ts:63:7 › 首页 › 轮播图模块渲染
+  [web] › web\home.spec.ts:77:7 › 首页 › 统计卡片显示
+  [web] › web\home.spec.ts:93:7 › 首页 › 导航栏链接可点击
+  [web] › web\home.spec.ts:106:7 › 首页 › 页脚显示
+  [web] › web\models.spec.ts:27:7 › 模型列表页 › 模型列表页正常加载
+  [web] › web\models.spec.ts:33:7 › 模型列表页 › 模型列表存在详情入口且指向 /models/:slug
+  [web] › web\models.spec.ts:40:7 › 模型列表页 › 模型列表至少渲染一个模型条目
+  [web] › web\models.spec.ts:46:7 › 模型列表页 › 点击详情入口可达详情页
+  [web] › web\models.spec.ts:65:7 › 模型详情页 › 模型详情页正常加载（主区 + 四个语义分区可见）
+  [web] › web\models.spec.ts:74:7 › 模型详情页 › 模型详情页基本介绍区含 modelCode 与厂商信息
+  [web] › web\models.spec.ts:80:7 › 模型详情页 › 模型详情页可将模型带入对比篮（EVAL-01 现役 DOM：+ 加入对比 → Dock 计数）
+  [web] › web\models.spec.ts:94:7 › 模型详情页 › 模型详情页测评示例区与对比测评入口共存
+  [web] › web\resources.spec.ts:38:9 › Skills页面 › Skills页面正常加载
+  [web] › web\resources.spec.ts:44:9 › Skills页面 › Skills页面有内容或空状态
+  [web] › web\resources.spec.ts:56:9 › Skills页面 › Skills页面筛选功能
+  [web] › web\resources.spec.ts:38:9 › MCP页面 › MCP页面正常加载
+  [web] › web\resources.spec.ts:44:9 › MCP页面 › MCP页面有内容或空状态
+  [web] › web\resources.spec.ts:56:9 › MCP页面 › MCP页面筛选功能
+  [web] › web\resources.spec.ts:38:9 › Agent页面 › Agent页面正常加载
+  [web] › web\resources.spec.ts:44:9 › Agent页面 › Agent页面有内容或空状态
+  [web] › web\resources.spec.ts:56:9 › Agent页面 › Agent页面筛选功能
+  [web] › web\resources.spec.ts:38:9 › 资讯页面 › 资讯页面正常加载
+  [web] › web\resources.spec.ts:44:9 › 资讯页面 › 资讯页面有内容或空状态
+  [web] › web\resources.spec.ts:56:9 › 资讯页面 › 资讯页面筛选功能
+  [web] › web\resources.spec.ts:76:7 › 资源导航 › 从首页导航到Skills页面
+  [web] › web\search.spec.ts:27:7 › 顶栏全局搜索（桌面 1440） › 种子模型名命中：按模型分组展示并 Enter 键盘跳转到详情页
+  [web] › web\search.spec.ts:46:7 › 顶栏全局搜索（桌面 1440） › 无结果：面板内空态提示且不弹窗
+  [web] › web\search.spec.ts:53:7 › 顶栏全局搜索（桌面 1440） › Esc 关闭面板
+  [web] › web\search.spec.ts:65:7 › 顶栏全局搜索（移动端 390 抽屉内） › 抽屉内搜索入口可用并展示命中
+  [web] › web\sso-3333.spec.ts:95:7 › sso-3333 › [a] 已登录会话 GET /oauth/authorize → 307 Location 3333 callback 含 code+state
+  [web] › web\sso-3333.spec.ts:113:7 › sso-3333 › [b] 真实浏览器 9 步：3333 发起 → 主平台登录 → callback 兑换 → 会话落地 3333
+  [web] › web\sso-3333.spec.ts:122:7 › sso-3333 › [c] 3333 /auth/me 200 + code 单次重放不 500 + 会话保持 + 无 3334
+  [web] › web\walking-skeleton.spec.ts:42:7 › S0 步行骨架：注册→登录→鉴权写→页面可见→错误信封→就绪 › 主链路：注册→登录→创建 API Key→控制台可见→清理
+  [web] › web\walking-skeleton.spec.ts:120:7 › S0 步行骨架：注册→登录→鉴权写→页面可见→错误信封→就绪 › 匿名 GET /user/api-keys → 401 且错误信封四要素齐全（ErrorBodySchema.parse）
+  [web] › web\walking-skeleton.spec.ts:136:7 › S0 步行骨架：注册→登录→鉴权写→页面可见→错误信封→就绪 › GET /system/ready → 200 且就绪体符合 SystemReadySchema
+  [admin] › admin\auth-setup.spec.ts:19:6 › admin认证 - 登录并保存状态
+  [admin] › admin\cms-content.spec.ts:29:7 › S4 站点可见即可改（后台改 → 前台联动） › 改站点名 → 前台首页 <title> 变化
+  [admin] › admin\cms-content.spec.ts:45:7 › S4 站点可见即可改（后台改 → 前台联动） › 改首页 Hero 主标题 → 前台首页标题区变化
+  [admin] › admin\dashboard.spec.ts:23:7 › Admin仪表盘 › 仪表盘页面正常加载
+  [admin] › admin\dashboard.spec.ts:34:7 › Admin仪表盘 › 统计卡片显示
+  [admin] › admin\dashboard.spec.ts:44:7 › Admin仪表盘 › 侧边栏导航可用
+  [admin] › admin\dashboard.spec.ts:51:7 › Admin仪表盘 › 点击侧边栏"模型管理"跳转
+  [admin] › admin\feature-flags.spec.ts:67:7 › Admin 功能开关端到端（S2 / TASK-019） › 关 ladder.station → /providers 显 feature-disabled + ladder API 403/50011 + 桌面入口消失；开→恢复
+  [admin] › admin\feature-flags.spec.ts:114:7 › Admin 功能开关端到端（S2 / TASK-019） › 关 ladder.station → 移动端抽屉亦无 /providers 入口（与桌面同源过滤）；开→恢复
+  [admin] › admin\login.spec.ts:26:7 › Admin登录 › 登录页正常渲染
+  [admin] › admin\login.spec.ts:41:7 › Admin登录 › 空表单提交不跳转
+  [admin] › admin\login.spec.ts:50:7 › Admin登录 › 错误凭证登录失败
+  [admin] › admin\login.spec.ts:68:7 › Admin登录 › Admin凭证登录成功跳转仪表盘
+  [admin] › admin\logs.spec.ts:16:7 › Admin 日志中心（S5 只读聚合） › 冷启动 /admin/logs：侧栏入口高亮 + 五 Tab 渲染
+  [admin] › admin\logs.spec.ts:32:7 › Admin 日志中心（S5 只读聚合） › 切换「安全事件」：露出刷新令牌/授权同意子切换
+  [admin] › admin\logs.spec.ts:40:7 › Admin 日志中心（S5 只读聚合） › 只读聚合 API：GET /api/v1/admin/logs/usage → code 0
+  [admin] › admin\logs.spec.ts:48:7 › Admin 日志中心（S5 只读聚合） › 后端逐接口强制：清 Cookie 后 GET usage → 401
+  [admin] › admin\menus.spec.ts:16:7 › Admin 可配置菜单（S2） › 冷启动 /admin/menus：DB 驱动的「菜单配置」入口自动展开且高亮
+  [admin] › admin\menus.spec.ts:25:7 › Admin 可配置菜单（S2） › 菜单面板读取真源：标题 + 种子分组可见
+  [admin] › admin\menus.spec.ts:35:7 › Admin 可配置菜单（S2） › 新建一级分组表单可展开（不提交）
+  [admin] › admin\mobile-nav.spec.ts:15:7 › Admin 移动端抽屉（S8.2） › 小屏冷启动：汉堡可见、桌面侧栏隐藏
+  [admin] › admin\mobile-nav.spec.ts:22:7 › Admin 移动端抽屉（S8.2） › 打开抽屉 → 链接可见 → 点击跳转并自动关闭
+  [admin] › admin\models.spec.ts:23:7 › 模型列表管理 › 模型列表页加载
+  [admin] › admin\models.spec.ts:28:7 › 模型列表管理 › 模型表格存在
+  [admin] › admin\models.spec.ts:37:7 › 模型列表管理 › 模型搜索功能
+  [admin] › admin\models.spec.ts:46:7 › 模型列表管理 › 新建模型按钮
+  [admin] › admin\models.spec.ts:63:7 › 厂商管理 › 厂商管理页加载
+  [admin] › admin\models.spec.ts:68:7 › 厂商管理 › 厂商列表有内容或空状态
+  [admin] › admin\models.spec.ts:80:7 › 基准测试管理 › 基准测试页面加载
+  [admin] › admin\modules.spec.ts:23:7 › 用户管理 › 用户列表页加载
+  [admin] › admin\modules.spec.ts:31:7 › 用户管理 › 用户搜索
+  [admin] › admin\modules.spec.ts:49:7 › 自动化脚本 › 脚本列表页加载
+  [admin] › admin\modules.spec.ts:64:7 › 模型评测 › 评测列表页加载
+  [admin] › admin\modules.spec.ts:79:7 › 权限组织 › 角色管理页加载
+  [admin] › admin\modules.spec.ts:87:7 › 权限组织 › 部门管理页加载
+  [admin] › admin\modules.spec.ts:95:7 › 权限组织 › 团队管理页加载
+  [admin] › admin\modules.spec.ts:110:7 › 内容管理 › 资讯管理页加载
+  [admin] › admin\modules.spec.ts:118:7 › 内容管理 › 公告管理页加载
+  [admin] › admin\modules.spec.ts:133:7 › 财务管理 › 交易记录页加载
+  [admin] › admin\modules.spec.ts:141:7 › 财务管理 › 套餐管理页加载
+  [admin] › admin\modules.spec.ts:156:7 › 天梯图管理 › 天梯图配置页加载
+  [admin] › admin\modules.spec.ts:171:7 › 系统设置 › 通用设置页加载
+  [admin] › admin\modules.spec.ts:179:7 › 系统设置 › 功能开关页加载
+  [admin] › admin\modules.spec.ts:194:7 › 反馈与公告 › 用户反馈页加载
+  [admin] › admin\modules.spec.ts:202:7 › 反馈与公告 › 系统公告页加载
+  [admin] › admin\oidc.spec.ts:13:7 › Admin OIDC 客户端（S7.3） › 冷启动 /admin/oidc-clients：标题 + 可写露出「操作」列
+  [admin] › admin\oidc.spec.ts:21:7 › Admin OIDC 客户端（S7.3） › 只读 API：GET oidc-clients → code 0，投影不含 clientSecretHash
+  [admin] › admin\oidc.spec.ts:32:7 › Admin OIDC 客户端（S7.3） › 后端逐接口强制：清 Cookie 后 GET oidc-clients → 401
+  [admin] › admin\orders.spec.ts:14:7 › Admin 订单与流水处置（S6） › 冷启动 /admin/orders：三类型 Tab + 可写露出「处置」列
+  [admin] › admin\orders.spec.ts:26:7 › Admin 订单与流水处置（S6） › 账本流水 Tab 不可处置：无「处置」列（LedgerEntry 只读）
+  [admin] › admin\orders.spec.ts:33:7 › Admin 订单与流水处置（S6） › 只读聚合 API：GET /api/v1/admin/package-orders → code 0
+  [admin] › admin\orders.spec.ts:41:7 › Admin 订单与流水处置（S6） › 后端逐接口强制：清 Cookie 后 GET package-orders → 401
+  [admin] › admin\prices.spec.ts:13:7 › Admin 模型定价（S7.1） › 冷启动 /admin/prices：表头齐全 + 可写露出「操作」列
+  [admin] › admin\prices.spec.ts:22:7 › Admin 模型定价（S7.1） › 只读 API：GET /api/v1/admin/prices → code 0
+  [admin] › admin\prices.spec.ts:30:7 › Admin 模型定价（S7.1） › 后端逐接口强制：清 Cookie 后 GET prices → 401
+  [admin] › admin\reports.spec.ts:15:7 › Admin 报表看板（S8.1 二维图 + 只读聚合） › /admin 概览露出运营报表与区间切换
+  [admin] › admin\reports.spec.ts:25:7 › Admin 报表看板（S8.1 二维图 + 只读聚合） › /admin/reports 独立页：完整看板含区间切换与模型排行（S2r）
+  [admin] › admin\reports.spec.ts:34:7 › Admin 报表看板（S8.1 二维图 + 只读聚合） › 只读聚合 API：GET reports/overview?days=30 → code 0 + 结构
+  [admin] › admin\reports.spec.ts:46:7 › Admin 报表看板（S8.1 二维图 + 只读聚合） › 入参封顶：days=3（< 下限 7）→ 400
+  [admin] › admin\reports.spec.ts:51:7 › Admin 报表看板（S8.1 二维图 + 只读聚合） › 后端强制：清 Cookie 后 GET overview → 401
+  [admin] › admin\roles.spec.ts:21:7 › Admin 角色权限管理（S3.5 RBAC） › 冷启动 /admin/roles：侧栏入口高亮 + 面板读取系统角色
+  [admin] › admin\roles.spec.ts:38:7 › Admin 角色权限管理（S3.5 RBAC） › 用户面板对 SUPER_ADMIN 露出「分配角色」入口
+  [admin] › admin\roles.spec.ts:44:7 › Admin 角色权限管理（S3.5 RBAC） › 护栏：禁止修改自身角色分配（后端拒绝，无副作用）
+  [admin] › admin\roles.spec.ts:62:7 › Admin 角色权限管理（S3.5 RBAC） › 后端逐接口强制：清除登录 Cookie 后访问 admin 角色接口 → 401（认证层先拦）
+  [admin] › admin\sidebar.spec.ts:18:7 › Admin 侧边栏展开态（S1） › 冷启动直访 /admin/orders：当前分组自动展开且当前项可见
+  [admin] › admin\sidebar.spec.ts:27:7 › Admin 侧边栏展开态（S1） › 手动展开"财务与配置"分组后刷新：展开态持久化保持
+  [admin] › admin\sync.spec.ts:49:7 › 模型同步管理 › 同步管理页渲染与基础交互
+  [admin] › admin\sync.spec.ts:74:7 › 模型同步管理 › 同步日志页筛选与展开交互
+  [admin] › admin\tools.spec.ts:27:7 › API站管理 › API站页面加载
+  [admin] › admin\tools.spec.ts:32:7 › API站管理 › API站列表渲染
+  [admin] › admin\tools.spec.ts:44:7 › API站管理 › API站新建按钮
+  [admin] › admin\tools.spec.ts:73:9 › Skills管理 (P2候选) › Skills页面加载
+  [admin] › admin\tools.spec.ts:73:9 › MCP管理 (P2候选) › MCP页面加载
+  [admin] › admin\tools.spec.ts:73:9 › Agent管理 (P2候选) › Agent页面加载
+  [admin-setup] › admin\auth-setup.spec.ts:19:6 › admin认证 - 登录并保存状态
+  [smoke] › tests\smoke.spec.ts:29:7 › smoke-3000 › [1] /api/v1/system/health → 200
+  [smoke] › tests\smoke.spec.ts:37:7 › smoke-3000 › [2] /models SSR → 200
+  [smoke] › tests\smoke.spec.ts:43:7 › smoke-3000 › [3] /admin 匿名 → 307 /admin/login?redirect=%2Fadmin
+  [smoke] › tests\smoke.spec.ts:48:7 › smoke-3000 › [4] /api/v1/auth/me 匿名 → 401
+  [smoke] › tests\smoke.spec.ts:53:7 › smoke-3000 › [5] 非管理员登录访问 /admin → denied=1
+  [smoke] › tests\smoke.spec.ts:62:7 › smoke-3000 › [6] SUPER_ADMIN 登录访问 /admin → 200
+  [smoke] › tests\smoke.spec.ts:71:7 › smoke-3000 › [7] 登录→退出→/auth/me 恢复 401
+Total: 150 tests in 30 files

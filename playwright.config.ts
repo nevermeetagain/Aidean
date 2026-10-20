@@ -11,14 +11,11 @@ import { defineConfig, devices } from '@playwright/test';
  * 响应：HTML报告输出到 playwright-report/
  *
  * [C-N4 2026-09-09 员工C] 配置唯一性说明：本文件是**全量 e2e 的唯一生效配置**
- * （testDir ./e2e，web/admin/admin-setup/mobile 四 projects，baseURL 固定 3000，
+ * （testDir ./e2e；projects: web/admin/admin-setup/mobile/smoke/flows；baseURL 固定 3000，
  * 符合「只能 3000 端口」门禁铁律；webServer 保持注释，测试不得私拉服务）。
- * [C-N6 同日补注] `e2e/tests/` 原先未被根配置任何 project 覆盖（仅 test:e2e 脚本的
- * 子配置覆盖），导致烟囱用例在全量配置下不可见；新增 smoke project 承载
- * `./e2e/tests`（testMatch smoke.spec.ts），使 C-N6 七断言可在唯一配置下运行。
- * e2e/playwright.config.ts 仅被 package.json 的 test:e2e 脚本引用（冒烟基线，
- * testDir ./tests），与本配置互不干扰；本配置 testMatch 仅匹配 *.spec.ts，
- * 不会将该子配置文件误纳为用例。双配置分工以本注记为准。
+ * [TASK-037 2026-10-20] e2e/playwright.config.ts 降级为兼容 re-export（仅供旧脚本/守卫引用），
+ * package.json test:e2e 与 CI 均改用本文件；flows project 承载 e2e/tests 全量（排除 smoke 重复），
+ * workers=1 规避登录 IP 限流（20/600s）。
  */
 export default defineConfig({
   // 未完成事项目录 #64：生成 web 项目游客快照 .auth/web-guest.json（此前无生成来源致 e2e/web 全红）
@@ -121,6 +118,19 @@ export default defineConfig({
       testMatch: /smoke\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
+      },
+    },
+
+    // 流程用例（TASK-037）：承载 e2e/tests 全量，排除已由 smoke project 覆盖的 smoke.spec.ts；
+    // workers=1 与旧 test:e2e 子配置一致，规避登录 IP 限流（20/600s）。
+    {
+      name: 'flows',
+      testDir: './e2e/tests',
+      testMatch: '**/*.spec.ts',
+      testIgnore: '**/smoke.spec.ts',
+      workers: 1,
+      use: {
+        locale: 'zh-CN',
       },
     },
   ],

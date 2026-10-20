@@ -1,0 +1,36 @@
+# TASK-037 验证记录（2026-10-20）
+
+$ pnpm exec playwright test --list --config playwright.config.ts
+Total: 211 tests in 44 files
+exit=0
+
+$ pnpm exec playwright test --list --config e2e/playwright.config.ts
+Total: 211 tests in 44 files
+exit=0
+
+# 并集对账
+根配置收敛前 = 150 tests / 30 files
+e2e 子配置收敛前 = 68 tests / 15 files
+smoke 交集 = 7 tests
+150 + 68 - 7 = 211 tests；30 + 15 - 1 = 44 files
+
+$ git diff --name-only
+.github/workflows/ci.yml
+e2e/playwright.config.ts
+package.json
+playwright.config.ts
+
+$ node scripts/check-docs-rule.mjs
+exit=0
+
+$ node scripts/check-docs-facts.mjs
+All 14 assertions passed.
+exit=0
+
+$ node scripts/guard/run-all.mjs
+RESULT: PASS (4/4 守卫通过)
+
+# 全量执行
+本机 Redis :6379 未监听，http://localhost:3000/api/v1/system/ready 返回 503。
+全量 e2e 受环境阻塞，不纳入本卡验收；卡面验收命令为 --list。
+CI e2e-skeleton 由 workflow 起 PG16 + Redis7 后执行。

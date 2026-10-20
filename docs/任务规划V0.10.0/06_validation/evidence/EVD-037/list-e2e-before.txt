@@ -1,0 +1,70 @@
+Listing tests:
+  auth-guard.spec.ts:6:7 › auth-guard › 未登录访问 /user/console → 重定向登录页并携带 redirect 回跳参数
+  auth-guard.spec.ts:17:7 › auth-guard › /login 渲染：h1/h2 含「登录」、微信扫码块隐藏（D4）、邮箱+密码输入框存在
+  auth-guard.spec.ts:33:7 › auth-guard › 头部未登录态出现 /login 登录入口，主导航八项不受影响
+  billing-flow.spec.ts:18:7 › billing-flow › 未登录访问受保护财务接口 → 401/10004
+  billing-flow.spec.ts:25:7 › billing-flow › 注册→mock 充值→钱包→流水 TOPUP→幂等与验签→余额正确
+  console-flow-gradient.spec.ts:25:7 › console-flow-gradient › H1 控制台、特效层 ≥3 且动画运行中
+  console-flow-gradient.spec.ts:46:9 › console-flow-gradient › reduced-motion 降级 › reduced-motion 下动画关闭且三卡文案可见
+  console-regression.spec.ts:57:5 › R1 页头三卡等高（P2 护栏：sm 三列横排态 clientHeight 相等）
+  console-regression.spec.ts:72:5 › R2 admin 等级 select option 与 TIER_SHORT_LABEL 一致（P4 护栏）
+  console-regression.spec.ts:85:5 › R3 统计面板 range 切换渲染 + 错误重试恢复（P5 护栏）
+  console-regression.spec.ts:112:5 › R4 自定义渠道 创建→编辑→删除 全路径（P7 护栏）
+  fe01-console-call.spec.ts:91:7 › WP-FE01 控制台调用链路 › 找模型 → 调用 → 延迟/计费事实头 → 余额页用量对账
+  fe01-console-call.spec.ts:130:7 › WP-FE01 控制台调用链路 › 流式开关：默认聚合回退路径须显式告知无增量
+  fe01-console-call.spec.ts:149:7 › WP-FE01 控制台调用链路 › 余额为 0：预检闸门可见且提供充值入口
+  fe01-console-call.spec.ts:170:9 › WP-FE01 视口与死链 › 375px：控制台无横向溢出且关键控件可聚焦
+  fe01-console-call.spec.ts:170:9 › WP-FE01 视口与死链 › 1440px：控制台无横向溢出且关键控件可聚焦
+  fe01-console-call.spec.ts:192:7 › WP-FE01 视口与死链 › /models 卡片可达详情；/ladder stations 卡片不再链向模型详情
+  g6-evaluations.spec.ts:104:9 › g6-evaluations 对比测评（EVAL-01） › E1 未登录：401 → 登录引导 › 匿名 GET /api/v1/evaluations → 401 10004
+  g6-evaluations.spec.ts:110:9 › g6-evaluations 对比测评（EVAL-01） › E1 未登录：401 → 登录引导 › 匿名详情页显示「请先登录」与「去登录」
+  g6-evaluations.spec.ts:119:9 › g6-evaluations 对比测评（EVAL-01） › E2 免费用户：403 付费用户能力 › @serial 新注册 NORMAL → 创建 403 code=10008
+  g6-evaluations.spec.ts:138:9 › g6-evaluations 对比测评（EVAL-01） › E3 创建链：Dock 暂存 → chips 预选 → 详情并排 › @serial 详情页加入对比 ×2 → Dock 计数 → new 页预选 → 提交 → 详情并排 2 列
+  g6-evaluations.spec.ts:173:9 › g6-evaluations 对比测评（EVAL-01） › E4 模型数下限：N=1 拒绝 › @serial 后端 40000（前端按钮同时禁用）
+  g6-evaluations.spec.ts:182:9 › g6-evaluations 对比测评（EVAL-01） › E4 模型数下限：N=1 拒绝 › 前端：仅选 1 个模型时提交按钮禁用
+  g6-evaluations.spec.ts:197:9 › g6-evaluations 对比测评（EVAL-01） › E5 状态机：创建即跑收口终态、失败列原因 › @serial PRO 混合两列（1 成 1 败）→ 终态 2、costMinor=2 列×单价、败列有原因
+  g6-evaluations.spec.ts:247:9 › g6-evaluations 对比测评（EVAL-01） › E6 demo 公开：匿名可见预置示例 › 匿名 GET /api/v1/evaluations/demo?limit=3 → 200，items 均 isPaid=false
+  g6-evaluations.spec.ts:258:9 › g6-evaluations 对比测评（EVAL-01） › E6 demo 公开：匿名可见预置示例 › limit 越界（11）→ 40000
+  g6-openapi-keys.spec.ts:48:9 › g6-openapi-keys 平台 API Key 网关鉴权（GW-KEY-01） › G1 签发：明文仅一次、列表恒脱敏 › @serial 创建返回 aid_ak_ 明文，后续列表不含明文/哈希
+  g6-openapi-keys.spec.ts:87:9 › g6-openapi-keys 平台 API Key 网关鉴权（GW-KEY-01） › G2 Bearer 通道：Authorization 头鉴权 › @serial Bearer aid_ak_… → 200 且 billing-path=PLATFORM
+  g6-openapi-keys.spec.ts:112:9 › g6-openapi-keys 平台 API Key 网关鉴权（GW-KEY-01） › G3 x-api-key 通道：同主体等价 › @serial x-api-key aid_ak_… → 200
+  g6-openapi-keys.spec.ts:132:9 › g6-openapi-keys 平台 API Key 网关鉴权（GW-KEY-01） › G4 无效凭据：401 / code 10004 › 伪造 Key → 401 10004（且不回退 cookie）
+  g6-openapi-keys.spec.ts:141:9 › g6-openapi-keys 平台 API Key 网关鉴权（GW-KEY-01） › G4 无效凭据：401 / code 10004 › @serial 已吊销 Key → 401 10004
+  g6-openapi-keys.spec.ts:159:9 › g6-openapi-keys 平台 API Key 网关鉴权（GW-KEY-01） › G4 无效凭据：401 / code 10004 › @serial 不存在的 id 吊销 → 40000（0 行）
+  g6-openapi-keys.spec.ts:169:9 › g6-openapi-keys 平台 API Key 网关鉴权（GW-KEY-01） › G5 permissions 不足：403 › @serial permissions 不含 gateway:chat → 403 code=10008（且 403 优先于 429）
+  g6-openapi-keys.spec.ts:189:9 › g6-openapi-keys 平台 API Key 网关鉴权（GW-KEY-01） › G6 频率限制：429 › @serial Key 级固定窗口超限 → 429 code=10006
+  g6-openapi-keys.spec.ts:222:9 › g6-openapi-keys 平台 API Key 网关鉴权（GW-KEY-01） › G7 UPSTREAM：自有 Key 命中免扣平台余额 › @serial 录入 station-key → 命中 → billing-path=UPSTREAM 且钱包零变化
+  gateway-flow.spec.ts:25:7 › gateway-flow › 未调用网关前未登录 → 401/10004
+  gateway-flow.spec.ts:33:7 › gateway-flow › 充值→网关调用（故障降级→mock 成功）→按实扣费→usage/流水→重放幂等
+  header-links.spec.ts:10:7 › header-links › 八项导航顺序契约（含二级子项），Logo 点击回首页
+  ladder-filter-all.spec.ts:31:7 › ladder-filter-all：天梯全选/全不选与价格档位一致 › 全选：协议组点击「全选」→ 五个协议选项全部选中并同步 URL
+  ladder-filter-all.spec.ts:62:7 › ladder-filter-all：天梯全选/全不选与价格档位一致 › 三态·半选：仅勾选单个协议选项 → 全选框呈 indeterminate（部分选中）
+  ladder-filter-all.spec.ts:80:7 › ladder-filter-all：天梯全选/全不选与价格档位一致 › 全不选：全选态再次点击「全选」→ 清空该组并移除 URL 参数
+  ladder-filter-all.spec.ts:113:7 › ladder-filter-all：天梯全选/全不选与价格档位一致 › pricing：充值档位与 RECHARGE_TIERS 五档一致
+  ladder-matrix.spec.ts:7:7 › ladder-matrix › 双榜加载：/models 与 /ladder 标题契约
+  ladder-matrix.spec.ts:18:7 › ladder-matrix › 筛选变更同步 URL query
+  ladder-matrix.spec.ts:40:7 › ladder-matrix › 切换柱状图视图零网络请求
+  ladder-matrix.spec.ts:69:7 › ladder-matrix › 非法 type 返回 400 与 20002 信封
+  model-provenance.spec.ts:14:7 › model-provenance › 模型详情页不展示「官方测试」
+  model-provenance.spec.ts:27:7 › model-provenance › 基准数据有核验状态徽标
+  model-provenance.spec.ts:42:7 › model-provenance › API 返回 verifiedStatus 字段
+  smoke.spec.ts:29:7 › smoke-3000 › [1] /api/v1/system/health → 200
+  smoke.spec.ts:37:7 › smoke-3000 › [2] /models SSR → 200
+  smoke.spec.ts:43:7 › smoke-3000 › [3] /admin 匿名 → 307 /admin/login?redirect=%2Fadmin
+  smoke.spec.ts:48:7 › smoke-3000 › [4] /api/v1/auth/me 匿名 → 401
+  smoke.spec.ts:53:7 › smoke-3000 › [5] 非管理员登录访问 /admin → denied=1
+  smoke.spec.ts:62:7 › smoke-3000 › [6] SUPER_ADMIN 登录访问 /admin → 200
+  smoke.spec.ts:71:7 › smoke-3000 › [7] 登录→退出→/auth/me 恢复 401
+  theme-switch.spec.ts:5:7 › theme-switch › teal 色点切换 html[data-theme]，刷新后持久
+  zcode-audit.spec.ts:30:5 › T1 /login 渲染：登录按钮 teal 底白字可见（P3）
+  zcode-audit.spec.ts:46:5 › T2 /login 微信扫码块不渲染（D4）
+  zcode-audit.spec.ts:53:5 › T3 未登录访问 /user/console 307 到登录页
+  zcode-audit.spec.ts:62:5 › T4 登录 test 用户成功
+  zcode-audit.spec.ts:71:5 › T5 控制台页头：三卡右置竖排 + 文案可见（P6/P2）
+  zcode-audit.spec.ts:86:5 › T6 顶栏无重复「普通」徽章（P4）
+  zcode-audit.spec.ts:97:5 › T7 控制台七 tab 齐备且可切换
+  zcode-audit.spec.ts:114:5 › T8 统计面板 range 切换（P5）
+  zcode-audit.spec.ts:125:5 › T9 自定义渠道面板打开（P7）
+  zcode-audit.spec.ts:133:5 › T10 /user/balance 页可达
+  zcode-audit.spec.ts:143:5 › T11 公开页冒烟：/ /models /pricing 200
+Total: 68 tests in 15 files

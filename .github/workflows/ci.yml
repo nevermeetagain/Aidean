@@ -220,8 +220,8 @@ jobs:
             exit 1
           fi
           rc=0
-          pnpm exec playwright test --project=web e2e/web/walking-skeleton.spec.ts || rc=1
-          pnpm exec playwright test --project=smoke || rc=1
+          pnpm exec playwright test --config playwright.config.ts --project=web e2e/web/walking-skeleton.spec.ts || rc=1
+          pnpm exec playwright test --config playwright.config.ts --project=smoke || rc=1
           exit $rc
 
       - name: Show next start log (on failure)

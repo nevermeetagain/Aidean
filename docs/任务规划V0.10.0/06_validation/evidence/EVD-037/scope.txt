@@ -1,0 +1,4 @@
+.github/workflows/ci.yml
+e2e/playwright.config.ts
+package.json
+playwright.config.ts
