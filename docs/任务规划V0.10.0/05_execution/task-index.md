@@ -58,3 +58,4 @@
 | [TASK-070](tasks/TASK-070.md) | S12 | 密钥源目录采集：SiliconFlow /v1/models、DeepSeek /models 等官方/托管目录（缺凭证时健康=credential_missing） | 外部Agent | Agent-API | sonnect | 大/8h | — | L0 | U-M1 | 条件·待裁决 |
 | [TASK-071](tasks/TASK-071.md) | S12 | 可用性与中转真实性探针：最小请求探测 → ReliabilityObservation + 身份信号（含 Claude thinking signature 检查） | Hark(主Agent) | Agent-API | opus | 大/10h | 070 | L1 | U-M3 | 条件·待裁决 |
 | [TASK-072](tasks/TASK-072.md) | S12 | Artificial Analysis Data API v2 适配器重写（/api/v2/language/models/free，x-api-key，署名字段） | 外部Agent | Agent-API | sonnect | 中/4h | — | L0 | U-M2 | 条件·待裁决 |
+| [TASK-101](tasks/TASK-101.md) | S4 | 每日汇率采集（Frankfurter 公开免费源 → fx_daily_rates 日快照，幂等） | 助手B | Agent-API | sonnect | 小/3h | 047 | L2 | U-15 | 已完成（助手B，真 PG16 实跑见 EVD-101） |

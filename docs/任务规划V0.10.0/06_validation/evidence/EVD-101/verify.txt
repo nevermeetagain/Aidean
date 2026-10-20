@@ -1,0 +1,22 @@
+$ cd apps/web && ./node_modules/.bin/vitest run --root ../.. scripts/crawl/__tests__/fx_daily.spec.ts
+ RUN  v2.1.9 /workspace/work/aidean-lineb
+ ✓ scripts/crawl/__tests__/fx_daily.spec.ts > fx_daily 每日汇率采集 > 正常写入：拉取 → 契约校验 → 写入当日一行
+ ✓ scripts/crawl/__tests__/fx_daily.spec.ts > fx_daily 每日汇率采集 > 同日重跑幂等：已有当日快照则不拉源、不新增、不改写
+ ✓ scripts/crawl/__tests__/fx_daily.spec.ts > fx_daily 每日汇率采集 > 并发写冲突（唯一键命中）返回 exists，不覆盖
+ ✓ scripts/crawl/__tests__/fx_daily.spec.ts > fx_daily 每日汇率采集 > 源 5xx：抛 FxSourceError(http)，不写库，前一日快照保留
+ ✓ scripts/crawl/__tests__/fx_daily.spec.ts > fx_daily 每日汇率采集 > 网络错误：抛 FxSourceError(network)，不写库
+ ✓ scripts/crawl/__tests__/fx_daily.spec.ts > fx_daily 每日汇率采集 > 非法数值拒绝：零 → value 错误且不写库
+ ✓ scripts/crawl/__tests__/fx_daily.spec.ts > fx_daily 每日汇率采集 > 非法数值拒绝：负数 → value 错误且不写库
+ ✓ scripts/crawl/__tests__/fx_daily.spec.ts > fx_daily 每日汇率采集 > 非法数值拒绝：NaN 串 → value 错误且不写库
+ ✓ scripts/crawl/__tests__/fx_daily.spec.ts > fx_daily 每日汇率采集 > 非法数值拒绝：缺 rate → value 错误且不写库
+ ✓ scripts/crawl/__tests__/fx_daily.spec.ts > fx_daily 每日汇率采集 > 非法数值拒绝：越界过小（倒数错位） → value 错误且不写库
+ ✓ scripts/crawl/__tests__/fx_daily.spec.ts > fx_daily 每日汇率采集 > 非法数值拒绝：越界过大（单位错位） → value 错误且不写库
+ ✓ scripts/crawl/__tests__/fx_daily.spec.ts > fx_daily 每日汇率采集 > 币对不符 / 非 JSON 拒绝
+ ✓ scripts/crawl/__tests__/fx_daily.spec.ts > fx_daily 每日汇率采集 > 时区按 Asia/Shanghai 取日期：UTC 16:30 已是北京次日
+ ✓ scripts/crawl/__tests__/fx_daily.spec.ts > fx_daily 每日汇率采集 > dry-run（store=null）只校验不写
+ ✓ scripts/crawl/__tests__/fx_daily.spec.ts > fx_daily 每日汇率采集 > toDecimalString 去尾零且最多 8 位
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  10:25:41
+   Duration  4.05s (transform 575ms, setup 0ms, collect 954ms, tests 49ms, environment 0ms, prepare 1.16s)
+exit=0
