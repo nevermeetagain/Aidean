@@ -20,7 +20,7 @@
 | [TASK-055](tasks/TASK-055.md) | S4 | 种子：系统配置新增 pricing.fxUsdCny 默认行（值取 U-15 裁决） | 外部Agent | Agent-Data | haiku | 小/1h | 047 | L1 | U-15 | 条件·待裁决 |
 | [TASK-047](tasks/TASK-047.md) | S4 | 计价口径归一契约：币种 CNY + 每百万 Token + 汇率配置键（EffectivePrice 扩展） | Hark(主Agent) | Agent-Contract | opus | 中/4h | — | L0 | U-15 | 条件·待裁决 |
 | [TASK-048](tasks/TASK-048.md) | S4 | 生效价解析器接入币种/单位归一（网关扣费与读侧同口径） | Hark(主Agent) | Agent-API | opus | 中/8h | 047 | L1 | U-15 | 已完成（EVD-048） |
-| [TASK-080](tasks/TASK-080.md) | S4 | 缓存命中 token 计价（priceCache / discountCache）接入网关扣费 | Hark(主Agent) | Agent-API | opus | 中/6h | 048 | L2 | U-15 | 条件·待裁决 |
+| [TASK-080](tasks/TASK-080.md) | S4 | 缓存命中 token 计价（priceCache / discountCache）接入网关扣费 | Hark(主Agent) | Agent-API | opus | 中/6h | 048 | L2 | U-15 | 已完成（EVD-080） |
 | [TASK-081](tasks/TASK-081.md) | S4 | 后台价格批量写入 POST /api/v1/admin/prices/batch-upsert（requestId 幂等） | 外部Agent | Agent-API | sonnect | 中/5h | — | L0 | — | 未开工 |
 | [TASK-049](tasks/TASK-049.md) | S4 | 存量价格行口径盘点脚本（只读：币种×计价单位×来源） | 外部Agent | Agent-Guard | sonnect | 小/3h | — | L0 | — | 未开工 |
 | [TASK-053](tasks/TASK-053.md) | S4 | UI：价格页/详情页统一 ¥/M 展示（附原币原价注记） | Hark(主Agent) | Agent-App | opus | 中/6h | 048 | L3 | U-15 | 条件·待裁决 |

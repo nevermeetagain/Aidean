@@ -714,3 +714,20 @@ describe("TASK-048 网关消费归一价", () => {
     expect(estimatePrepayMinor(m, body, null)).toBe(710n);
   });
 });
+
+describe("TASK-080 结算接入缓存价", () => {
+  it("非流式 OpenAI：cached_tokens 按缓存价结算（10 万 prompt 中 4 万命中，缓存价 0.5）→ 12+2 = 14 分", async () => {
+    const cachedModel = { ...requestedModel, prices: [{ priceInput: "2", priceOutput: "8", priceCache: "0.5", billingCurrency: "CNY", isFree: false }] };
+    repoStub.findModelByCode.mockResolvedValue(cachedModel);
+    repoStub.findModelsByIds.mockResolvedValue(new Map([["m-req", cachedModel], ["m-free", freeModel]]));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        okFetchOnce({ choices: [{ message: { content: "ok" } }], usage: { prompt_tokens: 100_000, completion_tokens: 0, prompt_tokens_details: { cached_tokens: 40_000 } } })
+      )
+    );
+    const result = await gatewayOrchestrator.executeChat("u-1", chatBody(), "req-cache");
+    expect(result.meta.quotaMinor).toBe(14n);
+    expect(billingStub.captureHold).toHaveBeenCalledWith(expect.stringMatching(/^gw:req-cache:a0$/), 14n);
+  });
+});

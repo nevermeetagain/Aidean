@@ -1,0 +1,6 @@
+ Test Files  14 passed | 1 skipped (15)
+      Tests  201 passed | 3 skipped (204)
+tsc exit=0
+0
+[铁律-数字] 数字真源断言 PASS（锚=文档，代码=实测）：schema model=73, enum=37, admin API 域=38, admin 页面=34, Next.js=15.0.x
+RESULT: PASS (4/4 守卫通过)

@@ -1,5 +1,7 @@
 # TASK-080：缓存命中 token 计价（priceCache / discountCache）接入网关扣费
 
+> **2026-10-20 完成（Hark）**：新增 chargeUsageMinor（service.ts）统一非流式与流式透传结算；OpenAI/DeepSeek/Gemini 的 cached 含于 prompt，Anthropic 的 cache_read 另计（此前漏计）；缓存价缺失回退输入价并记 info；预扣仍按全量输入价估算（cached 事前未知，保守上界）。缓存写入（cache_creation_input_tokens）暂按未计，另行立卡。证据 EVD-080。
+
 > 版本: v0.10 | 更新: 2026-10-19 | 变更: 任务规划V0.10.0（基线 main@ff08433；外部助手完成 085/091/090/009/013/020/025/038/059/028/093/073 并经独立审查，12 卡移出；审查缺陷拆为 095–099；仅保留未完成卡；契约唯一源仍为 packages/shared/src（冻结稿 docs/任务规划V0.5.0/contracts））
 
 > 执行者：**Hark(主Agent)** ｜ 所有权 Agent：**Agent-API** ｜ 建议档位：**opus** ｜ **条件卡：待 U-15（汇率口径）裁决后下发**

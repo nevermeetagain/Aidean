@@ -673,7 +673,7 @@ function estimateStreamCompletionTokens(
 export function estimatePrepayMinor(
   model: {
     maxOutputTokens: number | null;
-    prices: { priceInput: unknown; priceOutput: unknown; billingCurrency: string; isFree?: boolean }[];
+    prices: { priceInput: unknown; priceOutput: unknown; priceCache?: unknown; billingCurrency: string; isFree?: boolean }[];
   },
   body: GatewayChat,
   rule: { markupRate: unknown; tokenMultiplier: unknown } | null
@@ -703,6 +703,40 @@ export function estimatePrepayMinor(
     tokenMultiplier: multiplier,
   });
   return inputMinor + outputMinor;
+}
+
+/**
+ * TASK-080 · 按实 usage 结算（元/百万 Token 归一价 × 加价率 × 倍率，分）：
+ *   命中缓存的输入 token 按缓存价计（priceCache），缺缓存价回退输入价；未命中部分按输入价；输出按输出价。
+ *   上游口径差异：OpenAI/DeepSeek/Gemini 的 prompt 合计已含 cached（cached ≤ prompt，超出截断）；
+ *   Anthropic 的 input_tokens 不含 cache_read_input_tokens（缓存读取另计，此前完全漏计）。
+ *   无缓存价且 cached>0 时只记一条 info（回退属正常口径，不告警）。
+ */
+export function chargeUsageMinor(
+  price: { priceInput: unknown; priceOutput: unknown; priceCache?: unknown },
+  usage: { promptTokens: number; completionTokens: number; cachedTokens?: number },
+  rule: { markupRate: unknown; tokenMultiplier: unknown } | null,
+  upstreamFormat: GatewayFormat,
+): bigint {
+  const markupRate = Number(rule?.markupRate ?? 1);
+  const tokenMultiplier = Number(rule?.tokenMultiplier ?? 1);
+  const prompt = Math.max(0, Math.trunc(usage.promptTokens || 0));
+  const rawCached = Math.max(0, Math.trunc(usage.cachedTokens || 0));
+  const cachedIncluded = upstreamFormat !== "anthropic";
+  const cached = cachedIncluded ? Math.min(rawCached, prompt) : rawCached;
+  const uncached = cachedIncluded ? prompt - cached : prompt;
+  const hasCachePrice = price.priceCache !== null && price.priceCache !== undefined;
+  const charge = (p: unknown, tokens: number) =>
+    tokens > 0 ? calcCharge({ pricePerMillionToken: Number(p), tokens, markupRate, tokenMultiplier }) : 0n;
+
+  let inputMinor: bigint;
+  if (cached > 0 && hasCachePrice) {
+    inputMinor = charge(price.priceInput, uncached) + charge(price.priceCache, cached);
+  } else {
+    if (cached > 0) console.info(`[gateway] cachedTokens=${cached} 无缓存价，按输入价计费`);
+    inputMinor = charge(price.priceInput, uncached + cached);
+  }
+  return inputMinor + charge(price.priceOutput, Math.max(0, Math.trunc(usage.completionTokens || 0)));
 }
 
 /** 上游响应 usage 归一（宽松：缺失/形状异常按 0/0，不因计费字段异常丢弃成功响应；cached/reasoning 缺省 0） */
@@ -934,7 +968,7 @@ interface PassthroughContext {
     modelId: string;
     freeCycle?: "DAY" | "WEEK" | "MONTH";
     /** 当期价（计费/估算兜底依据，即 RouteCandidateWithModel.model 的 prices 投影） */
-    model: { maxOutputTokens: number | null; prices: { priceInput: unknown; priceOutput: unknown; billingCurrency: string; isFree?: boolean }[] };
+    model: { maxOutputTokens: number | null; prices: { priceInput: unknown; priceOutput: unknown; priceCache?: unknown; billingCurrency: string; isFree?: boolean }[] };
   };
   rule: { markupRate: unknown; tokenMultiplier: unknown } | null;
   stream: Awaited<ReturnType<typeof callUpstreamStream>>;
@@ -992,21 +1026,7 @@ async function executeChatPassthrough(ctx: PassthroughContext): Promise<GatewayC
     if (billingPath === "PLATFORM" && !ctx.chargeless) {
       const price = cand.model.prices[0];
       if (price) {
-        const markup = Number(rule?.markupRate ?? 1);
-        const multiplier = Number(rule?.tokenMultiplier ?? 1);
-        quotaMinor =
-          calcCharge({
-            pricePerMillionToken: Number(price.priceInput),
-            tokens: usage.promptTokens,
-            markupRate: markup,
-            tokenMultiplier: multiplier,
-          }) +
-          calcCharge({
-            pricePerMillionToken: Number(price.priceOutput),
-            tokens: usage.completionTokens,
-            markupRate: markup,
-            tokenMultiplier: multiplier,
-          });
+        quotaMinor = chargeUsageMinor(price, usage, rule, upstreamFormat);
       }
       if (quotaMinor > 0n) {
         await billingService.captureHold(holdKey, quotaMinor);
@@ -1413,21 +1433,7 @@ export const gatewayOrchestrator = {
             if (billingPath === "PLATFORM" && !chargeless) {
               const price = cand.model.prices[0];
               if (price) {
-                const markup = Number(rule?.markupRate ?? 1);
-                const multiplier = Number(rule?.tokenMultiplier ?? 1);
-                quotaMinor =
-                  calcCharge({
-                    pricePerMillionToken: Number(price.priceInput),
-                    tokens: usage.promptTokens,
-                    markupRate: markup,
-                    tokenMultiplier: multiplier,
-                  }) +
-                  calcCharge({
-                    pricePerMillionToken: Number(price.priceOutput),
-                    tokens: usage.completionTokens,
-                    markupRate: markup,
-                    tokenMultiplier: multiplier,
-                  });
+                quotaMinor = chargeUsageMinor(price, usage, rule, upstreamFormat);
               }
               if (quotaMinor > 0n) {
                 await billingService.captureHold(holdKey, quotaMinor);
