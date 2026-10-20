@@ -1,0 +1,87 @@
+# EVD-049 verify（2026-10-20 17:33:30 CST，基线 33a2e62）
+
+## 环境
+- PG 16.14（@embedded-postgres/linux-arm64 二进制，/tmp/pg16，端口 55439；沙箱无 docker/系统 PG）
+- DATABASE_URL=postgresql://postgres:***@localhost:55439/aidean
+- 前置：cd apps/web && npx prisma migrate deploy（All migrations have been successfully applied）→ pnpm db:seed（seed=0，aiModels=1000）
+
+## $ DATABASE_URL=$PG16_URL node scripts/audit/price-unit-census.mjs
+# 价格行口径盘点（TASK-049）
+
+- 生成时间：2026-10-20T09:33:31.253Z
+- 范围：model_prices WHERE is_current = true
+- is_current 行总数：1000（全表 1000 行）
+- 分组合计：1000（= 总数 ✓）
+
+## 1. 三维分组计数（billingCurrency × billingUnit × sourceType）
+
+| billingCurrency | billingUnit | sourceType | 行数 | priceInput min / avg / max | priceOutput min / avg / max |
+|---|---|---|---:|---|---|
+| CNY | per_1k_tokens | OFFICIAL | 34 | 0 / 0.0092 / 0.05 | 0 / 0.0220 / 0.12 |
+| USD | per_1k_tokens | OFFICIAL | 966 | 0 / 0.1555 / 75 | 0 / 0.4915 / 150 |
+| **合计** | | | **1000** | | |
+
+## 2. 按币种汇总
+
+| billingCurrency | 行数 |
+|---|---:|
+| CNY | 34 |
+| USD | 966 |
+
+## 3. 按计费模式 × 计价单位
+
+| billingMode | billingUnit | 行数 |
+|---|---|---:|
+| PER_TOKEN | per_1k_tokens | 1000 |
+
+## 4. 每组样例（每组最多 5 条，按 model slug 排序）
+
+### CNY · per_1k_tokens · OFFICIAL（34 行）
+
+| model slug | 名称 | priceInput | priceOutput | priceCache | pricePerRequest | billingMode | sourceName |
+|---|---|---:|---:|---:|---:|---|---|
+| abab-7 | abab-7 | 0.005 | 0.01 | — | — | PER_TOKEN | — |
+| bge-m3 | BGE-M3 | 0 | 0 | — | — | PER_TOKEN | — |
+| bge-reranker-v2-m3 | bge-reranker-v2-m3 | 0 | 0 | — | — | PER_TOKEN | — |
+| cogvlm2 | CogVLM2 | 0 | 0 | — | — | PER_TOKEN | — |
+| deepseek-coder-v2 | DeepSeek-Coder-V2 | 0 | 0 | — | — | PER_TOKEN | — |
+
+### USD · per_1k_tokens · OFFICIAL（966 行）
+
+| model slug | 名称 | priceInput | priceOutput | priceCache | pricePerRequest | billingMode | sourceName |
+|---|---|---:|---:|---:|---:|---|---|
+| claude-3-5-haiku | Claude 3.5 Haiku | 0.8 | 4 | — | — | PER_TOKEN | — |
+| claude-3-5-sonnet-vision | Claude 3.5 Sonnet Vision | 3 | 15 | — | — | PER_TOKEN | — |
+| claude-3-7-sonnet | Claude 3.7 Sonnet | 15 | 75 | — | — | PER_TOKEN | — |
+| claude-3-haiku | Claude 3 Haiku | 0.25 | 1.25 | — | — | PER_TOKEN | — |
+| claude-3-opus | Claude 3 Opus | 15 | 75 | — | — | PER_TOKEN | — |
+
+exit=0
+
+## $ node scripts/audit/price-unit-census.mjs   # 无 DATABASE_URL
+# 价格行口径盘点（TASK-049）
+
+> 未运行：未设置 DATABASE_URL
+
+用法：`DATABASE_URL=postgresql://user:pass@host:5432/db node scripts/audit/price-unit-census.mjs [--samples 5]`
+
+前置：库已 `prisma migrate deploy` 且已 `pnpm db:seed`（或为实际业务库，只读）。
+exit=0
+
+## $ DATABASE_URL=postgresql://x:y@localhost:1/none node scripts/audit/price-unit-census.mjs   # 连不上（stderr 省略）
+prisma:error 
+Invalid `prisma.modelPrice.count()` invocation:
+
+
+Can't reach database server at `localhost:1`
+
+Please make sure your database server is running at `localhost:1`.
+
+> 查询失败（脚本仍以 0 退出）：Please make sure your database server is running at `localhost:1`.
+exit=0
+
+## $ test -f scripts/audit/price-unit-census.mjs
+exit=0
+
+## $ grep -nEi 'create|update|upsert|delete|insert|truncate|drop|alter|executeRaw|queryRaw' scripts/audit/price-unit-census.mjs   # 写语句违规模式，期望 exit=1
+exit=1
