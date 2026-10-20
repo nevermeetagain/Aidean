@@ -1,0 +1,38 @@
+== TASK-032 卡面验证命令 ==
+$ pnpm --filter @aidean/shared exec tsc --noEmit && pnpm --filter @aidean/shared test
+
+> @aidean/shared@0.1.0 test E:\Code\Aidean\packages\shared
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mE:/Code/Aidean/packages/shared[39m
+
+ [32m✓[39m src/__tests__/billing.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/__tests__/admin-permissions.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/__tests__/contract/identity.generated.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/__tests__/provider-pricing.spec.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/__tests__/contract/envelope.generated.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/money.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/__tests__/user.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/__tests__/envelope.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/__tests__/auth.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/__tests__/contract/errors.generated.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/__tests__/search.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/__tests__/pricing-config.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/product-intro.spec.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m src/__tests__/ladder.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/__tests__/errors.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/__tests__/gateway.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/__tests__/favorites.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/feature-flags.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/__tests__/promotion.spec.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/__tests__/schemas.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/__tests__/monitoring.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/__tests__/price-batch.spec.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m22 passed[39m[22m[90m (22)[39m
+[2m      Tests [22m [1m[32m225 passed[39m[22m[90m (225)[39m
+[2m   Start at [22m 11:36:54
+[2m   Duration [22m 1.83s[2m (transform 2.90s, setup 0ms, collect 9.79s, tests 265ms, environment 6ms, prepare 6.96s)[22m
+
+EXIT_CODE=0

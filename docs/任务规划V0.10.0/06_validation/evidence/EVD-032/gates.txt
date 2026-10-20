@@ -1,0 +1,12 @@
+EVD-032 全局门禁记录（2026-10-20，基线 mirror/main@bcaa161d == 本地 main）
+
+1) node scripts/check-docs-rule.mjs          → PASS（铁律1 apps/ 无实体 .md；数字真源断言 PASS）exit 0
+2) node scripts/check-docs-facts.mjs         → All 14 assertions passed. exit 0
+3) node scripts/guard/run-all.mjs            → PASS root-pollution / secret-scan / module-boundary / port-consistency = 4/4
+4) pnpm --filter web exec tsc --noEmit       → exit 0（无输出）
+5) pnpm --filter web lint                    → exit 0（仅存量 @next/next/no-img-element warning，非本次引入）
+6) pnpm --filter web test                    → 1312 passed / 5 skipped / 0 failed（≥ 交接书基线 1292）
+7) 契约漂移：node scripts/contract/gen-contract-tests.mjs && git diff --exit-code packages/shared/src/__tests__/contract → exit 0（生成 3 spec，无 diff）
+8) shared 包验证（卡面命令）：tsc --noEmit exit 0；vitest 22 files / 225 passed（含本次新增 search.spec 18 用例）
+
+结论：全局门禁五项不退化，TASK-032 通过。
