@@ -1,0 +1,51 @@
+$ node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs
+[铁律1] docs rule PASS：apps/ 下无实体 .md（README.md 豁免）。
+[铁律-数字] 数字真源断言 PASS（锚=文档，代码=实测）：schema model=73, enum=37, admin API 域=38, admin 页面=34, Next.js=15.0.x
+✅ schema-models: schema.prisma model 数 = 73（TASK-047 新增 FxDailyRate 日汇率快照 72→73；前次 M-002 TASK-058 68→72） → expected=73, actual=73
+✅ seed-models: seed.ts 模型条数（modelsData 静态条目 + DEMO_MODEL_COUNT 生成器）≥ 50（下限式，R-83 T1：模型数不限由后台配置） → expected=>=50, actual=1000
+✅ seed-no-official: seed.ts 中无 OFFICIAL/官方测试（provenance 修复后） → expected=0, actual=0
+✅ lib-features-count: lib/features 子目录数 = 23（TASK-033 新增 lib/features/search 22→23，R10-01；前次 TASK-090 收口 18→22，含 lib/features/pricing 等新增目录） → expected=23, actual=23
+✅ aidean-ui-refs: @aidean/ui 在 apps/web/components 的 import 数 = 70（TASK-064 新增 ChangeFeed/MonitoringPanel 68→70；前次 TASK-074 BenchmarkDialog 67→68） → expected=70, actual=70
+✅ route-count: apps/web route.ts 文件数（含 app/ 全域）= 163（TASK-063 新增 admin/monitoring 4 端点 159→163，R10-01；前次 TASK-081 158→159） → expected=163, actual=163
+✅ page-count: apps/web page.tsx 文件数 = 58（TASK-064 新增 (admin)/admin/monitoring/page.tsx 57→58） → expected=58, actual=58
+✅ next-version: Next.js 版本 = 15.x → expected=15.x, actual=15.x
+✅ spec-count: spec 文件总数 = 194（TASK-030 新增 e2e/tests/promotion-billing.spec.ts 193→194，R10-01；前次 TASK-075 新增 e2e/web/model-detail-benchmark.spec.ts 192→193） → expected=194, actual=194
+✅ queryraw-biz: apps/web 业务代码 $queryRaw/$executeRaw = 0 → expected=0, actual=0
+✅ batch-count: admin batch 路由数 = 15 → expected=15, actual=15
+✅ db-doc-product-fields: 《数据库文档》products 行已登记 display_name 与 ProductCategory（DB 模型变更文档同步） → expected=2/2, actual=2/2
+✅ category-label-single-source: apps/web 中硬编码「label: "特供"」式分类映射 = 0（文案唯一来源 lib/product-label.ts） → expected=0, actual=0
+✅ usage-stats-anchor-pair: 《API架构设计方案》含 usage-stats-architecture 锚 且《API接口文档》含其回链（铁律 2 双向互引） → expected=2/2, actual=2/2
+✅ rtm-row-count: 《需求追溯矩阵》REQ 行数 = V0.10.0 03a RTM 行数（TASK-051 入库，grep -c "^| REQ-"） → expected=158, actual=158
+✅ rtm-gap-has-task: 《需求追溯矩阵》中「未实现/部分实现」行均有任务号或「暂不执行」理由（TASK-051） → expected=0, actual=0
+
+All 16 assertions passed.
+exit=0
+
+$ 「计价口径归一」三文档锚与互链
+docs/architecture/网关计费时序契约.md:3
+docs/architecture/API接口文档.md:3
+docs/governance/术语表.md:2
+-- pricing-normalization 定义:
+docs/architecture/网关计费时序契约.md
+   引用:
+docs/architecture/API接口文档.md
+docs/architecture/网关计费时序契约.md
+docs/governance/术语表.md
+-- effective-price-fields 定义:
+docs/architecture/API接口文档.md
+   引用:
+docs/architecture/网关计费时序契约.md
+docs/governance/术语表.md
+-- term-pricing-normalization 定义:
+docs/governance/术语表.md
+   引用:
+docs/architecture/API接口文档.md
+docs/architecture/网关计费时序契约.md
+
+$ 字段表 currency/unit/fx
+115:| currency | `CNY` \| `USD` | 归一目标币种：网关恒 `CNY`（结算币种）；读侧为展示币种（中国大陆 CNY，其他 USD，TASK-102） |
+116:| unit | `per_million_tokens` | 归一单位，恒为每百万 Token |
+119:| fxRate | DecimalStr \| null | 本次归一使用的汇率（同币种为 null） |
+120:| fxDate | `YYYY-MM-DD` \| null | 汇率快照日（Asia/Shanghai 自然日；回退 ≤3 天） |
+
+注：文档索引.md 不在卡面允许清单，但三文档版本头升级须同步索引版本列（check-docs-rule 版本一致性口径），故一并修改。
