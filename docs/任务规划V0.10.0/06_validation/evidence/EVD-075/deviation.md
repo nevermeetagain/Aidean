@@ -1,0 +1,7 @@
+# EVD-075 偏差说明
+
+1. **spec 路径**：卡面写 `e2e/model-detail-benchmark.spec.ts`，实际落 `e2e/web/model-detail-benchmark.spec.ts`。依据：根 `playwright.config.ts` 每个 project 自带 `testDir`（web=`e2e/web`…），放在 `e2e/` 根的 spec 不属于任何 project、不会被 `pnpm test:e2e` 执行（`playwright --list` 实测）。放入 web project 后 `pnpm test:e2e -g model-detail-benchmark` 原样 8 passed。
+2. **`bench-demo-note` 无法正向触发（卡面/§5 与代码事实冲突，需要 Hark 裁决）**：`lib/features/ladder/repository.ts` `findModelByIdentifier` 只取 `benchmarks.where.verifiedStatus = 1`，页面 `verified = verifiedStatus === 1` 恒真，`BenchmarkDialog` 的 `!open.verified` 分支在详情页不可达；seed 基准（sourceName=「平台演示数据」）也标为已核验（T-1.3.3 豁免）。本 spec 只做反向断言（已核验条 `bench-demo-note` 计数 0）。若要正向展示，需要 Hark/074 归属方二选一：读侧放行未核验基准，或以 sourceName/sourceType 判演示数据——均属 `apps/**`，本卡禁止修改。
+3. **`e2e/web/models.spec.ts:96` 注释更新**（交接任务书 §5 要求，review-074 S8）：卡面「允许修改」未列，但该文件属助手 C 独占（27 §3.4），只改注释、不改断言。
+4. **夹具**：详情页 `revalidate = 300`（ISR），故每次运行新建带运行 id 的专用模型/基准/演示测评/监控源，afterAll 级联清理；samples-loading 用事务内 `LOCK TABLE evaluation_models` 挡住服务端示例查询，samples-error 再 `pg_cancel_backend` 取消被挡查询（只选 query 含 evaluation + is_paid 且处于 Lock 等待的会话）；offerings loading/error 用 `page.route` 延迟 / 注入 500，再点「重试」放行真实接口。
+5. **环境**：沙箱无 root、无 redis-server 二进制，Redis :6390 由 `fakeredis` 2.40 TcpFakeServer 提供（RESP 协议兼容，app 侧 ioredis 正常读写）；Chromium headless 缺 libatk 等，用解包 deb 的 LD_LIBRARY_PATH 补齐。PG16.14 :55439 为真库；:3000 为 `next start` 生产构建（HEAD 7fe1ad1 构建）。

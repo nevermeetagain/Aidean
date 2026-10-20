@@ -93,7 +93,8 @@ test.describe('模型详情页', () => {
 
   test('模型详情页测评示例区与对比测评入口共存', async ({ page }) => {
     // RW-3 恢复：/evaluations（plural）已上线（列表/详情/new 三页 + demo 公开端点）。
-    // 详情页「测评示例」区仍为 Phase 4 占位（文案「即将上线」）——按现役 DOM 断言占位存在，
+    // 详情页「测评示例」区已由 TASK-074 实装（samples-* 四态，占位文案「即将上线」已移除；四态与基准弹窗断言见
+    // e2e/web/model-detail-benchmark.spec.ts，TASK-075）——此处只断言区块标题存在，
     // 并断言首页「模型对比」卡指向 /evaluations（死链 /compare 已销）。
     await expect(page.getByRole('heading', { name: '测评示例' })).toBeVisible();
     const home = await page.goto('/');

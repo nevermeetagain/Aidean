@@ -1,0 +1,21 @@
+$ pnpm test:e2e -g model-detail-benchmark
+# 2026-10-20 20:05:12 CST; :3000 = next start（生产构建，HEAD 7fe1ad1）；PG16.14 :55439/aidean_e2e；Redis :6390
+
+> aidean-monorepo@0.1.0 test:e2e /workspace/work/aidean-linec
+> playwright test --config playwright.config.ts "-g" "model-detail-benchmark"
+
+
+Running 8 tests using 1 worker
+
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+  ✓  1 [web] › e2e/web/model-detail-benchmark.spec.ts:148:7 › model-detail-benchmark · 模型详情页基准弹窗与测评示例（TASK-075） › 基准弹窗：bench-list → bench-open 打开 bench-dialog，Esc 与关闭按钮均可关闭；已核验条无 bench-demo-note (3.6s)
+  ✓  2 [web] › e2e/web/model-detail-benchmark.spec.ts:177:7 › model-detail-benchmark · 模型详情页基准弹窗与测评示例（TASK-075） › 空态：无基准 → bench-empty；无示例 → samples-empty；无公开源 → offerings-empty (2.2s)
+  ✓  3 [web] › e2e/web/model-detail-benchmark.spec.ts:188:7 › model-detail-benchmark · 模型详情页基准弹窗与测评示例（TASK-075） › 测评示例有数据态：samples-ready + samples-answer 并排 + samples-demo-badge + 长回答「展开全文 / 收起」 (4.6s)
+  ✓  4 [web] › e2e/web/model-detail-benchmark.spec.ts:210:7 › model-detail-benchmark · 模型详情页基准弹窗与测评示例（TASK-075） › seed 预置演示单（results.demo=true）在其模型详情页显示 samples-demo-badge (2.0s)
+  ✓  5 [web] › e2e/web/model-detail-benchmark.spec.ts:223:7 › model-detail-benchmark · 模型详情页基准弹窗与测评示例（TASK-075） › 测评示例加载态：服务端示例查询被挡住时显示 samples-loading（Suspense 骨架），释放后落定 (2.4s)
+  ✓  6 [web] › e2e/web/model-detail-benchmark.spec.ts:238:7 › model-detail-benchmark · 模型详情页基准弹窗与测评示例（TASK-075） › 测评示例错误态：示例查询失败 → samples-error(role=alert)，不阻断详情页 (2.3s)
+  ✓  7 [web] › e2e/web/model-detail-benchmark.spec.ts:256:7 › model-detail-benchmark · 模型详情页基准弹窗与测评示例（TASK-075） › 多源上架：offerings-loading → offerings-error（重试）→ offerings-ready；桌面 offerings-row、移动 offerings-card、中转 relay-unverified、署名 attribution (6.6s)
+  ✓  8 [web] › e2e/web/model-detail-benchmark.spec.ts:298:7 › model-detail-benchmark · 模型详情页基准弹窗与测评示例（TASK-075） › 公开接口白名单：tosStatus=pending 的源观测不进 offerings（仅 allowed / attribution_required 放行） (113ms)
+
+  8 passed (29.4s)
+exit=0

@@ -1,0 +1,21 @@
+# §5 testid 覆盖核对（grep 本 spec）
+bench-list                   2
+bench-empty                  2
+bench-open                   1
+bench-dialog                 1
+bench-demo-note              1
+samples-loading              3
+samples-empty                2
+samples-error                1
+samples-ready                5
+samples-answer               1
+samples-demo-badge           3
+offerings-loading            2
+offerings-empty              1
+offerings-error              1
+offerings-ready              1
+offerings-row                3
+offerings-card               4
+offerings-relay-unverified   2
+offerings-attribution        1
+展开全文/收起 4/2；即将上线 3；重试 1；aria-haspopup 2；Escape 1

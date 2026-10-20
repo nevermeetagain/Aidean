@@ -1,0 +1,28 @@
+== 全局门禁（2026-10-20 20:18:41 CST，工作树基于 origin/main@7fe1ad1）==
+---- rule
+$ node scripts/check-docs-rule.mjs
+[铁律1] docs rule PASS：apps/ 下无实体 .md（README.md 豁免）。
+[铁律-数字] 数字真源断言 PASS（锚=文档，代码=实测）：schema model=73, enum=37, admin API 域=38, admin 页面=34, Next.js=15.0.x
+exit=0
+---- facts
+✅ rtm-row-count: 《需求追溯矩阵》REQ 行数 = V0.10.0 03a RTM 行数（TASK-051 入库，grep -c "^| REQ-"） → expected=158, actual=158
+✅ rtm-gap-has-task: 《需求追溯矩阵》中「未实现/部分实现」行均有任务号或「暂不执行」理由（TASK-051） → expected=0, actual=0
+All 16 assertions passed.
+exit=0
+---- guard
+  PASS module-boundary.mjs (exit 0)
+  PASS port-consistency.mjs (exit 0)
+RESULT: PASS (4/4 守卫通过)
+exit=0
+---- tsc
+$ pnpm --filter web exec tsc --noEmit
+exit=0
+---- lint
+> next lint
+./components/common/SafeImage.tsx
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+exit=0
+---- test
+ Test Files  144 passed | 2 skipped (146)
+      Tests  1442 passed | 5 skipped (1447)
+exit=0
