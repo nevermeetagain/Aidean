@@ -1,0 +1,77 @@
+# EVD-006 · 本地复刻 ci.yml e2e-skeleton job  (2026-10-20T01:42:26Z)
+环境：PostgreSQL 16.14（:55432，空库 aidean_e2e 由 prisma 自动创建）· Redis 8.6.3（:6379，Debian 包本地运行，协议兼容 redis:7）· Node v22.23.3 · pnpm 9.0.0 · HEAD a1aa6da
+env 与 ci.yml 一致：REDIS_URL/JWT_SECRET/NEXT_PUBLIC_SITE_URL/AIDEAN_ENABLE_MOCK_UPSTREAM=1/AIDEAN_BYPASS_LOGIN_RATE_LIMIT=1/CHECKPOINT_DISABLE=1；未设 JWT_PRIVATE_KEY（与 CI 同，走 Redis 钥匙环）
+端口：next start -p 3000（恒 3000）
+
+
+
+== STEP prisma generate
+ok
+== STEP migrate deploy
+18 migrations found in prisma/migrations
+Applying migration `0000_init`
+Applying migration `20260915100201_add_station_user_key`
+Applying migration `20260916104633_encrypt_custom_channel_key`
+Applying migration `20260917004900_drop_deprecated_apikey`
+Applying migration `20260917150000_add_news_item`
+Applying migration `20260923120000_r34_extend_weight_columns`
+Applying migration `20260925000000_d5_add_billing_unit`
+Applying migration `20260925120000_add_product_intro`
+Applying migration `20260925170000_align_unique_indexes`
+Applying migration `20260928120000_product_display_name_category`
+Applying migration `20260929000000_add_provider_and_offerings_tables`
+Applying migration `20260930120000_ai_market_discovery_engine`
+Applying migration `20261008093000_channel_scheduling_enhance`
+Applying migration `20261010000000_channel_format_extend_4`
+Applying migration `20261012075217_navigation_menu_scope`
+Applying migration `20261012082315_rbac_role_permission_user_role`
+Applying migration `20261014000000_model_prices_partial_current_unique`
+Applying migration `20261015000000_model_source_monitoring`
+The following migration(s) have been applied:
+All migrations have been successfully applied.
+== STEP seed
+db:seed exit=0
+seed-navigation-menu exit=0
+seed-rbac exit=0
+== STEP build
+build exit=0
+== STEP start + ready
+ready after 4s
+{"code":0,"message":"ok","data":{"status":"ready","checks":{"db":"ok","redis":"ok"},"time":"2026-10-20T01:41:22.620Z"},"requestId":"b8f6a2df-5649-482c-af58-3d59256553d3"}+ echo
+
+== STEP playwright web walking-skeleton
+
+Running 3 tests using 1 worker
+
+  ✓  1 [web] › e2e/web/walking-skeleton.spec.ts:42:7 › S0 步行骨架：注册→登录→鉴权写→页面可见→错误信封→就绪 › 主链路：注册→登录→创建 API Key→控制台可见→清理 (2.2s)
+  ✓  2 [web] › e2e/web/walking-skeleton.spec.ts:120:7 › S0 步行骨架：注册→登录→鉴权写→页面可见→错误信封→就绪 › 匿名 GET /user/api-keys → 401 且错误信封四要素齐全（ErrorBodySchema.parse） (222ms)
+  ✓  3 [web] › e2e/web/walking-skeleton.spec.ts:136:7 › S0 步行骨架：注册→登录→鉴权写→页面可见→错误信封→就绪 › GET /system/ready → 200 且就绪体符合 SystemReadySchema (184ms)
+
+  3 passed (4.3s)
+walking-skeleton exit=0
+== STEP playwright smoke
+
+Running 7 tests using 1 worker
+
+  ✓  1 [smoke] › e2e/tests/smoke.spec.ts:29:7 › smoke-3000 › [1] /api/v1/system/health → 200 (312ms)
+  ✓  2 [smoke] › e2e/tests/smoke.spec.ts:37:7 › smoke-3000 › [2] /models SSR → 200 (1.2s)
+  ✓  3 [smoke] › e2e/tests/smoke.spec.ts:43:7 › smoke-3000 › [3] /admin 匿名 → 307 /admin/login?redirect=%2Fadmin (710ms)
+  ✓  4 [smoke] › e2e/tests/smoke.spec.ts:48:7 › smoke-3000 › [4] /api/v1/auth/me 匿名 → 401 (234ms)
+  ✓  5 [smoke] › e2e/tests/smoke.spec.ts:53:7 › smoke-3000 › [5] 非管理员登录访问 /admin → denied=1 (1.1s)
+  ✓  6 [smoke] › e2e/tests/smoke.spec.ts:62:7 › smoke-3000 › [6] SUPER_ADMIN 登录访问 /admin → 200 (1.6s)
+  ✓  7 [smoke] › e2e/tests/smoke.spec.ts:71:7 › smoke-3000 › [7] 登录→退出→/auth/me 恢复 401 (827ms)
+
+  7 passed (7.3s)
+smoke exit=0
+FINAL rc=0
+
+## 逐步退出码
+prisma generate exit=0
+migrate deploy exit=0（18 migrations found / 18 applied）
+db:seed exit=0
+seed-navigation-menu exit=0
+seed-rbac exit=0
+build exit=0
+ready after 4s
+walking-skeleton exit=0
+smoke exit=0

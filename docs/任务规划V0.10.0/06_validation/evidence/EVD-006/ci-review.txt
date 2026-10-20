@@ -1,0 +1,1 @@
+ci.yml 审视：本地逐步复刻全部通过，job 内无 GitHub runner 不可执行步骤（services postgres:16/redis:7、playwright install --with-deps、next start :3000、trap 回收均适用 ubuntu-latest）→ 本卡 ci.yml 零改动。

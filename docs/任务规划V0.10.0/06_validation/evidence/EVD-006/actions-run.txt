@@ -1,0 +1,1 @@
+U-25（GitHub Actions 是否启用）未裁决：workflow_runs_list total_count=0 → 首轮 Actions run 结论 UNKNOWN（不阻塞本卡其余验收）。

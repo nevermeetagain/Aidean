@@ -1,0 +1,31 @@
+#!/bin/bash
+# TASK-006：本地复刻 .github/workflows/ci.yml e2e-skeleton job（PG16.14 :55432 空库 + Redis 8.6 :6379 + next start :3000）
+set -x
+B=/tmp/pgbin/usr/lib/postgresql/16/bin
+cd /workspace/work/Aidean
+export DATABASE_URL="postgresql://postgres@127.0.0.1:55432/aidean_e2e?schema=public"
+export REDIS_URL="redis://localhost:6379"
+export JWT_SECRET="ci-e2e-skeleton-throwaway-secret-not-a-real-key"
+export NEXT_PUBLIC_SITE_URL="http://localhost:3000"
+export AIDEAN_ENABLE_MOCK_UPSTREAM=1 AIDEAN_BYPASS_LOGIN_RATE_LIMIT=1 CHECKPOINT_DISABLE=1 NEXT_TELEMETRY_DISABLED=1
+export LD_LIBRARY_PATH=/tmp/uilibs/usr/lib/aarch64-linux-gnu PLAYWRIGHT_BROWSERS_PATH=/tmp/pwbrowsers PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1
+unset JWT_PRIVATE_KEY JWT_PUBLIC_KEY
+cd apps/web
+pnpm exec prisma db execute --url "postgresql://postgres@127.0.0.1:55432/postgres" --stdin <<< "DROP DATABASE IF EXISTS aidean_e2e; CREATE DATABASE aidean_e2e;"
+cd ../..
+echo "== STEP prisma generate"; pnpm --filter web exec prisma generate >/dev/null && echo ok
+echo "== STEP migrate deploy"; pnpm --filter web exec prisma migrate deploy 2>&1 | grep -E "Applying|applied|migrations found|All migrations"
+echo "== STEP seed"; pnpm --filter web run db:seed >/tmp/seed1.log 2>&1; echo "db:seed exit=$?"; pnpm --filter web exec tsx prisma/seed-navigation-menu.ts >/tmp/seed2.log 2>&1; echo "seed-navigation-menu exit=$?"; pnpm --filter web exec tsx prisma/seed-rbac.ts >/tmp/seed3.log 2>&1; echo "seed-rbac exit=$?"
+echo "== STEP build"; pnpm --filter web build >/tmp/build006.log 2>&1; echo "build exit=$?"
+echo "== STEP start + ready"
+mkdir -p .auth
+(cd apps/web && exec npx next start -p 3000) > /tmp/next-start.log 2>&1 &
+SP=$!
+ready=0; for i in $(seq 1 90); do code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/v1/system/ready || echo 000); if [ "$code" = "200" ]; then ready=1; echo "ready after ${i}s"; break; fi; sleep 1; done
+[ "$ready" = 1 ] || { echo "NOT READY"; curl -s localhost:3000/api/v1/system/ready; tail -30 /tmp/next-start.log; }
+curl -s localhost:3000/api/v1/system/ready; echo
+rc=0
+echo "== STEP playwright web walking-skeleton"; timeout 600 pnpm exec playwright test --project=web e2e/web/walking-skeleton.spec.ts --reporter=list > /tmp/pw-web.log 2>&1; r=$?; tail -40 /tmp/pw-web.log; echo "walking-skeleton exit=$r"; [ $r = 0 ] || rc=1
+echo "== STEP playwright smoke"; timeout 600 pnpm exec playwright test --project=smoke --reporter=list > /tmp/pw-smoke.log 2>&1; r=$?; tail -40 /tmp/pw-smoke.log; echo "smoke exit=$r"; [ $r = 0 ] || rc=1
+kill $SP; pkill -f "[n]ext start -p 3000"; pkill -f "[n]ext-server"
+echo "FINAL rc=$rc"
