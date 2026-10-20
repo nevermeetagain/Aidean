@@ -1,0 +1,14 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v2.1.9 /workspace/work/Aidean/apps/web
+
+ ✓ lib/sync/writers/catalog-snapshot.spec.ts (11 tests) 11ms
+ ↓ lib/sync/writers/__tests__/persist-prices.int.spec.ts (2 tests | 2 skipped)
+ ✓ lib/sync/writers/__tests__/persist-prices.spec.ts (2 tests) 6ms
+
+ Test Files  2 passed | 1 skipped (3)
+      Tests  13 passed | 2 skipped (15)
+   Start at  03:39:24
+   Duration  1.74s (transform 122ms, setup 0ms, collect 257ms, tests 16ms, environment 0ms, prepare 411ms)
+
+verify exit=0

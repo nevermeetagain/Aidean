@@ -8,6 +8,8 @@
  * ③ 下架：本轮未出现的 isListed=true 观测 → updateMany 置 false + delistedAt=fetchedAt；
  * ④ 重新上架：命中既有观测走 update 分支，isListed=true、清 delistedAt、保 firstSeenAt 不变；
  * ⑤ 源不存在：抛错且不开事务。
+ * TASK-098 加固：⑥ 空目录不写快照不下架；⑦ 观测按 200 分批 + 事务 timeout；
+ * ⑧ 同哈希并发撞 P2002 → 事务外回读既有快照 idempotent=true；⑨ 同源行锁先于读写；⑩ 非 P2002 错误原样抛出。
  *
  * prisma 以 mock 注入，$transaction 回传同一 mock，使断言直接命中 prismaState.*。
  * 位置遵卡面允许路径：与 catalog-snapshot.ts 同目录（writers/，非 __tests__/）。
@@ -15,13 +17,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const prismaState = vi.hoisted(() => ({
-  monitoringSource: { findFirst: vi.fn() },
+  monitoringSource: { findFirst: vi.fn(), update: vi.fn() },
   catalogSnapshot: { findUnique: vi.fn(), create: vi.fn() },
   providerModelObservation: { upsert: vi.fn(), updateMany: vi.fn() },
   $transaction: vi.fn(),
 }));
 
 vi.mock("../../db/prisma", () => ({ prisma: prismaState }));
+
+const { Prisma } = await import("@prisma/client");
 
 const { persistCatalogSnapshot } = await import("./catalog-snapshot");
 import type { CatalogSnapshotItem } from "./catalog-snapshot";
@@ -44,13 +48,14 @@ function items(ids: string[]): CatalogSnapshotItem[] {
   }));
 }
 
-describe("persistCatalogSnapshot（TASK-059）", () => {
+describe("persistCatalogSnapshot（TASK-059 / TASK-098）", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     prismaState.$transaction.mockImplementation(async (cb: (tx: typeof prismaState) => Promise<unknown>) =>
       cb(prismaState),
     );
     prismaState.monitoringSource.findFirst.mockResolvedValue(SRC);
+    prismaState.monitoringSource.update.mockResolvedValue({ id: SRC.id });
     prismaState.providerModelObservation.upsert.mockResolvedValue({ id: "obs-1" });
     prismaState.providerModelObservation.updateMany.mockResolvedValue({ count: 0 });
   });
@@ -132,5 +137,58 @@ describe("persistCatalogSnapshot（TASK-059）", () => {
 
     await expect(persistCatalogSnapshot("missing", FA, items(["A"]), "x", META)).rejects.toThrow(/not found/);
     expect(prismaState.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("⑥ 空目录：不查源、不开事务、不写快照、不下架，返回 skipped（TASK-098）", async () => {
+    const res = await persistCatalogSnapshot("k", FA, [], "empty", META);
+    expect(res).toMatchObject({ skipped: true, reason: "empty", delisted: 0, created: false, upserted: 0 });
+    expect(prismaState.monitoringSource.findFirst).not.toHaveBeenCalled();
+    expect(prismaState.$transaction).not.toHaveBeenCalled();
+    expect(prismaState.catalogSnapshot.create).not.toHaveBeenCalled();
+    expect(prismaState.providerModelObservation.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("⑦ 观测按 200 分批写；事务显式 timeout=60000 / maxWait=10000（TASK-098）", async () => {
+    prismaState.catalogSnapshot.findUnique.mockResolvedValue(null);
+    prismaState.catalogSnapshot.create.mockResolvedValue({ id: "snap-b" });
+    let inFlight = 0;
+    let peak = 0;
+    prismaState.providerModelObservation.upsert.mockImplementation(async () => {
+      inFlight++;
+      peak = Math.max(peak, inFlight);
+      await Promise.resolve();
+      inFlight--;
+      return { id: "o" };
+    });
+    const ids = Array.from({ length: 450 }, (_, i) => `M${i}`);
+    const res = await persistCatalogSnapshot("k", FA, items(ids), "big", META);
+    expect(prismaState.providerModelObservation.upsert).toHaveBeenCalledTimes(450);
+    expect(peak).toBeLessThanOrEqual(200);
+    expect(res).toMatchObject({ created: true, upserted: 450, idempotent: false });
+    expect(prismaState.$transaction.mock.calls[0][1]).toEqual({ timeout: 60_000, maxWait: 10_000 });
+  });
+
+  it("⑧ 同哈希并发：事务内 create 撞 P2002 → 事务外回读既有快照，idempotent=true 不抛（TASK-098）", async () => {
+    prismaState.catalogSnapshot.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: "snap-winner" });
+    prismaState.catalogSnapshot.create.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError("Unique constraint failed", { code: "P2002", clientVersion: "6" }),
+    );
+    const res = await persistCatalogSnapshot("k", FA, items(["A"]), "dup", META);
+    expect(res).toMatchObject({ snapshotId: "snap-winner", created: false, idempotent: true, upserted: 0, delisted: 0 });
+    expect(prismaState.providerModelObservation.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("⑨ 同源行锁：monitoringSource.update(lastCount += 0) 先于快照读写（TASK-098）", async () => {
+    prismaState.catalogSnapshot.findUnique.mockResolvedValue(null);
+    prismaState.catalogSnapshot.create.mockResolvedValue({ id: "snap-l" });
+    await persistCatalogSnapshot("k", FA, items(["A"]), "lock", META);
+    expect(prismaState.monitoringSource.update).toHaveBeenCalledWith({ where: { id: "src-1" }, data: { lastCount: { increment: 0 } }, select: { id: true } });
+    expect(prismaState.monitoringSource.update.mock.invocationCallOrder[0]).toBeLessThan(prismaState.catalogSnapshot.findUnique.mock.invocationCallOrder[0]);
+  });
+
+  it("⑩ 非唯一键错误原样抛出，不吞错", async () => {
+    prismaState.catalogSnapshot.findUnique.mockResolvedValue(null);
+    prismaState.catalogSnapshot.create.mockRejectedValue(new Error("boom"));
+    await expect(persistCatalogSnapshot("k", FA, items(["A"]), "err", META)).rejects.toThrow("boom");
   });
 });
