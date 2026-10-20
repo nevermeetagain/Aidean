@@ -1,0 +1,53 @@
+# EVD-061 · 变更检测 detect+persist（快照 diff → catalog_change_events + 证据链）  (2026-10-20T03:11:25Z)
+
+## 基线
+HEAD(baseline)=becbc5d9（V0.10.0 拉取后 tip；本卡未叠加其它代码提交）
+
+## 推送基线整合（快进保障）
+提交前发现 mirror/main 已由 becbc5d9 前进 2 枚纯文档提交（75c54ee8「记录用户对 14 项待裁决事项的决定」、06bdee10「U-15 口径经用户确认」，仅改 `12_风险与待裁决.md`、`26_用户裁决记录.md`，与本卡文件零交集）。将本卡这一枚未推送提交 rebase 至 mirror/main 以保持线性快进（父=06bdee10，禁强推/不改写共享历史）；整合后重跑卡面验证与全局门禁，结果不变（18 passed；1312 passed | 5 skipped | 0 failed）。
+
+## 卡面验证命令（TASK-061「验证命令」原文）
+pnpm --filter web exec vitest run lib/monitoring/diff && pnpm --filter web exec tsc --noEmit
+
+    ✓ lib/monitoring/diff/__tests__/persist.spec.ts (6 tests) 6ms
+    ✓ lib/monitoring/diff/__tests__/detect.spec.ts (12 tests) 8ms
+    Test Files  2 passed (2)
+         Tests  18 passed (18)
+    VITEST_EXIT=0
+    TSC_EXIT=0
+
+## 验收标准逐条
+- [x] vitest run lib/monitoring/diff 全绿（18/18）
+- [x] 事件均可被 CatalogChangeEventSchema.parse（detect.spec「归一合并」「brand-new」等例对每条 event safeParse().success=true）
+- [x] tsc exit 0
+- [x] 同快照多 external 归一到同 normalized → 按 (snapshot_id, normalized_model_id, kind) 合并为一条，证据列全部 external id；不撞唯一键
+      · detect.ts：分组 key=`${kind}\u0000${normalizedModelId}`，合并 members→一条事件；代表 externalModelId 走确定性全序（主变体→lastSeenAt 新→字典序，对齐 TASK-066 offerings.ts / E9-18 OpenRouter 95 组）；mergedExternalModelIds 折叠全部 external id（dedup+sort）。
+      · detect.spec「归一合并 2→1」例：listed 与 model_first_seen 各仅 1 条、两条 (snapshotId|normalized|kind) 唯一、merged 含两 external id。
+      · persist.ts：DB 唯一键 upsert 输入名 snapshotId_normalizedModelId_kind；重放命中同键→update 不 create（persist.spec「重放二次仍 upsert 无 create」例覆盖），落库侧再兜底「整批不因唯一键冲突失败」。
+- [x] 价格阈值 ≥1%：dIn/dOut 任一 |Δ|≥PRICE_CHANGE_THRESHOLD_PCT（自 @aidean/shared 导入，未硬编码）才产 price_changed；deltaPct 取触发项绝对值最大；单位不同不比较（detect.spec「0.99% 不产」「1.0% 产」「单位不同不产」三例覆盖边界）
+- [x] model_first_seen 写 EvidenceChain(evidenceType=discovery, source=aggregator, sourceUrl)；归一合并(>1) 另写 change 链，evidenceData.externalModelIds 列全部 id（persist.spec 三例覆盖）
+- [x] check-docs-facts exit 0（spec-count 177→179）
+- [x] diff 仅落允许范围（见下）
+
+## 全局门禁（每卡不退化）
+check-docs-rule      exit=0（铁律1 + 数字真源 72/37/37/33/15.0.x）
+check-docs-facts     All 14 assertions passed / exit=0（spec=179, route=157, page=57, lib-features=22, aidean-ui=68, batch=15）
+guard run-all        RESULT: PASS (4/4 守卫通过)（module-boundary 1 warning 非致命：既有跨层引用，非本卡引入）
+web tsc --noEmit     exit=0
+web lint             exit=0（唯一 warning：components/common/SafeImage.tsx `<img>`，既有，非本卡）
+web test             Test Files 134 passed | 2 skipped (136)；Tests 1312 passed | 5 skipped (1317)；0 failed
+                     = 基线 1294（实测）+ 本卡 18 = 1312
+（占位 DATABASE_URL 下的 feature-flags load-failed-fail-open / CrossValidator fetch failed 为既有预期噪声，非失败）
+
+## diff 范围（git status --porcelain）
+ M scripts/check-docs-facts.mjs
+?? apps/web/lib/monitoring/diff/detect.ts
+?? apps/web/lib/monitoring/diff/persist.ts
+?? apps/web/lib/monitoring/diff/__tests__/detect.spec.ts
+?? apps/web/lib/monitoring/diff/__tests__/persist.spec.ts
+全部落在卡面「允许修改」：apps/web/lib/monitoring/diff/ + scripts/check-docs-facts.mjs（R10-01 计数）+ 本 EVD 目录。
+
+## 偏离/勘误说明
+1. persist.spec.ts 未在卡面「输出」逐条列出，但「允许修改」为整个 `apps/web/lib/monitoring/diff/` 目录级；本卡「不撞唯一键」的核心验收需落库侧证据，故在同目录补 persist.spec.ts（vi.mock ../../db/prisma，不起真实连接），属允许范围内。
+2. 交接书 §1 写 web 单测基线 1292；实测（本卡基线 becbc5d9）=1294（对齐 EVD-066 收尾记录）。按「数字以实测为准」取 ≥1294，本卡后 1312。非契约/算法冲突，不触发停止条件。
+3. detect 的 normalizedModelId 由采集器（TASK-058/059 观测行）预填，本卡不重算 normalizeModelId（types.ts 冻结逻辑在采集侧调用），符合卡面「按 externalModelId 对齐 + 已归一分组」。
