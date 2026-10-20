@@ -1,0 +1,121 @@
+TASK-064 · 后台 UI：「模型源监控」页（源表 + 变更流 + 手动运行，五态）—— 验证证据
+时间: 2026-10-20T06:05Z（UTC）｜执行者: 助手 A｜卡面: docs/任务规划V0.10.0/05_execution/tasks/TASK-064.md v0.10
+基线 HEAD: d397b346（TASK-063）
+复核工作树: E:/Code/Aidean-check64（detached @d397b346，独立 node_modules；共享树被并行助手并发安装反复清空，故隔离复核）
+
+== 1. 交付文件（卡面允许范围）==
+- apps/web/app/(admin)/admin/monitoring/page.tsx                 RSC 权限门 + 页头（新增）
+- apps/web/components/admin/monitoring/MonitoringPanel.tsx       五态编排 / 拉取 / 启停 / 运行轮询（新增，组合层）
+- apps/web/components/admin/monitoring/SourceTable.tsx           源表（tier/kind/auth/enabled/lastRun/lastError）
+- apps/web/components/admin/monitoring/ChangeFeed.tsx            变更流（4 kind / 价格前后 / 证据链 / 筛选分页）
+- apps/web/components/admin/monitoring/TierBadge.tsx             分级徽章（S1/S2/A/B/C）
+- scripts/check-docs-facts.mjs                                   仅 R10-01 计数：page 57→58、ui-refs 68→70
+- docs/product/design/功能设计文档.md                            v0.8.10；§3.5 锚 37 域/33 页→38 域/34 页（见 §4-2）
+- docs/任务规划V0.10.0/06_validation/evidence/EVD-064/**          本证据（verify.txt + 10 张截图）
+
+== 2. 实现口径（卡面逐条）==
+1) 权限门（RSC）：session = getSession()；perms = getAdminPermissions(session.userId)；
+   canRead = hasPermission(perms, "admin.sync.read")；canWrite = hasPermission(perms, "admin.sync.write")。
+   页面 force-dynamic，未登录由既有 admin 布局/中间件处理；无读权限渲染 forbidden 态，不发请求。
+2) 五态优先级（MonitoringPanel，testid 与 MONITORING_UX_STATES 一致）：
+   - !canRead || denied(403/10008)                         → monitoring-forbidden
+   - !sourcesLoaded || !changesLoaded                      → monitoring-loading
+   - sourcesError || (changesError && changes.items 为空)  → monitoring-error
+   - sources 为空 && changes 为空                          → monitoring-empty
+   - 其余                                                  → monitoring-ready
+   额外 monitoring-notice（aria-live）承载操作结果提示。
+3) 数据读取：adminFetch 解信封/401 刷新；GET sources；GET changes?page&pageSize&sourceKey&kind；
+   403 置 denied；变更流筛选变化从第 1 页重取。
+4) 启停：PATCH sources/{key} {enabled}；用响应 DTO 就地替换（不整表重取）；请求中禁用对应开关；
+   成功后 notice 提示；失败提示错误并保留原状态。
+5) 手动运行：POST sources/{key}/run → 202 accepted；以当前 lastRunAt 为基线，每 5s 轮询 sources，
+   上限 12 次（60s）。lastRunAt 变化后按 lastStatus 提示 ok/partial/error，静默刷新 changes 并回到第 1 页；
+   超时提示「已触发，60s 内未见新运行结果」；锁冲突 10006/429 按错误提示。
+6) 源表：tier 徽章；kind/authRequired/enabled；lastRunAt（全量 YYYY-MM-DD HH:mm，窄屏 MM-DD HH:mm）；
+   lastStatus 中文徽章 + lastCount；lastError 截断（title 全量）。运行按钮互斥：!canWrite / authRequired /
+   另一源运行中 三种禁用原因分别给出 title；操作列 sticky right，窄屏不横向溢出。
+   窄屏（<lg）隐藏 kind/auth/tier 列，tier 徽章内联到源名旁；已停用标签仅宽屏显示。
+7) 变更流：listed/delisted/model_first_seen/price_changed 四类标签与配色；price_changed 展示
+   priceUnit（cny/usd per 1m tokens）、before→after、deltaPct（涨红跌绿）；证据外链 target=_blank rel=noopener；
+   kind/sourceKey 筛选 + 分页（上一页/下一页，页码/总数）。
+8) 分级语义：TierBadge 仅表示结构性分级（S1 官方源 → C 中转），非实测 SLA；页头与表头均有说明。
+
+== 3. 验证命令与结果（工作树实测）==
+$ pnpm --filter web exec tsc --noEmit
+  → exit 0
+
+$ pnpm --filter web run lint
+  → exit 0；唯一 warning 为既有 components/common/SafeImage.tsx <img>（非本卡引入）
+
+$ cd apps/web && npx next build
+  → 成功；BUILD_ID=fWQe_9RkAmTc1Vh0_I0v4（2026-10-20 13:49，晚于最终源码 13:47）
+  路由表（.next/app-path-routes-manifest.json + routes-manifest.json 实测）：
+    /admin/monitoring
+    /api/v1/admin/monitoring/sources
+    /api/v1/admin/monitoring/sources/[key]
+    /api/v1/admin/monitoring/sources/[key]/run
+    /api/v1/admin/monitoring/changes
+
+$ node scripts/check-docs-facts.mjs
+  → All 14 assertions passed
+    route-count=163、page-count=58、spec-count=184、aidean-ui-refs=70、schema-models=73、lib-features=23 …
+    （spec=184 为 d397b346 提交态；共享树中并行助手 B 的未跟踪 e2e/web/search.spec.ts 会使实测 185，非本卡引入）
+
+$ node scripts/check-docs-rule.mjs
+  → PASS：schema model=73、enum=37、admin API 域=38、admin 页面=34、Next.js=15.0.x
+
+$ pnpm --filter web exec vitest run
+  → Test Files 139 passed | 2 skipped (141)
+    Tests 1377 passed | 5 skipped (1382)，exit 0（补充回归，无失败）
+
+== 4. 五态截图（mock API，真实登录）==
+服务：工作树 `next start -p 3000`（生产构建）；登录走 POST /api/v1/auth/login 取 HttpOnly cookie 注入 context；
+      mock `**/api/v1/admin/monitoring/sources` 与 `**/api/v1/admin/monitoring/changes*`；
+      截图前 `node apps/web/scripts/clear-rl.mjs` 清 rl:login:*，避免 429。
+视口：1280×900 与 768×1024；每态 fullPage 截图；脚本等待对应 testid 出现后 0.6~0.9s 落盘。
+文件（docs/任务规划V0.10.0/06_validation/evidence/EVD-064/）：
+  monitoring-ready-1280.png      141,544 B   三源（S1/S1/C）+ 开/关态 + 成功/从未/缺凭证 + 四类变更 + 分页
+  monitoring-empty-1280.png       73,501 B   源与变更均为空 → empty
+  monitoring-loading-1280.png     69,188 B   接口挂起 → loading
+  monitoring-error-1280.png       72,787 B   接口 500 → error + 重试
+  monitoring-forbidden-1280.png   73,562 B   403/10008 → forbidden（需 admin.sync.read）
+  monitoring-ready-768.png       133,837 B   窄屏：隐藏 kind/auth/tier 列、tier 内联、操作列 sticky
+  monitoring-empty-768.png        71,814 B
+  monitoring-loading-768.png      67,740 B
+  monitoring-error-768.png        71,472 B
+  monitoring-forbidden-768.png    72,372 B
+目视复核：ready 宽/窄、forbidden、loading 均与最终代码一致；无横向溢出/遮挡。
+
+== 5. 限制与偏差登记 ==
+1) 共享工作树并发污染：本卡实施期间 node_modules 被并行安装反复清空（next/jest-worker 缺文件导致构建失败）；
+   另 B 的 e2e/web/search.spec.ts 未跟踪使共享树 facts spec=185。改为独立工作树 E:/Code/Aidean-check64
+   （detached @d397b346 + 独立依赖）完成 build/门禁/截图/测试；提交时仅白名单本卡文件。
+2) 文档锚同步例外：卡面「允许修改」未列 docs/product/design/功能设计文档.md，但铁律 3/6 与 check-docs-rule
+   要求新增页面/API 域后同步锚；本次仅改版本行与 §3.5 两处数字（37→38 域、33→34 页，零逻辑），
+   否则 CI docs-rule 阻断。特此登记。
+3) 截图端口：middleware 按 NEXT_PUBLIC_SITE_URL 绝对重定向到 http://localhost:3000/admin/login；
+   在 3100 起服务时 Chromium 跟随重定向到 3000（无监听）→ ERR_CONNECTION_REFUSED。
+   改为在 3000 起生产服务后复现五态并完成截图（服务仅用于取证；生产部署仍走 standalone server）。
+4) `next start` 对 output:standalone 有提示（不影响构建产物与本次取证）；未新增数据库迁移/API/权限码。
+5) 环境陷阱：取证时 shell 残留 NODE_ENV=production 会使 billing 单测走生产分支而 5 例失败；
+   清除 NODE_ENV 后全量 vitest 恢复 1377 通过。与本卡代码无关，已复验。
+
+== 6. 变更范围核对 ==
+$ git status --porcelain（本卡）
+  M  docs/product/design/功能设计文档.md
+  M  scripts/check-docs-facts.mjs
+  ?? apps/web/app/(admin)/admin/monitoring/
+  ?? apps/web/components/admin/monitoring/
+  ?? docs/任务规划V0.10.0/06_validation/evidence/EVD-064/
+其余未跟踪/M（.openclaw*、EVD-035、EVD-087、e2e/web/search.spec.ts、docs/任务规划V0.5.0/README.md 等）
+属并行助手，未纳入本卡提交。
+
+== 7. 卡面验收对照 ==
+[x] tsc exit 0
+[x] lint 0 error（仅既有 SafeImage warning）
+[x] next build 成功且路由表含 /admin/monitoring
+[x] 1280/768 五态截图各一张（mock API）
+[~] UI 行为由 e2e 断言：TASK-065 依赖 TASK-037（他人卡，未合并），本卡先以五态截图 + 组件状态机取证；
+    065 合并后由 e2e 覆盖五态与变更流。
+[x] check-docs-facts exit 0（14/14）
+[x] diff 仅落在允许范围（§5-2 已登记文档锚例外）

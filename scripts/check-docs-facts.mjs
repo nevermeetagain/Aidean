@@ -95,7 +95,7 @@ const assertions = [
   },
   {
     id: "aidean-ui-refs",
-    desc: "@aidean/ui 在 apps/web/components 的 import 数 = 68（TASK-074 新增 BenchmarkDialog 67→68，R10-01；前次 TASK-029 65→67）",
+    desc: "@aidean/ui 在 apps/web/components 的 import 数 = 70（TASK-064 新增 ChangeFeed/MonitoringPanel 68→70；前次 TASK-074 BenchmarkDialog 67→68）",
     check: () =>
       String(
         walk("apps/web/components", () => true).filter((f) => {
@@ -106,7 +106,7 @@ const assertions = [
           }
         }).length
       ),
-    expect: "68",
+    expect: "70",
   },
   {
     id: "route-count",
@@ -116,9 +116,9 @@ const assertions = [
   },
   {
     id: "page-count",
-    desc: "apps/web page.tsx 文件数 = 57（TASK-090 收口以代码实测同步 56→57）",
+    desc: "apps/web page.tsx 文件数 = 58（TASK-064 新增 (admin)/admin/monitoring/page.tsx 57→58）",
     check: () => String(walk("apps/web/app", (n) => n === "page.tsx").length),
-    expect: "57",
+    expect: "58",
   },
   {
     id: "next-version",
