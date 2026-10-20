@@ -6,7 +6,7 @@ const { chromium } = require("/workspace/work/Aidean/node_modules/.pnpm/playwrig
   page.setDefaultTimeout(100000);
   await page.goto("http://localhost:3000/models/claude-3-5-haiku", { waitUntil: "networkidle" });
   await page.waitForSelector("[data-testid=offerings-ready], [data-testid=offerings-empty], [data-testid=offerings-error]");
-  console.log("offerings state:", await page.locator("[data-testid^=offerings-]").first().getAttribute("data-testid"), "rows:", await page.locator("[data-testid=offerings-row]").count(), "relay:", await page.locator("[data-testid=offerings-relay-unverified]").count());
+  console.log("offerings state:", await page.locator("[data-testid^=offerings-]").first().getAttribute("data-testid"), "rows:", await page.locator("[data-testid=offerings-row]").count(), "row labels:", (await page.locator("[data-testid=offerings-row]").allInnerTexts()).map((t) => t.split("\n")[0]).join("|"), "attribution:", await page.locator("[data-testid=offerings-attribution]").count(), "demo badge:", await page.locator("[data-testid=samples-demo-badge]").count());
   await page.locator("#providers").scrollIntoViewIfNeeded(); await page.waitForTimeout(800);
   await page.locator("#providers").screenshot({ path: "/tmp/shots/offerings-desktop.png" });
   const benchState = await page.locator("[data-testid=bench-list], [data-testid=bench-empty]").first().getAttribute("data-testid");

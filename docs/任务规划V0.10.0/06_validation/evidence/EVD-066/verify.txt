@@ -17,3 +17,21 @@ contract drift exit=0
  Test Files  132 passed | 2 skipped (134)
       Tests  1292 passed | 5 skipped (1297)
 next build exit=0
+
+## review-066-074 处置（复审修复提交）
+- M1 公开接口泄露 pending 源 → 白名单 PUBLIC_TOS_STATUSES={allowed, attribution_required}，route where 与 buildOfferings 双重把关；单测补 pending 用例。
+  运行态复验：种子 4 源（openrouter/quanzil allowed、aihubmix attribution_required、huggingface pending）→ 行数 3（B|B|C），pending 源不外泄，署名 1 条。
+  缓存：本功能未上线，无旧缓存，键保持契约 `cache:model-offerings:{id}`；命中值改为 ModelOfferingsResponse.safeParse 校验，不合即按 MISS 重算（S1）。
+- M3 同源去重不确定 → 确定性全序：在架 → 主变体（无 :free/:beta 等后缀）→ lastSeenAt → externalModelId；单测验证输入顺序无关。
+- S1 take 200→500。
+- M5 偏离说明：卡面「允许修改」只列 `.../stations/`，与卡目标/输出及冻结契约 MONITORING_ENDPOINTS（/offerings，task: TASK-066）冲突；按契约唯一源新建 `models/[id]/offerings/route.ts`，
+  业务逻辑落 `lib/monitoring/offerings.ts`（Agent-API 所有权内）；新增端点按铁律先登记 API接口文档 v1.56。已登记执行记录 E10-11。
+
+## 复审修复后全局回归
+web tsc exit=0
+web lint exit=0
+rule exit=0
+All 14 assertions passed.
+RESULT: PASS (4/4 守卫通过)
+ Test Files  132 passed | 2 skipped (134)
+      Tests  1294 passed | 5 skipped (1299)

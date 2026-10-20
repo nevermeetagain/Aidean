@@ -72,6 +72,8 @@ async function loadExamples(modelId: string): Promise<EvaluationExample[] | null
         prompt: true,
         completedAt: true,
         winnerModelId: true,
+        results: true,
+        metadata: true,
         evaluationModels: {
           orderBy: { createdAt: "asc" },
           select: {
@@ -91,6 +93,8 @@ async function loadExamples(modelId: string): Promise<EvaluationExample[] | null
       prompt: r.prompt,
       completedAt: r.completedAt ? r.completedAt.toISOString() : null,
       winnerModelId: r.winnerModelId,
+      // provenance（需求 §五.7）：后台预置的演示单（results.demo / metadata.demo = true）前台必须标「演示数据」
+      isDemo: isDemoFlag(r.results) || isDemoFlag(r.metadata),
       answers: r.evaluationModels.map((m) => ({
         modelId: m.modelId,
         modelName: m.model.nameDisplay,
@@ -105,6 +109,10 @@ async function loadExamples(modelId: string): Promise<EvaluationExample[] | null
     console.error(`[models] 测评示例取数失败：`, error);
     return null;
   }
+}
+
+function isDemoFlag(v: unknown): boolean {
+  return typeof v === "object" && v !== null && !Array.isArray(v) && (v as Record<string, unknown>).demo === true;
 }
 
 async function ExamplesSection({ modelId }: { modelId: string }) {
@@ -456,7 +464,7 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
               <h2 id="samples-title" className="text-xl font-bold text-foreground">
                 测评示例
               </h2>
-              <p className="mt-1 text-xs text-slate-400">同一道题多个模型的真实回答并排对比（来自公开测评示例）。</p>
+              <p className="mt-1 text-xs text-slate-400">同一道题多个模型的回答并排对比（来自公开测评示例）。</p>
               <Suspense fallback={<EvaluationExamplesSkeleton />}>
                 <ExamplesSection modelId={model.id} />
               </Suspense>

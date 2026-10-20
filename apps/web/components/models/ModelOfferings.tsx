@@ -153,6 +153,7 @@ export function ModelOfferings({ modelId }: { modelId: string }) {
   if (state.kind === "loading") {
     return (
       <div data-testid="offerings-loading" aria-busy="true" className="space-y-2">
+        <span className="sr-only">多源上架数据加载中…</span>
         {[0, 1, 2].map((i) => (
           <div key={i} className="h-10 animate-pulse rounded-md bg-slate-100" />
         ))}
@@ -161,7 +162,7 @@ export function ModelOfferings({ modelId }: { modelId: string }) {
   }
   if (state.kind === "error") {
     return (
-      <div data-testid="offerings-error" className="flex items-center justify-between rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
+      <div data-testid="offerings-error" role="alert" className="flex items-center justify-between rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
         <span>多源上架数据加载失败：{state.message}</span>
         <button type="button" onClick={() => void load()} className="rounded-md border border-rose-200 bg-white px-3 py-1 text-xs hover:bg-rose-50">
           重试
@@ -184,18 +185,23 @@ export function ModelOfferings({ modelId }: { modelId: string }) {
   return (
     <div data-testid="offerings-ready" className="space-y-3">
       {summary ? (
-        <p className="text-sm text-slate-600">
-          已在 <span className="font-semibold text-foreground">{summary.listed}</span> 个来源上架
-          {summary.cheapest ? (
-            <>
-              ，最低输入价 <span className="font-semibold text-primary">{fmtOrigin(summary.cheapest.priceInput, summary.cheapest.priceUnit)}</span>
-              <span className="text-xs text-slate-400">
-                {" "}/ 1M Tokens（{summary.cheapest.sourceLabel}
-                {summary.cheapest.identityVerified ? "" : "，中转·身份未验证"}）
-              </span>
-            </>
-          ) : null}
-        </p>
+        summary.listed === 0 ? (
+          <p className="text-sm text-slate-600">目前各来源均已下架，以下为历史观测记录。</p>
+        ) : (
+          <p className="text-sm text-slate-600">
+            已在 <span className="font-semibold text-foreground">{summary.listed}</span> 个来源上架
+            {summary.cheapest ? (
+              <>
+                ，最低输入价 <span className="font-semibold text-primary">{fmtOrigin(summary.cheapest.priceInput, summary.cheapest.priceUnit)}</span>
+                <span className="text-xs text-slate-400">
+                  {Number(summary.cheapest.priceInput) === 0 ? "（" : " / 1M Tokens（"}
+                  {summary.cheapest.sourceLabel}
+                  {summary.cheapest.identityVerified ? "" : "，中转·身份未验证"}）
+                </span>
+              </>
+            ) : null}
+          </p>
+        )
       ) : null}
 
       {/* 桌面：表格 */}

@@ -52,18 +52,37 @@ describe("buildOfferings", () => {
     expect(out.items.find((i) => i.sourceKey === "quanzil")?.sourceUrl).toBe("https://quanzil.com/api/pricing");
   });
 
-  it("同源多个 external 归一到同一模型：在架优先，其次 lastSeenAt 最新", () => {
+  it("同源多个 external 归一到同一模型：在架优先 → 主变体优先（:nitro 等后缀变体即使更新也让位）", () => {
     const out = buildOfferings([
       obs({ externalModelId: "openai/gpt-4o:extended", isListed: false, lastSeenAt: new Date("2026-10-20T00:00:00Z") }),
       obs({ externalModelId: "openai/gpt-4o", isListed: true, lastSeenAt: new Date("2026-10-18T00:00:00Z"), priceInput: dec("2.5") }),
       obs({ externalModelId: "openai/gpt-4o:nitro", isListed: true, lastSeenAt: new Date("2026-10-19T00:00:00Z"), priceInput: dec("3") }),
     ]);
     expect(out.items).toHaveLength(1);
-    expect(out.items[0]).toMatchObject({ isListed: true, priceInput: "3" });
+    expect(out.items[0]).toMatchObject({ isListed: true, priceInput: "2.5" });
   });
 
-  it("forbidden 与已删除源不出；attribution_required 带署名", () => {
+  it("同源 x 与 x:free 同时在架、同一 lastSeenAt：确定性取主变体（不让 :free 冒充该源价格），与输入顺序无关", () => {
+    const t = new Date("2026-10-19T00:00:00Z");
+    const main = obs({ externalModelId: "openai/gpt-4o", lastSeenAt: t, priceInput: dec("2.5") });
+    const free = obs({ externalModelId: "openai/gpt-4o:free", lastSeenAt: t, priceInput: dec("0"), priceOutput: dec("0") });
+    expect(buildOfferings([free, main]).items[0].priceInput).toBe("2.5");
+    expect(buildOfferings([main, free]).items[0].priceInput).toBe("2.5");
+  });
+
+  it("缓存命中但形状不合契约 → 按 MISS 重算", async () => {
+    const store = new Map<string, string>([["cache:model-offerings:m1", JSON.stringify({ items: [{ bogus: 1 }] })]]);
+    redisState.client = { get: vi.fn(async (k: string) => store.get(k) ?? null), set: vi.fn(async () => "OK") };
+    prismaState.aiModel.findFirst.mockResolvedValueOnce({ id: "m1", modelCode: "gpt-4o", slug: "gpt-4o" });
+    prismaState.providerModelObservation.findMany.mockResolvedValueOnce([obs()]);
+    const res = await route.GET(req(), ctx("gpt-4o"));
+    expect((await res.json()).data.items).toHaveLength(1);
+    expect(prismaState.providerModelObservation.findMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("pending（未核验）/ forbidden / 已删除源均不出；attribution_required 带署名", () => {
     const out = buildOfferings([
+      obs({ source: src({ key: "pend", tosStatus: "pending" }) }),
       obs({ source: src({ key: "bad", tosStatus: "forbidden" }) }),
       obs({ source: src({ key: "gone", deletedAt: new Date() }) }),
       obs({ source: src({ key: "aa", label: "Artificial Analysis", tier: "A", kind: "benchmark", tosStatus: "attribution_required" }) }),
@@ -112,7 +131,7 @@ describe("GET /api/v1/models/[id]/offerings", () => {
     expect(res.status).toBe(200);
     expect((await res.json()).data).toEqual({ items: [] });
     const arg = prismaState.providerModelObservation.findMany.mock.calls[0][0] as { where: Record<string, unknown> };
-    expect(arg.where).toEqual({ normalizedModelId: { in: ["gpt-4o"] }, source: { deletedAt: null } });
+    expect(arg.where).toEqual({ normalizedModelId: { in: ["gpt-4o"] }, source: { deletedAt: null, tosStatus: { in: ["allowed", "attribution_required"] } } });
   });
 
   it("有观测 → 契约形状；Redis 可用时回写 600s，二次请求命中缓存不查库", async () => {

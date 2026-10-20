@@ -20,7 +20,7 @@ const it0 = (over: Record<string, unknown> = {}) => ({
 });
 
 describe("ModelOfferings 辅助", () => {
-  it("fmtOrigin：原币符号、去尾随 0、0→免费（ratio 除外）、null→—；不出现 ¥ 换算", () => {
+  it("fmtOrigin：原币原单位（CNY 源才显示 ¥，不做汇率换算）、去尾随 0、0→免费（ratio 除外）、null→—", () => {
     expect(fmtOrigin("2.500000", "usd_per_1m_tokens")).toBe("$2.5");
     expect(fmtOrigin("0", "usd_per_1m_tokens")).toBe("免费");
     expect(fmtOrigin("0.8", "ratio")).toBe("×0.8");
@@ -77,7 +77,7 @@ describe("BenchmarkList", () => {
 
 describe("EvaluationExamples", () => {
   const ex = {
-    id: "e1", title: "写一首诗", prompt: "以秋天为题写一首七言绝句", completedAt: "2026-10-01T00:00:00.000Z", winnerModelId: "m2",
+    id: "e1", title: "写一首诗", prompt: "以秋天为题写一首七言绝句", completedAt: "2026-10-01T00:00:00.000Z", winnerModelId: "m2", isDemo: true,
     answers: [
       { modelId: "m1", modelName: "Model One", modelSlug: "model-one", response: "<script>alert(1)</script>" + "长".repeat(400), latencyMs: 1200, tokensTotal: 300, score: 8.5 },
       { modelId: "m2", modelName: "Model Two", modelSlug: "model-two", response: "秋风", latencyMs: null, tokensTotal: 0, score: null },
@@ -93,6 +93,8 @@ describe("EvaluationExamples", () => {
     expect(out).not.toContain("<script>");
     expect(out).toContain("&lt;script&gt;");
     expect(out).toContain('href="/models/model-two"');
+    expect(out).toContain('data-testid="samples-demo-badge"');
+    expect(renderToStaticMarkup(createElement(EvaluationExamples, { examples: [{ ...ex, isDemo: false }], currentModelId: "m1" }))).not.toContain("samples-demo-badge");
   });
   it("empty / error / loading 三态", () => {
     expect(renderToStaticMarkup(createElement(EvaluationExamples, { examples: [], currentModelId: "m1" }))).toContain('data-testid="samples-empty"');

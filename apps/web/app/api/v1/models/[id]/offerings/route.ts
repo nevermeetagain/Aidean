@@ -5,7 +5,9 @@
  */
 import { prisma } from "../../../../../../lib/db/prisma";
 import { getRedis } from "../../../../../../lib/db/redis";
-import { buildOfferings, offeringKeys, offeringsCacheKey, OFFERINGS_CACHE_TTL_SECONDS, type ModelOfferings } from "../../../../../../lib/monitoring/offerings";
+import { ModelOfferingsResponse } from "@aidean/shared";
+
+import { buildOfferings, offeringKeys, offeringsCacheKey, OFFERINGS_CACHE_TTL_SECONDS, PUBLIC_TOS_STATUSES, type ModelOfferings } from "../../../../../../lib/monitoring/offerings";
 import { ApiError, ERROR_CODES } from "../../../_lib/errors";
 import { withApi, type RouteContext } from "../../../_lib/handler";
 
@@ -23,16 +25,20 @@ async function loadOfferings(identifier: string): Promise<ModelOfferings> {
   if (cache) {
     try {
       const hit = await cache.get(key);
-      if (hit) return JSON.parse(hit) as ModelOfferings;
+      if (hit) {
+        // 命中也过契约校验：形状不符（旧版本/脏写）按 MISS 重算
+        const parsed = ModelOfferingsResponse.safeParse(JSON.parse(hit));
+        if (parsed.success) return parsed.data;
+      }
     } catch {
       /* 缓存故障按 MISS */
     }
   }
 
   const rows = await prisma.providerModelObservation.findMany({
-    where: { normalizedModelId: { in: offeringKeys(model) }, source: { deletedAt: null } },
+    where: { normalizedModelId: { in: offeringKeys(model) }, source: { deletedAt: null, tosStatus: { in: [...PUBLIC_TOS_STATUSES] } } },
     orderBy: { lastSeenAt: "desc" },
-    take: 200,
+    take: 500,
     select: {
       externalModelId: true,
       isListed: true,

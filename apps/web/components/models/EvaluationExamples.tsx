@@ -27,6 +27,8 @@ export interface EvaluationExample {
   prompt: string;
   completedAt: string | null;
   winnerModelId: string | null;
+  /** 后台预置演示单：必须显示「演示数据」（需求 §五.7 provenance） */
+  isDemo: boolean;
   answers: ExampleModelAnswer[];
 }
 
@@ -77,7 +79,7 @@ function Answer({ a, isSelf, isWinner }: { a: ExampleModelAnswer; isSelf: boolea
 export function EvaluationExamples({ examples, currentModelId, error = false }: { examples: EvaluationExample[]; currentModelId: string; error?: boolean }) {
   if (error) {
     return (
-      <p data-testid="samples-error" className="mt-4 rounded-md border border-rose-200 bg-rose-50 px-4 py-6 text-center text-sm text-rose-600">
+      <p data-testid="samples-error" role="alert" className="mt-4 rounded-md border border-rose-200 bg-rose-50 px-4 py-6 text-center text-sm text-rose-600">
         测评示例暂时无法加载，请稍后刷新重试
       </p>
     );
@@ -98,7 +100,14 @@ export function EvaluationExamples({ examples, currentModelId, error = false }: 
         <article key={ex.id} className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
           <header className="mb-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h3 className="text-sm font-semibold text-slate-700">{ex.title ?? "对比测评"}</h3>
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                {ex.title ?? "对比测评"}
+                {ex.isDemo ? (
+                  <span data-testid="samples-demo-badge" className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                    演示数据
+                  </span>
+                ) : null}
+              </h3>
               <span className="text-[11px] text-slate-400">
                 {ex.answers.length} 个模型{ex.completedAt ? ` · ${SH_DAY.format(new Date(ex.completedAt))}` : ""}
               </span>
@@ -122,6 +131,7 @@ export function EvaluationExamples({ examples, currentModelId, error = false }: 
 export function EvaluationExamplesSkeleton() {
   return (
     <div data-testid="samples-loading" aria-busy="true" className="mt-4 space-y-3">
+      <span className="sr-only">测评示例加载中…</span>
       <div className="h-6 w-1/3 animate-pulse rounded bg-slate-100" />
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div className="h-32 animate-pulse rounded-lg bg-slate-100" />

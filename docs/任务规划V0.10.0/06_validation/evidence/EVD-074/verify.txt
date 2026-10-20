@@ -24,3 +24,18 @@ contract drift exit=0
  Test Files  132 passed | 2 skipped (134)
       Tests  1292 passed | 5 skipped (1297)
 next build exit=0
+
+## review-066-074 处置
+- M2 演示数据 provenance：loadExamples 读取 results/metadata，demo=true → 「演示数据」徽标（samples-demo-badge）；副标题去掉「真实回答」。运行态复验 demo badge=2（seed 演示单 + 验收演示单）。
+- S7 百分位改为直显「百分位 N」，不再推断「前 X%」语义。
+- S8 e2e/web/models.spec.ts:96 过时注释交 TASK-075 顺手更新（已写入交接任务书 §5）。
+- M5 偏离说明同 EVD-067（model-detail-ui.spec 落 lib/**，E10-09）。
+
+## 复审修复后全局回归
+web tsc exit=0
+web lint exit=0
+rule exit=0
+All 14 assertions passed.
+RESULT: PASS (4/4 守卫通过)
+ Test Files  132 passed | 2 skipped (134)
+      Tests  1294 passed | 5 skipped (1299)

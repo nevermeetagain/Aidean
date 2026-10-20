@@ -91,7 +91,7 @@ export function BenchmarkList({ items }: { items: BenchmarkView[] }) {
               <span className={`${BADGE} font-medium ${VERIFIED[open.verified ? "true" : "false"].cls}`}>{VERIFIED[open.verified ? "true" : "false"].label}</span>
               <span className="ml-auto text-lg font-bold tabular-nums text-primary">
                 {open.totalScore.toFixed(1)}
-                {open.percentile !== null ? <span className="ml-1 text-xs font-normal text-slate-400">前 {Math.max(0, 100 - open.percentile).toFixed(0)}%</span> : null}
+                {open.percentile !== null ? <span className="ml-1 text-xs font-normal text-slate-400">百分位 {open.percentile.toFixed(0)}</span> : null}
               </span>
             </div>
 
