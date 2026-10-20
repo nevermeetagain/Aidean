@@ -1,0 +1,37 @@
+# EVD-088 verify（2026-10-20 19:03:57 CST，基线 origin/main@f036210）
+
+## $ node scripts/check-docs-rule.mjs && node scripts/check-docs-facts.mjs && test ! -f docs/执行过程.md && grep -q '任务规划V0.10.0' docs/governance/目录结构文档.md; echo exit=$?
+[铁律1] docs rule PASS：apps/ 下无实体 .md（README.md 豁免）。
+[铁律-数字] 数字真源断言 PASS（锚=文档，代码=实测）：schema model=73, enum=37, admin API 域=38, admin 页面=34, Next.js=15.0.x
+✅ schema-models: schema.prisma model 数 = 73（TASK-047 新增 FxDailyRate 日汇率快照 72→73；前次 M-002 TASK-058 68→72） → expected=73, actual=73
+✅ seed-models: seed.ts 模型条数（modelsData 静态条目 + DEMO_MODEL_COUNT 生成器）≥ 50（下限式，R-83 T1：模型数不限由后台配置） → expected=>=50, actual=1000
+✅ seed-no-official: seed.ts 中无 OFFICIAL/官方测试（provenance 修复后） → expected=0, actual=0
+✅ lib-features-count: lib/features 子目录数 = 23（TASK-033 新增 lib/features/search 22→23，R10-01；前次 TASK-090 收口 18→22，含 lib/features/pricing 等新增目录） → expected=23, actual=23
+✅ aidean-ui-refs: @aidean/ui 在 apps/web/components 的 import 数 = 70（TASK-064 新增 ChangeFeed/MonitoringPanel 68→70；前次 TASK-074 BenchmarkDialog 67→68） → expected=70, actual=70
+✅ route-count: apps/web route.ts 文件数（含 app/ 全域）= 163（TASK-063 新增 admin/monitoring 4 端点 159→163，R10-01；前次 TASK-081 158→159） → expected=163, actual=163
+✅ page-count: apps/web page.tsx 文件数 = 58（TASK-064 新增 (admin)/admin/monitoring/page.tsx 57→58） → expected=58, actual=58
+✅ next-version: Next.js 版本 = 15.x → expected=15.x, actual=15.x
+✅ spec-count: spec 文件总数 = 189（TASK-084 新增 e2e/ladder-no-footer.spec.ts 188→189，R10-01；前次 TASK-080 新增 cache-billing.spec.ts 187→188） → expected=189, actual=189
+✅ queryraw-biz: apps/web 业务代码 $queryRaw/$executeRaw = 0 → expected=0, actual=0
+✅ batch-count: admin batch 路由数 = 15 → expected=15, actual=15
+✅ db-doc-product-fields: 《数据库文档》products 行已登记 display_name 与 ProductCategory（DB 模型变更文档同步） → expected=2/2, actual=2/2
+✅ category-label-single-source: apps/web 中硬编码「label: "特供"」式分类映射 = 0（文案唯一来源 lib/product-label.ts） → expected=0, actual=0
+✅ usage-stats-anchor-pair: 《API架构设计方案》含 usage-stats-architecture 锚 且《API接口文档》含其回链（铁律 2 双向互引） → expected=2/2, actual=2/2
+
+All 14 assertions passed.
+exit=0
+
+## test -f docs/archive/执行过程.md
+exit=0
+
+## 引用修正：仓内（除只读历代规划 V0.1–V0.9 与 V0.10.0 规划正文）对 docs/执行过程.md 的路径引用
+docs/governance/目录结构文档.md:3:> 版本: v3.23 | 更新: 2026-10-20 | 变更: **TASK-088 治理登记**——① 修复 v3.22 落盘缺陷：§二 树�
+docs/governance/目录结构文档.md:4:> 前次（v3.22 | 更新: 2026-10-19）变更: **V0.10.0 规划树登记（铁律 6）**——§二 docs 树新增 `任
+docs/governance/目录结构文档.md:66:├── docs/                            # 开发文档中心（唯一真源；根含 README.md · 文档索引.md；
+docs/governance/目录结构文档.md:72:│   ├── ADR/ specs/ research/ assets/ archive/   # 决策记录 / 规格三件套（18 change-id + _template）
+docs/文档索引.md:4:> 版本: v1.85 | 更新: 2026-10-20 | 变更: TASK-088 `docs/执行过程.md`（历史 transcript）归档为 `docs/archive/执行过程
+docs/文档索引.md:78:| `docs/archive/` | 归档文档（执行报告、QA 报告、验收方案、旧版计划、双真源仲裁件、旧资产迁移清单 v
+docs/文档索引.md:164:| 执行过程.md | archive/执行过程.md（归档，TASK-088） |
+
+## task-index「已移出卡复核回写」与 EVD-086/verdicts.md 逐行比对（卡号 + 结论）
+verdicts 行数 22 task-index 回写行数 22 一致

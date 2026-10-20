@@ -1,0 +1,16 @@
+$ pnpm test:e2e -g ladder-filter-all
+# 2026-10-20 19:00:15 CST; :3000 = next start（生产构建，HEAD f036210）；PG16.14 :55439/aidean_e2e；Redis :6390
+
+> aidean-monorepo@0.1.0 test:e2e /workspace/work/aidean-linec
+> playwright test --config playwright.config.ts "-g" "ladder-filter-all"
+
+
+Running 4 tests using 1 worker
+
+  ✓  1 [flows] › e2e/tests/ladder-filter-all.spec.ts:31:7 › ladder-filter-all：天梯全选/全不选与价格档位一致 › 全选：协议组点击「全选」→ 五个协议选项全部选中并同步 URL (4.2s)
+  ✓  2 [flows] › e2e/tests/ladder-filter-all.spec.ts:62:7 › ladder-filter-all：天梯全选/全不选与价格档位一致 › 三态·半选：仅勾选单个协议选项 → 全选框呈 indeterminate（部分选中） (3.2s)
+  ✓  3 [flows] › e2e/tests/ladder-filter-all.spec.ts:80:7 › ladder-filter-all：天梯全选/全不选与价格档位一致 › 全不选：全选态再次点击「全选」→ 清空该组并移除 URL 参数 (3.1s)
+  ✓  4 [flows] › e2e/tests/ladder-filter-all.spec.ts:113:7 › ladder-filter-all：天梯全选/全不选与价格档位一致 › pricing：充值档位与 RECHARGE_TIERS 五档一致 (1.7s)
+
+  4 passed (22.5s)
+exit=0

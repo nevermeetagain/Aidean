@@ -10,7 +10,7 @@
 |---|---|---|---|---|---|---|---|---|---|---|
 | [TASK-086](tasks/TASK-086.md) | S0 | 已移出卡独立复核：V0.8.0 判镜像落地的 22 张卡逐卡跑原验证命令并裁决 PASS/FAIL/UNKNOWN（补 e2e/真库/运行态证据） | Hark(主Agent) | Agent-Guard | opus | 中/6h | — | L0 | — | 未开工（Hark 核心） |
 | [TASK-092](tasks/TASK-092.md) | S3 | UI 运行态验收：S2 功能开关页/入口隐藏/403 态 + S3 收藏按钮/控制台 Tab/筛选全选/价格档位（截图 + 五态核对） | Hark(主Agent) | Agent-Guard | opus | 中/4h | 086 | L1 | — | 未开工（Hark 核心） |
-| [TASK-088](tasks/TASK-088.md) | S7 | 治理登记：目录结构文档登记 V0.8.0 树 + task-index 状态回写（依 EVD-086/091/092） + docs/执行过程.md 归档拆分 | 外部Agent | Agent-Docs | haiku | 小/2h | 086 | L1 | — | 未开工 |
+| [TASK-088](tasks/TASK-088.md) | S7 | 治理登记：目录结构文档登记 V0.8.0 树 + task-index 状态回写（依 EVD-086/091/092） + docs/执行过程.md 归档拆分 | 外部Agent | Agent-Docs | haiku | 小/2h | 086 | L1 | — | 已完成（助手C；目录结构文档 v3.23 + 文末「已移出卡复核回写」22 行 + docs/执行过程.md→archive/，见 EVD-088） |
 | [TASK-006](tasks/TASK-006.md) | S0 | e2e-skeleton 实跑：本地复现 ci.yml e2e-skeleton 全步骤（PG16+Redis7、迁移重放、seed、build、:3000、smoke+walking-skeleton）+ Actions 首轮绿 run（U-25） | Hark(主Agent) | Agent-Guard | opus | 中/5h | — | L0 | — | 未开工（Hark 核心） |
 | [TASK-098](tasks/TASK-098.md) | S10 | 快照写入器加固：空 items 不下架、分批 upsert 与事务超时、同 hash 并发返回既有快照 | 外部Agent | Agent-Data | sonnect | 小/2h | — | L0 | — | 未开工 |
 | [TASK-099](tasks/TASK-099.md) | S12 | llmtest 观测落库前置：reliability_observations 幂等键口径 + entityId/窗口口径裁定（文档与单测，不建迁移） | 外部Agent | Agent-API | sonnect | 小/2h | — | L0 | — | 未开工 |
@@ -60,3 +60,32 @@
 | [TASK-072](tasks/TASK-072.md) | S12 | Artificial Analysis Data API v2 适配器重写（/api/v2/language/models/free，x-api-key，署名字段） | 外部Agent | Agent-API | sonnect | 中/4h | — | L0 | U-M2 | 条件·待裁决 |
 | [TASK-101](tasks/TASK-101.md) | S4 | 每日汇率采集（Frankfurter 公开免费源 → fx_daily_rates 日快照，幂等） | 助手B | Agent-API | sonnect | 小/3h | 047 | L2 | U-15 | 已完成（助手B，真 PG16 实跑见 EVD-101） |
 | [TASK-102](tasks/TASK-102.md) | S4 | 请求级展示币种解析（IP 国家头 → CNY/USD，middleware 写 x-display-currency） | 助手B | Agent-App | sonnect | 小/3h | 047 | L2 | U-15 | 已完成（助手B，EVD-102） |
+
+## 已移出卡复核回写（依 EVD-086/verdicts.md，TASK-088 登记，2026-10-20）
+
+> 22 张卡已于 V0.9.0/V0.10.0 移出卡集（卡面不在本目录），此处只登记复核结论，**不新建重复卡**；不计入上方「总计」。
+
+| 任务 | EVD-086 结论 | 现行状态 |
+|---|---|---|
+| TASK-001 | PASS | 已完成（复核 PASS） |
+| TASK-002 | PASS | 已完成（复核 PASS） |
+| TASK-003 | PASS | 已完成（复核 PASS） |
+| TASK-004 | PASS | 已完成（复核 PASS） |
+| TASK-005 | PASS | 已完成（复核 PASS） |
+| TASK-010 | PASS | 已完成（复核 PASS） |
+| TASK-011 | PASS | 已完成（复核 PASS） |
+| TASK-012 | PASS | 已完成（复核 PASS） |
+| TASK-014 | PASS | 已完成（复核 PASS） |
+| TASK-015 | PASS | 已完成（复核 PASS） |
+| TASK-016 | PASS | 已完成（复核 PASS） |
+| TASK-017 | PASS | 已完成（复核 PASS） |
+| TASK-018 | PASS | 已完成（复核 PASS） |
+| TASK-019 | PASS | 已完成（复核 PASS） |
+| TASK-021 | PASS | 已完成（复核 PASS） |
+| TASK-022 | PASS | 已完成（复核 PASS） |
+| TASK-023 | PASS | 已完成（复核 PASS） |
+| TASK-024 | PASS | 已完成（复核 PASS） |
+| TASK-076 | PASS | 已完成（复核 PASS） |
+| TASK-077 | PASS | 已完成（复核 PASS） |
+| TASK-078 | PASS | 已完成（复核 PASS） |
+| TASK-079 | FAIL（原命令）/ 功能 PASS | **重开 → 由 037 的 DEF-086-01 修复关闭**：TASK-037（a177fde）将 `pnpm test:e2e` 收敛为根 `playwright.config.ts`（无 webServer 复用探针）；TASK-088 在已运行的 `next start -p 3000` 上原样复跑 `pnpm test:e2e -g ladder-filter-all` → 4 passed, exit 0（EVD-088/e2e-ladder-filter-all.txt） |
