@@ -1,0 +1,42 @@
+$ ! grep -n '7\.2' apps/web/lib/discovery/pricing-extraction.ts && pnpm --filter web exec vitest run lib/discovery && pnpm --filter web exec tsc --noEmit
+(grep 无输出)
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+ RUN  v2.1.9 /workspace/work/aidean-lineb/apps/web
+ ✓ lib/discovery/llmtest.spec.ts > llmtest 站点采集映射 (L3) > extractLlmtestDomain：规范化域名、拒非 http(s) 与无点主机
+ ✓ lib/discovery/llmtest.spec.ts > llmtest 站点采集映射 (L3) > parseLlmtestComposite：合规返回 data，异形返回空数组
+ ✓ lib/discovery/llmtest.spec.ts > llmtest 站点采集映射 (L3) > mapLlmtestItemToCandidate：有效项 → gateway/crawl 候选 + 观测描述
+ ✓ lib/discovery/llmtest.spec.ts > llmtest 站点采集映射 (L3) > mapLlmtestItemToCandidate：无有效 url → null
+ ✓ lib/discovery/llmtest.spec.ts > llmtest 站点采集映射 (L3) > mapLlmtestItemsToCandidates：同批按域名去重，跳过无效项
+ ✓ lib/discovery/llmtest.spec.ts > llmtest 观测入时序 (TASK-073/099 · ReliabilityObservation 写入载荷) > entityId 只用站点 id；无 stationId 注入 → null；无有效域名 → null；窗口=上海自然日
+ ✓ lib/discovery/llmtest.spec.ts > llmtest 观测入时序 (TASK-073/099 · ReliabilityObservation 写入载荷) > isAlive=false → errorRate=1；score 优先 uptime、缺 score 按通过率派生；entityId=站点 id
+ ✓ lib/discovery/llmtest.spec.ts > llmtest 观测入时序 (TASK-073/099 · ReliabilityObservation 写入载荷) > 上海自然日窗口跨 UTC：上海墙钟日界（非 UTC 日界）
+ ✓ lib/discovery/llmtest.spec.ts > llmtest 观测入时序 (TASK-073/099 · ReliabilityObservation 写入载荷) > 批量：有效域名缺站点 id → skipped；无 url 静默跳过不入 skipped；按站点 id 去重保留 windowEnd 更晚
+ ✓ lib/discovery/__tests__/pricing-extraction-fx.spec.ts > toMinorCny（CNY 分 / 每百万 Token） > fx=5：$2/M → 1000 分；$0.002/1k → 1000 分
+ ✓ lib/discovery/__tests__/pricing-extraction-fx.spec.ts > toMinorCny（CNY 分 / 每百万 Token） > fx=7.2：$2/M → 1440 分；$2.5/M → 1800 分；半入 $0.0001/M → 0 分、$0.0007/M → 1 分
+ ✓ lib/discovery/__tests__/pricing-extraction-fx.spec.ts > toMinorCny（CNY 分 / 每百万 Token） > 汇率不同结果不同（证明无硬编码汇率）
+ ✓ lib/discovery/__tests__/pricing-extraction-fx.spec.ts > toMinorCny（CNY 分 / 每百万 Token） > CNY 价无需汇率：¥12.5/M → 1250 分
+ ✓ lib/discovery/__tests__/pricing-extraction-fx.spec.ts > toMinorCny（CNY 分 / 每百万 Token） > 缺汇率：USD 价抛 PriceNormalizationError(fx_missing)，不回退固定汇率
+ ✓ lib/discovery/__tests__/pricing-extraction-fx.spec.ts > toMinorCny（CNY 分 / 每百万 Token） > 容忍解析残留的尾点：'3.' 视为 3
+ ✓ lib/discovery/__tests__/pricing-extraction-fx.spec.ts > extractPricing 汇率注入与 fail-closed > 注入 fx=5：USD 与 CNY 两条均写入，USD 按 fx 折算
+ ✓ lib/discovery/__tests__/pricing-extraction-fx.spec.ts > extractPricing 汇率注入与 fail-closed > 注入 fx=7.2：USD 条目 1440 分
+ ✓ lib/discovery/__tests__/pricing-extraction-fx.spec.ts > extractPricing 汇率注入与 fail-closed > 缺汇率：跳过 USD 条目不写库，CNY 条目照常写入
+ ✓ lib/discovery/__tests__/pricing-extraction-fx.spec.ts > extractPricing 汇率注入与 fail-closed > 仅 CNY 价时不读汇率快照
+ ✓ lib/discovery/__tests__/pricing-extraction-fx.spec.ts > extractPricing 汇率注入与 fail-closed > 缺省读 getDailyFx；快照读取异常按缺汇率处理（fail-closed，不抛）
+ ✓ lib/discovery/__tests__/pricing-extraction-fx.spec.ts > extractPricingBatch > 同一批次只读一次当日快照，全部候选用同一汇率
+ ✓ lib/discovery/__tests__/pipeline.spec.ts > discovery types — 契约验证 > SourceType 包含所有发现源
+ ✓ lib/discovery/__tests__/pipeline.spec.ts > discovery types — 契约验证 > Candidate 包含必要字段
+ ✓ lib/discovery/__tests__/pipeline.spec.ts > discovery types — 契约验证 > CandidateType 枚举: provider | gateway | model | tool
+ ✓ lib/discovery/__tests__/pipeline.spec.ts > discovery types — 契约验证 > FingerprintResult 包含端点检测结果
+ ✓ lib/discovery/__tests__/pipeline.spec.ts > discovery types — 契约验证 > ProtocolProbeResult 包含协议探测结果
+ ✓ lib/discovery/__tests__/pipeline.spec.ts > entity-resolution — 域名规范化逻辑 > 去除协议前缀
+ ✓ lib/discovery/__tests__/pipeline.spec.ts > entity-resolution — 域名规范化逻辑 > 名称相似度 — Jaccard 系数
+ ✓ lib/discovery/__tests__/pipeline.spec.ts > technical-fingerprint — 格式检测逻辑 > OpenAI 格式: { data: [{ id: ... }] }
+ ✓ lib/discovery/__tests__/pipeline.spec.ts > pricing-extraction — SSRF 守卫接线（S2） > 元数据 IP baseUrl：入口拦截，返回 []，不触达 fetch
+ ✓ lib/discovery/__tests__/pipeline.spec.ts > pricing-extraction — SSRF 守卫接线（S2） > 回环 IP baseUrl：入口拦截，返回 []，不触达 fetch
+ ✓ lib/discovery/__tests__/pipeline.spec.ts > pricing-extraction — SSRF 守卫接线（S2） > 公网 IP baseUrl：守卫放行，6 个出站尝试经 stub fetch（无 prisma 写入）
+ Test Files  3 passed (3)
+      Tests  32 passed (32)
+   Start at  10:44:58
+   Duration  3.95s (transform 726ms, setup 0ms, collect 1.70s, tests 48ms, environment 1ms, prepare 483ms)
+--- tsc
+exit=0

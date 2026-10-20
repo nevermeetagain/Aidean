@@ -54,7 +54,7 @@
 | [TASK-074](tasks/TASK-074.md) | S11 | UI：模型详情页基准测试弹窗 + 历史测评示例（多模型回答并排）替换「即将上线」占位 | Hark(主Agent) | Agent-App | opus | 大/10h | 067 | L2 | — | 未开工（Hark 核心） |
 | [TASK-075](tasks/TASK-075.md) | S11 | e2e：模型详情页基准弹窗与测评示例 | 外部Agent | Agent-Guard | sonnect | 小/3h | 074, 006 | L3 | — | 未开工 |
 | [TASK-068](tasks/TASK-068.md) | S11 | 上架同步：观测 → ProviderModelOffering（源↔平台实体映射，listedAt=firstSeenAt，isActive=isListed） | Hark(主Agent) | Agent-Data | opus | 大/8h | — | L0 | U-M5 | 已完成（EVD-068） |
-| [TASK-069](tasks/TASK-069.md) | S11 | 发现引擎汇率统一：pricing-extraction.ts 硬编码 7.2 → 读 system_configs pricing.fxUsdCny | 外部Agent | Agent-API | sonnect | 小/3h | 055 | L2 | U-15 | 条件·待裁决 |
+| [TASK-069](tasks/TASK-069.md) | S11 | 发现引擎汇率统一：pricing-extraction.ts 硬编码汇率 → 读当日汇率快照 getDailyFx（缺汇率 fail-closed） | 外部Agent | Agent-API | sonnect | 小/3h | 055 | L2 | U-15 | 已完成（助手B） |
 | [TASK-070](tasks/TASK-070.md) | S12 | 密钥源目录采集：SiliconFlow /v1/models、DeepSeek /models 等官方/托管目录（缺凭证时健康=credential_missing） | 外部Agent | Agent-API | sonnect | 大/8h | — | L0 | U-M1 | 条件·待裁决 |
 | [TASK-071](tasks/TASK-071.md) | S12 | 可用性与中转真实性探针：最小请求探测 → ReliabilityObservation + 身份信号（含 Claude thinking signature 检查） | Hark(主Agent) | Agent-API | opus | 大/10h | 070 | L1 | U-M3 | 条件·待裁决 |
 | [TASK-072](tasks/TASK-072.md) | S12 | Artificial Analysis Data API v2 适配器重写（/api/v2/language/models/free，x-api-key，署名字段） | 外部Agent | Agent-API | sonnect | 中/4h | — | L0 | U-M2 | 条件·待裁决 |
