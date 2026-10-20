@@ -1,0 +1,31 @@
+$ node scripts/test/benchmark/ladder-1k.mjs --dry-run
+[ladder-1k] DRY-RUN：不连库、不写库、不发请求
+[ladder-1k] 计划：插入 1000 AiModel + 1000 Benchmark（厂商 bench1k-vendor，前缀 bench1k-）
+[ladder-1k] 计划：GET http://127.0.0.1:3000/api/v1/ladder?type=models 预热 1 + 采样 20；GET http://127.0.0.1:3000/models HTML 字节
+[ladder-1k] 计划：结束按前缀删除插入数据（Benchmark 级联）
+[ladder-1k] 当前 DATABASE_URL 安全闸：拒绝 —— DATABASE_URL 未设置
+  PASS 拒绝：生产风格库名 aidean
+  PASS 拒绝：标识只在密码里
+  PASS 拒绝：库名 contest（非分词）
+  PASS 拒绝：缺失
+  PASS 拒绝：非 PG 协议
+  PASS 放行：aidean_ci
+  PASS 放行：aidean-test
+  PASS 放行：主机 ci-postgres
+  PASS 生成 1000 行
+  PASS modelCode 唯一
+  PASS slug 唯一且带前缀
+  PASS 分数落在 40..100
+  PASS Benchmark 1:1
+  PASS p50(1..20)=10
+  PASS p95(1..20)=19
+[ladder-1k] 自检 15/15 PASS
+exit=0
+
+== 安全闸取证：非临时库拒绝运行 ==
+$ DATABASE_URL=postgresql://u:p@db.prod:5432/aidean node scripts/test/benchmark/ladder-1k.mjs
+[ladder-1k] 拒绝运行：库名/主机不含 ci/test 标识（db=aidean host=db.prod）。本脚本只允许在 ci/test 临时库执行。
+exit=2
+$ DATABASE_URL=postgresql://u:test@db:5432/aidean node scripts/test/benchmark/ladder-1k.mjs
+[ladder-1k] 拒绝运行：库名/主机不含 ci/test 标识（db=aidean host=db）。本脚本只允许在 ci/test 临时库执行。
+exit=2
