@@ -15,9 +15,17 @@
  *
  * 退出码：0 = 已写入或当日已存在（幂等）；1 = 源失败/数值非法（未写库）；2 = 参数错误或数据库错误。
  *
+ * 人工发布（--rate）：仅当运维显式传入时启用——跳过取源，直接把给定值写为当日快照，
+ *   行内 source=manual / sourceUrl=FX_SOURCE_URL_MANUAL（沿用仓内「非溯源值」署名惯例，不冒充公开源）；
+ *   仍过 FX_SANE_RANGE + FxDailyRateSchema 双闸，且当日已有快照时同样幂等不覆盖。
+ *   默认（不传 --rate）行为与此前完全一致：源失败绝不写库，交由读侧 fail-closed 显示「价格待核」。
+ *   适用：源长时间不可达时的运维补发、离线环境与演示库首轮建库。
+ *
  * 用法：
- *   pnpm --filter web exec tsx ../../scripts/crawl/fx_daily.ts            # 拉取并写入当日快照
- *   pnpm --filter web exec tsx ../../scripts/crawl/fx_daily.ts --dry-run  # 只拉取校验，不写库
+ *   pnpm --filter web crawl:fx                                   # 拉取并写入当日快照
+ *   pnpm --filter web crawl:fx --dry-run                        # 只拉取校验，不写库
+ *   pnpm --filter web crawl:fx --rate 7.1234                    # 人工发布当日快照（不取源）
+ *   等价直跑：pnpm --filter web exec tsx ../../scripts/crawl/fx_daily.ts
  */
 import {
   FxDailyRateSchema,
@@ -27,6 +35,9 @@ import {
 
 export const FX_SOURCE = "frankfurter";
 export const FX_SOURCE_URL_DEFAULT = "https://api.frankfurter.dev/v2/rate/usd/cny";
+/** 人工发布（--rate）行的署名：不冒充公开源，与 e2e 夹具「非溯源值」同一惯例 */
+export const FX_SOURCE_MANUAL = "manual";
+export const FX_SOURCE_URL_MANUAL = "https://example.com/manual-fx-rate";
 export const FX_PAIR = { base: "USD", quote: "CNY" } as const;
 /** USD→CNY 合理区间（防源返回错位/单位错误的值，如 0.14 或 714）：越界即拒绝，不写库 */
 export const FX_SANE_RANGE = { min: 1, max: 20 } as const;
@@ -87,12 +98,48 @@ export function parseFrankfurterRate(body: string): { rate: string; sourceDate: 
   return { rate: toDecimalString(n), sourceDate };
 }
 
+/**
+ * 人工发布值归一（--rate）：十进制正数、≤ 8 位小数、落 FX_SANE_RANGE。
+ * 故意抛普通 Error（非 FxSourceError）——这不是「源失败」而是入参非法，由 CLI 转退出码 2。
+ */
+export function normalizeManualRate(raw: string): string {
+  const s = String(raw ?? "").trim();
+  if (!/^\d+(\.\d{1,8})?$/.test(s)) throw new Error(`--rate 需为十进制正数串（≤8 位小数）：${raw}`);
+  const n = Number(s);
+  if (!Number.isFinite(n) || n <= 0) throw new Error(`--rate 非法：${raw}`);
+  if (n < FX_SANE_RANGE.min || n > FX_SANE_RANGE.max) {
+    throw new Error(`--rate ${n} 越出合理区间 [${FX_SANE_RANGE.min}, ${FX_SANE_RANGE.max}]`);
+  }
+  return toDecimalString(n);
+}
+
+/** 取源 → 校验：任一不合规抛 FxSourceError（调用方非零退出，库不变）。抽为单函数供人工发布模式旁路。 */
+async function fetchAndParse(fetchImpl: FetchLike, sourceUrl: string): Promise<{ rate: string; sourceDate: string | null }> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+  let body: string;
+  try {
+    const res = await fetchImpl(sourceUrl, { signal: ctrl.signal, headers: { accept: "application/json", "user-agent": "AideanFx/1.0" } });
+    if (!res.ok) throw new FxSourceError("http", `源返回 HTTP ${res.status}`);
+    body = await res.text();
+  } catch (e) {
+    if (e instanceof FxSourceError) throw e;
+    throw new FxSourceError("network", `源不可达：${(e as Error)?.message ?? String(e)}`);
+  } finally {
+    clearTimeout(timer);
+  }
+  if (body.length > MAX_BODY_BYTES) throw new FxSourceError("parse", `源响应过大（${body.length} 字节）`);
+  return parseFrankfurterRate(body);
+}
+
 export interface RunOptions {
   fetchImpl: FetchLike;
   store: FxStore | null; // null = dry-run
   now?: () => Date;
   sourceUrl?: string;
   log?: (line: string) => void;
+  /** 人工发布汇率（十进制串）：给定时跳过取源直接落该行，内部仍过 normalizeManualRate 闸；不传 = 现行拉源行为 */
+  manualRate?: string;
 }
 
 export type RunResult =
@@ -116,29 +163,27 @@ export async function runFxDaily(opts: RunOptions): Promise<RunResult> {
     }
   }
 
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
-  let body: string;
-  try {
-    const res = await opts.fetchImpl(sourceUrl, { signal: ctrl.signal, headers: { accept: "application/json", "user-agent": "AideanFx/1.0" } });
-    if (!res.ok) throw new FxSourceError("http", `源返回 HTTP ${res.status}`);
-    body = await res.text();
-  } catch (e) {
-    if (e instanceof FxSourceError) throw e;
-    throw new FxSourceError("network", `源不可达：${(e as Error)?.message ?? String(e)}`);
-  } finally {
-    clearTimeout(timer);
+  let rate: string;
+  let sourceDate: string | null = null;
+  let rowSource = FX_SOURCE;
+  let rowSourceUrl = sourceUrl;
+  if (opts.manualRate !== undefined) {
+    rate = normalizeManualRate(opts.manualRate);
+    rowSource = FX_SOURCE_MANUAL;
+    rowSourceUrl = FX_SOURCE_URL_MANUAL;
+    log(`[fx_daily] 人工发布模式（--rate）：不取源，${rateDate} USD/CNY=${rate}`);
+  } else {
+    const parsed = await fetchAndParse(opts.fetchImpl, sourceUrl);
+    rate = parsed.rate;
+    sourceDate = parsed.sourceDate;
   }
-  if (body.length > MAX_BODY_BYTES) throw new FxSourceError("parse", `源响应过大（${body.length} 字节）`);
-
-  const { rate, sourceDate } = parseFrankfurterRate(body);
   const row = FxDailyRateSchema.parse({
     rateDate,
     base: FX_PAIR.base,
     quote: FX_PAIR.quote,
     rate,
-    source: FX_SOURCE,
-    sourceUrl,
+    source: rowSource,
+    sourceUrl: rowSourceUrl,
     fetchedAt: fetchedAt.toISOString(),
   });
 
@@ -152,7 +197,7 @@ export async function runFxDaily(opts: RunOptions): Promise<RunResult> {
     log(`[fx_daily] ${rateDate} 并发写入已存在 ${existing?.rate ?? "?"}，本次不覆盖`);
     return { status: "exists", rateDate, rate: existing?.rate ?? null };
   }
-  log(`[fx_daily] 写入 ${rateDate} USD/CNY=${rate}（源 ${FX_SOURCE} 日期 ${sourceDate ?? "∅"}）`);
+  log(`[fx_daily] 写入 ${rateDate} USD/CNY=${rate}（源 ${rowSource} 日期 ${sourceDate ?? "∅"}）`);
   return { status: "inserted", row, sourceDate };
 }
 
@@ -192,14 +237,50 @@ async function createPrismaStore(): Promise<{ store: FxStore; close: () => Promi
 }
 
 async function main(argv: string[]): Promise<number> {
-  const unknown = argv.filter((a) => a !== "--dry-run" && a !== "--help" && a !== "-h");
+  // --rate 为带值选项，同时支持 `--rate 7.1234` 与 `--rate=7.1234` 两种书写：
+  // 只认其一会把另一种当成未知参数拒掉（人工补发是最容易两种混用的一层）
+  const rateIdx = argv.indexOf("--rate");
+  const rateEqIdx = argv.findIndex((a) => a.startsWith("--rate="));
+  const rateRaw =
+    rateIdx >= 0
+      ? argv[rateIdx + 1]
+      : rateEqIdx >= 0
+        ? argv[rateEqIdx].slice("--rate=".length)
+        : undefined;
+  const rest =
+    rateIdx >= 0
+      ? argv.filter((_, i) => i !== rateIdx && i !== rateIdx + 1)
+      : rateEqIdx >= 0
+        ? argv.filter((_, i) => i !== rateEqIdx)
+        : argv;
+  const unknown = rest.filter(
+    (a) => a !== "--dry-run" && a !== "--help" && a !== "-h" && !a.startsWith("--rate="),
+  );
   if (argv.includes("--help") || argv.includes("-h")) {
-    console.log("用法: tsx scripts/crawl/fx_daily.ts [--dry-run]\n  每日 USD/CNY 汇率快照（Frankfurter，无 Key）→ fx_daily_rates；同日重跑幂等。");
+    console.log(
+      "用法: tsx scripts/crawl/fx_daily.ts [--dry-run] [--rate <汇率>]\n" +
+        "  每日 USD/CNY 汇率快照（Frankfurter，无 Key）→ fx_daily_rates；同日重跑幂等。\n" +
+        "  --rate 7.1234（或 --rate=7.1234）：人工发布当日快照（不取源，行内 source=manual）；仅源长时间不可用或离线建库时使用。",
+    );
     return 0;
+  }
+  if (rateIdx >= 0 && rateRaw === undefined) {
+    console.error("[fx_daily] --rate 缺值：用法 --rate <汇率>");
+    return 2;
   }
   if (unknown.length) {
     console.error(`[fx_daily] 未知参数：${unknown.join(" ")}`);
     return 2;
+  }
+  // 人工发布值早于建连校验：入参非法 = 退出码 2，不占库连接也不写库
+  let manualRate: string | undefined;
+  if (rateRaw !== undefined) {
+    try {
+      manualRate = normalizeManualRate(rateRaw);
+    } catch (e) {
+      console.error(`[fx_daily] ${(e as Error)?.message ?? String(e)}`);
+      return 2;
+    }
   }
   const dryRun = argv.includes("--dry-run");
   const sourceUrl = process.env.FX_DAILY_SOURCE_URL || FX_SOURCE_URL_DEFAULT;
@@ -214,7 +295,7 @@ async function main(argv: string[]): Promise<number> {
       store = p.store;
       close = p.close;
     }
-    const r = await runFxDaily({ fetchImpl, store, sourceUrl, log: (l) => console.log(l) });
+    const r = await runFxDaily({ fetchImpl, store, sourceUrl, manualRate, log: (l) => console.log(l) });
     console.log(JSON.stringify(r));
     return 0;
   } catch (e) {
@@ -237,5 +318,20 @@ const isEntry = (() => {
   }
 })();
 if (isEntry) {
-  main(process.argv.slice(2)).then((code) => process.exit(code));
+  // 不用同步 process.exit：在 Windows 上，undici keep-alive 句柄尚处于关闭中时会触发
+  // libuv 断言（src/win/async.c）并以 0xC0000409 终止——脚本主体已写完、库已返，
+  // 但调度器会把每天正常的采集记成失败（与「无入口」叠加：本脚本从未被真实跑过，此崩溃因而长期未现）。
+  // 改为置 exitCode 让事件循环自然排空；若句柄滞留过久再由 unref 定时器限时兼顶。
+  main(process.argv.slice(2))
+    .then((code) => {
+      process.exitCode = code;
+      const guard = setTimeout(() => process.exit(code), 5_000);
+      guard.unref?.();
+    })
+    .catch((e) => {
+      // main 的 try 之前仍有可抛语句（如引入 url-policy 失败）；
+      // 无 catch 时只会给调度器留下一个退码，堆栈全丢
+      console.error(`[fx_daily] 致命：${(e as Error)?.stack ?? String(e)}`);
+      process.exitCode = 2;
+    });
 }

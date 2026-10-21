@@ -1,0 +1,62 @@
+B11-01 验收核验记录（DEF-011-01 · fx 采集链路最后一公里）
+环境：一次性 PG :55435 + Redis :6379 + next :3000（脚本经环境变量把 DATABASE_URL 指向一次性库；仓库 .env/.env.local 仍为规范开发端口 5435，未被改动）
+时间：2026-10-20（UTC 15:05–15:31 取证窗口）
+纪律：本文件不含任何连接串/凭据，只记录端口与非敏感输出。
+
+──────────────────────────────────────────────
+【验收①】采集入口可执行且退出码 0（含同日幂等）
+命令（与 npm 入口 `crawl:fx` 同构：cwd=apps/web，脚本相对路径 ../../scripts/crawl/fx_daily.ts）：
+  node .scratch/fxcli011c.mjs        → ALL_MATCH=true（10/10，见 cli-boundary.txt）
+关键输出（真实采集，同日重跑）：
+  [fx_daily] 2026-10-20 USD/CNY 已有快照 6.6757，不重复拉取（幂等）
+  {"status":"exists","rateDate":"2026-10-20","rate":"6.6757"}
+  EXITCODE = 0
+补充：修复前同一条命令在 Windows 上以退出码 3221226505（0xC0000409，libuv `src/win/async.c` 断言）崩溃，
+      根因为入口用 `process.exit()` 撞上 undici keep-alive 句柄关闭；改为 `process.exitCode` + unref 兜底后为 0。
+交付入口：apps/web/package.json → "crawl:fx": "tsx ../../scripts/crawl/fx_daily.ts"
+
+──────────────────────────────────────────────
+【验收②】fx_daily_rates ≥ 1 行
+命令：node .scratch/fxwrite011.mjs   （输出见 db-registration.txt）
+  fx_daily_rates count=1
+    rate_date=2026-10-20 USD/CNY rate=6.6757 source=frankfurter
+写入归因：`source=frankfurter` + `sourceUrl=https://api.frankfurter.dev/v2/rate/usd/cny` 仅由
+  `scripts/crawl/fx_daily.ts`（FX_SOURCE / FX_SOURCE_URL_DEFAULT）设置，故该行确由被测脚本写入，非校验脚本代跑。
+inserted 分支实证：scripts/crawl/__tests__/fx_daily.spec.ts:57/143/162 断言 status="inserted"；
+  其中 :161-166 为人工发布分支，且断言取汇调用次数 = 0（真离线可用）。
+
+──────────────────────────────────────────────
+【验收③】/pricing 运行态由 fail-closed 变为可计价
+命令：node .scratch/pricing011.mjs（cf-ipcountry 对照探针）；node .scratch/fxpoll011.mjs（负缓存过期时刻）
+修复前基线（同探针，2026-10-20 14:5x）：
+  {"label":"CN","displayCurrency":"¥","priceRows":120,"pendingCount":432,"fxNote":""}
+  {"label":"US","displayCurrency":"$","priceRows":120,"pendingCount":48,"fxNote":""}
+修复后（15:12:50 轮询破 200 阈值；15:30:31 复测）：
+  2026-10-20T15:12:05Z pending=432   ← 仍为 getDailyFx 进程内 10 分钟负缓存
+  2026-10-20T15:12:50Z pending=0     ← 缓存到期后读侧立即生效
+  {"label":"CN","displayCurrency":"¥","priceRows":120,"pendingCount":0,"freeCount":481}
+  {"label":"US","displayCurrency":"$","priceRows":120,"pendingCount":0,"freeCount":482}
+读侧口径直证（绕开 web 进程缓存的新进程等价查询）：
+  getDailyFx 等价查询(forDate=2026-10-20) → rate=6.6757 date=2026-10-20（stale=false）
+
+──────────────────────────────────────────────
+【验收④】调度注册（DEF-011-01 第二个未接线点）
+seed 后 scheduled_scripts 由 3 条 → 4 条：
+  - 每日汇率采集 | scripts/crawl/fx_daily.ts | 15 1 * * * | active=true | next=2026-10-20T17:15:00.000Z
+cron 取 01:15：避开既有 02:00（模型同步）/02:30（llmtest）/03:00（排名），且早于模型同步，保证当日价先有汇率。
+白名单零改动依据：lib/features/admin/script-validation.ts → /^scripts\/(?:crawl|ranking)\/[\w.-]+\.ts$/ 已覆盖。
+
+──────────────────────────────────────────────
+【门禁】（依赖修复后复跑，同环境）
+  pnpm --filter web typecheck   → 见 b1101-gates2.log
+  pnpm --filter web test        → 见 b1101-gates2.log
+  pnpm --filter web lint        → 见 b1101-gates2.log
+  node scripts/check-docs-facts.mjs → 见 b1101-gates2.log
+  pnpm --filter web build（dev 停止后单独执行，避免 .next 争用）
+──────────────────────────────
+【整改・第 37／38 次证伪＋门禁项判据变更】本卡【门禁】段那五行指针载体的效力，就地改判（只追加，上文一字未改）
+  一、本卡原文（缓存态，判定读数已作废）`  pnpm --filter web typecheck   → 见 b1101-gates2.log` 里的 exit=0 **不再构成类型检查的判定读数**：该命令与 `scripts/check-gates.ps1` L111 的 `tsc --noEmit` 是同一条命令、共用 `apps/web/tsconfig.json` L15 `incremental: true` 那同一份增量态（第 38 次），而缓存在空壳依赖树上的 exit=0 已被实测证明无信息力——同一棵树它 2.8s / 63 B / exit=0，全量态同帧却报 473 errors（第 37 次）。判定读数改认 `25_` §9.2 行 1 的 `pnpm --filter web exec tsc --noEmit --incremental false`（载体 `.scratch/u65-cold-tsc-20261021T105115Z.txt`：`EXIT=0 / WALL=11.1s / ERROR_LINES=0`，buildinfo `324045@2026-10-21T10:28:44.966Z` 前后不变）。
+  二、指针载体本身读数（本段当场按字节复取，非凭记忆）：`.scratch/b1101-gates2.log` = 132 B、UTF-8 带 BOM（head2=`ef,bb`）、`fffd=false`，内容为 `=== GATE2 START 2026-10-20T23:30:48 (dev running, .next untouched) ===` + `TYPECHECK_EXIT=0` / `TEST_EXIT=0` / `LINT_EXIT=0` / `DOCS_EXIT=0`。两个限定因此成立：① 它是**缓存态**读数；② 它的时点（2026-10-20T23:30:48）**早于** 2026-10-21 全轮的 `node_modules` 空壳事故与七次修复，因而对当前树态**没有覆盖力**；且该帧标注 `dev running`，本卡 L55 所说「build 需在 dev 停止后单独执行」不在这份载体里。
+  三、**诚实判定**：本卡【门禁】段就本文件所载载体而言记 `证据不足`——不是「门禁没跑」，也不是「结论被推翻」，而是**支撑该段的那组 exit 码已降为缓存态/历史旁证**，卡片的功能结论（fx 采集链路、`/pricing` 运行态 432→0）另有其运行时载体，不依赖本段。要把本卡门禁项改写成「已按现行七项口径复核通过」，必须先逐条重评本卡五项验收各自所引的读数，那一步**本段没有做**，故不预支结论。
+  四、口径不变（规则句）：**新一轮子智能体复核给出 PASS 之前，提交与 `mirror/main` 直推不得执行**。
+  五、**已知残留（读作设计取舍，不读作漏修）**：上文【门禁】段那行 `  pnpm --filter web typecheck   → 见 b1101-gates2.log` 仍会被 `.scratch/u78-census-context.mjs` 报为「无标记」——该探针只在 needle 之前的同一行回溯找标记，而本卡 §57 已声明「只追加，上文一字未改」，故不在原始行内插标记。判读方式：以本段一~四为权威口径，闭环靠逐行判读而非该整数归零（`00_` 方法论 15⑨）。

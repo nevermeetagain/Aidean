@@ -1,0 +1,12 @@
+数据库与调度注册实况（fxwrite011.mjs，2026-10-20 15:30 UTC 复跑，幂等第二次）
+fx_daily_rates count=1
+  rate_date=2026-10-20 USD/CNY rate=6.6757 source=frankfurter
+scheduledScript 已存在 → 更新 id=01a159db-7d06-7dc2-aae9-c2f636dbf5e4 cron=15 1 * * * nextRunAt=2026-10-20T17:15:00.000Z
+scheduled_scripts 共 4 条：
+  - 模型数据同步 | scripts/crawl/crawl_models.ts | 0 2 * * * | active=true | next=2026-10-21T13:51:58.596Z
+  - 排名更新 | scripts/ranking/update_ranking.ts | 0 3 * * 0 | active=true | next=2026-10-21T13:51:58.597Z
+  - llmtest 站点采集 | scripts/crawl/crawl_llmtest.ts | 30 2 * * * | active=true | next=2026-10-21T13:51:58.598Z
+  - 每日汇率采集 | scripts/crawl/fx_daily.ts | 15 1 * * * | active=true | next=2026-10-20T17:15:00.000Z
+getDailyFx 等价查询(forDate=2026-10-20) → rate=6.6757 date=2026-10-20（stale=false）
+
+对照：本轮审计开始时同表为 total=0、latest=null（见 02_事实基线.md §3.3 / .scratch/run-dbfacts011.txt:7）。

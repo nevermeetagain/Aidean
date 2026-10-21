@@ -6,8 +6,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   FX_SOURCE,
+  FX_SOURCE_MANUAL,
   FX_SOURCE_URL_DEFAULT,
+  FX_SOURCE_URL_MANUAL,
   FxSourceError,
+  normalizeManualRate,
   parseFrankfurterRate,
   runFxDaily,
   toDecimalString,
@@ -149,6 +152,46 @@ describe("fx_daily 每日汇率采集", () => {
   it("dry-run（store=null）只校验不写", async () => {
     const r = await runFxDaily({ fetchImpl: fetchReturning(200, FIXTURE_OK), store: null, now: () => AT });
     expect(r.status).toBe("dry-run");
+  });
+
+  // ---------------------------------------------------------- 人工发布（--rate，B11-01）
+  it("人工发布：不取源、直接落当日行，source=manual 不冒充公开源", async () => {
+    const m = memoryStore();
+    const calls: string[] = [];
+    const r = await runFxDaily({ fetchImpl: fetchReturning(200, FIXTURE_OK, calls), store: m.store, now: () => AT, manualRate: "7.1" });
+    expect(r.status).toBe("inserted");
+    expect(calls).toHaveLength(0); // 取汇点未被调用 = 真离线可用
+    const row = m.rows.get("2026-10-20")!;
+    expect(row).toMatchObject({ rateDate: "2026-10-20", base: "USD", quote: "CNY", rate: "7.1", source: FX_SOURCE_MANUAL });
+    expect(row.sourceUrl).toBe(FX_SOURCE_URL_MANUAL);
+  });
+
+  it("人工发布同样幂等：当日已有快照则不拉源、不新增、不改写", async () => {
+    const m = memoryStore();
+    await runFxDaily({ fetchImpl: fetchReturning(200, FIXTURE_OK), store: m.store, now: () => AT });
+    const r = await runFxDaily({ fetchImpl: fetchReturning(200, FIXTURE_OK), store: m.store, now: () => AT, manualRate: "8.5" });
+    expect(r).toEqual({ status: "exists", rateDate: "2026-10-20", rate: "6.6761" });
+    expect(m.inserts()).toBe(1);
+    expect(m.rows.get("2026-10-20")!.rate).toBe("6.6761");
+  });
+
+  it("人工发布越界/非法值：抛错且不写库（核心层自守，不仅依赖 CLI）", async () => {
+    for (const bad of ["0.1498", "667.61", "0", "-6.6", "abc", "6.123456789"]) {
+      const m = memoryStore();
+      await expect(
+        runFxDaily({ fetchImpl: fetchReturning(200, FIXTURE_OK), store: m.store, now: () => AT, manualRate: bad }),
+      ).rejects.toThrow(/rate|区间|串/);
+      expect(m.rows.size).toBe(0);
+    }
+  });
+
+  it.each([["6.6761", "6.6761"], ["7", "7"], ["7.10000000", "7.1"], [" 8.25 ", "8.25"]] as const)(
+    "normalizeManualRate 合法：%s → %s",
+    (raw, want) => expect(normalizeManualRate(raw)).toBe(want),
+  );
+
+  it.each([[""], ["0"], ["-1"], ["abc"], ["1e2"], ["0.5"], ["25"], ["6.123456789"]])("normalizeManualRate 非法：%s 报错", (raw) => {
+    expect(() => normalizeManualRate(raw)).toThrow();
   });
 
   it("toDecimalString 去尾零且最多 8 位", () => {

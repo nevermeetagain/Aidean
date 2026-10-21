@@ -1,0 +1,32 @@
+bins={"rootTbin":false,"rootTbinCmd":false,"webTbin":true,"webTbinCmd":true,"probeTbin":true}
+script=scripts/crawl/fx_daily.ts
+
+### ①复刻 executor：npx 无 shell，cwd=apps/web（next dev 的真实 cwd）
+  code=-4058 spawnError=ENOENT spawn npx ENOENT 判定=符合预期
+  out=-
+  err=-
+
+### ②npx 无 shell，cwd=仓库根
+  code=-4058 spawnError=ENOENT spawn npx ENOENT 判定=符合预期
+  out=-
+  err=-
+
+### ③npx shell=true，cwd=apps/web（DB 里的 scriptPath 在此 cwd 下不存在）
+  code=1 spawnError=- 判定=符合预期
+  out=-
+  err=node:internal/modules/esm/resolve:274 ⏎     throw new ERR_MODULE_NOT_FOUND( ⏎           ^ ⏎ Error [ERR_MODULE_NOT_FOUND]: Cannot find module 'E:\Code\Aidean\apps\web\scripts\crawl\fx_daily.ts' imported from E:\Code\Aidean\apps\web\
+
+### ④等价替代（避开 npx 自动安装副作用）：node + 本地 tsx cli，cwd=仓库根（应当可跑）
+  code=0 spawnError=- 判定=符合预期
+  out=[fx_daily] DRY-RUN 2026-10-20 USD/CNY=6.6757（源日期 2026-10-20），未写库 ⏎ {"status":"dry-run","row":{"rateDate":"2026-10-20","base":"USD","quote":"CNY","rate":"6.6757","source":"frankfurter","sourceUrl":"https://api.frankfurter.dev/v2/rate/usd/cny","fetchedAt":"2026-10-20T15:58:15.315Z"},"sourceDate":"2026-10-20"}
+  err=-
+
+### ⑤反向自检：同④但脚本名不存在，必须非零（若这项也 0 说明探针不可信）
+  code=1 spawnError=- 判定=符合预期
+  out=-
+  err=node:internal/modules/esm/resolve:274 ⏎     throw new ERR_MODULE_NOT_FOUND( ⏎           ^ ⏎ Error [ERR_MODULE_NOT_FOUND]: Cannot find module 'E:\Code\Aidean\scripts\crawl\__nope__.ts' imported from E:\Code\Aidean\
+
+### ⑥等价于真实调度链：node + 本地 tsx cli，cwd=apps/web + 仓库根相对 scriptPath（应当不可跑）
+  code=1 spawnError=- 判定=符合预期
+  out=-
+  err=node:internal/modules/esm/resolve:274 ⏎     throw new ERR_MODULE_NOT_FOUND( ⏎           ^ ⏎ Error [ERR_MODULE_NOT_FOUND]: Cannot find module 'E:\Code\Aidean\apps\web\scripts\crawl\fx_daily.ts' imported from E:\Code\Aidean\apps\web\

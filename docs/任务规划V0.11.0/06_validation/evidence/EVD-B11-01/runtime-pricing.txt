@@ -1,0 +1,38 @@
+/pricing 运行态对照（探针：cf-ipcountry 头驱动展示币种；页面无客户端币种开关）
+
+一、探针口径修正记录（重要）
+审计阶段曾把该现象记为「/pricing 币种切换零效果（切换前后 rows 均 120、首行文本相同）」，本轮穿透后证伪：
+- apps/web/middleware.ts L16-18：所有放行请求附加 `x-display-currency`，值由部署层国家头解析得到，且**覆盖客户端自带同名头（防伪造）**
+- apps/web/lib/currency/index.ts L59-65（withDisplayCurrencyHeader）：同上
+- apps/web/lib/currency/server.ts：resolveDisplayCurrencyFromHeaders 只读 `cf-ipcountry → x-vercel-ip-country → x-geo-country`
+- 页面侧不存在币种切换控件；audit-inter.json 中 before.control 取到的 "$" 本身就是默认值
+→ 结论：所谓"切换零效果"是**误探针**。正确对照方式是按国家头分组，指标为「价格待核」出现次数。
+
+二、修复前（同探针基线，2026-10-20 14:5x UTC）
+{"label":"CN","status":200,"displayCurrency":"¥","priceRows":120,"pendingCount":432,"fxNote":"","freeCount":50}
+{"label":"US","status":200,"displayCurrency":"$","priceRows":120,"pendingCount":48,"fxNote":"","freeCount":433}
+{"label":"no-header","status":200,"displayCurrency":"$","priceRows":120,"pendingCount":48,"fxNote":"","freeCount":433}
+（fx_daily_rates 当时 0 行 → getDailyFx 返回 null → 读侧 fail-closed 显示「价格待核」）
+
+三、负缓存过期时刻捕获（fxpoll011.mjs，45s 采样，阈值 pending<200）
+2026-10-20T15:09:49.930Z status=200 pending=432 fxNote=""
+2026-10-20T15:10:35.007Z status=200 pending=432 fxNote=""
+2026-10-20T15:11:20.088Z status=200 pending=432 fxNote=""
+2026-10-20T15:12:05.155Z status=200 pending=432 fxNote=""
+2026-10-20T15:12:50.230Z status=200 pending=0   fxNote=""
+BREAK at 2026-10-20T15:12:50.230Z
+→ 证明：写库后读侧不会立即变化，是 `getDailyFx` 进程内 10 分钟缓存（fx.ts L20-21、L29）在起作用；到期后自动生效，非"库不可见"。
+
+四、修复后复测（15:30 UTC，dev 进程重启后）
+{"label":"CN","status":200,"displayCurrency":"¥","priceRows":120,"pendingCount":0,"fxNote":"","freeCount":481}
+{"label":"US","status":200,"displayCurrency":"$","priceRows":120,"pendingCount":0,"fxNote":"","freeCount":482}
+{"label":"no-header","status":200,"displayCurrency":"$","priceRows":120,"pendingCount":0,"fxNote":"","freeCount":482}
+
+五、飞行中连接取证（dbtrace011.mjs，用于排除"服务进程连的不是 55435"）
+candidate pids: 7616,38044,36184；before/inflight#0-7/after 全部 hits=0、anyToDb=0；PRICING status=200 pending=0
+→ 观测到的事实：读到当日快照（pending 由 432 归 0），故服务进程数据源即一次性库 55435；
+  netstat 未捕获到 Prisma 连接属采样窗口/连接复用现象，不作为反证。
+
+六、遗留可观测性说明（非缺陷，需文档显式化）
+`clearDailyFxCache()`（fx.ts L50-52）在全仓无任何调用方：跨进程采集写入后，Web 进程最长需等 10 分钟才反映新汇率。
+按当前设计（同日快照、每日 01:15 采集、请求链路内一致性优先）该延迟可接受；如需即时生效须新增进程内失效通道（Redis pub/sub），列入后续批而非本卡。

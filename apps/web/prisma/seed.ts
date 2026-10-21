@@ -314,6 +314,14 @@ const scheduledScriptsData = [
     cronExpression: '30 2 * * *',
     isActive: true,
   },
+  {
+    name: '每日汇率采集',
+    description:
+      'USD→CNY 日汇率快照（Frankfurter 公开源，无 Key）→ fx_daily_rates；/pricing 展示币种换算与网关跨币种计价的唯一汇率来源，缺行则读侧 fail-closed 显示「价格待核」（TASK-047/101，ADR-P005 v0.3）；早于 02:00 模型同步跑，保证当日价先有汇率',
+    scriptPath: 'scripts/crawl/fx_daily.ts',
+    cronExpression: '15 1 * * *',
+    isActive: true,
+  },
 ]
 
 // API Stations 数据 (20个)

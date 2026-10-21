@@ -25,6 +25,7 @@
     "crawl:agents": "tsx ../../scripts/crawl/crawl_agents.ts",
     "crawl:mcp": "tsx ../../scripts/crawl/crawl_mcp.ts",
     "crawl:skills": "tsx ../../scripts/crawl/crawl_skills.ts",
+    "crawl:fx": "tsx ../../scripts/crawl/fx_daily.ts",
     "ranking:update": "tsx ../../scripts/ranking/update_ranking.ts"
   },
   "dependencies": {

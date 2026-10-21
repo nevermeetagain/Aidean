@@ -1,0 +1,315 @@
+B11-08 验收核验记录（DEF-011-11 调度链必失败 + DEF-011-12 执行历史恒空）
+环境：一次性 PG :55435 + Redis :6379 + next dev :3000（仓库 .env/.env.local 仍指向规范开发端口 5435，未被改动）
+时间：2026-10-20T15:58Z – 2026-10-21T01:26Z（取证）；收口门禁 2026-10-21 本地 09:2x → 11:2x/12:0x 全量重跑（口径见文末【收口读数重跑】段）
+纪律：本文件不含任何连接串/凭据/口令，只记录端口、状态码与非敏感输出。
+说明：本卡非立项卡，由 B11-01 运行态验收连带发现（详见 `deviation.md` §一）。
+版本: v0.5 | 更新: 2026-10-21 | 变更: **新增文末【收口程序项 · 端口释放】段**——本文件【审查・第三轮】所记闸门 B 四项缺口中的“端口释放与提交”一项，其**端口部分已于 13:17:38→13:19:19 完成并取证**（监听=0 / 进程=0 / 常驻实例无误伤，另清除挂起 `psql.exe`）；原文按“只增不删”保留不改。承 v0.4：**v0.3 版头承诺的三段正文已真正落盘**（【审查・第三轮】【第 22 次证伪】【第 23 次证伪】）；`u9` 实测读数已补齐并回填两处回填位（`u9-facts.log` 13:03:28 / `u9-rule.log` 13:03:29，两脚本均 **exit=0**；`u10-*` 按第 23 次证伪撤销）。承 v0.3：新增【审查・第三轮】【第 22 次证伪】【第 23 次证伪】三段；更正【收口读数重跑】 facts/rule 行的理由（“校验对象含本文档集自身”经静态读完两份脚本后推翻）与【第 20 次证伪】段的“命中 5 处”（属未落盘漏计，现为带正/负控的 7 文件/17 命中行/24 次出现）
+
+──────────────────────────────────────────────
+【验收①】DEF-011-11 根因：Windows 下 spawn('npx') 无 shell 必失败（六用例，源 `.scratch/execprobe011.txt`）
+bins={"rootTbin":false,"rootTbinCmd":false,"webTbin":true,"webTbinCmd":true,"probeTbin":true}  ← tsx 只物化在 apps/web/.bin，仓库根没有
+  ①复刻 executor：npx 无 shell，cwd=apps/web（next dev 真实 cwd）  code=-4058 ENOENT            判定=符合预期
+  ②npx 无 shell，cwd=仓库根                                        code=-4058 ENOENT            判定=符合预期
+  ③npx shell=true，cwd=apps/web                                    code=1 ERR_MODULE_NOT_FOUND 'E:\Code\Aidean\apps\web\scripts\crawl\fx_daily.ts'  判定=符合预期
+  ④node + 本地 tsx CLI，cwd=仓库根                                 code=0 DRY-RUN USD/CNY=6.6757（source=frankfurter）                              判定=符合预期
+  ⑤反向自检：同④但脚本名不存在                                     code=1 ERR_MODULE_NOT_FOUND '__nope__.ts'                                     判定=符合预期
+  ⑥真实调度形态：node + 本地 tsx CLI，cwd=apps/web + 仓库根相对 path code=1 ERR_MODULE_NOT_FOUND                                              判定=符合预期
+→ 结论：①② 证明「npx 无 shell 在 Windows 恒 ENOENT」；③⑥ 证明「DB 里的仓库根相对 scriptPath 在 cwd=apps/web 下必找不到模块」，
+  两条同时成立 ⇒ 修复前任何已注册脚本只可能 status=2；⑤ 为探针可信度自证（若⑤也返回 0 则整组证据作废）。
+
+──────────────────────────────────────────────
+【验收②】修复实现与单测
+`apps/web/lib/features/admin/script-executor.ts` → 新增纯函数 `planScriptRun()`：从 cwd 向上 ≤3 层定位仓库根、
+  优先本地 tsx CLI、全程 args 数组、绝不 `shell:true`（③ 显示 shell=true 会把后台可编辑 params 拼进命令行 = 命令注入面）。
+单测：`__tests__/script-executor.spec.ts` +8 用例（planScriptRun 分支：仓库根定位/本地 CLI 优先/回退 npx/参数不拼接）。
+变异检验（证明 DEF-011-12 断言真的在测被修的表达式）：把 route 内取 id 改回 `slice(-3,-2)[0]` 后
+  `scripts-executions-route.spec.ts` 报 `expected 'scripts' to be 'scr-9'`（2 failed）。
+  【更正·第 19 次证伪】本行当时只在**终端**完成，输出未入任何载体（全 `.scratch` 检索断言串 `scr-9` 零命中）；
+  旧写的“恢复后 6 passed”是 6 例时点的**未落盘读数**（该 spec 现为 7 例），不得作凭证。
+  已于 12:03:53 当场重做并落盘 `.scratch/u7-mutation.txt`：`CUR_SHA_BEFORE=a93f2071…` → `PATTERN_HIT p1=True`
+  → `MUT_SHA=be5af000…` → **`MUT_TEST_EXIT=1`** → `Tests 2 failed | 5 passed (7)`（两处均 `expected 'scripts' to be 'scr-9'`，⇒“×2”现属实）
+  → `RESTORE_SHA=a93f2071… MATCH=True` → `NUMSTAT_AFTER=32/7`。分页那例的正规载体是 `u3-mutation.txt`（`MUT_TEST_EXIT=1`、
+  `Tests 1 failed | 6 passed (7)`、`expected NaN to be +0`）；`u2-mutation.txt` 未写退出码且中文用例名乱码，不作凭证。
+
+──────────────────────────────────────────────
+【验收③】DEF-011-12 根因与「修复前」读数（关键：证据仍落在磁盘上）
+源 `.scratch/e2e011b.txt`（2026-10-21 0:22:56 写就，此后未复跑覆盖）：
+  行7 trigger 成功：{"step":"trigger","status":200,"result":{"executionId":"01a15a1f-76d2-7291-a483-2b3fffe83e50","status":1,"durationMs":1734,...}}
+  行8 同一时刻同 id 的执行历史：{"step":"executions","status":200,"count":0}
+  → 该脚本第 14/55 行确有 `unwrap`（解 withApi `{code,message,data}` 信封），故 `count:0` 是被测端点的真实读数，不是探针未解包造成的假阳性。
+静态复算（`.scratch/exec011.txt` 行1）：pathname 切片
+  parts=["","api","v1","admin","scripts","01a159db-…-c2f636dbf5e4","executions"]
+  slice(-3,-2)[0] = "scripts"   ← 原实现取到的就是这个字面量，不是 [id]
+  slice(-2,-1)[0] = "01a159db-…-c2f636dbf5e4"  ← 正确值
+→ 结论：`where.scriptId="scripts"` 永不命中 ⇒ 库里 1 行而端点 total=0 ⇒ 前端「历史」Dialog 恒显示「暂无执行记录」。
+修复：改用 Next 15 路由参数 `const scriptId = (await ctx.params).id`（`apps/web/app/api/v1/admin/scripts/[id]/executions/route.ts`）。
+
+──────────────────────────────────────────────
+【验收④】修复后读数（同库同脚本，双通道对照）
+`.scratch/exec011.txt`（8:48 复跑）：{"endpoint":{"total":1,"itemsLen":1,"page":1}} / {"db":{"totalExecutions":1,"forThisScript":1,"rows":[{…,"status":1,"durationMs":1734}]}}
+`.scratch/get011.txt`（9:20 复跑）：{"executionsNow":{"total":1,"items":1,"firstStatus":1,"firstDurationMs":1734}}
+调度状态翻转复核（经列表端点，因单资源无 GET，见【发现D13】）：
+  {"fxRow":{"id":"01a159db-7d06-7dc2-aae9-c2f636dbf5e4","name":"每日汇率采集","lastRunAt":"2026-10-20T16:22:53.906Z","nextRunAt":"2026-10-20T17:15:00.000Z","executionCount":1}}
+
+──────────────────────────────────────────────
+【验收⑤】用户可见层（Playwright chromium，`.scratch/ui011b.txt` + 截图 `.scratch/b1108-history-dialog.png`）
+  loginDom  hasCard=true email=1 pwd=1 submit=1
+  afterLogin url=/admin  loginResp=[{status:200}]
+  list      /admin/scripts scriptRows=4
+  row       「每日汇率采集 … cron: 15 1 * * * — 1 2026-10-21 01:15:00 触发 编辑 停用 历史 删除」（其中 executionCount=1、nextRunAt 均为库内动态值）
+  dialog    [role="dialog"][aria-label*="执行历史"] dialogRowCount=1（列表表同时刻仍为 4 行，故未串计）
+            hasEmptyText=false hasSuccessLabel=true hasDuration=true
+            snippet=「每日汇率采集 — 执行历史 状态 开始 耗时 错误 成功 2026-10-21 00:22:53 1734ms — 关闭 X」
+  execApi   同窗捕获 [{status:200,total:1,items:1,labels:["成功"]}]
+  health    netFail=[] consoleErr=[]
+→ DOM ⇄ API 同窗一致，故 DEF-011-12 的「用户可见症状已消失」是直接观察而非推断。
+
+──────────────────────────────────────────────
+【收口门禁】2026-10-21 本地 09:2x（dev 已停，端口 3000 计数=0）
+  pnpm --filter web typecheck              → TC_EXIT=0
+  pnpm --filter web lint                   → LINT_EXIT=0
+  pnpm --filter web test                   → TEST_EXIT=0；Test Files 146 passed | 2 skipped (148)；Tests **1486 passed | 5 skipped (1491)**；36.79s
+  node scripts/check-docs-facts.mjs        → FACTS_EXIT=0；All 16 assertions passed.
+  node scripts/check-docs-rule.mjs         → RULE_EXIT=0
+  pnpm --filter web build                  → BUILD_EXIT=0（静态页 28/28）
+      观测到的告警（非失败）：`[ladder/stations] SSR 取数失败，降级空排行 PrismaClientInitializationError`
+      归因：一次性库在 :55435，build 进程按 `.env` 连 :5435（无实例）→ 走的是既有 fail-soft 降级分支，不属本卡改动引入。
+  powershell scripts/check-gates.ps1       → GATES_EXIT=1：**6 PASS / 1 FAIL**
+      [PASS] deps-check、build-check(tasks=3)、tsc-check(0 errors, 9s)、prisma-check(schema 有效)、button-antipattern(0 命中/113 tsx)、store-check(untouched)
+      [FAIL] barrel-check：index.ts 数量 4 > 容忍值 3
+      → 已取证为**先于本卡存在的基线问题**，非本轮回归：4 个 barrel 全部为已跟踪且未修改文件
+        （sync/mappers、sync/writers ← `77c79526` 2026-10-13；monitoring/public-pricing ← `77fdc262` 2026-10-20；lib/currency ← `accbc1ff` 2026-10-20 11:06Z TASK-102），
+        计数在 `accbc1ff` 由 3→4，而此后无任何一轮复跑 `pnpm gates`，故历史文档中的「7/7 PASS」在其当时为真、现已过期。登记为 DEF-011-14（见 `02_事实基线.md` §五）。
+  空壳扫描（build 后）node .scratch/shellscan2_011.mjs → 条目=818 定位到包目录=818 **异常=0**
+      resolve 子探针 3 项 FAIL 已归类为探针噪声：`source-map-js` 是 postcss 的私有传递依赖（pnpm 严格布局下本就不从 app 作用域解析，
+      全仓 `source-map-js` 引用数=0）；根 `package.json` 上下文不是合法解析基准。见 `02_` §五 非缺陷表。
+
+──────────────────────────────────────────────
+【验收⑥】生产构建口径复跑（`next start`，消解「全部证据取自 dev」这一局限）
+前提：上述 build 产物直接 serve；DATABASE_URL 以环境变量指向一次性库 :55435；Ready in 267ms（端口 3000）
+取证载体：`.scratch/prod-recheck.ps1`（先备份 dev 口径原始产物再跑，跑完还原，确保两个口径的载体同时存在）
+结果（三件全部 exit=0）：
+  /pricing（`.scratch/prod-pricing011.txt`）：CN/US/无头 三组 pendingCount = **0 / 0 / 0**（priceRows=120；展示币种 ¥/$/$）
+  执行历史（`.scratch/prod-get011.txt`）：{"executionsNow":{"total":1,"items":1,"firstStatus":1,"firstDurationMs":1734}}
+  调度状态：{"fxRow":{…,"lastRunAt":"2026-10-20T16:22:53.906Z","executionCount":1}}
+  DOM 实证（`.scratch/prod-ui011b.txt` + `prod-b1108-history-dialog.png`）：与 dev 逐字一致
+    dialog dialogRowCount=1 / hasEmptyText=false / hasSuccessLabel=true / hasDuration=true
+    execApi [{status:200,total:1,items:1,labels:["成功"]}]；health netFail=[] consoleErr=[]
+  405 边界复现（同文件 envelope）：405 仍为 0 字节空体；404 HTML 体在 prod 下为 8734 字节（dev 下 27435）
+    → DEF-011-13 与构建方式无关；HTML 体积随口径变化，故引用时必须标明取自哪个口径。
+限定：`next start` 仍不是生产容器（无 Caddy/无真实外网汇率调度、镜像内仍未 COPY scripts），本段只把结论从「dev 口径」扩到「本机 build 产物口径」。
+
+──────────────────────────────────────────────
+【发现 D13】运行态顺带取证（本轮不实施，仅登记）
+`.scratch/get011.txt` 静态扫描（含反向自检：`models/[id]/route.ts` 检出 GET ⇒ 扫描器可信；`noMethodAtAll=[]`）：
+  api/v1 下动态路由 53 条，其中 **35 条无 GET** = 9 条动作型子路由（trigger/promote/run/revert/disable/revoke/mock-pay/notify/mock-upstream）
+  + **26 条单资源 CRUD 路由缺 GET**（admin 22 条 + user 4 条，完整清单见 `get011.txt` scan2.list）。
+运行态信封边界：
+  GET /api/v1/admin/scripts/{id} → **405**，`content-type=null`，body 长度 0 ⇒ 不符合 `{code,message,data}` 信封；
+  `res.json()` 抛 `SyntaxError: Unexpected end of JSON input` —— 这正是 `.scratch/e2e011b.txt` 步骤5（lastRunAt 复核）整行缺失的原因（本次坐实）。
+  GET /api/v1/admin/no-such-resource-xyz → **404 + 27435 字节 HTML**（API 路径回落站点 404 页，客户端仍不可解析）。
+  GET /api/v1/admin/scripts/{不存在 id}/executions → **200** + 合法信封 `{items:[],total:0}`（列表型语义，可辩护）。
+→ 登记 DEF-011-13（统一信封的非 2xx 出口 + 单资源可寻址性），属 V0.11.0「可寻址性」主题但需裁决是否排卡（`12_` Q-11-03）。
+
+──────────────────────────────────────────────
+【审查・第一轮】CodeReview 子智能体（review_scope=explicit_target，9 个文件清单）结论：**PASS（带前提）**
+  无 Blocker / 无 Major；提出 6 项 Minor（M1–M6）+ 3 项 Nit（N1–N3）。
+  子智能体另质疑本轮单测对账“1477+8+6=1491 不可能成立”⇒ 促使我用四份日志独立裁决，确认 1477 为中途基线（开工基线 1462）——该结论已入 `00_` §五 第 12 次证伪。
+  “带前提”的具体前提：① 容器口径未取证（RK-11-07）；② 同类分页缺陷未全站修（DEF-011-15 / Q-11-05）；③ barrel-check 基线 FAIL 未裁决（DEF-011-14 / Q-11-04）。本卡只能在此三条前提下称“已闭环”。
+
+──────────────────────────────────────────────
+【加固处置】逐项（均在 B11-08 卡内完成，未横向扩大范围）
+  M1 `executions/route.ts` 的 `page`/`pageSize` 未套与 `status` 同一守卫（既存行，非法串→NaN→500）
+     → 新增局部 `toInt()`（`Number.isFinite` 口径）+ 文件头写明缘由
+  M2 deviation.md §二 声称有“pageSize 越界用例”，实际不存在
+     → **不靠改文字过关，而是补真用例**：`scripts-executions-route.spec.ts` 新增第 7 例（1000→50 钳制、abc→1/20 回退，并对 `skip/take` 双断 `Number.isFinite`）⇒ 声称与实现重新对齐
+  M3 `plan.root` 算了但未用于 spawn `cwd`（两套路径口径）
+     → 取**文档化**而非改代码：在 spawn 处写明“root 仅用于定位脚本与 tsx 真身，子进程 cwd 有意保持 web 进程 cwd”。
+       理由：脚本内部按 `process.cwd()` 解 `.env` 与相对路径，改 cwd 会破坏已运行态实证的成功路径（风险大于收益）
+  M4 注释“≤ 3 层”比实现多一层（实为 3 个候选根：cwd 本身 + 向上两级）
+     → 引入 `MAX_ROOT_LOOKUP = 3` 常量并把注释口径改准（消除魔数与注释双源）
+  M5 `fx_daily.ts` 不支持 `--rate=值` 等号形式 → 已支持（含 help 文案与未知参数过滤）
+  M6 CLI `main().then()` 无 `.catch` → 已补（异常打 stack 并 `exitCode=2`）
+  N2 `toThrow(/tsx/)` 断言过宽 → 改为捕获 message 后 `toMatch(/未找到本地 tsx CLI/)`、`/已尝试/`、`/脚本不存在/`
+  N1（既存，不动）`FX_DAILY_SOURCE_URL` 覆盖时 source 仍署 frankfurter；N3（操作纪律）`pnpm-lock.yaml` 仅换行噪声，提交时排除
+
+──────────────────────────────────────────────
+【加固后复验】2026-10-21 本地 10:0x~11:0x（全部命令级）
+  定向 vitest（executor + 两个路由 spec）  → TARGET_EXIT=0；executor **14** 例、route **7** 例（共 21）
+  全量 vitest                       → `1487 passed | 5 skipped (1492)`；`146 passed | 2 skipped (148)` files；36.77s；exit=0
+  typecheck / lint / facts / rule    → 均 exit=0（facts **All 16 assertions passed**；spec-count 仍 195，因该断言按**文件**计数）
+  build                             → 首跑 **exit=1**（**本轮内第 4 次环境事故**：`Cannot find module '.../next/dist/compiled/jest-worker/processChild.js'`，该 next 包 entries=0）
+                                     →【口径更正·第 18 次证伪】本行原写“即该类归档故障的第 5 次复发”，把仓内历史与本轮内计数相加，而仓内三处归档的复发次数**未互相对账** ⇒ 全局“第 N 次复发”编号已从本目录撤销，只保留可逐条对账的“本轮内第 5 次事故 / 第 6 次修复”
+                                     → 第 5 次修复（`reused 818, downloaded 0, added 818`、34s、exit=0，postinstall `prisma generate` OK）
+                                     → 复跑 **exit=0**（静态页 28/28）；空壳扫描：事故时 条目=818/定位=818/**异常=52** → 修复后 **异常=0** → build 后仍 **异常=0**
+                                     → `git hash-object pnpm-lock.yaml` == `git rev-parse HEAD:pnpm-lock.yaml`（修复未引入依赖变更）；`pnpm store status` = untouched
+  check-gates.ps1                    → 仍 **6 PASS / 1 FAIL**（唯一 FAIL = barrel-check 4>3，DEF-011-14 既存），GATES_EXIT=1
+  CLI 实测（M5/M6）                  → `--rate=7.1234` 与 `--rate 7.1234` 均 exit=0，dry-run 行含 `"rate":"7.1234","source":"manual"`；`--nope` 仍 exit=2
+
+【M1 运行态实证】生产产物口径（`.scratch/t9-m1runtime.mjs` → `t9-m1.txt`；脚本内起 `next start`，测完自杀，端口不留驻）
+  ready  200 `{db:ok, redis:ok}`；login 200；scripts total=4；fxId=01a159db-7d06-7dc2-aae9-c2f636dbf5e4；lastRunAt=2026-10-20T16:22:53.906Z
+  A `?page=abc&pageSize=1000` → 200 `page=1 pageSize=50 total=1`（钳制生效，无 NaN）
+  B `?page=3&pageSize=xyz`   → 200 `page=3 pageSize=20 total=1`
+  C `?status=`（空串）        → 200 `pageSize=20 items=1`
+  D `?page=1&pageSize=10`     → 200 `pageSize=10 items=1`
+  E 不存在的 id              → 200 `total=0 items=0`（列表型语义，合法信封）
+  同窗 UI（历史 Dialog）      → `dialogRowCount=1 / hasEmptyText=false / hasSuccessLabel=true / hasDuration=true`；`execApi 200 total=1 labels=["成功"]`；`netFail=[] consoleErr=[]`
+                                     ⇒ 与加固前载体（备份于 `t9-keep-ui011b.txt`）逐字一致，且 `restored:true` ⇒ 本项加固无 UI 回归
+  诚实限定：本端点加固前的失败值未单独取前值（文件已改不可回溯），NaN→500 的形态只在兄弟端点实证（见下段）
+
+【DEF-011-15 同类面定性】（`.scratch/t9-sibling.mjs` → `t9-sibling.txt`，同一生产口径）
+  对照组：`scripts/[id]/executions?page=abc` → **200**（本轮已修）
+  `admin/audit-logs?page=abc`  → **500** `code=50000`（内部错误）
+  `admin/tier-mappings?page=abc` → **500** `code=50000`
+  `admin/protocols?page=abc` 与 `?pageSize=xyz` → 均 **200**（因其用 `parseInt(…) || 1` 兜底 ⇒ 静态扫描假阳性）
+  静态扫描三档（**第 16 次证伪后更正**，载体 `.scratch/u2-tiers.txt`，`FILES_SCANNED=155`，11:08:49）：
+    无守卫 **12 文件 / 22 行**；`parseInt(…) || 默认值` 兜底 **3 文件 / 6 行**（实测免疫，属静态扫描假阳性）；
+    分页有限性守卫 **修前 0 文件 / 修后 1 文件**（本卡 `executions` 为全仓第一处）。
+    原写「无守卫 **11** / 兜底 3 / `Number.isFinite` **1**（`free-quotas` 先例）」为误：那处 `Number.isFinite`（`free-quotas/route.ts:67`）
+    守的是 **POST body 的 `quotaTokens`**，其分页两行 `:21-22` 恰是无守卫写法 ⇒ **“同构先例”不存在**，且高危名单少算一个文件。
+  扫描器自查：正控「已知无守卫的 free-quotas 分页行必须命中」= true；负控「已改用 `toInt()` 的本端点必须不命中」= true；
+    `.scratch/u2-blind.txt` 核对跨行别名写法全仓仅本端点 1 文件（`BLIND_FILES=1`）；扫描器 v0.1 曾因**别名变量**漏检，经上述双向自纠后才采信
+    ⇒ 名单是**待查模式清单**而非缺陷数。
+→ 结论：本轮**只修了 1/N**，系统性口径分裂仍存在；已登记 DEF-011-15（P2）+ Q-11-05 + 候选卡 B11-11，本轮**不扩散修**。
+
+──────────────────────────────────────────────
+【审查・第二轮】CodeReview 子智能体（review_scope=explicit_target：M1–M6/N2 加固增量 + 本轮文档回写）结论：**PASS（带前提）**
+  构成：2 项 Major + 3 项 Minor + 4 项 Nit。**闸门 B 否决“原样提交”**，给出的最小放行路径是「更正 2 Major + 3 Minor」**或**「在 §9.5 追加自纠并在 §9.7 显式写明文档更正待补」，本轮选择**前者**（已全部更正）。
+  闸门 A：允许 B11-08 记「正式放行（附 4 条前提）」：RK-11-07 容器/生产镜像口径未取证｜DEF-011-15 同类分页面只修 1/N｜变异检验当时未落盘（本轮已补）｜DEF-011-14 `barrel-check` 未裁决。
+  Major-1 三档名单与「`free-quotas` 同构先例」失实 → 独立复证后全文更正（本文件【DEF-011-15】段与 `25_` §9.5 第 4 条，第 16 次证伪）。
+  Major-2「7 例与变异检验同步」把未执行的验证写成已满足判据 → 两次真做并落盘正规载体 `u3-mutation.txt`（`25_` §9.5 第 5 条，第 17 次证伪）。
+  Minor-1「六组探针」实为 A–E 五组（已改）；Minor-2 CLI 证据载体指向 M5 **修前**读数 → 补 `fxcli011d.txt` 九例并在 `02_` 加注「不得当作修后证据」；Minor-3 `07_`「✅已完成」与其他文件口径冲突 → 已改。
+  Nit-1～4：措辞 referent 错位、`+15` 所指、SCAN 出处混用、**禁令与“允许表述”模板的字面冲突**（第 4 项即下文【第 20 次证伪】的线索）。
+  未取证项（诚实登记）：第二轮审查的**时点与原始输出未落盘为独立载体**，结论系逐项写入 `25_` §9.5/§9.7 与 `00_`/`02_`/`07_`/`12_`/`15_`/`16_`/`README`，该段标 `部分确认`。
+
+──────────────────────────────────────────────
+【收口读数重跑】2026-10-21 本地 11:2x → 12:0x（因 `route.ts` 头注释在 10:09 build 之后于 11:27:34 定稿，“沿用 10:09”口径作废，七项全量重跑）
+  typecheck   → `u6-tc.log` **exit=0**（11:44:20；复现 `u5-tc` 11:39 / `u3-tc` 11:26 / `u1-tc` 10:37）
+  lint        → `u6-lint.log` **exit=0**（11:44:18，**晚于源码定稿**；仅 `components/common/SafeImage.tsx` 既有 `<img>` warning）
+  vitest 定向 → **21 passed (21)**（executor 14 + route 7），`u4-vitest-target.log`
+  vitest 全量 → `u4-test.log` **exit=0**，`1487 passed | 5 skipped (1492)` / `146 passed | 2 skipped (148)` files
+                （本文件 L64 的 1491 是 09:2x 时点读数；第 7 例补齐后的最终值为 **1492**）
+  build       → `u4-build.log` **exit=0**（静态页 28/28）；失败原文 `u3-build.log`（**本轮内第 5 次环境事故**，11:27:21）
+                → 第 6 次修复 `u4-repair.log` 尾行：`resolved 818, reused 818, downloaded 0, added 818`、`Done in 37.8s`、EXIT=0
+                → 不改依赖证明：`u4-lockcheck.log` `CUR=9898d2b6…` == `HEAD=9898d2b6…`，`NUMSTAT=`（空）
+  check-gates → `u4-gates7.log` **EXIT=1，Total: 7 | PASS: 6 | FAIL/ERROR: 1**（唯一 FAIL = barrel-check 4>3，DEF-011-14 既存；store-check untouched）
+  空壳深扫    → 事故现场 `u4-scan1.log` **异常=52** → 修复后 `u4-scan2.log` **异常=0** → build 后 `u4-scan3.log` **异常=0** → 定稿后 `u6-shellscan.log` **异常=0**
+                （均 条目=818 / 定位=818；11:26:57 / 11:27:21 两次误用浅扫器只报「可疑空壳=2」属假确认，**不采信**）
+  facts / rule → 早前 `u5-facts.log`/`u5-rule.log` exit=0；收口最终读数已落盘：**`u9-facts.log`（13:03:28，`All 16 assertions passed`）**与 **`u9-rule.log`（13:03:29，铁律 1 + 数字真源 PASS）**，两者均 **exit=0**（`u9-run.log` 尾行 `SUMMARY FACTS=0 RULE=0`；以 `25_` §9.2 第 3/4 行为汇总载体）
+                【第 23 次证伪】原写的“校验对象含本文档集自身，故必须最后跑”**不实**：两份脚本均不读 `docs/任务规划V0.11.0/`
+                （`facts` 的 `walk()` 根仅 `apps/web*` 与 `e2e`；载体 `.scratch/scan-validator-scope.txt`）；真理由=本轮 diff 含 `scripts/check-docs-facts.mjs` 自身与 `package.json`/`seed.ts` 等被断言对象
+  变异检验     → ①取 id 行：`u7-mutation.txt`（12:03:53，`MUT_TEST_EXIT=1`、`Tests 2 failed | 5 passed (7)`、还原 `MATCH=True`）
+                ②分页两行：`u3-mutation.txt`（11:26:03，`MUT_TEST_EXIT=1`、`Tests 1 failed | 6 passed (7)`、还原 `MATCH=True`）
+                ⇒ 本卡两处判据现均有**带退出码的落盘载体**
+  源码未因任何复跑而变内容：`git hash-object apps/web/app/api/v1/admin/scripts/[id]/executions/route.ts` = `a93f2071…`（定稿前后一致），`git diff --numstat` = **32/7**
+
+──────────────────────────────────────────────
+【第 20 次证伪】「门禁全绿」禁令与自身文本的冲突（本轮自查，线索来自第二轮 Nit-4）
+  现象：`25_` §9.6 条件 6 与 `16_` 条件 6 均声称「本轮所有文本均未写『门禁全绿』」，但全目录检索该子串确实命中若干处。
+  【本行原写“命中 5 处”，属未落盘的漏计，已于第 22 次证伪更正为：7 文件 / 17 命中行 / 24 次出现（带正/负控，`.scratch/scan-gate-green.txt`）】
+  逐处判读：`12_` L36（选项 C 的代价说明）、`16_` L59 与 `25_` §9.2 允许表述段（当时行号 L216，现因本文件后续追加而漂移）——这几处属**禁令条文自身**的引用，不违反约束本意；
+    但 `deviation.md` L44 与 `02_` L234 把「五项单测/类型/规范**门禁全绿** + `pnpm gates` 6/7」写成了**允许使用的表述模板**——这才是实质缺陷：
+    被禁字样出现在“唯一允许表述”里，任何按该模板收口的文本都会自相矛盾。
+  处置：两处模板改为「六项命令 exit=0 + `pnpm gates` 7 项中 6 项 PASS（唯一 FAIL 为既存 `barrel-check`）」（不含被禁字样）；
+    条件 6 的表述从「文本中无该子串」精确化为「不得把门禁表述为**全部通过**；该字样只允许出现在禁令条文与对旧模板的更正说明中」。
+  教训：写「禁止 X」时必须同时检索**给出“允许表述”模板的地方**——禁令与模板由不同时点的我写下，就会彼此打架。
+
+──────────────────────────────────────────────
+【审查・第三轮】子智能体复核，命题域限定为「文档-事实一致性」（已执行，结论 **PASS（带前提）**）
+  与第二轮的分工：第二轮审“加固增量 + 文档回写”的内容是否属实；第三轮只审“文档里的每一句读数能否在仓库/落盘载体中复现”，不再复审代码。
+  闸门 A（本卡可否记正式放行）：**允许**，前提 4 条须同时登记——容器/生产镜像口径未取证（RK-11-07）、同类分页面只修 1/N（DEF-011-15）、`barrel-check` 未裁决（DEF-011-14）、收口读数中 facts/rule 的定稿后复跑未落盘。
+  闸门 B（可否提交推送）：**仍否决**，触发项全部是程序性缺口而非内容失实，共 4 项：
+    ① `barrel-check` 4>3 未由决策人裁定；② facts/rule 的“定稿后最终复跑”当时未生成独立载体；③ 端口释放与提交动作尚未执行；④ 该轮报告自身此前未落盘（已按 `25_` §9.7 ④ 补齐）。
+  命题清单 A~I（九项文档-事实命题）：审查员逐条判**成立**，无 Blocker / Major。
+  审查员现场只读复跑 `check-docs-facts`（16 断言 exit=0）与 `check-docs-rule`（exit=0）——但该两次复跑**未进入仓库载体**，因此本文件与 `25_` §9.2 行 3/4 的最终载体仍以本方落盘的 `u9-facts.log`/`u9-rule.log` 为准。
+  1 项 Minor：`12_` L60 用「五项全绿 + gates 6/7」与「七项全绿」两种旧措辞，与最终口径不同构 ⇒ 已改写并附**废用声明**（见 `12_` v0.18）。
+  对我方文档的直接纠正：审查员以管道法报「门禁全绿」全目录命中 **17** 处，与我此前写入的 **5** 处冲突 ⇒ 复核确认审查员为真、我方为漏计（即下一段）。
+  2 项安全 Info（不属本卡范围，仅登记）：`.scratch` 内的探针产物含既存本地种子口令（该目录 gitignored）；不在任何入库文件中明文引用。
+  逐字对账载体：`../../25_执行记录.md` §9.7 ④。
+
+──────────────────────────────────────────────
+【第 22 次证伪】「命中 5 处」是只在终端看过、没有落盘的漏计（自查；线索来自第三轮子智能体的读数冲突）
+  现象：第 20 次证伪的更正文字里，我在新建的 `25_`/`00_`/`16_`/本文件各处都写了「全目录检索该子串命中 **5 处**」；审查员给的却是 17。两个数都无载体时无法裁决。
+  处置（不在旧句上做算术修补，而是重做带正/负控的可复核扫描）：`.scratch/scan-gate-green.mjs` → `.scratch/scan-gate-green.txt`
+    扫描时点 `2026-10-21T04:48:29.982Z`，`files=16`
+    正控 `DEF-011` = 12 文件 / 162 出现（证明扫描器在该目录有效）；负控 `ZZZ-no-such-string-ZZZ` = 0 文件 / 0 出现（证明该环境的 0 不是假零）
+    被测「门禁全绿」= **7 文件 / 17 命中行 / 24 次出现**；另「五项全绿」= 1 文件/1 行、「七项全绿」= 1 文件/1 行（**两处同在 `12_`**，即上述 Minor）、「全部通过」= 6 文件/13 行/14 次
+    （载体内随附各文件命中行号；行号属扫描时点，本目录此后又被编辑，**行号已漂移，不作逐行对账依据**，对账以子串为准）
+  判读：17 命中行逐行性质为**版本头变更说明、禁令条文自身、或对旧模板的更正引用**；**0 行为现行允许表述模板**（原 2 处模板缺陷已按第 20 次证伪改写）。
+  教训：`00_` 方法论第 11 条讲“以零命中为据要补正控”，本条补上另一半——**引用到的计数本身必须有载体**；否则一条证伪的更正文字会立刻变成下一条证伪。本轮第三次由外部读数推翻我方自证（前两次为第 12、16/17 次）。
+
+──────────────────────────────────────────────
+【第 23 次证伪】「`check-docs-facts`/`check-docs-rule` 的校验对象含本文档集自身 ⇒ 必须最后跑」不成立（自查）
+  原表述分布在五处：`16_`、`07_`【验收 6】、`README`、`deviation.md` §9.2 的注、以及本文件【收口读数重跑】的 facts/rule 行。
+  取证方式：静态读完两份脚本全文（`scripts/check-docs-facts.mjs` 252 行 / `scripts/check-docs-rule.mjs` 248 行）+ 一次路径字面量枚举，载体 `.scratch/scan-validator-scope.mjs` / `.scratch/scan-validator-scope.txt`：
+    `facts` 的 `walk()` 根**只有** `apps/web/app`、`apps/web/app/api`、`apps/web/components`、`apps/web/lib/features`（另有按文件计数断言的 `apps/web/package.json`、`apps/web/prisma/schema.prisma`、`apps/web/prisma/seed.ts`）；它读取的 .md 仅 `docs/architecture/{数据库文档,API接口文档,API架构设计方案}.md`、`docs/product/requirements/需求追溯矩阵.md`、`docs/任务规划V0.10.0/03a_统一需求追溯矩阵.md`；正控 `HAS_V0_10=true`、负控 `HAS_V0_11=false`。
+    `rule` 只走 `apps/**` 的 .md（铁律 1）+ `join(root,"docs","architecture","数据库文档.md")` 与 `join(root,"docs","product","design","功能设计文档.md")` 两份口径锚文档；`HAS_V0_10=false`、`HAS_V0_11=false`。
+  ⇒ **二者均不读 `docs/任务规划V0.11.0/`**：“把读数回填进文档会造成循环论证”这一前提不存在，据此设计的 `u9`/`u10` **双轮一致**机制动机作废（改为单轮）。
+  仍然在收口末跑一次，但理由要换成真的那个：本轮 diff 含 `scripts/check-docs-facts.mjs` **自身**（spec 断言 194→195）与被断言对象 `apps/web/package.json`、`apps/web/prisma/seed.ts`，故最终时点复跑是对**代码侧口径**的回归确认。
+  最终载体**已落盘**：`.scratch/u9-facts.log`（13:03:28，`All 16 assertions passed`，`FACTS_EXIT=0`）/ `.scratch/u9-rule.log`（13:03:29，铁律 1 + 数字真源均 PASS，`RULE_EXIT=0`），启动器 `u9-gate.ps1`、尾行 `SUMMARY FACTS=0 RULE=0`。（诚实记录：本行于 13:03 之前写下时曾标为“回填位、尚未生成”，现由上述时点的落盘输出坐实；不再安排 `u10-*`）。
+  教训：为流程发明的“必须最后跑”这类约束，落笔前要先证明它的前提存在；工具**能力**（第 21 次）与工具**作用域**（第 23 次）是同一个坑的两个面，它们都不会在运行时报错。
+
+──────────────────────────────────────────────
+【收口程序项 · 端口释放】（条件 2；本地 13:17:38 → 13:19:19，载体 `.scratch/port-release-011.txt`）
+  动机：本文件开头“环境：一次性 PG :55435 + Redis :6379 + next dev :3000”三件都是本轮自起的一次性进程，收口必须释放；【审查・第三轮】的闸门 B 第 ③ 项也要求它。
+  归属核验（终止前）：pid 8300 = `postgres.exe -D ".scratch/pg011" -p 55435`；pid 41992 = `redis-server.exe --port 6379 --save "" --appendonly no --dir .scratch`；两者数据目录均在本仓库 `.scratch` 下 ⇒ 确属本轮，而非共享基础服务。
+  事前读数：3000 监听=0；55435 监听=2 行（`::1` / `127.0.0.1`，同属 pid 8300）；6379 监听=2 行（`::` / `0.0.0.0`，同属 pid 41992）；向 55435 的已建立连接=1 条（客户端 `psql.exe` pid 47472）。
+  动作（优先优雅关停，不用 kill）：`pg_ctl stop -D .scratch/pg011 -m fast` → **EXIT=0**（控制台「等待服务器进程关闭 …. 完成」）；`redis-cli -p 6379 shutdown nosave` → **EXIT=0**（**诚实校正**：脚本注释里预判非 0，实测为 0）。
+  事后读数：3000/55435/6379 监听=**0**；`PG011_PROCESSES_LEFT=0`；`REDIS_SERVER_PROCESSES_LEFT=0`；**无误伤**：用户的常驻实例 pid 6740（`-D "D:\SoftWare\PostgreSQL\data"`）仍存活、5432 监听=2。
+  附加发现（本段的真正价值）：关停后复查发现一个**挂起的客户端** `psql.exe` pid 47472（10-20 21:52:33 起，父进程为 IDE 终端 powershell）仍存活——它不监听任何端口，**只数监听会漏掉它**；已 `Stop-Process -Force` 并复验 `PSQL_PROCESSES_LEFT=0`。故释放类取证应同时数：**监听 + 相关进程 + 残留客户端**。
+  取证工具自身的两处缺陷（已按“只增不删”在载体里标注）：首次追加四行取证用的是内联 `powershell -Command`，嵌套引号转义打断了 `$(…)` 子表达式，导致时间戳丢失并报 `Get-Date : 无法绑定参数“Date”`；已用 **ADDENDUM v2** 补齐，原无时间戳行保留。教训已写入 `25_` §六 取证陷阱④：**取证脚本一律落盘为 `.ps1` 再执行**。
+  仍未关闭的只剩一项：本轮 diff 的提交与直推 `mirror/main`（闸门 B 第 ③ 项的提交部分）；`barrel-check`（第 ① 项）属决策人裁定范围，按 `16_` 条件 6 以限定表述收口。
+
+──────────────────────────────────────────────
+【审查・第五轮】只读收口复核（针对**第四轮整改自身**）——结论：**闸门 A 不通过 / 闸门 B FAIL（禁止提交、禁止直推）**
+  本卡状态：**仍记「正式放行（附 4 条前提）」**——该放行针对的是 B11-08 的代码与运行态证据链（本轮该轮复核未推翻），但**提交动作受闸门 B 约束**。
+  该轮现场复算的五项判据均绿（编译与守卫、`await ctx.params`、注入面、变异检验 EXIT=1 后 SHA 还原 MATCH=True、CLI 九例与文档一致），且独立复算 `git diff --numstat` 与 8 个文件一致；阻挡**全部在文档侧**：
+    M-0（第 28 次证伪）轮次口径在**现行指令位**仍是旧实况（`07_` 卡集行与验收叙述、`16_` 1b 行、`README` 两处、`16_` §四 条件 4）；即「改正结论时未一并检索指向它的现行指令位」这一错误类的**直接复发**。
+    Minor-1（第 29 次）`15_` 局限 13 凭空写入源码不存在的 `-r` 短选项（载体 `.scratch/u12-noDashR.txt`，含正控与 `VERDICT=NO_SHORT_R`）。
+    Minor-2/3/4（第 30 次）三类时点读数被当现行值：本文件与 `25_` 版本头里的滚动元整数、「bad 7 → 4 → 0」的中间态 4 无磁盘载体、旧 numstat 与旧用例数。
+    Nit-1：`README` 未开工行列 9 个标签 vs 8 张卡（判为单位差异，不占证伪行号）；Nit-2：`EVD-B11-01/deviation.md` 的撤回标记距引用 106 字符 ⇒ 要求紧贴。
+  另，**审查者自身构成一次载体污染**（第 31 次证伪）：它为复核而用 `Out-File` 默认编码复跑，把 `.scratch/u11b-facts.log` / `u11b-rule.log` 覆盖为 UTF-16LE，而我方文档引用的正是这两个固定文件名 ⇒ **原读数仍存 `u11b-report.txt`**（mtime 07:06:34Z），收口最终读数改指**文件名内含 UTC 时点**的 `u12-20261021T080258Z-facts.log` / `-rule.log`（均 exit=0）。
+  逐字对账载体：`../../25_执行记录.md` §9.7 ⑥ 与 `00_深度分析.md` §五 第 28–31 行。
+
+──────────────────────────────────────────────
+【整改・第五轮后 + 第 32 次证伪】“把失真类写进检测器”这个补救自身的一次语义假绿（自查，线索来自执行 Nit-2 时的逐行核对）
+  现象：按 Nit-2 将 `EVD-B11-01/deviation.md` 的撤回标注补好后，复跑 `.scratch/find-stale-claims.mjs`，那处**我明知仍属现行失真**的引用（把一个已于第 26 次被推翻的事后基线载体连同四项属性写成现场定位）仍判为 HISTORICAL、没翻红。
+  根因：该检测器的邻近窗口（120 字符）只检查「窗口内**有无**标记词」，不检查「标记词**说的是否同一件事**」；该次窗口内确实有一个标记词，但它属于同一行里的**另一个子句**（讲的是另一个磁盘上不存在的文件名），与被推翻的那组属性归属无关。
+  三条判据升级（已入 `00_`）：① **控制组只证明工具“能翻红”，不证明它的分类语义正确**——`CONTROL_FAILED=0` 永远推不出 `BAD_AS_CURRENT_CLAIM=0` 就是真的零；② **检测器的绿色总数不得当作“已清零”**，闭环判据降为「工具线索 + 逐行人工判读」；③ **紧贴标注必须落在被判串之前**（窗口只回溯、不向前看，第一版补注写在引用之后对分类完全无效）。
+  处置：`deviation.md` 升 **v0.17**（撤回标注前置紧贴，并在版头登记“假绿”缺陷类）；复扫实测该行窗口标记由一个语义无关的词变为三个明确指向该断言的词（载体 `.scratch/u13-falsegreen-deviation-20261021T082848.955Z.txt`，逐行打印 `markersInWindow`）。
+  同轮另一项正面结论（现场复算探针 `.scratch/u13-round5-verify.mjs`，`PROBE_EXIT=0 / CONTROL_FAILED=0`）：本卡与 `25_` 所写的四组 `git diff --numstat`、route spec 的 `it(` 块计数（7）与定向 vitest 读数 `Tests 21 passed (21)` **逐条与磁盘一致**；`t9-vitest-target.log` 需按 UTF-16LE 解码才可见该读数（按 UTF-8 解得大量替换字符）——即方法论 15⑤ 所述**假缺席**的活样本。
+  本文件口径（规则句，不绑定轮次编号）：**新一轮子智能体复核给出 PASS 之前，本卡不得被读成“可提交”，提交与 `mirror/main` 直推不得执行**；已完成轮次（一～五轮）的结论属历史事实，只增不删。
+
+ ──────────────────────────────────────────────
+ 【整改・第 33 次证伪】“为记录证伪而做的计数”自身成为新的失真（自查；线索来自**把检测器语料扩面**这个动作，不是子智能体指出）
+   现象一（元计数失真，第 22 次的同族复发）：`02_` 在记录第 22 次补救时写下了一句“该串在本目录语料中的命中分布”整数。本轮把 `find-stale-claims.mjs` 的语料由 `*.md` 扩到叙述性 `verify.txt`（即本文件，故本段文字也在被检射程内）后现场复算，**该分布已不成立**。机理比第 22/24 次更直接：**每写一条更正引用，就等于给语料多加一次被检串**——所以「命中 N 处」连同「其中 M 处是合法引用」这类二次分类，在落笔那一刻就开始腐烂（第 22 次是漏计，第 33 次是**结构性追不上**）。
+   现象二（新变体：载体命名撞被检串）：为做该计数写的探针脚本连同它的**时点载体文件名**里含着被检串本身，于是文档中每一处对该载体的**合法**引用都自造一次命中；更糟的是那次自造命中被判成 HISTORICAL——窗口里唯一的标记词属于同一段落的**另一个子句**，即第 32 次那个语义假绿**由工具命名习惯触发**，比由措辞触发更难发现。
+   取证载体（均为文件名内含 UTC 时点的不可变快照）：编辑前分布明细 `.scratch/u15-count-meta-20261021T091027Z.txt`；逐行窗口判读 `.scratch/u15-window-all-20261021T090904Z.txt`（把当期快照每一条历史引用的 120 字符窗口全部打印后逐条读，取消上一轮按手挑样本判读的选择偏差）；改名前后对照 `.scratch/find-stale-claims-20261021T091334Z.txt` → `-091458Z.txt`（`VERDICT=CLEAN` 保持）。
+   处置：① `02_` 升 v0.21 **删掉那句分布断言**，改为语境规则句 + 指时点载体；② 探针与载体**改名去除被检串**并同步修文档引用；③ **把该失真类判据化**：新建 `.scratch/find-metacount.mjs`（识别元计数句式 + 作用域门区分“数本目录语料”与“数代码文件/扫描输出” + 与 `find-stale-claims` **同一套**锚点词 + 3 例控制组），终态载体 `.scratch/find-metacount-20261021T092002Z.txt`（`CONTROL_FAILED=0`，且 `BOUND` 分区非空 ⇒ 那个 `UNBOUND=0` 不是假零）；④ 语料**明确排除** `*.log` 与原始探针转写——给证据文件插撤回标注就等于改证据。
+   一条过程纪律（值得单列）：该检测器首版报出大量误报（`.scratch/find-metacount-20261021T091831Z.txt`，`CONTROL_CASES=2`）时，**没有**去改文档让读数变零——那等于让工具反向重写事实；改为用 `.scratch/u15b-unbound-ctx.mjs` 逐行取回宽上下文判读，然后**只改判据**（补作用域门与锚点词表）。
+   已知局限（不得读成已解决）：作用域门依赖「全目录 / 本目录 / 本文档 / `docs/任务规划`」这几个词，若一句元计数换别的表述就会被归入外部计数而漏检；`.log` 与原始探针转写不在语料内。
+   收口时点读数（本段写下后仍会再跑，故引用处只给指针 + 退出码，不复制快照名）：`node .scratch/u16-run.mjs` → **`FACTS_EXIT=0 / RULE_EXIT=0`**，三份载体自证 `utf8bom=false / utf16le=false / hasFFFD=false`；四复算器（`find-stale-claims` / `find-v1-pointer3` / `count-ledger` / `find-metacount`）各自 **exit=0**，`CONTROL_FAILED=0`。本文件口径不变：**新一轮子智能体复核给出 PASS 之前，提交与 `mirror/main` 直推不得执行**。
+ ──────────────────────────────────────────────
+ 【整改・第 34 次证伪】检索仪器在超长行上静默假缺席，而本目录一条承重的「不存在」断言正是拿它的读数当证据（自查；线索来自开工复证时「工具说没有、node 说那串就在偏移 73167」的对撞，非子智能体指出）
+   现象：`00_` §五 第 14 行的证据句写着「V0.10.0 全目录检索『55435/端口释放』0 命中，不存在所谓环境约定」，而那个 0 出自 IDE 检索工具。本轮先排除竞争性解释——`u19-encoding-probe.mjs` 证明被检各文件 `roundTripOK=true / nul=false / fffd=0 / bom=false`，即不是文件编码非法，随后只能改判仪器。
+   仪器实验（可当场复跑）：`u20-longline-probe.mjs`（每行一枚位置已知的针，40/300/1200/3000 × 行首/行尾）与 `u21-column-limit-probe.mjs`（同一针分别以裸串与行首锚定两种写法搜）给出四个方向不一致的读数——300 字符行的尾部针漏、728 字符行的尾部针中、≥1000 字符行连列 0 的标签都搜不到、同一行锚定命中而裸串漏 ⇒ **不存在可背下来的安全字符阈值**，因此「把行写短一点」不是防护手段。
+   反身审计本目录：`u22-absence-audit.mjs` 统计 `.md` 里「不存在／零命中」类短语得 `absence_claims=72`，其中落在 >900 字符整行上的是 24 行；`u23-absence-carrier-audit.mjs` 再加一道「同一行是否给了取证载体」的门，得 `withCarrierInLine=64 / withoutCarrierInLine=8`；8 条由 `u24-read-eight.mjs` 逐条取回原文判读，仅两处属承重断言。
+   按新判据重做承重那处：`u25-absence-recheck.mjs` 要求同一枚正则在 UTF-8 与 latin1 两种解码视图下各扫一遍取并集、先剔除 NUL、并在同一条输出里给一条必定命中的正控；实测 `HITS_55435=2`、正控 `CONTROL_任务规划_hits=1327`、`V010_FILES=350`。`u26-read-55435.mjs` 取回的那两行原文写的是「一次性自建集群 `.scratch/pg065`」与「取证完成后已停止 PG 集群(`:55435`)」⇒ 原始材料**加强**而非推翻原结论，故处置为**证据句作废、结论保留**（反过来做就等于让坏仪器改写事实）。
+   同族自查两处：① `README` L13「采集器已交付却没有任何 npm 执行入口」经 `git diff -- apps/web/package.json` 实证工作区**已新增** `crawl:fx = tsx ../../scripts/crawl/fx_daily.ts` ⇒ 该句只描述修复前状态，已就地补审计时点口径（方法论 15⑧ 状态句腐烂）；② 本卡与 `25_` 一度把 PowerShell `>` 重定向捕获的 stdout 当作可复核载体，实测 head2=`fffe`（UTF-16LE）⇒ 就地作废，同批复算改指 node 直写 UTF-8 的 `u18-<UTC>Z-{stale,pointer,ledger,meta}.txt`。
+   取证载体（均为文件名内含 UTC 时点的不可变快照，node 直写并当场自证字节属性）：`.scratch/u27-20261021T095453Z-{carrier-audit,absence-recheck,read-55435,report}.txt`（`ALL_THREE_EXIT_ZERO=true`）、`.scratch/u18-20261021T094457Z-{stale,pointer,ledger,meta,report}.txt`（`ALL_FOUR_EXIT_ZERO=true`）；探针 `u19/u20/u21/u22/u23/u24/u25/u26/u30/u31/u32/u34/u35`（`.mjs`，部分带同名 `.txt` 转写）。**同轮两处仪器侧自纠（与「静默假缺席」同一失效面，方向相反）**：① 本段所属追加脚本 `.scratch/u33-append-verify.mjs` 的第一版用 `loneLF: /\n(?!\r)/` 判「有无孤立 LF」，而该正则看的是 LF **后面**跟着什么 ⇒ 对**任何** CRLF 文件恒为真，于是 `APPEND_EXIT=1` 报的是一次并不存在的缺陷（第 32 次「语义假绿」的**镜像：构造性假红**）；处置方向仍是**不为迎合坏检查去改文件**——先以独立方法复测（`u34-lonelf-probe.mjs` 逐字节扫「LF 前非 CR」，得 `loneLF_count=0`），确认文件无害后才把判据改为 `/(?<!\r)\n/` 并复跑得 `APPEND_EXIT=0`；② 该脚本是本轮首个**会写文件**的取证脚本，原本非幂等（任何人复跑会把整段追加第二遍），已加段标题 `MARK` 护栏并在自检中输出 `skippedBecauseAlreadyPresent=true / sectionMarkerCount=1`，使「未重复追加」成为可当场复算的读数。另 `u35-lf-mix-probe.mjs` 逐字节数本段所属四份文档的行尾，得 `crlf>0 / loneLF=0 / fffd=0 / bom=false`（⇒ 编辑工具在 CRLF 文件上不产生混合行尾，此前这只是假设）。文档落盘：`00_` 升 v0.27（§五 第 34 行 + 第 14 行就地更正 + 方法论 15⑪）、`25_` 升 v0.32（§9.5 第 22–24 条 + §9.1 本轮行 + §六 区间终点去整数化）、`README` 升 v0.27（L13 补时点 + L33 新增缺陷类）。
+   已知局限（不得读成已解决）：① 该检索工具漏检的**内部规则仍未测出**，本轮只证到「不可预测」，故 15⑪ 取保守判据而非阈值；② `u23` 那道门只筛「同一行有无载体」，**不校验载体能否支撑该句**，故 `withCarrier` 那一批仍是未逐行复核的量；③ 该类目前只进了方法论判据，**没有**对应检测器——`find-stale-claims` 认不出「拿仪器读数当不存在证据」这种结构；④ `.log` 与原始探针转写仍在检测器射程外（第 33 次的既定取舍）。
+   本文件口径不变（规则句，不绑定轮次编号）：**新一轮子智能体复核给出 PASS 之前，提交与 `mirror/main` 直推不得执行**。
+──────────────────────────────
+【整改・第 37–42 次证伪】本文件把 `typecheck` 的**缓存态**读数当判定项的四处在下降格；另作废两枚探针的派生时间列，并立端口/进程读数的取数写法（对象＝本卡【门禁】与【环境】段；全部逐字取证见文末载体指针）
+  一、**降格清单**（引原文而非只给行号——行号会随本文件增长而漂移，属方法论 15⑦「引用必须绑可当场复核的属性」）：
+    ① 缓存态，判定读数已作废——`  pnpm --filter web typecheck              → TC_EXIT=0`
+    ② 缓存态，判定读数已作废——`      [PASS] deps-check、build-check(tasks=3)、tsc-check(0 errors, 9s)、prisma-check(schema 有效)、button-antipattern(0 命中/113 tsx)、store-check(untouched)`
+    ③ 缓存态，判定读数已作废——`  typecheck / lint / facts / rule    → 均 exit=0（facts **All 16 assertions passed**；spec-count 仍 195，因该断言按**文件**计数）`
+    ④ 缓存态，判定读数已作废——`  typecheck   → `u6-tc.log` **exit=0**（11:44:20；复现 `u5-tc` 11:39 / `u3-tc` 11:26 / `u1-tc` 10:37）`
+    四处此后一律只读作**缓存态旁证**，不再充当类型检查的判定读数。判定读数的唯一载体是 `25_` §9.2 行 1 那条显式禁用增量的全量命令，实测读数原文：`u65 started 2026-10-21T10:51:04.016Z  buildinfo=324045@2026-10-21T10:28:44.966Z` / `RUN cold-typecheck EXIT=0 WALL=11.1s ERROR_LINES=0` / `buildinfo after=324045@2026-10-21T10:28:44.966Z`（前后不变 ⇒ 该次确实没走增量），载体 `.scratch/u65-cold-tsc-20261021T105115Z.txt`。
+  二、**为什么「换一条命令读它」不构成判据**（第 38 次证伪；它推翻的是本卡上一段的**机制归因**，不是「缓存态读数无信息力」这个结论）：`scripts/check-gates.ps1` L111 执行的就是 `& pnpm --filter web exec tsc --noEmit`，与 `apps/web/package.json` 里的 `typecheck` 是同一条命令；`apps/web/tsconfig.json` L15 `incremental: true`、L8 `noEmit: true`，且仓内存在 `apps/web/tsconfig.tsbuildinfo` ⇒ 两条路径共用**同一份**增量态。所以本行 ② 的 `tsc-check(0 errors, 9s)` 并不因为来自 gates 就自动获得判定权：它落在热态还是全量态，只能由**同帧的 buildinfo bytes+mtime 是否变化**来判断，命令名本身不携带这个信息。
+  三、**本文件此后引用监听/进程读数必须写出取数写法**（第 39 次证伪）：`netstat -ano -p tcp` 在 Windows 上只返回 IPv4 表，会漏 `[::]:<port>` 那一行 ⇒ 一切「监听行数」改取不带 `-p` 的 `netstat -ano`（全部地址族），并在句内同时写出写法；跨时点的进程身份只能取**命令行**（如数据目录 `-D "…data"`），**pid 只是时点读数**（实测：历史载体的 pid 6740 用 `tasklist /fi "PID eq 6740"` 复查已返「没有匹配」）。
+  四、**两枚探针的派生时间列作废**（第 42 次证伪）：`.scratch/u74-resident-5432.mjs` 与 `.scratch/u75-resident-starttime.mjs` 各自打印的 `START_LOCAL`／`UTC`／`OFFSET_MIN` 都是把 WMI `CreationDate` 按**固定列号**手工切开的产物，且两处切法不同（`u74` 小时取 `slice(9,11)`，`u75` 偏移取 `slice(17)`）。本轮逐字复算（载体 `.scratch/u80-wmi-slice-replay-20261021T113945Z.txt`，RAW 串从 `u75` 的时点载体现场读出而非凭记忆，两枚**正控**各自重现了该探针当时的错误打印值）⇒ 派生列一律作废，只保留原始串 `RAW=20261021172235.427826+480` 与由它按锚定整条格式的正则复推的 `2026-10-21 17:22:35`（UTC `2026-10-21T09:22:35.000Z`，时区偏移 +480 分钟）。**第 39 次的结论不受影响**——证据句作废、结论保留。
+  五、**两条仪器判据的当前状态**（诚实区分「本段实测」与「仅按判据引用」）：① 本段**当场复现**：`Get-ChildItem .scratch -Filter "u8[0-9]*"` 返回 **0** 项，同目录 `-Filter "u8*"` 返回 **6** 项 ⇒ `[0-9]` 字符类给出的是**假缺席**，不得当「文件不存在」的证据（该坑登记于 `00_` §五 第 40 行，本轮原样复发）；② 第 34 次族（检索工具在超长行上静默返回无匹配，故「不存在／零命中」类断言只能由落盘 node 探针 + 双视图 + 去 NUL + 同句正控产出）本段**未复现**，此处仅作判据引用，复现读数在 `00_` §五 第 34 行与其登记的 `u19`–`u26` 载体。
+  六、本文件口径不变（规则句，不绑定轮次编号，也不写「第 N 轮待派」）：**新一轮子智能体复核给出 PASS 之前，提交与 `mirror/main` 直推不得执行**。
+  七、**已知残留（读作设计取舍，不读作漏修）**：上文【门禁】【加固后复验】【收口读数重跑】三段里那四处原始行——`pnpm --filter web typecheck → TC_EXIT=0`、`[PASS] …tsc-check(0 errors, 9s)…`、`typecheck / lint / facts / rule → 均 exit=0`、`typecheck → `u6-tc.log` exit=0`——仍会被 `.scratch/u78-census-context.mjs` 报为「无标记」。原因有二：① 该探针的标记窗口只在 needle **之前的同一行**回溯，作废语写在读数之后它看不见；② 本文件承第 33 次「插改证据即改证据」的取舍，只在文末追加、不在原始读数行内插标记。故这四处按设计保持正文原貌，闭环判据是对它们**逐行判读**并指回上面一~六小节，而非让该整数归零（`00_` 方法论 15⑨：工具线索＋逐行判读，绿色总数不作闭环判据）。

@@ -1,0 +1,53 @@
+CLI 边界矩阵（fxcli011c.mjs：显式 argv 数组 + cwd=apps/web，与 pnpm --filter web crawl:fx 同构）
+结果：ALL_MATCH=true（10/10）
+
+### 无参（真实采集，应幂等）
+  args=[] expect=0 actual=0 OK
+  | [fx_daily] 2026-10-20 USD/CNY 已有快照 6.6757，不重复拉取（幂等）
+  | {"status":"exists","rateDate":"2026-10-20","rate":"6.6757"}
+
+### --dry-run
+  args=["--dry-run"] expect=0 actual=0 OK
+  | [fx_daily] DRY-RUN 2026-10-20 USD/CNY=6.6757（源日期 2026-10-20），未写库
+  | {"status":"dry-run","row":{"rateDate":"2026-10-20","base":"USD","quote":"CNY","rate":"6.6757","source":"frankfurter","sourceUrl":"https://api.frankfurter.dev/v2/rate/usd/cny","fetchedAt":"2026-10-20T15:29:40.461Z"}}
+
+### --help
+  args=["--help"] expect=0 actual=0 OK
+  | 用法: tsx scripts/crawl/fx_daily.ts [--dry-run] [--rate <汇率>]
+  |   每日 USD/CNY 汇率快照（Frankfurter，无 Key）→ fx_daily_rates；同日重跑幂等。
+  |   --rate 7.1234：人工发布当日快照（不取源，行内 source=manual）；仅源长时间不可用或离线建库时使用。
+
+### --rate 缺值
+  args=["--rate"] expect=2 actual=2 OK
+  | [fx_daily] --rate 缺值：用法 --rate <汇率>
+
+### --rate abc
+  args=["--rate","abc"] expect=2 actual=2 OK
+  | [fx_daily] --rate 需为十进制正数串（≤8 位小数）：abc
+
+### --rate 0
+  args=["--rate","0"] expect=2 actual=2 OK
+  | [fx_daily] --rate 非法：0
+
+### --rate -1
+  args=["--rate","-1"] expect=2 actual=2 OK
+  | [fx_daily] --rate 需为十进制正数串（≤8 位小数）：-1
+
+### --rate 99（越界）
+  args=["--rate","99"] expect=2 actual=2 OK
+  | [fx_daily] --rate 99 越出合理区间 [1, 20]
+
+### --rate 7.1234 --dry-run
+  args=["--rate","7.1234","--dry-run"] expect=0 actual=0 OK
+  | [fx_daily] 人工发布模式（--rate）：不取源，2026-10-20 USD/CNY=7.1234
+  | [fx_daily] DRY-RUN 2026-10-20 USD/CNY=7.1234（源日期 ∅），未写库
+  | {"status":"dry-run","row":{"rateDate":"2026-10-20","base":"USD","quote":"CNY","rate":"7.1234","source":"manual","sourceUrl":"https://example.com/manual-fx-rate"},"sourceDate":null}
+
+### --bogus（未知参数）
+  args=["--bogus"] expect=2 actual=2 OK
+  | [fx_daily] 未知参数：--bogus
+
+──────────────────────────────────────────────
+方法论备注（防复发）：此前一轮用 PowerShell 循环 `node runfx011.mjs 55435 $a` 传参时，
+`"--rate abc"` 被作为**单个 argv 元素**传入，脚本走的是「未知参数」分支（恰好也返回 2），
+会被误读为「--rate 校验分支已验证」。本版改为 node 驱动内显式 argv 数组，才真正覆盖 5 条取值校验分支。
