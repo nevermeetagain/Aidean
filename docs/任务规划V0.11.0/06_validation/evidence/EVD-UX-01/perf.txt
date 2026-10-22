@@ -1,0 +1,25 @@
+# EVD-UX-01 perf.txt — 生产构建性能（next build → next start :3002，BASE c84efff）
+# 工具：Lighthouse 12 两次连接 chrome 失败（chrome-launcher 端口超时 / --port 模式 110s 超时），按任务书「失败两次停手换法」改用 .scratch/ux/perf2.mjs：
+#   Playwright+CDP，PerformanceObserver 采 FCP/LCP/CLS，longtask 超出 50ms 部分求和作 TBT（INP 代理），每页 3 次取中位；
+#   desktop=1440×900 无节流；mobile=390×844 DPR2 + CPU 4x + 150ms RTT/200KB/s 下行。沙箱 ARM 共享 CPU，绝对值偏慢，只做相对比较。
+
+mode     route           FCPms  LCPms  CLS    TBTms  KB 
+desktop  /               452    452    0.000  123    398
+desktop  /models         384    384    0.000  113    403
+desktop  /ladder         236    236    0.000  16     403
+desktop  /pricing        224    440    0.346  6      406
+desktop  /models/gpt-4o  316    316    0.000  30     409
+desktop  /news           252    660    0.170  20     397
+mobile   /               1564   1564   0.000  1248   308
+mobile   /models         1436   1436   0.000  1145   309
+mobile   /ladder         956    956    0.000  310    302
+mobile   /pricing        824    1232   0.000  217    267
+mobile   /models/gpt-4o  740    976    0.000  238    318
+mobile   /news           928    2152   0.414  346    319
+
+## 判读（阈值：LCP≤2.5s 良；CLS≤0.1 良、>0.25 差；TBT≤200ms 良）
+- CLS 超标：/pricing 桌面 0.346（差）；/news 桌面 0.170、移动 0.414（差）。/news 推断成因：静态页内 NewsList 用 useSearchParams 包在 Suspense（app/(site)/news/page.tsx:30-38），SSR 先出 fallback、水合后换成列表引发位移（推断，未单独归因）。/pricing 成因未归因（生产构建在 S5 样板验证时被 next dev 覆盖，未复测）。
+- 移动端 TBT：/ 1248ms、/models 1145ms（4x 节流），首页与天梯为主线程最重的两页；/ladder 310ms。
+- LCP 全部 ≤2.2s（含节流），无超标；/news 移动 2152ms 最慢。
+- 首屏 JS（next build First Load）：/user/console 178kB 最大，/models 与 /ladder 161kB，/admin/configs 152kB；共享 99.3kB。
+- 管理端未纳入 6 页性能样本（冻结，且多为登录后客户端取数）。

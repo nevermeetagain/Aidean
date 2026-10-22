@@ -1,0 +1,52 @@
+# EVD-UX-01 static.txt — 静态度量（BASE c84efff，克隆 ux/01-audit 未改动源码时测）
+# 脚本：.scratch/ux-static.mjs（全工具类口径）+ 下列 grep（与 Hark 基线同口径）
+
+## 1. 与 Hark 基线对账（c84efff）
+指标                                 基线   本次 说明
+components 硬编码色板(bg|text|border)     1643     1643 一致
+components var(--令牌)                  131      131 一致
+app 硬编码色板(bg|text|border)       327      327 一致
+app var(--令牌)(仅tsx)                  98       98 一致；含 globals.css 为 131
+6位hex(components+app tsx)                21       21 一致；含 .ts 为 29
+text-[11px]                                51       51 一致
+text-[10px]                                20       20 一致
+差异说明：若把 ring/from/to/via/divide/stroke/accent 等前缀也计入，components=1677、app=331；基线口径只数 bg|text|border 三前缀。
+
+## 2. 分区（全工具类口径，node .scratch/ux-static.mjs；palStrict=全前缀，var=var(--x)，space=任意值间距类，style=内联 style）
+components             {"files":115,"palStrict":1676,"palLoose":1677,"var":131,"hex6":13,"hex6NonCss":13,"px11":46,"px10":19,"pxOther":{"13":4,"15":9},"space":44,"style":20}
+components(非admin)     {"files":59,"palStrict":528,"palLoose":529,"var":66,"hex6":11,"hex6NonCss":11,"px11":21,"px10":12,"pxOther":{"13":2,"15":9},"space":33,"style":18}
+components/admin       {"files":56,"palStrict":1148,"palLoose":1148,"var":65,"hex6":2,"hex6NonCss":2,"px11":25,"px10":7,"pxOther":{"13":2},"space":11,"style":2}
+app                    {"files":256,"palStrict":331,"palLoose":337,"var":131,"hex6":41,"hex6NonCss":16,"px11":5,"px10":1,"pxOther":{},"space":10,"style":26}
+packages/ui            {"files":20,"palStrict":14,"palLoose":14,"var":65,"hex6":3,"hex6NonCss":3,"px11":0,"px10":0,"pxOther":{},"space":2,"style":0}
+
+## 3. 低对比文字类（axe color-contrast 主因）
+text-slate-400：components(非admin) 74 / components/admin 81 / app 29
+text-slate-300：components(非admin) 7 / components/admin 1 / app 3
+slate-400=#90a1b9 对白底 2.63:1；slate-300=#cad5e2 1.48:1（WCAG AA 正文需 ≥4.5:1）
+
+## 4. 页面容器宽度（UI设计文档 §2.4 要求全宽 px-4 md:px-6）
+全宽（合规）：/、/about、/docs、/ladder、/models、/models/[slug]、/news、/partners、/pricing、/products*、/providers、/roadmap（PagePlaceholder/main px-4 md:px-6）
+自设窄容器（3xl/4xl/6xl 三种）：evaluations/page.tsx:49 max-w-4xl；evaluations/new/page.tsx:30 max-w-3xl；evaluations/[id]/page.tsx:81,105 max-w-6xl（:66,:89 max-w-3xl）；news/[slug]/page.tsx:38 max-w-3xl；user/console/page.tsx:112 max-w-6xl；user/balance/page.tsx:75 max-w-6xl
+骨架与页面不同宽：user/console/loading.tsx:6、user/balance/loading.tsx:6 全宽 → 页面 max-w-6xl（加载完成时版心跳变）
+页头 components/site/SiteHeader.tsx:98 max-w-6xl；页脚 components/site/SiteFooter.tsx:70 max-w-6xl；首页分隔线 app/(site)/page.tsx:44 max-w-6xl
+
+## 5. H1 字号（文档刻度上限 32px）
+components/common/PageHero.tsx:73
+components/common/PagePlaceholder.tsx:58
+app/(site)/models/page.tsx:70
+app/(site)/news/[slug]/page.tsx:52
+
+## 6. 管理端原生控件（scripts/audit/admin-ui-audit.mjs）
+SUMMARY {"files":55,"rawButton":108,"rawSelect":44,"rawTextarea":24,"rawLabel":163,"rawTable":3,"mixedFiles":16,"filesWithTestid":11,"filesWithPanelState":2,"filesWithoutErrorState":13,"filesWithoutRetry":38}
+
+## 7. 体积（next build 输出，First Load JS）
+├ ƒ /admin/configs 12.3 kB 152 kB
+├ ƒ /admin/models 6.47 kB 114 kB
+├ ƒ /admin/prices 9.3 kB 117 kB
+├ ƒ /evaluations/new 2.69 kB 142 kB
+├ ○ /ladder 153 B 161 kB
+├ ○ /login 2.58 kB 154 kB
+├ ○ /models 153 B 161 kB
+├ ƒ /pricing 202 B 109 kB
+└ ƒ /user/console 17.5 kB 178 kB
+shared by all: + First Load JS shared by all 99.3 kB

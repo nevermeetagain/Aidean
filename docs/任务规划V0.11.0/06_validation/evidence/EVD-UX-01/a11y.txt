@@ -1,0 +1,90 @@
+# EVD-UX-01 a11y.txt — axe-core 4.x（@axe-core/playwright，tags wcag2a/2aa/21a/21aa），1440×900，仅 serious/critical
+# 运行：node .scratch/ux/axe.mjs（生产构建 :3002；user/admin 角色经 POST /api/v1/auth/login 取 Cookie，口令仅来自环境变量）
+
+## 汇总：扫描 62 页；serious+critical 节点合计 701
+- color-contrast [serious] 节点 687，涉及 45 页
+- select-name [critical] 节点 11，涉及 8 页
+- label [critical] 节点 2，涉及 1 页
+- label-content-name-mismatch [serious] 节点 1，涉及 1 页
+- 用户端零违规页：17/27；管理端零违规页：0/35
+
+## 逐页（route: 规则(严重度)x节点）
+/: color-contrast(s)x7
+/about: 0
+/announcements: color-contrast(s)x3
+/docs: 0
+/evaluations: color-contrast(s)x15
+/evaluations/01a162ad-b49f-7f00-8354-e859e36fcd5a: color-contrast(s)x10
+/evaluations/01a162ad-b4a2-7fd3-953a-ead2cb77660b: color-contrast(s)x10
+/evaluations/new: 0
+/ladder: color-contrast(s)x12
+/login: 0
+/register: 0
+/models: color-contrast(s)x49
+/models/gpt-4o: 0
+/models/o1: 0
+/news: 0
+/news/free-model-collection: 0
+/news/console-tab-workspace: 0
+/partners: 0
+/pricing: color-contrast(s)x12
+/products: 0
+/products/aideanwiki: 0
+/products/wechatrag: 0
+/providers: 0
+/roadmap: 0
+/user/console: color-contrast(s)x11 label-content-name-mismatch(s)x1
+/user/balance: color-contrast(s)x6
+/oauth/dev/callback: 0
+/admin: color-contrast(s)x21
+/admin/announcements: color-contrast(s)x16 select-name(c)x1
+/admin/api-stations: color-contrast(s)x49
+/admin/audit-logs: color-contrast(s)x9 select-name(c)x2
+/admin/benchmarks: color-contrast(s)x28 select-name(c)x1
+/admin/capabilities: color-contrast(s)x8
+/admin/configs: color-contrast(s)x11
+/admin/discovery: color-contrast(s)x8 select-name(c)x2
+/admin/evaluations: color-contrast(s)x15 select-name(c)x1
+/admin/feature-flags: color-contrast(s)x16
+/admin/free-quotas: color-contrast(s)x9
+/admin/intelligence: color-contrast(s)x8
+/admin/logs: color-contrast(s)x8 label(c)x2
+/admin/menus: color-contrast(s)x47
+/admin/models: color-contrast(s)x29
+/admin/monitoring: color-contrast(s)x25
+/admin/news: color-contrast(s)x14
+/admin/oidc-clients: color-contrast(s)x13
+/admin/orders: color-contrast(s)x10
+/admin/packages: color-contrast(s)x10
+/admin/partner-keys: color-contrast(s)x11
+/admin/prices: color-contrast(s)x9
+/admin/products: color-contrast(s)x14
+/admin/protocols: color-contrast(s)x8
+/admin/providers: color-contrast(s)x13
+/admin/redemptions: color-contrast(s)x12 select-name(c)x1
+/admin/reports: color-contrast(s)x14
+/admin/roles: color-contrast(s)x15
+/admin/scripts: color-contrast(s)x19
+/admin/sync: color-contrast(s)x11 select-name(c)x2
+/admin/tier-mappings: color-contrast(s)x9
+/admin/users: color-contrast(s)x13
+/admin/vendors: color-contrast(s)x40
+/admin/wallets: color-contrast(s)x9 select-name(c)x1
+/admin/login: color-contrast(s)x1
+
+## 代表样本
+- / color-contrast: article:nth-child(1) > .mb-4.gap-3.relative > .tracking-\[0\.14em\].text-slate-300.text-\[ ::   Element has insufficient color contrast of 1.48 (foreground color: #cad5e2, background color: #ffffff, font size: 8.3p
+- /user/console label-content-name-mismatch: .transition-\[box-shadow\,transform\] ::   Text inside the element is not included in the accessible name
+- /admin color-contrast: button[aria-controls=":R5fb:-g0"] ::   Element has insufficient color contrast of 2.63 (foreground color: #90a1b9, background color: #ffffff, font size: 8.3p
+- /admin/announcements select-name: select ::   Element does not have an implicit (wrapped) <label>
+- /admin/logs label: .px-2[type="date"][value=""]:nth-child(2) ::   Element does not have an implicit (wrapped) <label>
+
+## 触控目标（Playwright 度量，390×844；可交互元素宽或高 <24px 记为过小，含页头约 11 个/管理端 1 个）
+- 用户端最多：/models 148；/pricing 132；/providers 19；/ladder 19；/evaluations/01a162ad-b4a2-7fd3-953a-ead2cb77660b 18；/evaluations/01a162ad-b49f-7f00-8354-e859e36fcd5a 18
+- 管理端最多：/admin/menus 86；/admin/models 62；/admin/benchmarks 42；/admin/api-stations 41；/admin/vendors 34；/admin/configs 30
+- 样本：/models 天梯卡片内「☆」「+」按钮约 14×14px；/admin 汉堡按钮 24×36（宽 24 达 WCAG 2.5.8 下限、低于 44 推荐值）
+
+## 键盘与语义（抽检）
+- 模型详情 /models/[slug]：页面无 <h1>（metrics h1=[]），首个标题为 h2「基本介绍」
+- 管理端 8 页 select/date 输入无可访问名称（select-name/label critical，见上）
+- 控制台余额入口 Link aria-label 与可见文字不一致（label-content-name-mismatch，app/(site)/user/console/page.tsx:126）

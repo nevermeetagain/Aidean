@@ -1,0 +1,27 @@
+EVD-UX-01 verify.txt
+BASE=c84efff2081ac7a63e0823bb78fbc5e8b79634a4（克隆时 origin/main；收尾时远端 main 已前进到 8aa32fd，本克隆未 pull）
+执行方：Hark 沙箱（用户 2026-10-22 16:10 裁定）。E:\Code\Aidean-UX / E:\Code\Aidean-B11 在用户机器，沙箱不可达；等效隔离=/workspace/work/Aidean-UX 独立克隆（非 worktree），磁盘余量 JuiceFS 1.0P
+隔离：分支 ux/01-audit，未 push（ls-remote 无 ux 分支）；主工作区等价物 /workspace/work/Aidean 保持 main...origin/main、c84efff、无改动；git status 仅本证据目录未跟踪
+端口/数据：next start -p 3002（生产构建）；独立库 aidean_ux（embedded PG16 :55432）+ 本克隆 seed；apps/web/.env 为 gitignore 文件
+口令：仅经 ADMIN_EMAIL/ADMIN_PASSWORD、USER_EMAIL/USER_PASSWORD 环境变量（chmod 600 文件 source）；登录走 POST /api/v1/auth/login，不经表单，截图与证据无口令
+命令与退出码：
+  git clone + checkout -b ux/01-audit ............................. 0
+  pnpm install --frozen-lockfile ................................... 0
+  prisma migrate deploy + db:seed + 6 个 seed 脚本 .................. 0
+  pnpm build（apps/web） ........................................... 0
+  node .scratch/ux/crawl.mjs --set site|admin|noauth（196 次截图） ... 0/0/0
+  node .scratch/ux/axe.mjs（62 页） ................................. 0
+  node .scratch/ux/inject.mjs site（offline/500/empty） ............. 0
+  node .scratch/ux/inject.mjs admin offline,500 .................... 中断（offline 33 页完成；500 完成 4 页后浏览器 Protocol error，未重跑）
+  node .scratch/ux/theme.mjs（4 页 × 3 主题） ....................... 0
+  node .scratch/ux/journeys.mjs（U1–U6、A1/A3/A4/A5） ................ 0（A2 调价未执行）
+  Lighthouse 12 ..................................................... 失败×2（chrome 调试端口超时）→ 换 .scratch/ux/perf2.mjs ... 0
+  停库注入（pg_ctl stop → curl 5 页 → start） ........................ 0（/announcements 显示「当前暂无公告」）
+  node scripts/audit/admin-ui-audit.mjs ............................ 0
+  node .scratch/ux-static.mjs + grep 对账 ........................... 0（7 项与 Hark 基线完全一致，口径=bg|text|border）
+  样板修复 UX-01（next dev :3002，md→xl）+ node .scratch/ux/ovf.mjs ... 0；git checkout 还原 0
+环境事件：16:5x 沙箱重启清空 /tmp（浏览器、库、服务进程），用 .scratch/ux/setup.sh 重建；评测样本 id 随重建变化，截图取自重建前
+未改动：components/admin/**、app/(admin)/** 全程只读
+实际使用技能/工具：Hark 无专用 UI 评审技能，按任务书工具序用 Playwright（自写 crawl/inject/journeys/theme/ovf 脚本）、@axe-core/playwright 4、生产构建性能测量（Playwright+CDP 替代 Lighthouse）、admin-ui-audit.mjs、静态度量脚本、run_subagent 独立审查
+独立审查结论（run_subagent ux01-review，只读）：总体通过。12 条 file:line 抽检 9 条支持、3 条行号偏移（UX-12→:349、UX-14→page.tsx:44、UX-16→:115-118）已修正；static 7 项复算一致；report 128 行、六项结构齐全；38 图一一引用；证据无口令。
+采纳建议：UX-15 两处页面级 H1 划入批次 B、UX-13 限定令牌层，A/B 文件不再交叉；AdminMobileNav 改标「B11-05 范围内未点名」
