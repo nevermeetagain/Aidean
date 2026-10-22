@@ -1,0 +1,37 @@
+> 版本: v1.0 | 更新: 2026-10-22 | 变更: B11-04b（18 文件原生标签迁移）验收读数——audit 归零 / 截图 34 / 冒烟 5/5 / 门禁
+
+基线：HEAD=c84efff2（= origin/main），范围=31_ 计划锁定的 18 个 admin 组件；Windows 本机。口令只经环境变量传递。
+
+======== 1. D1 audit 前后（scripts/audit/admin-ui-audit.mjs --files <18>）========
+前：{"files":18,"rawButton":79,"rawSelect":26,"rawTextarea":16,"rawLabel":102,"rawTable":1,"mixedFiles":16,"filesWithTestid":0}
+后：{"files":18,"rawButton":0,"rawSelect":0,"rawTextarea":0,"rawLabel":0,"rawTable":1,"mixedFiles":0,"filesWithTestid":0}
+判据达成：button/select/textarea/label 全 0，mixedFiles 0。rawTable=1 为 SyncManager 既有表格（不在本卡范围）。
+
+======== 2. D2 迁移后截图（17 路由 × 1440/390 = 34 张，state 全 null）========
+.scratch/04b-after/ 与 .scratch/04b-before/ 同路由逐对比对：尺寸差均 <6%（max +10,225B @ models.desktop）；menus/packages、api-stations.mobile 像素级同尺寸（d=0）。
+目视 products/configs/menus（桌面+移动）：无布局错位，按钮可见可点；归档 12 张见同目录 shots/。
+首轮 34 张全为登录页，根因：此前 build 覆盖运行中 dev 的 .next；重启 dev 后复拍成功（过程偏差，非代码回归）。
+
+======== 3. D3 表单提交冒烟（.scratch/04b-smoke.mjs，UI 点击驱动）========
+announcements：POST /api/v1/admin/announcements 200 → DELETE /{id} 200
+models：POST /api/v1/admin/models 200 → DELETE /{id} 200（slug/厂商为既有 Zod 必填，空串会 400）
+users：PATCH /api/v1/admin/users/{id} 200（等级 select 改值再改回）
+api-stations：POST /api/v1/admin/api-stations 200 → DELETE /{id} 200
+benchmarks：POST /api/v1/admin/benchmarks 200 → POST /api/v1/admin/benchmarks/batch 200
+SMOKE_PASS 5/5；清理后四类 smoke* 残留 FOUND 0。
+
+======== 4. D4 aidean-ui-refs ========
+实际 71 不变：18 文件迁移前已 18/18 引用 @aidean/ui，本次只增命名导入（不改文件计数）。计划「预期 +2」不成立，断言无需改。
+
+======== 5. D6 风险登记 ========
+12_风险与待裁决 v0.21 新增 RK-11-10：全量 55 文件 audit 余 rawButton 29 / rawSelect 18 / rawTextarea 8 / rawLabel 61 / rawTable 3（24 文件仍有原生标签），后续批以该计数为基线。
+
+======== 6. 门禁（Windows）========
+tsc --noEmit --incremental false 0｜lint 0（唯一 warning：既有 SafeImage <img>）｜web vitest 158 passed | 2 skipped（1752 passed | 5 skipped）｜@aidean/ui 27 passed
+docs-rule PASS｜docs-facts 16/16｜guard run-all 6/6 PASS｜build 0（Middleware 160 kB，postbuild nm-integrity shells=0）
+build 首次 exit 1 为 RK-11-09 第 7 次（node_modules 32 包空壳，mtime 08:25:40–42Z）：按归档路径 --force 重链（reused 818 / downloaded 0 / 11.9s）复扫 shells=0 后重跑 0。
+
+======== 7. 提交 ========
+e5abdd22 B11-04b.B select/textarea/label 迁移（codemod + 清理）
+220d5d80 C1–C6（含 C10 ModelsTable 提前）｜ad8a190b C7–C12｜719b6b7b C13–C18
+本 EVD、RK-11-10 与验收产物随 D 收尾提交。
