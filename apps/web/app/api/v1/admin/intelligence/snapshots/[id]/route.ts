@@ -16,3 +16,7 @@ export const GET = withApi(async (_req: Request, ctx: RouteContext<{ id: string 
   if (!snapshot) throw new ApiError(ERROR_CODES.BAD_REQUEST, "快照不存在");
   return snapshot;
 });
+
+// B11-10：未实现的方法统一返回 405 信封（含 Allow 头）。由 scripts/guard/api-method-coverage.mjs --fix 生成，勿手改列表。
+import { methodNotAllowed } from "../../../../_lib/method-not-allowed";
+export const { POST, PUT, PATCH, DELETE, OPTIONS } = methodNotAllowed(["GET"]);

@@ -61,3 +61,7 @@ export const POST = withApi(async (req: Request) => {
 
   return { key: created, apiKey: plaintext };
 });
+
+// B11-10：未实现的方法统一返回 405 信封（含 Allow 头）。由 scripts/guard/api-method-coverage.mjs --fix 生成，勿手改列表。
+import { methodNotAllowed } from "../../_lib/method-not-allowed";
+export const { PUT, PATCH, DELETE, OPTIONS } = methodNotAllowed(["GET", "POST"]);

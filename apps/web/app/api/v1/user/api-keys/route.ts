@@ -32,3 +32,7 @@ export const POST = withApi(async (req: Request) => {
   // 明文仅本响应出现一次（secret 只存哈希，之后任何接口不可再取）
   return { plaintext, item: view };
 });
+
+// B11-10：未实现的方法统一返回 405 信封（含 Allow 头）。由 scripts/guard/api-method-coverage.mjs --fix 生成，勿手改列表。
+import { methodNotAllowed } from "../../_lib/method-not-allowed";
+export const { PUT, PATCH, DELETE, OPTIONS } = methodNotAllowed(["GET", "POST"]);

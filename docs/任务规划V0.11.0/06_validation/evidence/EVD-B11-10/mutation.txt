@@ -1,0 +1,23 @@
+# B11-10 变异检验：删除 admin/scripts/[id]/route.ts 末尾的 methodNotAllowed 存根块（回到 Next 0 字节 405），守卫与单测必须失败
+DATE=2026-10-22T01:51:13+00:00
+SHA_BEFORE=3cdf137d3e4a4f53
+--- guard (mutated) ---
+  [FAIL] apps/web/app/api/v1/admin/scripts/[id]/route.ts：缺少 methodNotAllowed 存根（未实现方法会返回 Next 0 字节 405）。运行 --fix 生成
+  [PASS] route.ts 覆盖 154/155
+  [PASS] API 兜底路由覆盖 7/7 方法
+RESULT: FAIL (api-method-coverage)
+MUT_GUARD_EXIT=1
+--- vitest (mutated) ---
+   × 真实路由：admin/scripts/[id]（仅 PATCH/DELETE） > GET → 405 信封（修前：0 字节空体 + content-type=null） 168ms
+   × 守卫 scripts/guard/api-method-coverage.mjs > 对当前仓库 exit 0（每个 route.ts 均有正确存根 + 兜底路由存在） 225ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected 'undefined' to be 'function' // Object.is equality
+ Test Files  1 failed (1)
+      Tests  2 failed | 11 passed (13)
+MUT_TEST_EXIT=1
+--- restore ---
+SHA_AFTER=3cdf137d3e4a4f53 MATCH=True
+RESTORED_GUARD_EXIT=0
+ Test Files  1 passed (1)
+      Tests  13 passed (13)
+RESTORED_TEST_EXIT=0

@@ -1,4 +1,4 @@
-// TASK-007 守卫聚合器：按序运行四项守卫，透传子进程输出，聚合退出码（任一 FAIL → 整体 exit 1）。
+// TASK-007 守卫聚合器：按序运行全部守卫（TASK-007 四项 + B11-10/B11-11 两项），透传子进程输出，聚合退出码（任一 FAIL → 整体 exit 1）。
 // 用法：node scripts/guard/run-all.mjs
 // 零新依赖：node 内置 child_process/path/url。跨 cwd 稳定（以脚本自身定位仓库根）。
 import { spawnSync } from "node:child_process";
@@ -11,6 +11,8 @@ const GUARDS = [
   "secret-scan.mjs",
   "module-boundary.mjs",
   "port-consistency.mjs",
+  "api-method-coverage.mjs", // B11-10：未实现方法 405 信封 + API 兜底 404
+  "pagination-guard.mjs", // B11-11：查询参数整数解析须走 lib/http/pagination.ts（棘轮模式）
 ];
 
 let failures = 0;

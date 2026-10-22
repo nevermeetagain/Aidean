@@ -8,6 +8,8 @@
  * 导致 where.scriptId 永不命中、执行历史恒返回空列表——即使 ScriptExecution 已有行。
  * 现改用与兄弟路由（[id]、[id]/trigger）一致的 ctx.params，从结构上消除下标偏移这一类错误。
  *
+ * B11-11（Q-11-05=A）：原内联 `toInt()` 已提升为共享件 `lib/http/pagination.ts`（parsePagination /
+ * parseOptionalInt），本端点为全站接入的参考实现。以下为 M1 加固时的历史记录（语义未变）：
  * 子智能体审查（M1）加固：status 与 page/pageSize 三处 parseInt 统一走有限性守卫，
  * 避免同类缺陷只修一半（非法分页串同样会把 NaN 送进 Prisma 而 500）。
  * 变异检验（已落盘 `.scratch/u3-mutation.txt`：`PATTERN_HIT p1=True p2=True`、`GUARD_CALLS_LEFT=0`、
@@ -18,6 +20,7 @@
 
 import { prisma } from '../../../../../../../lib/db/prisma';
 import { requireAdminApi } from '../../../../../../../lib/features/auth/session';
+import { parseOptionalInt, parsePagination } from '../../../../../../../lib/http/pagination';
 import { withApi, type RouteContext } from '../../../../_lib/handler';
 
 export const dynamic = 'force-dynamic';
@@ -28,33 +31,22 @@ export const GET = withApi(async (req: Request, ctx: RouteContext<{ id: string }
   const url = new URL(req.url);
   // 路径参数取自 Next 路由段（不再用 pathname 下标切片）；与 prisma.scheduledScript.id 同义
   const scriptId = (await ctx.params).id;
-  // 与下方 status 同一口径：非数字串 parseInt → NaN 经 Math.max/min 仍为 NaN，
-  // 会直送 Prisma 的 skip/take 触发 500；不可解析即回退默认值
-  const toInt = (raw: string | null, fallback: number) => {
-    const n = Number.parseInt(raw ?? '', 10);
-    return Number.isFinite(n) ? n : fallback;
-  };
-  const page = Math.max(1, toInt(url.searchParams.get('page'), 1));
-  const pageSize = Math.min(50, Math.max(1, toInt(url.searchParams.get('pageSize'), 20)));
-  const status = url.searchParams.get('status');
-
+  // B11-11：分页与 status 过滤统一走共享解析件（lib/http/pagination.ts，Q-11-05=A 参考实现）。
+  // 非数字串回退默认值、越界钳制（pageSize ∈ [1,50]），结构上不可能把 NaN 送进 Prisma skip/take。
+  const { page, pageSize, skip, take } = parsePagination(url, { defaultPageSize: 20, maxPageSize: 50 });
   const where: Record<string, unknown> = { scriptId };
-  if (status !== null) {
-    // 非法 status 串（如 ?status=abc）parseInt → NaN 会直送 Prisma 触发 500；
-    // 不可解析即视为未过滤。注：这是**本端点新口径**，全仓分页/过滤参数此前无同构先例，
-    // 多数兄弟列表端点仍会把 NaN 送进 skip/take（DEF-011-15，待裁决 Q-11-05 后统一）
-    const parsed = Number.parseInt(status, 10);
-    if (Number.isFinite(parsed)) {
-      where.status = parsed;
-    }
+  // 非法 status 串（如 ?status=abc）视为未过滤，绝不送 NaN（parseOptionalInt 恒返回有限整数或 undefined）
+  const status = parseOptionalInt(url, 'status');
+  if (status !== undefined) {
+    where.status = status;
   }
 
   const [items, total] = await Promise.all([
     prisma.scriptExecution.findMany({
       where,
       orderBy: { startedAt: 'desc' },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
+      skip,
+      take,
       select: {
         id: true,
         status: true,
@@ -83,3 +75,7 @@ export const GET = withApi(async (req: Request, ctx: RouteContext<{ id: string }
     totalPages: Math.ceil(total / pageSize),
   };
 });
+
+// B11-10：未实现的方法统一返回 405 信封（含 Allow 头）。由 scripts/guard/api-method-coverage.mjs --fix 生成，勿手改列表。
+import { methodNotAllowed } from "../../../../_lib/method-not-allowed";
+export const { POST, PUT, PATCH, DELETE, OPTIONS } = methodNotAllowed(["GET"]);
