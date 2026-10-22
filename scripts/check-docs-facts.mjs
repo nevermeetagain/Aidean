@@ -132,10 +132,10 @@ const assertions = [
   },
   {
     id: "spec-count",
-    desc: "spec 文件总数 = 202（B11-10/11 新增 pagination/pagination-guard/api-envelope-exits 3 spec + B11-03 新增 matrix-constants/matrix-backfill/matrix-routes/panel-state 4 spec 195→202，R10-01；前次 B11-08 新增 apps/web/lib/features/admin/__tests__/scripts-executions-route.spec.ts 194→195，R10-01；前次 TASK-030 新增 e2e/tests/promotion-billing.spec.ts 193→194，R10-01）",
+    desc: "spec 文件总数 = 205（B11-06 新增 session-store/middleware-session-hint/favorites-session-gate 3 spec + B11-10/11 新增 pagination/pagination-guard/api-envelope-exits 3 spec + B11-03 新增 matrix-constants/matrix-backfill/matrix-routes/panel-state 4 spec 195→205，R10-01；前次 B11-08 新增 apps/web/lib/features/admin/__tests__/scripts-executions-route.spec.ts 194→195，R10-01；前次 TASK-030 新增 e2e/tests/promotion-billing.spec.ts 193→194，R10-01）",
     check: () =>
       String(walk("e2e", (n) => n.endsWith(".spec.ts")).length + walk("apps/web", (n) => n.endsWith(".spec.ts")).length),
-    expect: "202",
+    expect: "205",
   },
   {
     id: "queryraw-biz",

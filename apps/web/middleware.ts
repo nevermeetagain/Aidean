@@ -16,21 +16,33 @@
  * - TASK-102 展示币种头：所有经 middleware 放行的请求附加 `x-display-currency`（CNY/USD，按部署层国家头
  *   解析，覆盖客户端自带值；不做外网 GeoIP；只影响展示，不参与扣费）。为此 matcher 扩至站点页与 API
  *   （排除静态资源）；非 /user、/admin 路径只加头直接放行，**登录守卫逻辑与作用范围不变**。
+ * - B11-06 会话提示 Cookie：所有经过 middleware 的响应按「access/refresh 令牌 Cookie 是否存在」同步一枚
+ *   非 HttpOnly 的 `aidean_session_hint`（仅存在性，不含令牌内容；状态一致时不写 Set-Cookie），供客户端
+ *   会话 store 在无提示时零请求判定匿名（DEF-011-08）。**不改放行/拦截判定，不改 /auth/me 契约。**
  */
 import { createRemoteJWKSet } from "jose/jwks/remote";
 import { jwtVerify } from "jose/jwt/verify";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { AUTH_AUDIENCE_SELF, AUTH_ISSUER, AUTH_ISSUERS_ACCEPTED, COOKIE_ACCESS } from "./lib/features/auth/constants";
+import { COOKIE_SESSION_HINT, SESSION_HINT_ATTRS, decideSessionHint } from "./lib/features/auth/session-hint";
 import { withDisplayCurrencyHeader } from "./lib/currency/display";
 
 const jwks = createRemoteJWKSet(new URL("/.well-known/jwks.json", AUTH_ISSUER), {
   cooldownDuration: 60_000,
 });
 
-/** TASK-102：放行时附加展示币种请求头（仅新增头，不改放行/拦截判定） */
+/** B11-06：按令牌 Cookie 存在性同步会话提示 Cookie（已一致则不动，不额外产生 Set-Cookie） */
+function withSessionHint(req: NextRequest, res: NextResponse): NextResponse {
+  const action = decideSessionHint((name) => req.cookies.get(name)?.value);
+  if (action === "set") res.cookies.set(COOKIE_SESSION_HINT, "1", SESSION_HINT_ATTRS);
+  else if (action === "clear") res.cookies.set(COOKIE_SESSION_HINT, "", { ...SESSION_HINT_ATTRS, maxAge: 0 });
+  return res;
+}
+
+/** TASK-102：放行时附加展示币种请求头（仅新增头，不改放行/拦截判定）；B11-06 顺带同步会话提示 */
 function passWithCurrency(req: NextRequest): NextResponse {
-  return NextResponse.next({ request: { headers: withDisplayCurrencyHeader(req.headers) } });
+  return withSessionHint(req, NextResponse.next({ request: { headers: withDisplayCurrencyHeader(req.headers) } }));
 }
 
 /** 登录守卫作用范围（与原 matcher 一致）：/user/*、/admin/* */
@@ -90,7 +102,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     if (lastDeny) {
       res.headers.set("x-auth-guard", JSON.stringify(lastDeny));
     }
-    return res;
+    return withSessionHint(req, res);
   }
 
   return passWithCurrency(req);

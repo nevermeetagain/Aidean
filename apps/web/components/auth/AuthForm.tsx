@@ -16,6 +16,7 @@ import { LoginSchema, RegisterSchema } from "@aidean/shared";
 import { Button, Input } from "@aidean/ui";
 
 import { isSafeInternalRedirect } from "../../lib/features/auth/redirect";
+import { sessionStore } from "../../lib/features/auth/session-store";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -86,7 +87,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         ),
       });
       const body = (await res.json().catch(() => null)) as
-        | { code?: number; message?: string }
+        | { code?: number; message?: string; data?: { user?: unknown } | null }
         | null;
       if (!res.ok || !body || body.code !== 0) {
         // 错误信封行内展示；不清空 state → 输入保留
@@ -94,6 +95,9 @@ export function AuthForm({ mode }: AuthFormProps) {
         return;
       }
 
+      // B11-06：通知全站会话 store（写提示 Cookie + 跨标签广播 login），其他标签页随之重新定案
+      // 响应体自带 user 则直接定案；整页跳转在即，不再额外探测（probe:false）
+      void sessionStore.markLoggedIn(body.data?.user, { probe: false });
       // 成功：redirect 仅接受站内相对路径（以单个 / 开头，拒绝 // 与外部 URL），缺省控制台
       const redirect = new URLSearchParams(window.location.search).get("redirect");
       // AUTH-01/RC-02：回跳校验收敛为共享 Contract（拒绝 // 与 /\ 及外部 URL，仅站内相对路径）

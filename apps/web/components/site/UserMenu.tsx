@@ -1,6 +1,7 @@
 "use client";
 import { Button } from "@aidean/ui";
 
+import { sessionStore } from "../../lib/features/auth/session-store";
 import { tierShortLabelOf } from "../../lib/features/user/tier";
 
 /**
@@ -24,6 +25,8 @@ export function UserMenu({ nickname, tier }: UserMenuProps) {
     fetch("/api/v1/auth/logout", { method: "POST" })
       .catch(() => undefined)
       .finally(() => {
+        // B11-06：会话 store 置匿名 + 删提示 Cookie + 跨标签广播 logout（其他标签页零请求同步）
+        sessionStore.markLoggedOut();
         window.location.href = "/";
       });
   }
