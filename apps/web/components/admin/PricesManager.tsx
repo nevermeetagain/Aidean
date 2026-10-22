@@ -6,14 +6,16 @@
  * 只读口径下（canWrite=false）隐藏编辑/新建。金额非分单位（Decimal 19,6），按原值展示。
  * TASK-029：新增「限时优惠」子表 Tab（PromotionsPanel）；当前价行「添加优惠」直达新建对话框（预选模型）。
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
+import { PanelState, usePanelResource } from "./PanelState";
+import { panelTestIds } from "../../lib/admin/panel-resource";
 import { Dialog, Button, Input, Tabs } from "@aidean/ui";
 import { PromotionsPanel, type PromotionModelOption } from "./PromotionsPanel";
 
-interface PriceRow {
+export interface PriceRow {
   id: string;
   modelId: string;
   modelName: string;
@@ -67,9 +69,31 @@ function numOrNull(v: string): number | null {
   return Number.isFinite(n) && n >= 0 ? n : NaN;
 }
 
+/** 列表数据形状（信封 data；?limit=100 口径不变） */
+export type PricesListData = { items: PriceRow[] };
+
+/** 五态外壳 testid 前缀（B11-05） */
+export const PRICES_PANEL_PREFIX = "admin-prices";
+
+export const PRICES_LIMIT = 100;
+
+export function buildPricesUrl(query = ""): string {
+  const params = new URLSearchParams({ limit: String(PRICES_LIMIT) });
+  if (query.trim()) params.set("q", query.trim());
+  return `/api/v1/admin/prices?${params}`;
+}
+
+/** 首屏地址（单测锁定 loader 无参调用的请求 URL，与改造前完全一致） */
+export const PRICES_LIST_URL = buildPricesUrl();
+
+export const loadPrices = (signal?: AbortSignal, query = "") =>
+  adminFetch<PricesListData>(buildPricesUrl(query), { signal });
+
+/** loading/error 态下给派生 memo 用的稳定空数组（避免每次渲染新建引用） */
+const NO_ROWS: PriceRow[] = [];
+
 export function PricesManager({ canWrite = false }: { canWrite?: boolean }) {
-  const [rows, setRows] = useState<PriceRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const ids = panelTestIds(PRICES_PANEL_PREFIX);
   const [query, setQuery] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -81,24 +105,19 @@ export function PricesManager({ canWrite = false }: { canWrite?: boolean }) {
   const [modelsLoading, setModelsLoading] = useState(false);
   const [tab, setTab] = useState<"current" | "promotions">("current");
   const [promoCreateFor, setPromoCreateFor] = useState<{ modelId: string; nonce: number } | null>(null);
+  // 搜索沿用改造前「回车才生效」口径：nonce 计入签名，query 草稿本身不入签名
+  const [searchNonce, setSearchNonce] = useState(0);
 
-  const load = useCallback(async (q: string) => {
-    setLoading(true);
-    const params = new URLSearchParams({ limit: "100" });
-    if (q.trim()) params.set("q", q.trim());
-    const res = await adminFetch<{ items: PriceRow[] }>(`/api/v1/admin/prices?${params}`);
-    setLoading(false);
-    if (res.ok && res.data) {
-      setRows(res.data.items);
-      setMessage(null);
-    } else {
-      setMessage(res.message ?? "加载失败");
-    }
-  }, []);
+  const loader = useCallback((signal: AbortSignal) => loadPrices(signal, query), [query]);
+  const { resource, reload, refresh } = usePanelResource(loader, (d) => d.items.length === 0);
+  const rows = resource.status === "ready" ? resource.data.items : NO_ROWS;
 
+  const lastSearch = useRef(searchNonce);
   useEffect(() => {
-    void load("");
-  }, [load]);
+    if (lastSearch.current === searchNonce) return;
+    lastSearch.current = searchNonce;
+    reload();
+  }, [searchNonce, reload]);
 
   /**
    * P0.3（B11-11 待裁定 / 运行态缺陷）：原先请求 `pageSize=200`，而 AdminPageQuerySchema.pageSize ≤ 50，
@@ -207,7 +226,7 @@ export function PricesManager({ canWrite = false }: { canWrite?: boolean }) {
     }
     setMessage(editing ? "定价已更新" : "定价已创建");
     setCreating(false);
-    await load(query);
+    refresh();
   }
 
   const columns: Column<PriceRow>[] = [
@@ -267,17 +286,28 @@ export function PricesManager({ canWrite = false }: { canWrite?: boolean }) {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") void load(query); }}
+          onKeyDown={(e) => { if (e.key === "Enter") setSearchNonce((n) => n + 1); }}
           placeholder="搜索模型名/slug/modelCode"
           className="w-64 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-[var(--accent)]"
         />
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500">共 {rows.length} 条当前价</span>
-          {canWrite ? <Button variant="primary" size="sm" onClick={openCreate}>新建定价</Button> : null}
+          {canWrite ? <Button variant="primary" size="sm" data-testid={`${ids.root}-create`} onClick={openCreate}>新建定价</Button> : null}
         </div>
       </div>
 
-      <AdminDataTable columns={columns} rows={rows} rowKey={(p) => p.id} emptyText="暂无定价数据" busy={busy || loading} />
+      <PanelState testId={ids.root} resource={resource} onRetry={reload} emptyText="暂无定价数据">
+        {(d) => (
+          <AdminDataTable
+            columns={columns}
+            rows={d.items}
+            rowKey={(p) => p.id}
+            rowTestId={(p) => `${ids.root}-row-${p.id}`}
+            emptyText="暂无定价数据"
+            busy={busy}
+          />
+        )}
+      </PanelState>
 
       <Dialog
         open={creating}

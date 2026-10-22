@@ -6,14 +6,16 @@
  * - 批次聚合列表（状态分布）+ 码明细列表（批次/状态筛选 + 分页）+ 单码禁用；
  * - 卡商密钥卡：生成（明文仅展示一次）+ 启停。
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { adminFetch } from "./adminFetch";
 import { Badge, Button, Input } from "@aidean/ui";
 import { AdminDataTable, type Column } from "./AdminDataTable";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { PanelState, usePanelResource } from "./PanelState";
+import { panelTestIds } from "../../lib/admin/panel-resource";
 
-interface BatchRow {
+export interface BatchRow {
   batchNo: string;
   name: string | null;
   targetType: string;
@@ -26,7 +28,7 @@ interface BatchRow {
   createdAt: string;
 }
 
-interface CodeRow {
+export interface CodeRow {
   id: string;
   codeMasked: string;
   targetType: string;
@@ -38,7 +40,7 @@ interface CodeRow {
   redeemedAt: string | null;
 }
 
-interface KeyRow {
+export interface KeyRow {
   id: string;
   name: string;
   prefix: string;
@@ -47,7 +49,7 @@ interface KeyRow {
   createdAt: string;
 }
 
-interface ListData {
+export interface ListData {
   codes: CodeRow[];
   batches: BatchRow[];
   packages: { id: string; title: string }[];
@@ -76,12 +78,35 @@ function downloadCsv(batchNo: string, codes: string[]): void {
   URL.revokeObjectURL(url);
 }
 
+/** 五态外壳 testid 前缀（B11-05：码明细为主列表，批次聚合与卡商密钥各一外壳） */
+export const REDEMPTION_PANEL_PREFIX = "admin-redemptions";
+export const REDEMPTION_BATCHES_PANEL_PREFIX = "admin-redemptions-batches";
+export const REDEMPTION_KEYS_PANEL_PREFIX = "admin-redemptions-keys";
+
+export const REDEMPTION_PAGE_SIZE = 20;
+
+export function buildRedemptionUrl(page = 1, batchNo = "", status = ""): string {
+  const qs = new URLSearchParams({ page: String(page), pageSize: String(REDEMPTION_PAGE_SIZE) });
+  if (batchNo) qs.set("batchNo", batchNo);
+  if (status) qs.set("status", status);
+  return `/api/v1/admin/redemption-codes?${qs.toString()}`;
+}
+
+/** 首屏地址（单测锁定 loader 无参调用的请求 URL，与改造前完全一致） */
+export const REDEMPTION_LIST_URL = buildRedemptionUrl();
+
+export const loadRedemptions = (signal?: AbortSignal, page = 1, batchNo = "", status = "") =>
+  adminFetch<ListData>(buildRedemptionUrl(page, batchNo, status), { signal });
+
+/** 卡商密钥区（与 partner-keys 面板同一后端，独立资源 → 独立外壳） */
+export const REDEMPTION_KEYS_URL = "/api/v1/admin/partner-keys";
+export const loadRedemptionKeys = (signal?: AbortSignal) =>
+  adminFetch<{ keys: KeyRow[] }>(REDEMPTION_KEYS_URL, { signal });
+
 export function RedemptionManager() {
-  const [data, setData] = useState<ListData | null>(null);
-  const [keys, setKeys] = useState<KeyRow[]>([]);
-  // #35③：load（批次+码）与 loadKeys（卡商密钥）在途 → 各表「加载中…」
-  const [loading, setLoading] = useState(true);
-  const [loadingKeys, setLoadingKeys] = useState(true);
+  const ids = panelTestIds(REDEMPTION_PANEL_PREFIX);
+  const batchIds = panelTestIds(REDEMPTION_BATCHES_PANEL_PREFIX);
+  const keyIds = panelTestIds(REDEMPTION_KEYS_PANEL_PREFIX);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -99,6 +124,8 @@ export function RedemptionManager() {
   const [filterBatch, setFilterBatch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [page, setPage] = useState(1);
+  // 「重置」「查看明细」等主动重查也要重取：nonce 计入签名，但不进 URL
+  const [queryNonce, setQueryNonce] = useState(0);
 
   // 卡商密钥
   const [keyName, setKeyName] = useState("");
@@ -108,35 +135,32 @@ export function RedemptionManager() {
   const [pendingDisable, setPendingDisable] = useState<CodeRow | null>(null);
   const [pendingToggleKey, setPendingToggleKey] = useState<KeyRow | null>(null);
 
-  const load = useCallback(
-    async (p: number, batch: string, status: string) => {
-      const qs = new URLSearchParams({ page: String(p), pageSize: "20" });
-      if (batch) qs.set("batchNo", batch);
-      if (status) qs.set("status", status);
-      setLoading(true);
-      const res = await adminFetch<ListData>(`/api/v1/admin/redemption-codes?${qs.toString()}`);
-      setLoading(false);
-      if (res.ok && res.data) {
-        setData(res.data);
-        setMessage(null);
-      } else {
-        setMessage(res.message ?? "加载失败");
-      }
-    },
-    []
+  const loader = useCallback(
+    (signal: AbortSignal) => loadRedemptions(signal, page, filterBatch, filterStatus),
+    [page, filterBatch, filterStatus],
   );
+  const { resource, reload, refresh } = usePanelResource(
+    loader,
+    (d) => d.codes.length === 0 && d.batches.length === 0,
+  );
+  const data = resource.status === "ready" ? resource.data : null;
 
-  const loadKeys = useCallback(async () => {
-    setLoadingKeys(true);
-    const res = await adminFetch<{ keys: KeyRow[] }>("/api/v1/admin/partner-keys");
-    setLoadingKeys(false);
-    if (res.ok && res.data) setKeys(res.data.keys);
-  }, []);
+  const keysLoader = useCallback((signal: AbortSignal) => loadRedemptionKeys(signal), []);
+  const {
+    resource: keysResource,
+    reload: reloadKeys,
+    refresh: refreshKeys,
+  } = usePanelResource(keysLoader, (d) => d.keys.length === 0);
 
+  // 筛选/翻页/主动重查才重新取数：三张表共用同一 resource，故静默刷新（不整体塌陷为 loading）
+  // 批次号 Input 只作草稿，不入签名（沿用改造前「敲字不即时请求、翻页/重置时才带上」的口径）
+  const signature = `${filterStatus}|${page}|${queryNonce}`;
+  const lastSignature = useRef(signature);
   useEffect(() => {
-    void load(1, "", "");
-    void loadKeys();
-  }, [load, loadKeys]);
+    if (lastSignature.current === signature) return;
+    lastSignature.current = signature;
+    refresh();
+  }, [signature, refresh]);
 
   async function submitGenerate() {
     const body: Record<string, unknown> = {
@@ -174,8 +198,9 @@ export function RedemptionManager() {
     setLastGen({ batchNo: res.data.batchNo, codes: res.data.codes });
     setMessage(`批次 ${res.data.batchNo} 生成成功，共 ${res.data.count} 枚（明文仅本次展示，请立即导出）`);
     setFilterBatch(res.data.batchNo);
+    setFilterStatus("");
     setPage(1);
-    await load(1, res.data.batchNo, "");
+    setQueryNonce((n) => n + 1);
   }
 
   async function disableCode(c: CodeRow) {
@@ -190,7 +215,7 @@ export function RedemptionManager() {
       return;
     }
     setMessage(res.data?.changed ? "已禁用" : "该码已使用/已禁用，无需操作");
-    await load(page, filterBatch, filterStatus);
+    refresh();
   }
 
   async function generateKey() {
@@ -211,7 +236,7 @@ export function RedemptionManager() {
     setLastKey(res.data.apiKey);
     setKeyName("");
     setMessage("卡商密钥已生成（明文仅本次展示，请立即复制）");
-    await loadKeys();
+    refreshKeys();
   }
 
   async function toggleKey(k: KeyRow) {
@@ -225,10 +250,8 @@ export function RedemptionManager() {
       setMessage(res.message ?? "操作失败");
       return;
     }
-    await loadKeys();
+    refreshKeys();
   }
-
-  const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   // 批次列表列定义
   const batchColumns: Column<BatchRow>[] = [
@@ -252,7 +275,7 @@ export function RedemptionManager() {
           onClick={() => {
             setFilterBatch(b.batchNo);
             setPage(1);
-            void load(1, b.batchNo, filterStatus);
+            setQueryNonce((n) => n + 1);
           }}
         >
           查看明细
@@ -385,7 +408,7 @@ export function RedemptionManager() {
             <Input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="mt-1" />
           </label>
           <div className="flex items-end">
-            <Button variant="primary" disabled={busy} onClick={() => void submitGenerate()}>
+            <Button variant="primary" disabled={busy} data-testid={`${ids.root}-create`} onClick={() => void submitGenerate()}>
               生成批次
             </Button>
           </div>
@@ -412,13 +435,17 @@ export function RedemptionManager() {
       <section aria-label="批次列表" className="rounded-lg border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)]">
         <h2 className="text-sm font-semibold text-slate-800">批次列表</h2>
         <div className="mt-3">
-          <AdminDataTable
-            columns={batchColumns}
-            rows={data?.batches ?? []}
-            rowKey={b => b.batchNo}
-            emptyText="暂无批次"
-            busy={loading}
-          />
+          <PanelState testId={batchIds.root} resource={resource} onRetry={reload} emptyText="暂无批次">
+            {(d) => (
+              <AdminDataTable
+                columns={batchColumns}
+                rows={d.batches}
+                rowKey={b => b.batchNo}
+                rowTestId={b => `${batchIds.root}-row-${b.batchNo}`}
+                emptyText="暂无批次"
+              />
+            )}
+          </PanelState>
         </div>
       </section>
 
@@ -438,7 +465,6 @@ export function RedemptionManager() {
               onChange={(e) => {
                 setFilterStatus(e.target.value);
                 setPage(1);
-                void load(1, filterBatch, e.target.value);
               }}
               className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-800 outline-none focus:border-[var(--accent)]"
             >
@@ -451,27 +477,28 @@ export function RedemptionManager() {
               setFilterBatch("");
               setFilterStatus("");
               setPage(1);
-              void load(1, "", "");
+              setQueryNonce((n) => n + 1);
             }}>
               重置
             </Button>
           </div>
         </div>
         <div className="mt-3">
-          <AdminDataTable
-            columns={codeColumns}
-            rows={data?.codes ?? []}
-            rowKey={c => c.id}
-            emptyText="暂无兑换码"
-            busy={loading}
-            page={page}
-            totalPages={totalPages}
-            total={data?.total ?? 0}
-            onPageChange={p => {
-              setPage(p);
-              void load(p, filterBatch, filterStatus);
-            }}
-          />
+          <PanelState testId={ids.root} resource={resource} onRetry={reload} emptyText="暂无兑换码">
+            {(d) => (
+              <AdminDataTable
+                columns={codeColumns}
+                rows={d.codes}
+                rowKey={c => c.id}
+                rowTestId={c => `${ids.root}-row-${c.id}`}
+                emptyText="暂无兑换码"
+                page={page}
+                totalPages={Math.max(1, Math.ceil(d.total / d.pageSize))}
+                total={d.total}
+                onPageChange={setPage}
+              />
+            )}
+          </PanelState>
         </div>
       </section>
 
@@ -486,7 +513,7 @@ export function RedemptionManager() {
             密钥名称
             <Input value={keyName} onChange={(e) => setKeyName(e.target.value)} className="mt-1 w-56" />
           </label>
-          <Button variant="primary" disabled={busy} onClick={() => void generateKey()}>
+          <Button variant="primary" disabled={busy} data-testid={`${keyIds.root}-create`} onClick={() => void generateKey()}>
             生成密钥
           </Button>
         </div>
@@ -496,13 +523,17 @@ export function RedemptionManager() {
           </p>
         ) : null}
         <div className="mt-3">
-          <AdminDataTable
-            columns={keyColumns}
-            rows={keys}
-            rowKey={k => k.id}
-            emptyText="暂无卡商密钥"
-            busy={loadingKeys}
-          />
+          <PanelState testId={keyIds.root} resource={keysResource} onRetry={reloadKeys} emptyText="暂无卡商密钥">
+            {(d) => (
+              <AdminDataTable
+                columns={keyColumns}
+                rows={d.keys}
+                rowKey={k => k.id}
+                rowTestId={k => `${keyIds.root}-row-${k.id}`}
+                emptyText="暂无卡商密钥"
+              />
+            )}
+          </PanelState>
         </div>
       </section>
 

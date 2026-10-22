@@ -9,14 +9,16 @@
  * - 批量操作（R-28）+ ConfirmDialog 确认（R-36）
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge, Button, Dialog, Input, Select } from "@aidean/ui";
 
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { PanelState, usePanelResource } from "./PanelState";
+import { panelTestIds } from "../../lib/admin/panel-resource";
 
-interface BenchmarkRow {
+export interface BenchmarkRow {
   id: string;
   modelId: string;
   benchmarkType: string;
@@ -37,11 +39,29 @@ const SOURCE_TYPE_LABEL: Record<string, string> = {
   SYNC: "同步",
 };
 
+/** 列表数据形状（信封 data） */
+export type BenchmarksListData = { items: BenchmarkRow[]; total: number };
+
+/** 五态外壳 testid 前缀（B11-05） */
+export const BENCHMARKS_PANEL_PREFIX = "admin-benchmarks";
+
+export const BENCHMARKS_PAGE_SIZE = 20;
+
+export function buildBenchmarksUrl(page = 1, benchmarkType = "", verifiedStatus = ""): string {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(BENCHMARKS_PAGE_SIZE) });
+  if (benchmarkType) params.set("benchmarkType", benchmarkType);
+  if (verifiedStatus) params.set("verifiedStatus", verifiedStatus);
+  return `/api/v1/admin/benchmarks?${params}`;
+}
+
+/** 首屏地址（单测锁定 loader 无参调用的请求 URL，与改造前完全一致） */
+export const BENCHMARKS_LIST_URL = buildBenchmarksUrl();
+
+export const loadBenchmarks = (signal?: AbortSignal, page = 1, benchmarkType = "", verifiedStatus = "") =>
+  adminFetch<BenchmarksListData>(buildBenchmarksUrl(page, benchmarkType, verifiedStatus), { signal });
+
 export function BenchmarksManager() {
-  const [rows, setRows] = useState<BenchmarkRow[]>([]);
-  // #35③：列表请求在途（参照 UsersTable #68 模式），首载不闪空态
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
+  const ids = panelTestIds(BENCHMARKS_PANEL_PREFIX);
   const [page, setPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -49,8 +69,8 @@ export function BenchmarksManager() {
   const [showImport, setShowImport] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<string | null>(null);
-
-  const pageSize = 20;
+  // 「查询」重复点击也要重取：nonce 计入签名，但不进 URL
+  const [queryNonce, setQueryNonce] = useState(0);
 
   const [formData, setFormData] = useState({
     modelId: "",
@@ -77,7 +97,7 @@ export function BenchmarksManager() {
     if (res.ok) {
       setSelectedIds(new Set());
       setImportResult(`批量${action} 完成: ${res.data?.affected ?? 0} 条受影响`);
-      void load(page);
+      refresh();
     } else {
       setImportResult(res.message);
     }
@@ -121,32 +141,26 @@ export function BenchmarksManager() {
         parts.push(`SyncBatch: ${d.syncBatchId.slice(0, 8)}…`);
       }
       setImportResult(parts.join(" | "));
-      void load(page);
+      refresh();
     } else {
       setImportResult(res.message ?? "导入失败");
     }
   }
 
-  const load = useCallback(async (p: number) => {
-    const params = new URLSearchParams({ page: String(p), pageSize: String(pageSize) });
-    if (typeFilter) params.set("benchmarkType", typeFilter);
-    if (statusFilter) params.set("verifiedStatus", statusFilter);
-    setLoading(true);
-    const res = await adminFetch<{ items: BenchmarkRow[]; total: number }>(
-      `/api/v1/admin/benchmarks?${params}`
-    );
-    setLoading(false);
-    if (res.ok && res.data) {
-      setRows(res.data.items);
-      setTotal(res.data.total);
-    }
-  }, [typeFilter, statusFilter]);
+  const loader = useCallback(
+    (signal: AbortSignal) => loadBenchmarks(signal, page, typeFilter, statusFilter),
+    [page, typeFilter, statusFilter],
+  );
+  const { resource, reload, refresh } = usePanelResource(loader, (d) => d.items.length === 0);
 
+  // 筛选/翻页/主动查询才重新取数（改造前筛选变化即重取，口径保持）：以查询签名比对
+  const signature = `${typeFilter}|${statusFilter}|${page}|${queryNonce}`;
+  const lastSignature = useRef(signature);
   useEffect(() => {
-    void load(page);
-  }, [load, page]);
-
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (lastSignature.current === signature) return;
+    lastSignature.current = signature;
+    reload();
+  }, [signature, reload]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -164,7 +178,7 @@ export function BenchmarksManager() {
     if (res.ok) {
       setShowForm(false);
       setFormData({ modelId: "", benchmarkType: "", totalScore: "", sourceName: "admin_manual", sourceType: "SELF", testDate: "" });
-      void load(page);
+      refresh();
     } else {
       setImportResult(res.message);
     }
@@ -176,7 +190,7 @@ export function BenchmarksManager() {
       body: JSON.stringify({ verifiedStatus: target }),
     });
     if (res.ok) {
-      void load(page);
+      refresh();
     } else {
       setImportResult(res.message);
     }
@@ -225,11 +239,12 @@ export function BenchmarksManager() {
           <option value="0">待审核</option>
           <option value="1">已审核</option>
         </Select>
-        <Button variant="primary" size="sm" onClick={() => { setPage(1); void load(1); }}>查询</Button>
+        <Button variant="primary" size="sm" onClick={() => { setPage(1); setQueryNonce((n) => n + 1); }}>查询</Button>
         <Button
           variant="outline"
           size="sm"
           className="ml-auto"
+          data-testid={`${ids.root}-create`}
           onClick={() => setShowForm(!showForm)}
         >
           {showForm ? "取消" : "+ 录入基准"}
@@ -276,29 +291,34 @@ export function BenchmarksManager() {
         </div>
       ) : null}
 
-      <AdminDataTable
-        columns={columns}
-        rows={rows}
-        rowKey={row => row.id}
-        emptyText="暂无基准测试数据"
-        busy={batchBusy || loading}
-        selectable
-        selectedIds={selectedIds}
-        onToggleRow={id => {
-          const next = new Set(selectedIds);
-          if (next.has(id)) next.delete(id);
-          else next.add(id);
-          setSelectedIds(next);
-        }}
-        onToggleAll={() => {
-          if (rows.every(r => selectedIds.has(r.id))) setSelectedIds(new Set());
-          else setSelectedIds(new Set(rows.map(r => r.id)));
-        }}
-        page={page}
-        totalPages={totalPages}
-        total={total}
-        onPageChange={p => setPage(p)}
-      />
+      <PanelState testId={ids.root} resource={resource} onRetry={reload} emptyText="暂无基准测试数据">
+        {(d) => (
+          <AdminDataTable
+            columns={columns}
+            rows={d.items}
+            rowKey={row => row.id}
+            rowTestId={row => `${ids.root}-row-${row.id}`}
+            emptyText="暂无基准测试数据"
+            busy={batchBusy}
+            selectable
+            selectedIds={selectedIds}
+            onToggleRow={id => {
+              const next = new Set(selectedIds);
+              if (next.has(id)) next.delete(id);
+              else next.add(id);
+              setSelectedIds(next);
+            }}
+            onToggleAll={() => {
+              if (d.items.every(r => selectedIds.has(r.id))) setSelectedIds(new Set());
+              else setSelectedIds(new Set(d.items.map(r => r.id)));
+            }}
+            page={page}
+            totalPages={Math.max(1, Math.ceil(d.total / BENCHMARKS_PAGE_SIZE))}
+            total={d.total}
+            onPageChange={p => setPage(p)}
+          />
+        )}
+      </PanelState>
 
       <ConfirmDialog
         open={pendingDelete}

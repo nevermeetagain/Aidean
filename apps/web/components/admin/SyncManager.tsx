@@ -11,14 +11,16 @@
  * 传入 additionalSources 字段触发多源交叉验证。
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { adminFetch } from "./adminFetch";
 import { Badge, Button, Dialog, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Label, Select } from "@aidean/ui";
 import { AdminDataTable, type Column } from "./AdminDataTable";
+import { PanelState, usePanelResource } from "./PanelState";
+import { panelTestIds } from "../../lib/admin/panel-resource";
 import { SYNC_SOURCES } from "../../lib/sync/sources/registry";
 
-interface SyncBatchRow {
+export interface SyncBatchRow {
   id: string;
   batchCode: string;
   source: string | null;
@@ -29,7 +31,7 @@ interface SyncBatchRow {
   createdAt: string;
 }
 
-interface ChangeLogRow {
+export interface ChangeLogRow {
   id: string;
   modelCode: string | null;
   changeType: string;
@@ -50,13 +52,32 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive"> = 
 // 由 registry.spec.ts 断言一致——彻底消除历史上 UI(9) 落后于 registry(11) 的漂移。
 const SOURCE_OPTIONS = SYNC_SOURCES.map((s) => ({ value: s.key, label: s.label }));
 
+/** 列表数据形状（两个 tab 共用一个 resource，items 按 tab 落在两种行类型上） */
+export type SyncListData = { items: Array<SyncBatchRow | ChangeLogRow>; total: number };
+export type SyncTab = "batches" | "changes";
+
+/** 五态外壳 testid 前缀（B11-05） */
+export const SYNC_PANEL_PREFIX = "admin-sync";
+
+export const SYNC_PAGE_SIZE = 20;
+
+/** tab 决定端点与过滤参数名（batches→status，changes→changeType），口径与改造前一致 */
+export function buildSyncUrl(tab: SyncTab = "batches", page = 1, filter = ""): string {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(SYNC_PAGE_SIZE) });
+  if (filter) params.set(tab === "batches" ? "status" : "changeType", filter);
+  const path = tab === "batches" ? "/api/v1/admin/sync/batches" : "/api/v1/admin/sync/changes";
+  return `${path}?${params}`;
+}
+
+/** 首屏地址（单测锁定 loader 无参调用的请求 URL，与改造前完全一致） */
+export const SYNC_LIST_URL = buildSyncUrl();
+
+export const loadSync = (signal?: AbortSignal, tab: SyncTab = "batches", page = 1, filter = "") =>
+  adminFetch<SyncListData>(buildSyncUrl(tab, page, filter), { signal });
+
 export function SyncManager() {
-  const [tab, setTab] = useState<"batches" | "changes">("batches");
-  const [batches, setBatches] = useState<SyncBatchRow[]>([]);
-  const [changes, setChanges] = useState<ChangeLogRow[]>([]);
-  // #35③：批次/变更记录在途 → 表格「加载中…」（参照 UsersTable #68 模式）
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
+  const ids = panelTestIds(SYNC_PANEL_PREFIX);
+  const [tab, setTab] = useState<SyncTab>("batches");
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
   const [primarySource, setPrimarySource] = useState("openrouter");
@@ -66,33 +87,22 @@ export function SyncManager() {
   const [message, setMessage] = useState<string | null>(null);
   const [revertTarget, setRevertTarget] = useState<string | null>(null);
   const [revertReason, setRevertReason] = useState("");
-  const pageSize = 20;
 
-  const load = useCallback(async (p: number) => {
-    if (tab === "batches") {
-      const params = new URLSearchParams({ page: String(p), pageSize: String(pageSize) });
-      if (statusFilter) params.set("status", statusFilter);
-      setLoading(true);
-      const res = await adminFetch<{ items: SyncBatchRow[]; total: number }>(
-        `/api/v1/admin/sync/batches?${params}`
-      );
-      setLoading(false);
-      if (res.ok && res.data) { setBatches(res.data.items); setTotal(res.data.total); }
-    } else {
-      const params = new URLSearchParams({ page: String(p), pageSize: String(pageSize) });
-      if (statusFilter) params.set("changeType", statusFilter);
-      setLoading(true);
-      const res = await adminFetch<{ items: ChangeLogRow[]; total: number }>(
-        `/api/v1/admin/sync/changes?${params}`
-      );
-      setLoading(false);
-      if (res.ok && res.data) { setChanges(res.data.items); setTotal(res.data.total); }
-    }
-  }, [tab, statusFilter]);
+  const loader = useCallback(
+    (signal: AbortSignal) => loadSync(signal, tab, page, statusFilter),
+    [tab, page, statusFilter],
+  );
+  const { resource, reload, refresh } = usePanelResource(loader, (d) => d.items.length === 0);
+  const data = resource.status === "ready" ? resource.data : null;
 
-  useEffect(() => { void load(page); }, [load, page]);
-
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  // tab/筛选/翻页才重新取数：以查询签名比对（StrictMode 下 effect 双跑也不会重复请求）
+  const signature = `${tab}|${statusFilter}|${page}`;
+  const lastSignature = useRef(signature);
+  useEffect(() => {
+    if (lastSignature.current === signature) return;
+    lastSignature.current = signature;
+    reload();
+  }, [signature, reload]);
 
   async function handleDryRun() {
     setConflictReport(null);
@@ -108,7 +118,7 @@ export function SyncManager() {
       }),
     });
     if (res.ok && res.data) {
-      void load(page);
+      refresh();
       // R-66: 展示交叉验证冲突报告
       const cv = res.data.validationSummary?.crossValidation;
       if (cv && cv.conflicts && cv.conflicts.length > 0) {
@@ -134,7 +144,7 @@ export function SyncManager() {
       body: JSON.stringify({ reason: revertReason || "管理员手动回滚" }),
     });
     if (res.ok) {
-      void load(page);
+      refresh();
       setMessage("已回滚该变更");
     } else {
       setMessage(res.message ?? "回滚失败");
@@ -186,7 +196,7 @@ export function SyncManager() {
               <option value="failed">失败</option>
               <option value="partial">部分成功</option>
             </Select>
-            <Button variant="outline" size="sm" onClick={handleDryRun} className="ml-auto">触发 dry-run</Button>
+            <Button variant="outline" size="sm" onClick={handleDryRun} data-testid={`${ids.root}-create`} className="ml-auto">触发 dry-run</Button>
           </>
         ) : (
           <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="ml-2 bg-white">
@@ -197,7 +207,7 @@ export function SyncManager() {
             <option value="SYNC">SYNC</option>
           </Select>
         )}
-        <span className="ml-auto text-xs text-slate-500">共 {total} 条</span>
+        <span className="ml-auto text-xs text-slate-500">{data ? `共 ${data.total} 条` : null}</span>
       </div>
 
       {message ? (
@@ -227,31 +237,40 @@ export function SyncManager() {
         </div>
       )}
 
-      {tab === "batches" ? (
-        <AdminDataTable
-          columns={batchColumns}
-          rows={batches}
-          rowKey={b => b.id}
-          emptyText="暂无同步批次"
-          busy={loading}
-          page={page}
-          totalPages={totalPages}
-          total={total}
-          onPageChange={p => setPage(p)}
-        />
-      ) : (
-        <AdminDataTable
-          columns={changeColumns}
-          rows={changes}
-          rowKey={c => c.id}
-          emptyText="暂无变更记录"
-          busy={loading}
-          page={page}
-          totalPages={totalPages}
-          total={total}
-          onPageChange={p => setPage(p)}
-        />
-      )}
+      <PanelState
+        testId={ids.root}
+        resource={resource}
+        onRetry={reload}
+        emptyText={tab === "batches" ? "暂无同步批次" : "暂无变更记录"}
+      >
+        {(d) =>
+          tab === "batches" ? (
+            <AdminDataTable
+              columns={batchColumns}
+              rows={d.items as SyncBatchRow[]}
+              rowKey={b => b.id}
+              rowTestId={b => `${ids.root}-row-${b.id}`}
+              emptyText="暂无同步批次"
+              page={page}
+              totalPages={Math.max(1, Math.ceil(d.total / SYNC_PAGE_SIZE))}
+              total={d.total}
+              onPageChange={p => setPage(p)}
+            />
+          ) : (
+            <AdminDataTable
+              columns={changeColumns}
+              rows={d.items as ChangeLogRow[]}
+              rowKey={c => c.id}
+              rowTestId={c => `${ids.root}-row-${c.id}`}
+              emptyText="暂无变更记录"
+              page={page}
+              totalPages={Math.max(1, Math.ceil(d.total / SYNC_PAGE_SIZE))}
+              total={d.total}
+              onPageChange={p => setPage(p)}
+            />
+          )
+        }
+      </PanelState>
 
       {conflictReport && conflictReport.length > 0 && (
         <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4">
