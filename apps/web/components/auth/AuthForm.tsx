@@ -4,7 +4,9 @@
  * 认证表单（Task A.3.2）：
  * - 邮箱/密码(/注册昵称)受控输入，提交前用 @aidean/shared 的 Login/RegisterSchema
  *   做客户端同源校验（契约唯一真源，本地仅做中文映射）；
- * - POST /api/v1/auth/{login,register}，响应信封 code!==0 → 行内红字展示 message 且保留输入；
+ * - UX-18：表单 noValidate（不走浏览器原生气泡），客户端校验失败按字段在输入框下方行内红字提示
+ *   （aria-invalid + aria-describedby），多个字段同时出错一并标出；
+ * - POST /api/v1/auth/{login,register}，响应信封 code!==0 → 表单级红字展示 message 且保留输入；
  * - 登录成功回跳 redirect 参数（仅接受站内相对路径，防开放跳转），缺省 /user/console；
  * - 微信扫码块（AT-18.3.3 / D4 裁决）：探测 /api/v1/wechat/qrcode，enabled:true 才渲染，
  *   未启用时整块隐藏（不渲染占位），探测保留以便开通即回显。
@@ -17,6 +19,8 @@ import { Button, Input } from "@aidean/ui";
 
 import { isSafeInternalRedirect } from "../../lib/features/auth/redirect";
 import { sessionStore } from "../../lib/features/auth/session-store";
+
+type AuthField = "email" | "password" | "nickname";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -42,6 +46,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<AuthField, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   // 微信扫码通道探测结果：默认 disabled（SSR/首帧即占位，fetch 失败也回落占位）
   const [wechatEnabled, setWechatEnabled] = useState(false);
@@ -61,6 +66,10 @@ export function AuthForm({ mode }: AuthFormProps) {
     };
   }, []);
 
+  function clearFieldError(field: AuthField) {
+    setFieldErrors((cur) => (cur[field] ? { ...cur, [field]: undefined } : cur));
+  }
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (submitting) return;
@@ -71,11 +80,22 @@ export function AuthForm({ mode }: AuthFormProps) {
       ? RegisterSchema.safeParse({ email, password, nickname })
       : LoginSchema.safeParse({ email, password });
     if (!parsed.success) {
-      const issue = parsed.error.issues[0];
-      const fieldPath = issue ? String(issue.path[0] ?? "") : "";
-      setError(issue ? localizedIssueMessage(fieldPath, isRegister) : "输入有误，请检查后重试");
+      // 按字段收集（每字段取首条），行内展示；无法归属字段的问题落表单级提示
+      const next: Partial<Record<AuthField, string>> = {};
+      let general: string | null = null;
+      for (const issue of parsed.error.issues) {
+        const fieldPath = String(issue.path[0] ?? "");
+        if (fieldPath === "email" || fieldPath === "password" || fieldPath === "nickname") {
+          next[fieldPath] ??= localizedIssueMessage(fieldPath, isRegister);
+        } else {
+          general ??= localizedIssueMessage(fieldPath, isRegister);
+        }
+      }
+      setFieldErrors(next);
+      setError(general);
       return;
     }
+    setFieldErrors({});
 
     setSubmitting(true);
     try {
@@ -119,7 +139,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           {isRegister ? "注册后即可使用筛选收藏与统一计费网关" : "登录后同步等级权益与余额"}
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4" data-testid="auth-form">
+        <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4" data-testid="auth-form">
           {isRegister && (
             <label className="block">
               <span className="text-sm font-medium text-slate-700">昵称</span>
@@ -131,9 +151,19 @@ export function AuthForm({ mode }: AuthFormProps) {
                 autoComplete="nickname"
                 placeholder="你的昵称"
                 value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
+                onChange={(e) => {
+                  setNickname(e.target.value);
+                  clearFieldError("nickname");
+                }}
+                invalid={!!fieldErrors.nickname}
+                aria-describedby={fieldErrors.nickname ? "auth-nickname-error" : undefined}
                 className="mt-1.5 rounded-xl px-3.5 py-2.5 text-slate-800 shadow-[var(--shadow-sm)] focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12)]"
               />
+              {fieldErrors.nickname ? (
+                <span id="auth-nickname-error" data-testid="field-error-nickname" className="mt-1 block text-xs text-red-600">
+                  {fieldErrors.nickname}
+                </span>
+              ) : null}
             </label>
           )}
 
@@ -146,9 +176,19 @@ export function AuthForm({ mode }: AuthFormProps) {
               autoComplete="email"
               placeholder="you@example.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                clearFieldError("email");
+              }}
+              invalid={!!fieldErrors.email}
+              aria-describedby={fieldErrors.email ? "auth-email-error" : undefined}
               className="mt-1.5 rounded-xl px-3.5 py-2.5 text-slate-800 shadow-[var(--shadow-sm)] focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12)]"
             />
+            {fieldErrors.email ? (
+              <span id="auth-email-error" data-testid="field-error-email" className="mt-1 block text-xs text-red-600">
+                {fieldErrors.email}
+              </span>
+            ) : null}
           </label>
 
           <label className="block">
@@ -161,9 +201,19 @@ export function AuthForm({ mode }: AuthFormProps) {
               autoComplete={isRegister ? "new-password" : "current-password"}
               placeholder={isRegister ? "至少 8 位字符" : "请输入密码"}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clearFieldError("password");
+              }}
+              invalid={!!fieldErrors.password}
+              aria-describedby={fieldErrors.password ? "auth-password-error" : undefined}
               className="mt-1.5 rounded-xl px-3.5 py-2.5 text-slate-800 shadow-[var(--shadow-sm)] focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12)]"
             />
+            {fieldErrors.password ? (
+              <span id="auth-password-error" data-testid="field-error-password" className="mt-1 block text-xs text-red-600">
+                {fieldErrors.password}
+              </span>
+            ) : null}
           </label>
 
           {error && (

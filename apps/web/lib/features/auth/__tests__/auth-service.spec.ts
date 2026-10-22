@@ -165,12 +165,12 @@ describe("authService.login", () => {
     });
   });
 
-  it("⑥ 用户不存在 → 10003 '凭据无效'", async () => {
+  it("⑥ 用户不存在 → 10003 '邮箱或密码错误'", async () => {
     findUnique.mockResolvedValueOnce(null);
     await expectApiError(
       authService.login({ email: "ghost@b.co", password: "whatever1" }),
       10003,
-      "凭据无效"
+      "邮箱或密码错误"
     );
   });
 
@@ -179,13 +179,13 @@ describe("authService.login", () => {
     const wrongPwd = await expectApiError(
       authService.login({ email: "a@b.co", password: "wrong-pass-1" }),
       10003,
-      "凭据无效"
+      "邮箱或密码错误"
     );
     findUnique.mockResolvedValueOnce(null); // 用户不存在
     const noUser = await expectApiError(
       authService.login({ email: "ghost@b.co", password: "wrong-pass-1" }),
       10003,
-      "凭据无效"
+      "邮箱或密码错误"
     );
     // 防枚举：两者响应完全不可区分
     expect(noUser.code).toBe(wrongPwd.code);

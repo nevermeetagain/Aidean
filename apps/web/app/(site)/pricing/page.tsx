@@ -197,6 +197,34 @@ function PricePending() {
   );
 }
 
+/** 单价单元（表格列与移动端卡片共用）：生效价 + 优惠原价划线 + 源币种注记；不可归一显示「价格待核」 */
+function PriceCell({
+  price,
+  which,
+  displayCurrency,
+  align,
+}: {
+  price: EffectivePrice | null;
+  which: "input" | "output";
+  displayCurrency: SupportedCurrency;
+  align: "start" | "end";
+}) {
+  if (!price) return <PricePending />;
+  return (
+    <>
+      <PriceTag
+        value={which === "input" ? price.priceInput : price.priceOutput}
+        currency={price.currency ?? displayCurrency}
+        isPromotion={price.isPromotion}
+        basePrice={which === "input" ? price.basePriceInput : price.basePriceOutput}
+        showBadge={false}
+        align={align}
+      />
+      <SourcePriceNote price={price} which={which} />
+    </>
+  );
+}
+
 /** 读 system_configs 的 pricing.* 两键（与 GET /admin/configs 同口径：缺行/异常回退默认） */
 async function loadPricingConfig() {
   try {
@@ -235,13 +263,45 @@ export default async function PricingPage() {
           </div>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">
             下表为当前在售模型的上游官方单价，统一按 <span data-testid="display-currency">{displaySymbol} / 百万 Tokens</span>{" "}
-            展示（按访问地区：中国大陆显示人民币，其他地区显示美元）；源币种不同的行并列官方原币原价。实际扣费由单价、加价率与
-            Token 倍率共同决定，按账户余额币种结算，明细在用量页可查。
+            展示（按访问地区：中国大陆显示人民币，其他地区显示美元）；源币种不同的行并列官方原币原价。按官方单价与实际
+            Token 用量计费，按账户余额币种结算，明细在用量页可查。
           </p>
 
           {gatewayPrices.length > 0 ? (
             <>
-              <div className="mt-6 max-h-[560px] overflow-auto rounded-lg border border-[var(--border)]">
+              {/* UX-05：手机（<768）卡片式——每条一张卡：模型名/厂商 + 输入/输出两价并列，首屏即见价格，无需横滑 */}
+              <ul
+                data-testid="gateway-price-cards"
+                aria-label="网关 Token 单价"
+                className="mt-6 max-h-[70vh] divide-y divide-[var(--border)] overflow-y-auto rounded-lg border border-[var(--border)] md:hidden"
+              >
+                {gatewayPrices.map((row) => {
+                  const p = row.price;
+                  const free = !!p && Number(p.priceInput) <= 0 && Number(p.priceOutput) <= 0;
+                  return (
+                    <li key={row.key} data-testid="gateway-price-card" className="px-4 py-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <a href={`/models/${row.slug}`} className="text-sm font-medium text-foreground transition-colors hover:text-primary">
+                          {row.name}
+                        </a>
+                        {p?.isPromotion ? <PromoBadge free={free} endsAt={p.promotionEndsAt} /> : null}
+                      </div>
+                      <p className="mt-0.5 text-xs text-slate-500">{row.vendor}</p>
+                      <dl className="mt-2 grid grid-cols-2 gap-3 text-sm text-slate-600">
+                        {(["input", "output"] as const).map((which) => (
+                          <div key={which} className="min-w-0">
+                            <dt className="text-xs text-slate-500">{which === "input" ? "输入单价" : "输出单价"}</dt>
+                            <dd className="mt-0.5">
+                              <PriceCell price={p} which={which} displayCurrency={displayCurrency} align="start" />
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="mt-6 hidden max-h-[560px] overflow-auto rounded-lg border border-[var(--border)] md:block">
                 <table className="w-full min-w-[520px] text-sm">
                   <thead className="sticky top-0 z-10">
                     <tr className="border-b border-[var(--border)] bg-[var(--muted)] text-left">
@@ -277,21 +337,7 @@ export default async function PricingPage() {
                           <td className="px-4 py-2.5 text-slate-500">{row.vendor}</td>
                           {(["input", "output"] as const).map((which) => (
                             <td key={which} className="px-4 py-2.5 text-right text-slate-600">
-                              {p ? (
-                                <>
-                                  <PriceTag
-                                    value={which === "input" ? p.priceInput : p.priceOutput}
-                                    currency={p.currency ?? displayCurrency}
-                                    isPromotion={p.isPromotion}
-                                    basePrice={which === "input" ? p.basePriceInput : p.basePriceOutput}
-                                    showBadge={false}
-                                    align="end"
-                                  />
-                                  <SourcePriceNote price={p} which={which} />
-                                </>
-                              ) : (
-                                <PricePending />
-                              )}
+                              <PriceCell price={p} which={which} displayCurrency={displayCurrency} align="end" />
                             </td>
                           ))}
                         </tr>
@@ -308,7 +354,6 @@ export default async function PricingPage() {
                     {gateway.fx.stale ? "，当日快照未到，沿用最近一日" : ""}，每日一次）换算。
                   </span>
                 ) : null}
-                加价率与 Token 倍率按 API 站点单独配置，见模型详情页与控制台。
               </p>
             </>
           ) : (

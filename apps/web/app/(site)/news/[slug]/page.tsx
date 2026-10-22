@@ -35,42 +35,45 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
   const related = [...others.filter((n) => n.category === item.category), ...others.filter((n) => n.category !== item.category)].slice(0, 3);
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
-      <Link href="/news" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-primary">
-        <ArrowLeft size={15} /> 返回资讯
-      </Link>
-      <article className="mt-6">
-        <p className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">{item.category}</span>
-          {item.pinned ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
-              <Pin size={11} /> 置顶
-            </span>
+    // UX-14：正文容器全宽（M-WIDE，与页头/其他页同为 px-4 md:px-6）；文章阅读区自身 max-w-3xl 约束行宽
+    <main className="w-full px-4 py-12 md:px-6">
+      <div className="max-w-3xl">
+        <Link href="/news" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-primary">
+          <ArrowLeft size={15} /> 返回资讯
+        </Link>
+        <article className="mt-6">
+          <p className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">{item.category}</span>
+            {item.pinned ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
+                <Pin size={11} /> 置顶
+              </span>
+            ) : null}
+            <time dateTime={item.date}>{item.date}</time>
+          </p>
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight md:text-[32px] md:leading-tight">{item.title}</h1>
+          {item.summary ? (
+            <p className="mt-5 border-l-2 border-primary/40 pl-4 text-sm leading-7 text-muted-foreground">{item.summary}</p>
           ) : null}
-          <time dateTime={item.date}>{item.date}</time>
-        </p>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight md:text-4xl">{item.title}</h1>
-        {item.summary ? (
-          <p className="mt-5 border-l-2 border-primary/40 pl-4 text-sm leading-7 text-muted-foreground">{item.summary}</p>
+          {/* 服务端 markdown → sanitize-html 白名单净化的 HTML（链接 scheme/图片域名双重把关），此处只接受净化结果。 */}
+          <div className="news-content mt-8" dangerouslySetInnerHTML={{ __html: item.html }} />
+        </article>
+        {related.length > 0 ? (
+          <section className="mt-14 border-t border-border pt-8">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">延伸阅读</h2>
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              {related.map((rel) => (
+                <Link key={rel.slug} href={`/news/${rel.slug}`} className="group rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40">
+                  <p className="text-xs text-muted-foreground">
+                    <time dateTime={rel.date}>{rel.date}</time>
+                  </p>
+                  <p className="mt-2 text-sm font-medium leading-snug group-hover:text-primary">{rel.title}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
         ) : null}
-        {/* 服务端 markdown → sanitize-html 白名单净化的 HTML（链接 scheme/图片域名双重把关），此处只接受净化结果。 */}
-        <div className="news-content mt-8" dangerouslySetInnerHTML={{ __html: item.html }} />
-      </article>
-      {related.length > 0 ? (
-        <section className="mt-14 border-t border-border pt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">延伸阅读</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            {related.map((rel) => (
-              <Link key={rel.slug} href={`/news/${rel.slug}`} className="group rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40">
-                <p className="text-xs text-muted-foreground">
-                  <time dateTime={rel.date}>{rel.date}</time>
-                </p>
-                <p className="mt-2 text-sm font-medium leading-snug group-hover:text-primary">{rel.title}</p>
-              </Link>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      </div>
     </main>
   );
 }

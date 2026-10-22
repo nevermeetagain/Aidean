@@ -507,7 +507,7 @@ describe("GET /api/v1/ladder（withApi 包装路由）", () => {
 
 // ==================== v2.1 定距档布局（spec: document-lessons-and-fix-granularity） ====================
 
-import { buildLayout, ROW_H } from "../matrix-layout";
+import { buildLayout, computeAxisTop, ROW_H } from "../matrix-layout";
 import type { LadderRankEntry } from "../types";
 
 /** 最小排行条目夹具：仅布局数学所需字段，其余填中性值 */
@@ -589,5 +589,132 @@ describe("buildLayout 定距档（v2.1 分度值=行距）", () => {
     expect(fine.height).toBeGreaterThan(coarse.height);
     expect(fine.granularity).toBe(0.1);
     expect(coarse.granularity).toBe(5);
+  });
+});
+
+describe("UX-07 轴顶 = 最高综合分向上取整（computeAxisTop + buildLayout axisTopScore）", () => {
+  it("computeAxisTop：ceil 到整数再对齐分度值，封顶 100；无条目 100", () => {
+    expect(computeAxisTop([makeEntry({ modelName: "a", composite: 98 })], 0.1)).toBe(98);
+    expect(computeAxisTop([makeEntry({ modelName: "a", composite: 97.3 })], 0.1)).toBe(98);
+    expect(computeAxisTop([makeEntry({ modelName: "a", composite: 97.3 })], 5)).toBe(100);
+    expect(computeAxisTop([makeEntry({ modelName: "a", composite: 86.2 })], 5)).toBe(90);
+    expect(computeAxisTop([makeEntry({ modelName: "a", composite: 50 }), makeEntry({ modelName: "b", composite: 72.01 })], 3)).toBe(75);
+    expect(computeAxisTop([makeEntry({ modelName: "a", composite: 100 })], 0.1)).toBe(100);
+    expect(computeAxisTop([], 0.1)).toBe(100);
+  });
+
+  it("云服务榜最高 98 @ g=0.1：首张卡落在第 0 行（原恒 100 时空 20 行），刻度自 98 起", () => {
+    const entries = [makeEntry({ modelName: "s-a", composite: 98 }), makeEntry({ modelName: "s-b", composite: 97.5 })];
+    const legacy = buildLayout(entries, false, 0.1)!;
+    expect(legacy.right[0].cells[0].row).toBe(20);
+    const layout = buildLayout(entries, false, 0.1, 0, computeAxisTop(entries, 0.1))!;
+    const rows = [...layout.left, ...layout.right].flatMap((c) => c.cells.map((x) => x.row)).sort((a, b) => a - b);
+    expect(rows[0]).toBe(0);
+    expect(layout.ticks[0].score).toBe(98);
+    expect(layout.ticks[layout.ticks.length - 1].score).toBe(0);
+    expect(layout.height).toBe(980 * ROW_H);
+  });
+
+  it("渐进轴底与轴顶共存：[80, 98] 量程 → 180 行；轴顶低于轴底+一档时抬到轴底+一档", () => {
+    const entries = [makeEntry({ modelName: "m-a", composite: 97.2 })];
+    const layout = buildLayout(entries, true, 0.1, 80, 98)!;
+    expect(layout.height).toBe(180 * ROW_H);
+    expect(layout.ticks[0].score).toBe(98);
+    expect(layout.ticks[layout.ticks.length - 1].score).toBe(80);
+    const clamped = buildLayout(entries, true, 5, 80, 60)!;
+    expect(clamped.ticks[0].score).toBe(85);
+  });
+});
+
+// ==================== UX-08 / UX-09 模型搜索选项（Combobox 取数口径；并入本文件以不增 spec 文件数） ====================
+
+import {
+  MODEL_SEARCH_PAGE_SIZE,
+  buildModelSearchUrl,
+  groupModelOptions,
+  parseModelSearchResponse,
+  searchModels,
+} from "../model-options";
+
+function jsonResponse(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+}
+
+describe("buildModelSearchUrl", () => {
+  it("默认一页 50 条，空关键字不带 keyword", () => {
+    expect(MODEL_SEARCH_PAGE_SIZE).toBe(50);
+    expect(buildModelSearchUrl("")).toBe("/api/v1/models?page=1&pageSize=50");
+  });
+  it("关键字 trim + 编码 + 截断至 100 字符；pageSize 夹在 1..100", () => {
+    expect(buildModelSearchUrl("  gpt 4 ")).toBe("/api/v1/models?page=1&pageSize=50&keyword=gpt+4");
+    const long = buildModelSearchUrl("x".repeat(150));
+    expect(new URL(long, "http://h").searchParams.get("keyword")).toHaveLength(100);
+    expect(buildModelSearchUrl("a", 500)).toContain("pageSize=100");
+  });
+});
+
+describe("parseModelSearchResponse", () => {
+  it("解析 items + total，缺厂商归「其他」，非法行跳过", () => {
+    const parsed = parseModelSearchResponse({
+      code: 0,
+      data: {
+        items: [
+          { id: "m1", name: "GPT-4o", vendor: "OpenAI", slug: "gpt-4o" },
+          { id: "m2", name: "Qwen", vendor: "", slug: null },
+          { id: 3, name: "bad" },
+        ],
+        pagination: { total: 120 },
+      },
+    });
+    expect(parsed).toEqual({
+      items: [
+        { id: "m1", name: "GPT-4o", vendor: "OpenAI", slug: "gpt-4o" },
+        { id: "m2", name: "Qwen", vendor: "其他", slug: null },
+      ],
+      total: 120,
+    });
+  });
+  it("code≠0 / 无 items → null（按失败处理）", () => {
+    expect(parseModelSearchResponse({ code: 50000, data: null })).toBeNull();
+    expect(parseModelSearchResponse({ code: 0, data: {} })).toBeNull();
+    expect(parseModelSearchResponse(null)).toBeNull();
+  });
+});
+
+describe("searchModels（失败≠空）", () => {
+  it("200 且 0 条 → ok:true 空列表", async () => {
+    const f = vi.fn(async () => jsonResponse(200, { code: 0, data: { items: [], pagination: { total: 0 } } }));
+    expect(await searchModels("zzz", undefined, f as unknown as typeof fetch)).toEqual({ ok: true, items: [], total: 0 });
+  });
+  it("500 → ok:false 带服务端 message", async () => {
+    const f = vi.fn(async () => jsonResponse(500, { code: 50000, message: "服务异常", data: null }));
+    expect(await searchModels("", undefined, f as unknown as typeof fetch)).toEqual({ ok: false, message: "服务异常" });
+  });
+  it("断网 → ok:false 网络异常", async () => {
+    const f = vi.fn(async () => {
+      throw new TypeError("Failed to fetch");
+    });
+    const res = await searchModels("", undefined, f as unknown as typeof fetch);
+    expect(res.ok).toBe(false);
+  });
+  it("AbortError 透传（晚到请求由调用方丢弃）", async () => {
+    const f = vi.fn(async () => {
+      throw Object.assign(new Error("aborted"), { name: "AbortError" });
+    });
+    await expect(searchModels("", undefined, f as unknown as typeof fetch)).rejects.toThrow("aborted");
+  });
+});
+
+describe("groupModelOptions", () => {
+  it("按厂商分组，保持首次出现序", () => {
+    const groups = groupModelOptions([
+      { id: "1", name: "a", vendor: "B", slug: null },
+      { id: "2", name: "b", vendor: "A", slug: null },
+      { id: "3", name: "c", vendor: "B", slug: null },
+    ]);
+    expect(groups.map((g) => [g.vendor, g.items.map((i) => i.id)])).toEqual([
+      ["B", ["1", "3"]],
+      ["A", ["2"]],
+    ]);
   });
 });
