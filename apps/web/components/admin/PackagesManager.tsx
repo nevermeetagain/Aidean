@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
-import { Dialog, Button, Input } from "@aidean/ui";
+import { Dialog, Button, Input, Label, Select, Textarea } from "@aidean/ui";
 import { ConfirmDialog } from "./ConfirmDialog";
 
 interface PackageRow {
@@ -332,52 +332,52 @@ export function PackagesManager() {
         }
       >
         <div className="space-y-3">
-          <label className="block text-xs font-medium text-slate-500">
+          <Label className="block text-xs font-medium text-slate-500">
             标题
             <Input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1" />
-          </label>
-          <label className="block text-xs font-medium text-slate-500">
+          </Label>
+          <Label className="block text-xs font-medium text-slate-500">
             描述（可选）
-            <textarea
+            <Textarea
               rows={2}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-[var(--accent)]"
+              className="mt-1 w-full bg-white text-slate-800"
             />
-          </label>
-          <label className="block text-xs font-medium text-slate-500">
+          </Label>
+          <Label className="block text-xs font-medium text-slate-500">
             价格（元）
             <Input type="number" min={0} step="0.01" value={form.priceYuan} onChange={(e) => setForm({ ...form, priceYuan: e.target.value })} className="mt-1" />
-          </label>
-          <label className="block text-xs font-medium text-slate-500">
+          </Label>
+          <Label className="block text-xs font-medium text-slate-500">
             有效期（小时，留空为不限时）
             <Input type="number" min={1} value={form.durationHours} onChange={(e) => setForm({ ...form, durationHours: e.target.value })} className="mt-1" />
-          </label>
-          <label className="block text-xs font-medium text-slate-500">
+          </Label>
+          <Label className="block text-xs font-medium text-slate-500">
             权益条目（每行一条，≤20 条）
-            <textarea
+            <Textarea
               rows={4}
               value={form.benefitsText}
               onChange={(e) => setForm({ ...form, benefitsText: e.target.value })}
-              className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-[var(--accent)]"
+              className="mt-1 w-full bg-white text-slate-800"
             />
-          </label>
+          </Label>
           <div className="flex gap-4">
-            <label className="block text-xs font-medium text-slate-500">
+            <Label className="block text-xs font-medium text-slate-500">
               状态
-              <select
+              <Select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value as PackageForm["status"] })}
-                className="mt-1 block w-32 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-[var(--accent)]"
+                className="mt-1 block w-32 bg-white text-slate-800"
               >
                 <option value="ACTIVE">在售</option>
                 <option value="DISABLED">停售</option>
-              </select>
-            </label>
-            <label className="block text-xs font-medium text-slate-500">
+              </Select>
+            </Label>
+            <Label className="block text-xs font-medium text-slate-500">
               排序（越小越前）
               <Input type="number" min={0} max={999} value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} className="mt-1 w-24" />
-            </label>
+            </Label>
           </div>
         </div>
       </Dialog>

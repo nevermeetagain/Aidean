@@ -11,7 +11,7 @@
 import React, { useEffect, useState } from "react";
 import { DocsArticlesSchema, parseDocsArticles, DOCS_ARTICLES_DEFAULT, type DocsArticle } from "@aidean/shared";
 import { adminFetch } from "./adminFetch";
-import { Input } from "@aidean/ui";
+import { Input, Label, Textarea } from "@aidean/ui";
 
 const inputClass = "mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900";
 
@@ -59,12 +59,12 @@ export function DocsEditor() {
           <fieldset key={i} disabled={!ready || busy} className="rounded-xl border border-slate-200 bg-white p-5 disabled:opacity-60">
             <legend className="px-2 font-semibold text-slate-800">第 {i + 1} 篇</legend>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm text-slate-700">文章标识 id（必填，≤40 字）<Input maxLength={40} value={a.id} onChange={(e) => patchArticle(i, { id: e.target.value })} placeholder="如 start" /></label>
-              <label className="block text-sm text-slate-700">分组（必填，≤40 字，如「开始使用」）<Input maxLength={40} value={a.group} onChange={(e) => patchArticle(i, { group: e.target.value })} /></label>
-              <label className="block text-sm text-slate-700 sm:col-span-2">标题（必填，≤80 字）<Input maxLength={80} value={a.title} onChange={(e) => patchArticle(i, { title: e.target.value })} /></label>
-              <label className="block text-sm text-slate-700 sm:col-span-2">摘要（≤200 字）<Input maxLength={200} value={a.summary} onChange={(e) => patchArticle(i, { summary: e.target.value })} /></label>
-              <label className="block text-sm text-slate-700">底部链接（必填，≤200 字）<Input maxLength={200} value={a.link} onChange={(e) => patchArticle(i, { link: e.target.value })} placeholder="/user/console" /></label>
-              <label className="block text-sm text-slate-700">链接文案（必填，≤40 字）<Input maxLength={40} value={a.linkLabel} onChange={(e) => patchArticle(i, { linkLabel: e.target.value })} /></label>
+              <Label className="block text-sm text-slate-700">文章标识 id（必填，≤40 字）<Input maxLength={40} value={a.id} onChange={(e) => patchArticle(i, { id: e.target.value })} placeholder="如 start" /></Label>
+              <Label className="block text-sm text-slate-700">分组（必填，≤40 字，如「开始使用」）<Input maxLength={40} value={a.group} onChange={(e) => patchArticle(i, { group: e.target.value })} /></Label>
+              <Label className="block text-sm text-slate-700 sm:col-span-2">标题（必填，≤80 字）<Input maxLength={80} value={a.title} onChange={(e) => patchArticle(i, { title: e.target.value })} /></Label>
+              <Label className="block text-sm text-slate-700 sm:col-span-2">摘要（≤200 字）<Input maxLength={200} value={a.summary} onChange={(e) => patchArticle(i, { summary: e.target.value })} /></Label>
+              <Label className="block text-sm text-slate-700">底部链接（必填，≤200 字）<Input maxLength={200} value={a.link} onChange={(e) => patchArticle(i, { link: e.target.value })} placeholder="/user/console" /></Label>
+              <Label className="block text-sm text-slate-700">链接文案（必填，≤40 字）<Input maxLength={40} value={a.linkLabel} onChange={(e) => patchArticle(i, { linkLabel: e.target.value })} /></Label>
             </div>
 
             <div className="mt-4 space-y-3">
@@ -72,10 +72,10 @@ export function DocsEditor() {
               {a.sections.map((s, j) => (
                 <div key={j} className="rounded-lg border border-slate-100 p-3">
                   <div className="flex items-end gap-2">
-                    <label className="flex-1 text-sm text-slate-700">小节标题（≤80 字）<Input maxLength={80} value={s.title} onChange={(e) => patchSection(i, j, { title: e.target.value })} /></label>
+                    <Label className="flex-1 text-sm text-slate-700">小节标题（≤80 字）<Input maxLength={80} value={s.title} onChange={(e) => patchSection(i, j, { title: e.target.value })} /></Label>
                     <button type="button" onClick={() => patchArticle(i, { sections: a.sections.filter((_, sj) => sj !== j) })} className="rounded-md border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50">删除小节</button>
                   </div>
-                  <label className="mt-2 block text-sm text-slate-700">小节正文（≤1000 字）<textarea className={inputClass} rows={3} maxLength={1000} value={s.text} onChange={(e) => patchSection(i, j, { text: e.target.value })} /></label>
+                  <Label className="mt-2 block text-sm text-slate-700">小节正文（≤1000 字）<Textarea className={inputClass} rows={3} maxLength={1000} value={s.text} onChange={(e) => patchSection(i, j, { text: e.target.value })} /></Label>
                 </div>
               ))}
               <button type="button" disabled={a.sections.length >= 12} onClick={() => patchArticle(i, { sections: [...a.sections, { title: "", text: "" }] })} className="rounded-md border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-60">添加小节</button>

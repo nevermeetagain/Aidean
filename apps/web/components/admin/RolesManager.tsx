@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ADMIN_DOMAINS, ADMIN_DOMAIN_KEYS } from "@aidean/shared";
 import { adminFetch } from "./adminFetch";
-import { Badge, Button } from "@aidean/ui";
+import { Badge, Button, Label } from "@aidean/ui";
 import { ConfirmDialog } from "./ConfirmDialog";
 
 interface RoleVM {
@@ -161,12 +161,12 @@ function RoleForm({ role, onDone, onSaved, onError }: {
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-xs text-slate-500">名称
+        <Label className="flex flex-col gap-1 text-xs text-slate-500">名称
           <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} />
-        </label>
-        <label className="flex flex-1 flex-col gap-1 text-xs text-slate-500">描述
+        </Label>
+        <Label className="flex flex-1 flex-col gap-1 text-xs text-slate-500">描述
           <input className={`${inputCls} w-full`} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={200} />
-        </label>
+        </Label>
       </div>
       {isSuper ? (
         <p className="rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-700">
@@ -206,15 +206,15 @@ function CreateRoleForm({ onDone }: { onDone: () => void }) {
   return (
     <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
       <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-xs text-slate-500">编码（小写下划线，2-40）
+        <Label className="flex flex-col gap-1 text-xs text-slate-500">编码（小写下划线，2-40）
           <input className={inputCls} value={code} onChange={(e) => setCode(e.target.value)} placeholder="finance_ops" />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-500">名称
+        </Label>
+        <Label className="flex flex-col gap-1 text-xs text-slate-500">名称
           <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="财务运营" />
-        </label>
-        <label className="flex flex-1 flex-col gap-1 text-xs text-slate-500">描述
+        </Label>
+        <Label className="flex flex-1 flex-col gap-1 text-xs text-slate-500">描述
           <input className={`${inputCls} w-full`} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={200} />
-        </label>
+        </Label>
       </div>
       <PermissionsGrid value={codes} onChange={setCodes} />
       <div className="flex items-center gap-2">
@@ -264,12 +264,12 @@ function PermissionsGrid({ value, onChange, note }: {
                 {ADMIN_DOMAINS[d]}
               </button>
               <span className="flex items-center gap-3">
-                <label className="flex cursor-pointer items-center gap-1">
+                <Label className="flex cursor-pointer items-center gap-1 font-normal">
                   <input type="checkbox" checked={value.has(rc)} onChange={() => toggle(rc)} />读
-                </label>
-                <label className="flex cursor-pointer items-center gap-1">
+                </Label>
+                <Label className="flex cursor-pointer items-center gap-1 font-normal">
                   <input type="checkbox" checked={value.has(wc)} onChange={() => toggle(wc)} />写
-                </label>
+                </Label>
               </span>
             </div>
           );

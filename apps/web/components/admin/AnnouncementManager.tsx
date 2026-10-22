@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { adminFetch } from "./adminFetch";
-import { Badge, Button } from "@aidean/ui";
+import { Badge, Button, Label, Select, Textarea } from "@aidean/ui";
 import { AdminDataTable, type Column } from "./AdminDataTable";
 import { ConfirmDialog } from "./ConfirmDialog";
 
@@ -147,13 +147,13 @@ export function AnnouncementManager() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="rounded border border-slate-200 bg-white px-3 py-1.5 text-sm">
+        <Select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="bg-white">
           <option value="">全部类型</option>
           <option value="system">系统</option>
           <option value="maintenance">维护</option>
           <option value="update">更新</option>
           <option value="promotion">推广</option>
-        </select>
+        </Select>
         <Button variant="outline" size="sm" onClick={() => { setPage(1); void load(1); }}>刷新</Button>
         <Button variant="primary" size="sm" onClick={() => setShowCreate(!showCreate)} className="ml-auto">
           {showCreate ? "取消" : "新建公告"}
@@ -250,37 +250,37 @@ function AnnouncementForm({ existing, onDone }: { existing?: AnnRow; onDone: () 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/50 p-4">
       <div className="grid grid-cols-2 gap-3">
-        <label className="col-span-2 flex flex-col gap-1">
+        <Label className="col-span-2 flex flex-col gap-1">
           <span className="text-xs font-medium text-slate-600">标题 *</span>
           <input value={title} onChange={e => setTitle(e.target.value)} required className="rounded border border-slate-200 px-3 py-1.5 text-sm" />
-        </label>
-        <label className="flex flex-col gap-1">
+        </Label>
+        <Label className="flex flex-col gap-1">
           <span className="text-xs font-medium text-slate-600">类型</span>
-          <select value={type} onChange={e => setType(e.target.value)} className="rounded border border-slate-200 px-3 py-1.5 text-sm">
+          <Select value={type} onChange={e => setType(e.target.value)}>
             <option value="system">系统</option>
             <option value="maintenance">维护</option>
             <option value="update">更新</option>
             <option value="promotion">推广</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-1">
+          </Select>
+        </Label>
+        <Label className="flex flex-col gap-1">
           <span className="text-xs font-medium text-slate-600">优先级</span>
           <input type="number" value={priority} onChange={e => setPriority(Number(e.target.value))} className="rounded border border-slate-200 px-3 py-1.5 text-sm" />
-        </label>
-        <label className="col-span-2 flex flex-col gap-1">
+        </Label>
+        <Label className="col-span-2 flex flex-col gap-1">
           <span className="text-xs font-medium text-slate-600">内容 * (Markdown)</span>
-          <textarea value={content} onChange={e => setContent(e.target.value)} required rows={5} className="rounded border border-slate-200 px-3 py-1.5 font-mono text-sm" />
-        </label>
+          <Textarea value={content} onChange={e => setContent(e.target.value)} required rows={5} className="font-mono" />
+        </Label>
       </div>
       <div className="flex gap-4">
-        <label className="flex items-center gap-2 text-sm text-slate-600">
+        <Label className="flex items-center gap-2 text-sm text-slate-600 font-normal">
           <input type="checkbox" checked={isPinned} onChange={e => setIsPinned(e.target.checked)} />
           置顶
-        </label>
-        <label className="flex items-center gap-2 text-sm text-slate-600">
+        </Label>
+        <Label className="flex items-center gap-2 text-sm text-slate-600 font-normal">
           <input type="checkbox" checked={isPublished} onChange={e => setIsPublished(e.target.checked)} />
           发布
-        </label>
+        </Label>
       </div>
       {error && <p className="text-xs text-red-500">{error}</p>}
       <div className="flex gap-2">

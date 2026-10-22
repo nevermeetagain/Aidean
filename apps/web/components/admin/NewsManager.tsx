@@ -15,7 +15,7 @@ import { NEWS_CATEGORIES, type NewsCategory } from "@aidean/shared";
 import { normalizeNewsMarkdown } from "../../lib/features/news/normalize";
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
-import { Dialog, Button, Input } from "@aidean/ui";
+import { Dialog, Button, Input, Label, Select, Textarea } from "@aidean/ui";
 
 interface NewsRow {
   id: string;
@@ -229,17 +229,17 @@ export function NewsManager() {
       ) : null}
 
       <div className="flex flex-wrap items-center gap-3">
-        <select
+        <Select
           value={filterCat}
           onChange={(e) => setFilterCat(e.target.value)}
-          className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-[var(--accent)]"
+          className="bg-white text-slate-800"
           aria-label="按分类筛选"
         >
           <option value="">全部分类</option>
           {NEWS_CATEGORIES.map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
-        </select>
+        </Select>
         <span className="text-xs text-slate-500">共 {visible.length}{filterCat ? ` / ${rows.length}` : ""} 条资讯（{filterCat || "全部"}·置顶恒排最前）</span>
         <Button variant="primary" size="sm" onClick={openCreate}>新建资讯</Button>
       </div>
@@ -267,7 +267,7 @@ export function NewsManager() {
       >
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <label className="block text-xs font-medium text-slate-500">
+            <Label className="block text-xs font-medium text-slate-500">
               slug（小写字母/数字/连字符{editId ? "，创建后不可改" : ""}）
               <Input
                 type="text"
@@ -276,49 +276,49 @@ export function NewsManager() {
                 onChange={(e) => setForm({ ...form, slug: e.target.value })}
                 className="mt-1"
               />
-            </label>
-            <label className="block text-xs font-medium text-slate-500">
+            </Label>
+            <Label className="block text-xs font-medium text-slate-500">
               分类
-              <select
+              <Select
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value as NewsCategory })}
-                className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-[var(--accent)]"
+                className="mt-1 block w-full bg-white text-slate-800"
               >
                 {NEWS_CATEGORIES.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </Label>
           </div>
-          <label className="block text-xs font-medium text-slate-500">
+          <Label className="block text-xs font-medium text-slate-500">
             标题
             <Input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1" />
-          </label>
-          <label className="block text-xs font-medium text-slate-500">
+          </Label>
+          <Label className="block text-xs font-medium text-slate-500">
             摘要（列表卡片展示，留空自动取正文首行）
-            <textarea
+            <Textarea
               rows={2}
               value={form.summary}
               onChange={(e) => setForm({ ...form, summary: e.target.value })}
-              className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-[var(--accent)]"
+              className="mt-1 w-full bg-white text-slate-800"
             />
-          </label>
+          </Label>
           <div className="flex items-center gap-5">
-            <label className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+            <Label className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
               <input type="checkbox" checked={form.pinned} onChange={(e) => setForm({ ...form, pinned: e.target.checked })} />
               置顶（列表恒排最前）
-            </label>
-            <label className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-              <select
+            </Label>
+            <Label className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+              <Select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value as NewsForm["status"] })}
-                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-800 outline-none focus:border-[var(--accent)]"
+                className="bg-white text-slate-800"
               >
                 <option value="DRAFT">草稿</option>
                 <option value="PUBLISHED">发布</option>
-              </select>
+              </Select>
               状态
-            </label>
+            </Label>
           </div>
 
           <div>
@@ -340,12 +340,12 @@ export function NewsManager() {
               <span className="text-[11px] text-slate-400">支持 ()[] 等含括号链接；保存的始终是 Markdown 原文</span>
             </div>
             {tab === "write" ? (
-              <textarea
+              <Textarea
                 rows={14}
                 value={form.contentMarkdown}
                 onChange={(e) => setForm({ ...form, contentMarkdown: e.target.value })}
                 placeholder={"## 小标题\n\n正文支持 GFM：列表、表格、代码块、链接 [文本](https://example.com/a(b)c) 等。"}
-                className="mt-2 w-full rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-[13px] leading-6 text-slate-800 outline-none focus:border-[var(--accent)]"
+                className="mt-2 w-full bg-white font-mono text-[13px] leading-6 text-slate-800"
               />
             ) : (
               <div

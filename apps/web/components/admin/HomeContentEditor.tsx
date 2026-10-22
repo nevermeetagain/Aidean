@@ -23,7 +23,7 @@ import {
   type HomeIconName,
 } from "@aidean/shared";
 import { adminFetch } from "./adminFetch";
-import { Input } from "@aidean/ui";
+import { Input, Label, Select, Textarea } from "@aidean/ui";
 
 const inputClass = "mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900";
 
@@ -38,9 +38,9 @@ function raw(res: { data: { configs: { configKey: string; configValue: string }[
 /** 图标下拉（受限枚举名） */
 function IconSelect({ value, onChange, disabled }: { value: HomeIconName; onChange: (v: HomeIconName) => void; disabled: boolean }) {
   return (
-    <select className={inputClass} value={value} disabled={disabled} onChange={(e) => onChange(e.target.value as HomeIconName)}>
+    <Select className={inputClass} value={value} disabled={disabled} onChange={(e) => onChange(e.target.value as HomeIconName)}>
       {HOME_ICON_NAMES.map((n) => <option key={n} value={n}>{n}</option>)}
-    </select>
+    </Select>
   );
 }
 
@@ -52,11 +52,11 @@ function CardListEditor({ cards, onChange, withHref, disabled }: { cards: HomeCa
       {cards.map((c, i) => (
         <div key={i} className="rounded-lg border border-slate-200 p-4">
           <div className="grid gap-3 sm:grid-cols-[160px_minmax(0,1fr)]">
-            <label className="block text-sm text-slate-700">图标<IconSelect value={c.icon} disabled={disabled} onChange={(v) => patch(i, { icon: v })} /></label>
-            <label className="block text-sm text-slate-700">标题（≤60 字）<Input maxLength={60} disabled={disabled} value={c.title} onChange={(e) => patch(i, { title: e.target.value })} /></label>
+            <Label className="block text-sm text-slate-700">图标<IconSelect value={c.icon} disabled={disabled} onChange={(v) => patch(i, { icon: v })} /></Label>
+            <Label className="block text-sm text-slate-700">标题（≤60 字）<Input maxLength={60} disabled={disabled} value={c.title} onChange={(e) => patch(i, { title: e.target.value })} /></Label>
           </div>
-          <label className="mt-3 block text-sm text-slate-700">描述（≤200 字）<textarea className={inputClass} rows={2} maxLength={200} disabled={disabled} value={c.description} onChange={(e) => patch(i, { description: e.target.value })} /></label>
-          {withHref && <label className="mt-3 block text-sm text-slate-700">跳转链接（可选，≤200 字，如 /models）<Input maxLength={200} disabled={disabled} value={c.href ?? ""} onChange={(e) => patch(i, { href: e.target.value || undefined })} /></label>}
+          <Label className="mt-3 block text-sm text-slate-700">描述（≤200 字）<Textarea className={inputClass} rows={2} maxLength={200} disabled={disabled} value={c.description} onChange={(e) => patch(i, { description: e.target.value })} /></Label>
+          {withHref && <Label className="mt-3 block text-sm text-slate-700">跳转链接（可选，≤200 字，如 /models）<Input maxLength={200} disabled={disabled} value={c.href ?? ""} onChange={(e) => patch(i, { href: e.target.value || undefined })} /></Label>}
           <button type="button" disabled={disabled} onClick={() => onChange(cards.filter((_, idx) => idx !== i))} className="mt-3 rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-40">删除此卡片</button>
         </div>
       ))}
@@ -120,16 +120,16 @@ export function HomeContentEditor() {
       <fieldset disabled={!ready || busy} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 disabled:opacity-60">
         <legend className="px-2 font-semibold text-slate-800">首屏 Hero</legend>
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block text-sm text-slate-700">角标（可空，≤120 字）<Input maxLength={120} value={hero.badge} onChange={(e) => patchHero({ badge: e.target.value })} /></label>
-          <label className="block text-sm text-slate-700">主标题（必填，≤120 字）<Input maxLength={120} value={hero.title} onChange={(e) => patchHero({ title: e.target.value })} /></label>
+          <Label className="block text-sm text-slate-700">角标（可空，≤120 字）<Input maxLength={120} value={hero.badge} onChange={(e) => patchHero({ badge: e.target.value })} /></Label>
+          <Label className="block text-sm text-slate-700">主标题（必填，≤120 字）<Input maxLength={120} value={hero.title} onChange={(e) => patchHero({ title: e.target.value })} /></Label>
         </div>
-        <label className="block text-sm text-slate-700">副标题（≤300 字）<textarea className={inputClass} rows={2} maxLength={300} value={hero.subtitle} onChange={(e) => patchHero({ subtitle: e.target.value })} /></label>
+        <Label className="block text-sm text-slate-700">副标题（≤300 字）<Textarea className={inputClass} rows={2} maxLength={300} value={hero.subtitle} onChange={(e) => patchHero({ subtitle: e.target.value })} /></Label>
         <div className="grid gap-4 sm:grid-cols-2">
           {(["primaryCta", "secondaryCta"] as const).map((which) => (
             <div key={which} className="rounded-lg border border-slate-100 p-3">
               <p className="text-xs font-medium text-slate-500">{which === "primaryCta" ? "主按钮" : "次按钮"}</p>
-              <label className="mt-2 block text-sm text-slate-700">文案（≤40 字）<Input maxLength={40} value={hero[which].label} onChange={(e) => patchCta(which, { label: e.target.value })} /></label>
-              <label className="mt-2 block text-sm text-slate-700">链接（≤200 字）<Input maxLength={200} value={hero[which].href} onChange={(e) => patchCta(which, { href: e.target.value })} /></label>
+              <Label className="mt-2 block text-sm text-slate-700">文案（≤40 字）<Input maxLength={40} value={hero[which].label} onChange={(e) => patchCta(which, { label: e.target.value })} /></Label>
+              <Label className="mt-2 block text-sm text-slate-700">链接（≤200 字）<Input maxLength={200} value={hero[which].href} onChange={(e) => patchCta(which, { href: e.target.value })} /></Label>
             </div>
           ))}
         </div>
@@ -138,8 +138,8 @@ export function HomeContentEditor() {
           <div className="mt-2 space-y-2">
             {hero.stats.map((s, i) => (
               <div key={i} className="flex flex-wrap items-end gap-2">
-                <label className="flex-1 text-sm text-slate-700">数值文案（≤40 字）<Input maxLength={40} value={s.value} onChange={(e) => patchStat(i, { value: e.target.value })} /></label>
-                <label className="flex-1 text-sm text-slate-700">标签（≤40 字）<Input maxLength={40} value={s.label} onChange={(e) => patchStat(i, { label: e.target.value })} /></label>
+                <Label className="flex-1 text-sm text-slate-700">数值文案（≤40 字）<Input maxLength={40} value={s.value} onChange={(e) => patchStat(i, { value: e.target.value })} /></Label>
+                <Label className="flex-1 text-sm text-slate-700">标签（≤40 字）<Input maxLength={40} value={s.label} onChange={(e) => patchStat(i, { label: e.target.value })} /></Label>
                 <button type="button" onClick={() => patchHero({ stats: hero.stats.filter((_, idx) => idx !== i) })} className="rounded-md border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50">删除</button>
               </div>
             ))}

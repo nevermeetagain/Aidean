@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { adminFetch } from "./adminFetch";
-import { Badge, Button } from "@aidean/ui";
+import { Badge, Button, Label, Textarea } from "@aidean/ui";
 import { AdminDataTable, type Column } from "./AdminDataTable";
 import { ConfirmDialog } from "./ConfirmDialog";
 
@@ -206,19 +206,19 @@ function StationForm({ existing, onDone }: { existing?: StationRow; onDone: () =
   return (
     <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/50 p-4">
       <div className="grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-1">
+        <Label className="flex flex-col gap-1">
           <span className="text-xs font-medium text-slate-600">名称 *</span>
           <input value={name} onChange={e => setName(e.target.value)} required className="rounded border border-slate-200 px-3 py-1.5 text-sm" />
-        </label>
-        <label className="flex flex-col gap-1">
+        </Label>
+        <Label className="flex flex-col gap-1">
           <span className="text-xs font-medium text-slate-600">显示名 *</span>
           <input value={displayName} onChange={e => setDisplayName(e.target.value)} required className="rounded border border-slate-200 px-3 py-1.5 text-sm" />
-        </label>
-        <label className="flex flex-col gap-1">
+        </Label>
+        <Label className="flex flex-col gap-1">
           <span className="text-xs font-medium text-slate-600">提供商</span>
           <input value={provider} onChange={e => setProvider(e.target.value)} className="rounded border border-slate-200 px-3 py-1.5 text-sm" />
-        </label>
-        <label className="flex flex-col gap-1">
+        </Label>
+        <Label className="flex flex-col gap-1">
           <span className="text-xs font-medium text-slate-600">Base URL</span>
           <input
             value={baseUrl}
@@ -226,12 +226,12 @@ function StationForm({ existing, onDone }: { existing?: StationRow; onDone: () =
             placeholder="https://api.example.com/v1"
             className="rounded border border-slate-200 px-3 py-1.5 text-sm"
           />
-        </label>
+        </Label>
       </div>
-      <label className="flex flex-col gap-1">
+      <Label className="flex flex-col gap-1">
         <span className="text-xs font-medium text-slate-600">描述</span>
-        <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="rounded border border-slate-200 px-3 py-1.5 text-sm" />
-      </label>
+        <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} />
+      </Label>
       {baseUrlTouched && baseUrl && !/^https?:\/\//.test(baseUrl) && (
         <p className="text-xs text-red-500">Base URL 须以 http(s):// 开头</p>
       )}

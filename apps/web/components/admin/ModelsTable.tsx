@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
-import { Dialog, Button, Input } from "@aidean/ui";
+import { Dialog, Button, Input, Label, Select } from "@aidean/ui";
 import { ConfirmDialog } from "./ConfirmDialog";
 
 interface ModelRow {
@@ -231,7 +231,7 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
       header: "上架",
       className: "px-3 py-2",
       render: m => (
-        <label className="inline-flex cursor-pointer items-center gap-1.5">
+        <Label className="inline-flex cursor-pointer items-center gap-1.5 font-normal">
           <input
             type="checkbox"
             checked={m.isActive}
@@ -245,7 +245,7 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
           <span className={`text-xs ${m.isActive ? "text-emerald-600" : "text-slate-500"}`}>
             {m.isActive ? "上架" : "下架"}
           </span>
-        </label>
+        </Label>
       ),
     },
     {
@@ -257,17 +257,17 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
           <span className={`mr-1.5 inline-block rounded px-1.5 py-0.5 text-xs font-medium ${m.visibility === "PUBLIC" ? "bg-emerald-100 text-emerald-700" : m.visibility === "HIDDEN" ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-600"}`}>
             {VISIBILITY_LABEL[m.visibility]}
           </span>
-          <select
+          <Select size="sm"
             aria-label={`${m.modelCode} 可见性`}
             value={m.visibility}
             disabled={busy}
             onChange={(e) => void patchModel(m.id, { visibility: e.target.value }, "可见性已更新")}
-            className="rounded border border-slate-200 bg-white px-1.5 py-1 text-xs text-slate-700 shadow-[var(--shadow-sm)]"
+            className="bg-white text-slate-700 shadow-[var(--shadow-sm)]"
           >
             {Object.entries(VISIBILITY_LABEL).map(([v, label]) => (
               <option key={v} value={v}>{label}</option>
             ))}
-          </select>
+          </Select>
         </>
       ),
     },
@@ -411,7 +411,7 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
         }
       >
         <div className="space-y-3">
-          <label className="block">
+          <Label className="block">
             <span className="text-xs text-slate-500">模型代码 (modelCode) *</span>
             <Input
               type="text"
@@ -420,8 +420,8 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
               placeholder="gpt-4o, claude-3-opus"
               className="mt-1"
             />
-          </label>
-          <label className="block">
+          </Label>
+          <Label className="block">
             <span className="text-xs text-slate-500">显示名称 *</span>
             <Input
               type="text"
@@ -429,8 +429,8 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
               onChange={(e) => setCreateForm({ ...createForm, nameDisplay: e.target.value })}
               className="mt-1"
             />
-          </label>
-          <label className="block">
+          </Label>
+          <Label className="block">
             <span className="text-xs text-slate-500">Slug</span>
             <Input
               type="text"
@@ -439,60 +439,60 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
               placeholder="留空则自动生成"
               className="mt-1"
             />
-          </label>
-          <label className="block">
+          </Label>
+          <Label className="block">
             <span className="text-xs text-slate-500">厂商</span>
-            <select
+            <Select
               value={createForm.vendorId}
               onChange={(e) => setCreateForm({ ...createForm, vendorId: e.target.value })}
-              className="mt-1 w-full rounded border border-slate-200 px-3 py-1.5 text-sm"
+              className="mt-1 w-full"
             >
               <option value="">请选择</option>
               {vendors.map((v) => (
                 <option key={v.id} value={v.id}>{v.nameDisplay}</option>
               ))}
-            </select>
-          </label>
+            </Select>
+          </Label>
           <div className="grid grid-cols-2 gap-3">
-            <label className="block">
+            <Label className="block">
               <span className="text-xs text-slate-500">类型</span>
-              <select
+              <Select
                 value={createForm.modelType}
                 onChange={(e) => setCreateForm({ ...createForm, modelType: e.target.value })}
-                className="mt-1 w-full rounded border border-slate-200 px-3 py-1.5 text-sm"
+                className="mt-1 w-full"
               >
                 {Object.entries(MODEL_TYPE_LABEL).map(([v, label]) => (
                   <option key={v} value={v}>{label}</option>
                 ))}
-              </select>
-            </label>
-            <label className="block">
+              </Select>
+            </Label>
+            <Label className="block">
               <span className="text-xs text-slate-500">协议</span>
-              <select
+              <Select
                 value={createForm.protocol}
                 onChange={(e) => setCreateForm({ ...createForm, protocol: e.target.value })}
-                className="mt-1 w-full rounded border border-slate-200 px-3 py-1.5 text-sm"
+                className="mt-1 w-full"
               >
                 {Object.entries(PROTOCOL_LABEL).map(([v, label]) => (
                   <option key={v} value={v}>{label}</option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </Label>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <label className="block">
+            <Label className="block">
               <span className="text-xs text-slate-500">可见性</span>
-              <select
+              <Select
                 value={createForm.visibility}
                 onChange={(e) => setCreateForm({ ...createForm, visibility: e.target.value })}
-                className="mt-1 w-full rounded border border-slate-200 px-3 py-1.5 text-sm"
+                className="mt-1 w-full"
               >
                 {Object.entries(VISIBILITY_LABEL).map(([v, label]) => (
                   <option key={v} value={v}>{label}</option>
                 ))}
-              </select>
-            </label>
-            <label className="block">
+              </Select>
+            </Label>
+            <Label className="block">
               <span className="text-xs text-slate-500">上下文长度</span>
               <Input
                 type="number"
@@ -501,7 +501,7 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
                 placeholder="如 128000"
                 className="mt-1"
               />
-            </label>
+            </Label>
           </div>
         </div>
       </Dialog>

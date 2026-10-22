@@ -14,7 +14,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Button } from "@aidean/ui";
+import { Button, Label, Select } from "@aidean/ui";
 
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
@@ -143,9 +143,9 @@ function UsageTab() {
         <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="rounded border border-slate-200 bg-white px-2 py-1.5 text-sm" />
         <span className="text-xs text-slate-400">至</span>
         <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="rounded border border-slate-200 bg-white px-2 py-1.5 text-sm" />
-        <label className="flex items-center gap-1 text-xs text-slate-600">
+        <Label className="flex items-center gap-1 text-xs text-slate-600 font-normal">
           <input type="checkbox" checked={onlyErrors} onChange={(e) => setOnlyErrors(e.target.checked)} />仅错误
-        </label>
+        </Label>
         <Button variant="primary" size="sm" onClick={q.reload}>查询</Button>
         <span className="ml-auto text-xs text-slate-500">共 {q.total} 条</span>
       </div>
@@ -229,13 +229,13 @@ function SyncTab() {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded border border-slate-200 bg-white px-3 py-1.5 text-sm">
+        <Select value={status} onChange={(e) => setStatus(e.target.value)} className="bg-white">
           <option value="">全部状态</option>
           <option value="running">running</option>
           <option value="completed">completed</option>
           <option value="partial">partial</option>
           <option value="failed">failed</option>
-        </select>
+        </Select>
         <Button variant="primary" size="sm" onClick={q.reload}>查询</Button>
         <span className="ml-auto text-xs text-slate-500">共 {q.total} 条</span>
       </div>
@@ -299,12 +299,12 @@ function ScriptsTab() {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded border border-slate-200 bg-white px-3 py-1.5 text-sm">
+        <Select value={status} onChange={(e) => setStatus(e.target.value)} className="bg-white">
           <option value="">全部状态</option>
           <option value="0">执行中</option>
           <option value="1">成功</option>
           <option value="2">失败</option>
-        </select>
+        </Select>
         <Button variant="primary" size="sm" onClick={q.reload}>查询</Button>
         <span className="ml-auto text-xs text-slate-500">共 {q.total} 条</span>
       </div>
@@ -395,13 +395,13 @@ function SecurityTab() {
         </div>
         <input value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="用户 ID（精确）" className="rounded border border-slate-200 bg-white px-3 py-1.5 text-sm" />
         {kind === "TOKEN" && (
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded border border-slate-200 bg-white px-3 py-1.5 text-sm">
+          <Select value={status} onChange={(e) => setStatus(e.target.value)} className="bg-white">
             <option value="">全部状态</option>
             <option value="ACTIVE">有效</option>
             <option value="ROTATED">已轮换</option>
             <option value="REVOKED">已撤销</option>
             <option value="EXPIRED">已过期</option>
-          </select>
+          </Select>
         )}
         <Button variant="primary" size="sm" onClick={q.reload}>查询</Button>
         <span className="ml-auto text-xs text-slate-500">共 {q.total} 条</span>

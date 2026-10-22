@@ -7,7 +7,7 @@
  * 批量操作（R-28）。
  */
 import { useCallback, useEffect, useState } from "react";
-import { Dialog, Button, Input } from "@aidean/ui";
+import { Dialog, Button, Input, Label } from "@aidean/ui";
 
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
@@ -307,7 +307,7 @@ export function VendorsManager() {
         }
       >
         <div className="space-y-3">
-          <label className="block text-xs font-medium text-slate-500">
+          <Label className="block text-xs font-medium text-slate-500">
             code（小写字母/数字/连字符{editing ? "，创建后不可改" : ""}）
             <Input
               type="text"
@@ -316,8 +316,8 @@ export function VendorsManager() {
               onChange={(e) => setForm({ ...form, code: e.target.value })}
               className="mt-1"
             />
-          </label>
-          <label className="block text-xs font-medium text-slate-500">
+          </Label>
+          <Label className="block text-xs font-medium text-slate-500">
             名称
             <Input
               type="text"
@@ -325,8 +325,8 @@ export function VendorsManager() {
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="mt-1"
             />
-          </label>
-          <label className="block text-xs font-medium text-slate-500">
+          </Label>
+          <Label className="block text-xs font-medium text-slate-500">
             中文名（可选）
             <Input
               type="text"
@@ -334,8 +334,8 @@ export function VendorsManager() {
               onChange={(e) => setForm({ ...form, nameCn: e.target.value })}
               className="mt-1"
             />
-          </label>
-          <label className="block text-xs font-medium text-slate-500">
+          </Label>
+          <Label className="block text-xs font-medium text-slate-500">
             优先级（1-99，越小越优先）
             <Input
               type="number"
@@ -345,8 +345,8 @@ export function VendorsManager() {
               onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })}
               className="mt-1"
             />
-          </label>
-          <label className="flex items-center gap-2 text-xs font-medium text-slate-500">
+          </Label>
+          <Label className="flex items-center gap-2 text-xs font-medium text-slate-500">
             <input
               type="checkbox"
               checked={form.isActive}
@@ -354,7 +354,7 @@ export function VendorsManager() {
               className="h-4 w-4 accent-indigo-500"
             />
             启用
-          </label>
+          </Label>
         </div>
       </Dialog>
 

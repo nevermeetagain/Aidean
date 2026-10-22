@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { adminFetch } from "./adminFetch";
-import { Badge, Button, Dialog } from "@aidean/ui";
+import { Badge, Button, Dialog, Select } from "@aidean/ui";
 import { AdminDataTable, type Column } from "./AdminDataTable";
 import { ConfirmDialog } from "./ConfirmDialog";
 
@@ -128,13 +128,13 @@ export function EvaluationManager() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="rounded border border-slate-200 bg-white px-3 py-1.5 text-sm">
+        <Select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="bg-white">
           <option value="">全部状态</option>
           <option value="0">待执行</option>
           <option value="1">执行中</option>
           <option value="2">已完成</option>
           <option value="3">失败</option>
-        </select>
+        </Select>
         <Button variant="outline" size="sm" onClick={() => { setPage(1); void load(1); }}>刷新</Button>
         <span className="ml-auto text-xs text-slate-500">共 {total} 条</span>
       </div>

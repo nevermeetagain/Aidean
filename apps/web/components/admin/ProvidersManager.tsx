@@ -8,7 +8,7 @@
  * - 点击行展开 offerings 管理子面板
  */
 import { useCallback, useEffect, useState } from "react";
-import { Dialog, Button, Input, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@aidean/ui";
+import { Dialog, Button, Input, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Label } from "@aidean/ui";
 
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
@@ -341,7 +341,7 @@ export function ProvidersManager() {
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="text-sm font-medium">Code *</label>
+              <Label className="text-sm font-medium">Code *</Label>
               <Input
                 value={form.code}
                 disabled={!!editing}
@@ -352,7 +352,7 @@ export function ProvidersManager() {
               <p className="mt-1 text-xs text-muted-foreground">小写字母/数字/连字符，创建后不可改</p>
             </div>
             <div>
-              <label className="text-sm font-medium">名称 *</label>
+              <Label className="text-sm font-medium">名称 *</Label>
               <Input
                 value={form.name}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, name: e.target.value })}
@@ -361,7 +361,7 @@ export function ProvidersManager() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">中文名</label>
+              <Label className="text-sm font-medium">中文名</Label>
               <Input
                 value={form.nameCn}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, nameCn: e.target.value })}
@@ -370,7 +370,7 @@ export function ProvidersManager() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">充值比例 *</label>
+              <Label className="text-sm font-medium">充值比例 *</Label>
               <Input
                 value={form.rechargeRatio}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, rechargeRatio: e.target.value })}
@@ -380,7 +380,7 @@ export function ProvidersManager() {
               <p className="mt-1 text-xs text-muted-foreground">1 元 = N 外币（如 20 表示 1元=$20）</p>
             </div>
             <div>
-              <label className="text-sm font-medium">标价币种</label>
+              <Label className="text-sm font-medium">标价币种</Label>
               <Input
                 value={form.priceCurrency}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, priceCurrency: e.target.value })}
@@ -389,7 +389,7 @@ export function ProvidersManager() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">充值币种</label>
+              <Label className="text-sm font-medium">充值币种</Label>
               <Input
                 value={form.rechargeCurrency}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, rechargeCurrency: e.target.value })}
@@ -399,10 +399,10 @@ export function ProvidersManager() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-sm">
+            <Label className="flex items-center gap-2 text-sm font-normal">
               <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
               启用
-            </label>
+            </Label>
           </div>
         </div>
       </Dialog>

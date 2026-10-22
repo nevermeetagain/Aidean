@@ -13,7 +13,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
-import { Dialog, Button, Input } from "@aidean/ui";
+import { Dialog, Button, Input, Label, Select, Textarea } from "@aidean/ui";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { PRODUCT_CATEGORY_LABELS } from "../../lib/product-label";
 
@@ -533,7 +533,7 @@ export function ProductsManager() {
         }
       >
         <div className="space-y-3">
-          <label className="block text-xs font-medium text-slate-500">
+          <Label className="block text-xs font-medium text-slate-500">
             slug（小写字母/数字/连字符{editing ? "，创建后不可改" : ""}）
             <Input
               type="text"
@@ -542,8 +542,8 @@ export function ProductsManager() {
               onChange={(e) => setForm({ ...form, slug: e.target.value })}
               className="mt-1"
             />
-          </label>
-          <label className="block text-xs font-medium text-slate-500">
+          </Label>
+          <Label className="block text-xs font-medium text-slate-500">
             名称
             <Input
               type="text"
@@ -551,9 +551,9 @@ export function ProductsManager() {
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="mt-1"
             />
-          </label>
+          </Label>
           <div className="grid grid-cols-2 gap-2">
-            <label className="block text-xs font-medium text-slate-500">
+            <Label className="block text-xs font-medium text-slate-500">
               中文显示名（可选，留空显英文名）
               <Input
                 type="text"
@@ -562,23 +562,23 @@ export function ProductsManager() {
                 onChange={(e) => setForm({ ...form, displayName: e.target.value })}
                 className="mt-1"
               />
-            </label>
-            <label className="block text-xs font-medium text-slate-500">
+            </Label>
+            <Label className="block text-xs font-medium text-slate-500">
               二级分类（#71）
-              <select
+              <Select
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
-                className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm"
+                className="mt-1 block w-full bg-white"
               >
                 {CATEGORY_OPTIONS.map((c) => (
                   <option key={c.value} value={c.value}>
                     {c.label}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </Label>
           </div>
-          <label className="block text-xs font-medium text-slate-500">
+          <Label className="block text-xs font-medium text-slate-500">
             一句话简介（可选）
             <Input
               type="text"
@@ -586,8 +586,8 @@ export function ProductsManager() {
               onChange={(e) => setForm({ ...form, tagline: e.target.value })}
               className="mt-1"
             />
-          </label>
-          <label className="block text-xs font-medium text-slate-500">
+          </Label>
+          <Label className="block text-xs font-medium text-slate-500">
             徽标文案（可选，如「已上线」）
             <Input
               type="text"
@@ -595,25 +595,25 @@ export function ProductsManager() {
               onChange={(e) => setForm({ ...form, badge: e.target.value })}
               className="mt-1"
             />
-          </label>
-          <label className="block text-xs font-medium text-slate-500">
+          </Label>
+          <Label className="block text-xs font-medium text-slate-500">
             详细描述（可选）
-            <textarea
+            <Textarea
               rows={3}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-[var(--accent)]"
+              className="mt-1 w-full bg-white text-slate-800"
             />
-          </label>
-          <label className="block text-xs font-medium text-slate-500">
+          </Label>
+          <Label className="block text-xs font-medium text-slate-500">
             权益条目（每行一条，≤12 条）
-            <textarea
+            <Textarea
               rows={4}
               value={form.benefitsText}
               onChange={(e) => setForm({ ...form, benefitsText: e.target.value })}
-              className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-[var(--accent)]"
+              className="mt-1 w-full bg-white text-slate-800"
             />
-          </label>
+          </Label>
           {/* intro 块（add-subplatform-showcase-pages）：链接动态行 + 信息条目多行文本 */}
           <div className="border-t border-slate-100 pt-3">
             <p className="text-xs font-medium text-slate-500">介绍页链接（≤6 条；「产品入口」渲染为主按钮，其余为描边按钮）</p>
@@ -637,7 +637,7 @@ export function ProductsManager() {
                   }
                   className="min-w-0 flex-1"
                 />
-                <select
+                <Select size="sm"
                   value={row.kind}
                   onChange={(e) =>
                     setForm({
@@ -645,14 +645,14 @@ export function ProductsManager() {
                       links: form.links.map((r, idx) => (idx === i ? { ...r, kind: e.target.value as IntroKind } : r)),
                     })
                   }
-                  className="w-20 shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-800 outline-none focus:border-[var(--accent)]"
+                  className="w-20 shrink-0 bg-white text-slate-800"
                 >
                   {KIND_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>
                       {o.label}
                     </option>
                   ))}
-                </select>
+                </Select>
                 <button
                   type="button"
                   onClick={() => setForm({ ...form, links: form.links.filter((_, idx) => idx !== i) })}
@@ -672,21 +672,21 @@ export function ProductsManager() {
               </button>
             ) : null}
           </div>
-          <label className="block text-xs font-medium text-slate-500">
+          <Label className="block text-xs font-medium text-slate-500">
             信息条目（每行「分组::标签::值」，如 交付::交付形态::Docker Compose 一键部署；面向读者用业务语言，勿堆技术栈）
-            <textarea
+            <Textarea
               rows={4}
               value={form.factsText}
               onChange={(e) => setForm({ ...form, factsText: e.target.value })}
-              className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-[var(--accent)]"
+              className="mt-1 w-full bg-white text-slate-800"
             />
-          </label>
+          </Label>
           {/* 三层介绍区块（enrich-subplatform-intro-pages #70）：任一字段有值即保存为 intro v2，前台按三层区块渲染 */}
           <div className="border-t border-slate-100 pt-3">
             <p className="text-xs font-medium text-slate-500">
               三层介绍内容（可选；受众 → 价值 → 流程 → 决策，填写任一项保存后介绍页即升级 v2 区块）
             </p>
-            <label className="mt-2 block text-xs font-medium text-slate-500">
+            <Label className="mt-2 block text-xs font-medium text-slate-500">
               适用人群·身份层（≤80 字）
               <Input
                 type="text"
@@ -695,19 +695,19 @@ export function ProductsManager() {
                 onChange={(e) => setForm({ ...form, audience: e.target.value })}
                 className="mt-1"
               />
-            </label>
-            <label className="mt-2 block text-xs font-medium text-slate-500">
+            </Label>
+            <Label className="mt-2 block text-xs font-medium text-slate-500">
               解决什么问题·价值层（每行「痛点::解法」，≤4 行）
-              <textarea
+              <Textarea
                 rows={4}
                 value={form.problemsText}
                 placeholder={"公众号文章散在收藏夹里找不到::链接发给机器人即入库"}
                 onChange={(e) => setForm({ ...form, problemsText: e.target.value })}
-                className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-[var(--accent)]"
+                className="mt-1 w-full bg-white text-slate-800"
               />
-            </label>
+            </Label>
             <div className="mt-2 flex items-end gap-2">
-              <label className="block min-w-0 flex-1 text-xs font-medium text-slate-500">
+              <Label className="block min-w-0 flex-1 text-xs font-medium text-slate-500">
                 如何使用·流程标题
                 <Input
                   type="text"
@@ -716,54 +716,54 @@ export function ProductsManager() {
                   onChange={(e) => setForm({ ...form, workflowTitle: e.target.value })}
                   className="mt-1"
                 />
-              </label>
+              </Label>
             </div>
-            <label className="mt-2 block text-xs font-medium text-slate-500">
+            <Label className="mt-2 block text-xs font-medium text-slate-500">
               使用步骤（每行一步，≤8 步；有步骤才会成块，标题留空默认「使用流程」）
-              <textarea
+              <Textarea
                 rows={4}
                 value={form.workflowStepsText}
                 placeholder={"发送公众号链接给机器人\n选择订阅范围\n自动解析入库\n随时问答并附原文溯源"}
                 onChange={(e) => setForm({ ...form, workflowStepsText: e.target.value })}
-                className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-[var(--accent)]"
+                className="mt-1 w-full bg-white text-slate-800"
               />
-            </label>
+            </Label>
             <div className="mt-2 grid gap-3 sm:grid-cols-2">
-              <label className="block text-xs font-medium text-slate-500">
+              <Label className="block text-xs font-medium text-slate-500">
                 生态互通·决策层（每行一条，≤4）
-                <textarea
+                <Textarea
                   rows={3}
                   value={form.ecosystemText}
                   placeholder={"与主平台账号统一登录"}
                   onChange={(e) => setForm({ ...form, ecosystemText: e.target.value })}
-                  className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-[var(--accent)]"
+                  className="mt-1 w-full bg-white text-slate-800"
                 />
-              </label>
-              <label className="block text-xs font-medium text-slate-500">
+              </Label>
+              <Label className="block text-xs font-medium text-slate-500">
                 安全与承诺·决策层（每行一条，≤4）
-                <textarea
+                <Textarea
                   rows={3}
                   value={form.promisesText}
                   placeholder={"私有部署，数据留在自有环境"}
                   onChange={(e) => setForm({ ...form, promisesText: e.target.value })}
-                  className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-[var(--accent)]"
+                  className="mt-1 w-full bg-white text-slate-800"
                 />
-              </label>
+              </Label>
             </div>
           </div>
           <div className="flex gap-4">
-            <label className="block text-xs font-medium text-slate-500">
+            <Label className="block text-xs font-medium text-slate-500">
               状态
-              <select
+              <Select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value as ProductForm["status"] })}
-                className="mt-1 block w-32 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-[var(--accent)]"
+                className="mt-1 block w-32 bg-white text-slate-800"
               >
                 <option value="ACTIVE">上架</option>
                 <option value="DISABLED">下架</option>
-              </select>
-            </label>
-            <label className="block text-xs font-medium text-slate-500">
+              </Select>
+            </Label>
+            <Label className="block text-xs font-medium text-slate-500">
               排序（越小越前）
               <Input
                 type="number"
@@ -773,7 +773,7 @@ export function ProductsManager() {
                 onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })}
                 className="mt-1 w-24"
               />
-            </label>
+            </Label>
           </div>
         </div>
       </Dialog>

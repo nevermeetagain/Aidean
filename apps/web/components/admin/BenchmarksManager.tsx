@@ -10,7 +10,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Badge, Button, Dialog, Input } from "@aidean/ui";
+import { Badge, Button, Dialog, Input, Select } from "@aidean/ui";
 
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
@@ -216,15 +216,15 @@ export function BenchmarksManager() {
           placeholder="基准类型..."
           className="max-w-[180px]"
         />
-        <select
+        <Select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded border border-slate-200 bg-white px-3 py-1.5 text-sm"
+          className="bg-white"
         >
           <option value="">全部状态</option>
           <option value="0">待审核</option>
           <option value="1">已审核</option>
-        </select>
+        </Select>
         <Button variant="primary" size="sm" onClick={() => { setPage(1); void load(1); }}>查询</Button>
         <Button
           variant="outline"
@@ -258,9 +258,9 @@ export function BenchmarksManager() {
           <Input value={formData.benchmarkType} onChange={(e) => setFormData({ ...formData, benchmarkType: e.target.value })} placeholder="基准类型（如 MMLU）*" required />
           <Input value={formData.totalScore} onChange={(e) => setFormData({ ...formData, totalScore: e.target.value })} placeholder="总分 *" required type="number" step="0.01" />
           <Input value={formData.sourceName} onChange={(e) => setFormData({ ...formData, sourceName: e.target.value })} placeholder="来源名称" />
-          <select value={formData.sourceType} onChange={(e) => setFormData({ ...formData, sourceType: e.target.value })} className="h-9 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm">
+          <Select value={formData.sourceType} onChange={(e) => setFormData({ ...formData, sourceType: e.target.value })} className="h-9">
             {Object.entries(SOURCE_TYPE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
+          </Select>
           <Input value={formData.testDate} onChange={(e) => setFormData({ ...formData, testDate: e.target.value })} placeholder="测试日期" type="date" />
           <Button type="submit" variant="primary" className="col-span-full">提交</Button>
         </form>

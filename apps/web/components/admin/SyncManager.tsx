@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { adminFetch } from "./adminFetch";
-import { Badge, Button, Dialog, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@aidean/ui";
+import { Badge, Button, Dialog, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Label, Select } from "@aidean/ui";
 import { AdminDataTable, type Column } from "./AdminDataTable";
 import { SYNC_SOURCES } from "../../lib/sync/sources/registry";
 
@@ -179,23 +179,23 @@ export function SyncManager() {
         </Button>
         {tab === "batches" ? (
           <>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="ml-2 rounded border border-slate-200 bg-white px-3 py-1.5 text-sm">
+            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="ml-2 bg-white">
               <option value="">全部状态</option>
               <option value="running">运行中</option>
               <option value="completed">已完成</option>
               <option value="failed">失败</option>
               <option value="partial">部分成功</option>
-            </select>
+            </Select>
             <Button variant="outline" size="sm" onClick={handleDryRun} className="ml-auto">触发 dry-run</Button>
           </>
         ) : (
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="ml-2 rounded border border-slate-200 bg-white px-3 py-1.5 text-sm">
+          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="ml-2 bg-white">
             <option value="">全部类型</option>
             <option value="CREATE">CREATE</option>
             <option value="UPDATE">UPDATE</option>
             <option value="DELETE">DELETE</option>
             <option value="SYNC">SYNC</option>
-          </select>
+          </Select>
         )}
         <span className="ml-auto text-xs text-slate-500">共 {total} 条</span>
       </div>
@@ -209,12 +209,12 @@ export function SyncManager() {
       {tab === "batches" && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/50 px-4 py-2.5">
           <span className="text-xs font-medium text-slate-600">数据源：</span>
-          <select value={primarySource} onChange={(e) => setPrimarySource(e.target.value)} className="rounded border border-slate-200 bg-white px-2.5 py-1 text-xs">
+          <Select size="sm" value={primarySource} onChange={(e) => setPrimarySource(e.target.value)} className="bg-white">
             {SOURCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          </Select>
           <span className="text-xs text-slate-400">额外源（交叉验证）：</span>
           {SOURCE_OPTIONS.filter(o => o.value !== primarySource).map(o => (
-            <label key={o.value} className="flex items-center gap-1 text-xs text-slate-600">
+            <Label key={o.value} className="flex items-center gap-1 text-xs text-slate-600 font-normal">
               <input
                 type="checkbox"
                 checked={extraSources.includes(o.value)}
@@ -222,7 +222,7 @@ export function SyncManager() {
                 className="h-3 w-3 rounded border-slate-300"
               />
               {o.value}
-            </label>
+            </Label>
           ))}
         </div>
       )}

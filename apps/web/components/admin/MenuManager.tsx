@@ -9,7 +9,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminFetch } from "./adminFetch";
-import { Badge, Button } from "@aidean/ui";
+import { Badge, Button, Label, Select } from "@aidean/ui";
 import { ConfirmDialog } from "./ConfirmDialog";
 
 interface MenuRow {
@@ -198,24 +198,24 @@ function NodeForm({ row, groups, onMutate, onDone }: {
 
   return (
     <div className="flex flex-wrap items-end gap-2">
-      <label className="flex flex-col gap-1 text-xs text-slate-500">名称
+      <Label className="flex flex-col gap-1 text-xs text-slate-500">名称
         <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} />
-      </label>
-      <label className="flex flex-col gap-1 text-xs text-slate-500">排序
+      </Label>
+      <Label className="flex flex-col gap-1 text-xs text-slate-500">排序
         <input type="number" className={`${inputCls} w-20`} value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} />
-      </label>
+      </Label>
       {row.level === 2 && (
         <>
-          <label className="flex flex-col gap-1 text-xs text-slate-500">路径
+          <Label className="flex flex-col gap-1 text-xs text-slate-500">路径
             <input className={`${inputCls} w-56`} value={path} onChange={(e) => setPath(e.target.value)} placeholder="/admin/xxx" />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-500">归属分组
-            <select className={inputCls} value={parentCode} onChange={(e) => setParentCode(e.target.value)}>
+          </Label>
+          <Label className="flex flex-col gap-1 text-xs text-slate-500">归属分组
+            <Select className={inputCls} value={parentCode} onChange={(e) => setParentCode(e.target.value)}>
               {groups.filter((g) => g.menuCode !== row.menuCode && g.isDropdown).map((g) => (
                 <option key={g.menuCode} value={g.menuCode}>{g.name}</option>
               ))}
-            </select>
-          </label>
+            </Select>
+          </Label>
         </>
       )}
       <Button variant="primary" size="sm" onClick={save}>保存</Button>
@@ -242,15 +242,15 @@ function CreateGroupForm({ onDone }: { onDone: () => void }) {
   return (
     <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
       <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-xs text-slate-500">编码（小写下划线）
+        <Label className="flex flex-col gap-1 text-xs text-slate-500">编码（小写下划线）
           <input className={inputCls} value={menuCode} onChange={(e) => setMenuCode(e.target.value)} placeholder="adm_grp_xxx" />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-500">名称
+        </Label>
+        <Label className="flex flex-col gap-1 text-xs text-slate-500">名称
           <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="新分组" />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-500">排序
+        </Label>
+        <Label className="flex flex-col gap-1 text-xs text-slate-500">排序
           <input type="number" className={`${inputCls} w-20`} value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} />
-        </label>
+        </Label>
         <Button variant="primary" size="sm" onClick={() => void submit()}>创建分组</Button>
       </div>
       {error && <p className="text-xs text-red-500">{error}</p>}
@@ -282,18 +282,18 @@ function CreateLeafForm({ groupCode, onDone }: { groupCode: string; onDone: () =
   return (
     <div className="space-y-2 rounded border border-slate-200 bg-slate-50 p-2">
       <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-xs text-slate-500">编码
+        <Label className="flex flex-col gap-1 text-xs text-slate-500">编码
           <input className={inputCls} value={menuCode} onChange={(e) => setMenuCode(e.target.value)} placeholder="adm_xxx" />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-500">名称
+        </Label>
+        <Label className="flex flex-col gap-1 text-xs text-slate-500">名称
           <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-500">路径
+        </Label>
+        <Label className="flex flex-col gap-1 text-xs text-slate-500">路径
           <input className={`${inputCls} w-56`} value={path} onChange={(e) => setPath(e.target.value)} placeholder="/admin/xxx" />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-500">排序
+        </Label>
+        <Label className="flex flex-col gap-1 text-xs text-slate-500">排序
           <input type="number" className={`${inputCls} w-20`} value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} />
-        </label>
+        </Label>
         <Button variant="primary" size="sm" onClick={() => void submit()}>创建子项</Button>
         <Button variant="outline" size="sm" onClick={() => setOpen(false)}>取消</Button>
       </div>

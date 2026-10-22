@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
-import { Button, Input } from "@aidean/ui";
+import { Button, Input, Label, Select } from "@aidean/ui";
 
 interface UserRow {
   id: string;
@@ -287,19 +287,19 @@ export function UsersTable({
       className: "px-3 py-2",
       render: u => (
         <div className="flex items-center gap-2">
-          <select
+          <Select size="sm"
             aria-label={`${u.email} 等级调整`}
             value={u.tier}
             disabled={busy}
             onChange={(e) => void patchUser(u.id, { tier: e.target.value }, "等级已调整")}
-            className="rounded-lg border border-slate-200 bg-white px-1.5 py-1 text-xs text-slate-700 shadow-[var(--shadow-sm)]"
+            className="bg-white text-slate-700 shadow-[var(--shadow-sm)]"
           >
             {Object.entries(TIER_SHORT_LABEL).map(([key, label]) => (
               <option key={key} value={key}>
                 {label}
               </option>
             ))}
-          </select>
+          </Select>
           {u.status === "ACTIVE" ? (
             <Button variant="danger" size="sm" disabled={busy} onClick={() => void patchUser(u.id, { status: "SUSPENDED" }, "已封禁（旧令牌全部失效）")}>
               封禁
@@ -539,12 +539,12 @@ export function UsersTable({
                 <p className="text-sm text-slate-400">加载中…</p>
               ) : (
                 allRoles.map((r) => (
-                  <label key={r.code} className="flex cursor-pointer items-center gap-2 rounded border border-slate-100 px-2 py-1.5 text-sm">
+                  <Label key={r.code} className="flex cursor-pointer items-center gap-2 rounded border border-slate-100 px-2 py-1.5 text-sm font-normal">
                     <input type="checkbox" checked={roleCodes.has(r.code)} disabled={roleBusy} onChange={() => toggleRoleCode(r.code)} />
                     <span className="text-slate-800">{r.name}</span>
                     <span className="font-mono text-[11px] text-slate-400">{r.code}</span>
                     {r.isSystem && <span className="ml-auto rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">系统</span>}
-                  </label>
+                  </Label>
                 ))
               )}
             </div>
