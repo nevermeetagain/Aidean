@@ -47,6 +47,8 @@ export function WalletsManager() {
   // 内联提示（替代原生 alert）：顶层状态 + 调账表单级错误
   const [message, setMessage] = useState<string | null>(null);
   const [adjustError, setAdjustError] = useState<string | null>(null);
+  // UX-04 复测：列表拉取失败 ≠ 空数据，失败时显示错误态 + 重试，不落「暂无钱包数据」
+  const [loadError, setLoadError] = useState<string | null>(null);
   const pageSize = 20;
 
   const load = useCallback(async (p: number) => {
@@ -58,8 +60,11 @@ export function WalletsManager() {
     );
     setLoading(false);
     if (res.ok && res.data) {
+      setLoadError(null);
       setRows(res.data.items);
       setTotal(res.data.total);
+    } else {
+      setLoadError(res.message || "钱包列表加载失败");
     }
   }, [statusFilter]);
 
@@ -163,6 +168,12 @@ export function WalletsManager() {
         </p>
       ) : null}
 
+      {loadError && !loading ? (
+        <div role="alert" data-testid="admin-wallets-error" className="flex items-center gap-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <span>加载失败：{loadError}</span>
+          <Button variant="outline" size="sm" onClick={() => void load(page)}>重试</Button>
+        </div>
+      ) : (
       <AdminDataTable
         columns={columns}
         rows={rows}
@@ -174,6 +185,7 @@ export function WalletsManager() {
         total={total}
         onPageChange={setPage}
       />
+      )}
 
       {/* 余额调账 Dialog — R-32 @aidean/ui Dialog */}
       <Dialog

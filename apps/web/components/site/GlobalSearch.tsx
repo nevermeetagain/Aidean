@@ -162,8 +162,8 @@ export function GlobalSearch({ variant = "desktop" }: { variant?: "desktop" | "m
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
           // UX-19（EVD-UX-01）：w-44 可用文字宽约 132px（176−pl-8−pr-3），原「搜索模型 / 产品 / 资讯…」≈150px 被截断；
-          // 去空格与省略号后 8 个汉字 + 2 斜杠 ≈122px 完整显示。不加宽输入框，以免 1280 断点（UX-01 xl）页头再挤出溢出。
-          placeholder="搜索模型/产品/资讯"
+          // 复测（中文字体渲染）仍截断「资讯」→ 按报告方案改为「搜索」（aria-label 仍为「全站搜索」）。不加宽输入框，以免 1280 断点页头溢出。
+          placeholder="搜索"
           aria-label="全站搜索"
           autoComplete="off"
           className={
