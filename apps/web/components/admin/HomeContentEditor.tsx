@@ -23,7 +23,7 @@ import {
   type HomeIconName,
 } from "@aidean/shared";
 import { adminFetch } from "./adminFetch";
-import { Input, Label, Select, Textarea } from "@aidean/ui";
+import { Button, Input, Label, Select, Textarea } from "@aidean/ui";
 
 const inputClass = "mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900";
 
@@ -57,10 +57,10 @@ function CardListEditor({ cards, onChange, withHref, disabled }: { cards: HomeCa
           </div>
           <Label className="mt-3 block text-sm text-slate-700">描述（≤200 字）<Textarea className={inputClass} rows={2} maxLength={200} disabled={disabled} value={c.description} onChange={(e) => patch(i, { description: e.target.value })} /></Label>
           {withHref && <Label className="mt-3 block text-sm text-slate-700">跳转链接（可选，≤200 字，如 /models）<Input maxLength={200} disabled={disabled} value={c.href ?? ""} onChange={(e) => patch(i, { href: e.target.value || undefined })} /></Label>}
-          <button type="button" disabled={disabled} onClick={() => onChange(cards.filter((_, idx) => idx !== i))} className="mt-3 rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-40">删除此卡片</button>
+          <Button variant="outline" className="mt-3 text-[var(--danger)]" disabled={disabled} onClick={() => onChange(cards.filter((_, idx) => idx !== i))}>删除此卡片</Button>
         </div>
       ))}
-      <button type="button" disabled={disabled || cards.length >= 8} onClick={() => onChange([...cards, { icon: "Sparkles", title: "", description: "", ...(withHref ? { href: "" } : {}) }])} className="rounded-md border border-slate-300 px-4 py-2 text-sm disabled:opacity-60">添加卡片（最多 8 张）</button>
+      <Button variant="outline" disabled={disabled || cards.length >= 8} onClick={() => onChange([...cards, { icon: "Sparkles", title: "", description: "", ...(withHref ? { href: "" } : {}) }])}>添加卡片（最多 8 张）</Button>
     </div>
   );
 }
@@ -115,7 +115,7 @@ export function HomeContentEditor() {
         <p className="mt-2 text-sm text-slate-600">首屏 Hero、平台价值点与模型入口卡片。留空字段会按校验提示拒绝保存；保存后刷新首页即时生效。</p>
       </header>
       {message && <p role="status" className="break-words rounded-lg bg-slate-100 p-3 text-sm">{message}</p>}
-      {!ready && <button type="button" className="text-sm underline" onClick={() => void load()}>重新加载内容</button>}
+      {!ready && <Button variant="ghost" className="underline" onClick={() => void load()}>重新加载内容</Button>}
 
       <fieldset disabled={!ready || busy} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 disabled:opacity-60">
         <legend className="px-2 font-semibold text-slate-800">首屏 Hero</legend>
@@ -140,25 +140,25 @@ export function HomeContentEditor() {
               <div key={i} className="flex flex-wrap items-end gap-2">
                 <Label className="flex-1 text-sm text-slate-700">数值文案（≤40 字）<Input maxLength={40} value={s.value} onChange={(e) => patchStat(i, { value: e.target.value })} /></Label>
                 <Label className="flex-1 text-sm text-slate-700">标签（≤40 字）<Input maxLength={40} value={s.label} onChange={(e) => patchStat(i, { label: e.target.value })} /></Label>
-                <button type="button" onClick={() => patchHero({ stats: hero.stats.filter((_, idx) => idx !== i) })} className="rounded-md border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50">删除</button>
+                <Button variant="outline" className="text-[var(--danger)]" onClick={() => patchHero({ stats: hero.stats.filter((_, idx) => idx !== i) })}>删除</Button>
               </div>
             ))}
           </div>
-          <button type="button" disabled={hero.stats.length >= 6} onClick={() => patchHero({ stats: [...hero.stats, { value: "", label: "" }] })} className="mt-2 rounded-md border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-60">添加统计项</button>
+          <Button variant="outline" className="mt-2" disabled={hero.stats.length >= 6} onClick={() => patchHero({ stats: [...hero.stats, { value: "", label: "" }] })}>添加统计项</Button>
         </div>
-        <button type="button" onClick={() => void saveHero()} className="rounded-md bg-primary px-4 py-2 text-sm text-white">保存首屏文案</button>
+        <Button onClick={() => void saveHero()}>保存首屏文案</Button>
       </fieldset>
 
       <fieldset disabled={!ready || busy} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 disabled:opacity-60">
         <legend className="px-2 font-semibold text-slate-800">平台价值点（home.valuePoints）</legend>
         <CardListEditor cards={valuePoints} disabled={!ready || busy} onChange={setValuePoints} withHref={false} />
-        <button type="button" onClick={() => void saveCards("home.valuePoints", valuePoints)} className="rounded-md bg-primary px-4 py-2 text-sm text-white">保存价值点卡片</button>
+        <Button onClick={() => void saveCards("home.valuePoints", valuePoints)}>保存价值点卡片</Button>
       </fieldset>
 
       <fieldset disabled={!ready || busy} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 disabled:opacity-60">
         <legend className="px-2 font-semibold text-slate-800">模型入口卡片（home.modelEntries）</legend>
         <CardListEditor cards={modelEntries} disabled={!ready || busy} onChange={setModelEntries} withHref />
-        <button type="button" onClick={() => void saveCards("home.modelEntries", modelEntries)} className="rounded-md bg-primary px-4 py-2 text-sm text-white">保存入口卡片</button>
+        <Button onClick={() => void saveCards("home.modelEntries", modelEntries)}>保存入口卡片</Button>
       </fieldset>
     </section>
   );

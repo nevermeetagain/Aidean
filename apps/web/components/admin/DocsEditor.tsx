@@ -11,7 +11,7 @@
 import React, { useEffect, useState } from "react";
 import { DocsArticlesSchema, parseDocsArticles, DOCS_ARTICLES_DEFAULT, type DocsArticle } from "@aidean/shared";
 import { adminFetch } from "./adminFetch";
-import { Input, Label, Textarea } from "@aidean/ui";
+import { Button, Input, Label, Textarea } from "@aidean/ui";
 
 const inputClass = "mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900";
 
@@ -52,7 +52,7 @@ export function DocsEditor() {
         <p className="mt-2 text-sm text-slate-600">/docs 文档中心的文章内容。分组相同会合并到左侧同一目录；「文章标识」为锚点，须唯一、非空、只用字母数字短横线。最多 24 篇，每篇最多 12 小节。</p>
       </header>
       {message && <p role="status" className="break-words rounded-lg bg-slate-100 p-3 text-sm">{message}</p>}
-      {!ready && <button type="button" className="text-sm underline" onClick={() => void load()}>重新加载内容</button>}
+      {!ready && <Button variant="ghost" className="underline" onClick={() => void load()}>重新加载内容</Button>}
 
       <div className="space-y-5">
         {articles.map((a, i) => (
@@ -73,29 +73,28 @@ export function DocsEditor() {
                 <div key={j} className="rounded-lg border border-slate-100 p-3">
                   <div className="flex items-end gap-2">
                     <Label className="flex-1 text-sm text-slate-700">小节标题（≤80 字）<Input maxLength={80} value={s.title} onChange={(e) => patchSection(i, j, { title: e.target.value })} /></Label>
-                    <button type="button" onClick={() => patchArticle(i, { sections: a.sections.filter((_, sj) => sj !== j) })} className="rounded-md border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50">删除小节</button>
+                    <Button variant="outline" className="text-[var(--danger)]" onClick={() => patchArticle(i, { sections: a.sections.filter((_, sj) => sj !== j) })}>删除小节</Button>
                   </div>
                   <Label className="mt-2 block text-sm text-slate-700">小节正文（≤1000 字）<Textarea className={inputClass} rows={3} maxLength={1000} value={s.text} onChange={(e) => patchSection(i, j, { text: e.target.value })} /></Label>
                 </div>
               ))}
-              <button type="button" disabled={a.sections.length >= 12} onClick={() => patchArticle(i, { sections: [...a.sections, { title: "", text: "" }] })} className="rounded-md border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-60">添加小节</button>
+              <Button variant="outline" disabled={a.sections.length >= 12} onClick={() => patchArticle(i, { sections: [...a.sections, { title: "", text: "" }] })}>添加小节</Button>
             </div>
 
-            <button type="button" onClick={() => setArticles(articles.filter((_, idx) => idx !== i))} className="mt-4 rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50">删除此文章</button>
+            <Button variant="outline" className="mt-4 text-[var(--danger)]" onClick={() => setArticles(articles.filter((_, idx) => idx !== i))}>删除此文章</Button>
           </fieldset>
         ))}
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <button
-          type="button"
+        <Button
+          variant="outline"
           disabled={!ready || busy || articles.length >= 24}
           onClick={() => setArticles([...articles, { id: "", group: articles[0]?.group ?? "开始使用", title: "", summary: "", sections: [{ title: "", text: "" }], link: "/", linkLabel: "了解更多" }])}
-          className="rounded-md border border-slate-300 px-4 py-2 text-sm disabled:opacity-60"
         >
           添加文章
-        </button>
-        <button type="button" disabled={!ready || busy} onClick={() => void save()} className="rounded-md bg-primary px-4 py-2 text-sm text-white disabled:opacity-60">保存帮助文档</button>
+        </Button>
+        <Button disabled={!ready || busy} onClick={() => void save()}>保存帮助文档</Button>
       </div>
     </section>
   );

@@ -344,19 +344,18 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
           aria-label="搜索模型"
           className="w-72"
         />
-        <button type="submit" className="rounded-md bg-primary px-3 py-1.5 text-sm text-[var(--primary-foreground)] transition-opacity hover:opacity-90">
+        <Button type="submit">
           搜索
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={() => {
             void loadVendors();
             setShowCreate(true);
           }}
-          className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white transition-opacity hover:opacity-90"
         >
           + 新增模型
-        </button>
+        </Button>
         <span className="ml-auto text-xs text-slate-500">共 {total} 个模型</span>
       </form>
 
@@ -367,7 +366,7 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
           <Button variant="outline" size="sm" disabled={batchBusy} onClick={() => void handleBatch("deactivate")}>批量下架</Button>
           <Button variant="ghost" size="sm" disabled={batchBusy} onClick={() => void handleBatch("hide")}>批量隐藏</Button>
           <Button variant="danger" size="sm" disabled={batchBusy} onClick={() => void handleBatch("delete")}>批量删除</Button>
-          <button onClick={() => setSelectedIds(new Set())} className="ml-auto text-xs text-slate-400">取消选择</button>
+          <Button variant="ghost" size="sm" className="ml-auto text-slate-400" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
         </div>
       ) : null}
 

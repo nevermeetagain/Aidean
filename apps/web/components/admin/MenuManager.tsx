@@ -111,9 +111,9 @@ export function MenuManager() {
                   {!g.isVisible && <Badge variant="secondary">已隐藏</Badge>}
                   {!g.isDropdown && <Badge variant="secondary">独立一级</Badge>}
                   <div className="ml-auto flex items-center gap-2">
-                    <button className="text-xs text-primary hover:underline" onClick={() => setEditingId(editing ? null : g.id)}>{editing ? "收起" : "编辑"}</button>
-                    <button className="text-xs text-slate-500 hover:underline" onClick={() => void mutate(g.id, { isVisible: !g.isVisible }, g.isVisible ? "已隐藏" : "已显示")}>{g.isVisible ? "隐藏" : "显示"}</button>
-                    <button className="text-xs text-red-500 hover:underline" onClick={() => setPendingDelete(g)}>删除</button>
+                    <Button variant="ghost" size="sm" className="text-primary hover:underline" onClick={() => setEditingId(editing ? null : g.id)}>{editing ? "收起" : "编辑"}</Button>
+                    <Button variant="ghost" size="sm" className="text-slate-500 hover:underline" onClick={() => void mutate(g.id, { isVisible: !g.isVisible }, g.isVisible ? "已隐藏" : "已显示")}>{g.isVisible ? "隐藏" : "显示"}</Button>
+                    <Button variant="ghost" size="sm" className="text-[var(--danger)] hover:underline" onClick={() => setPendingDelete(g)}>删除</Button>
                   </div>
                 </div>
                 {editing && (
@@ -131,9 +131,9 @@ export function MenuManager() {
                           <span className="font-mono text-[11px] text-slate-400">{leaf.path}</span>
                           {!leaf.isVisible && <Badge variant="secondary">已隐藏</Badge>}
                           <div className="ml-auto flex items-center gap-2">
-                            <button className="text-xs text-primary hover:underline" onClick={() => setEditingId(lEditing ? null : leaf.id)}>{lEditing ? "收起" : "编辑"}</button>
-                            <button className="text-xs text-slate-500 hover:underline" onClick={() => void mutate(leaf.id, { isVisible: !leaf.isVisible }, leaf.isVisible ? "已隐藏" : "已显示")}>{leaf.isVisible ? "隐藏" : "显示"}</button>
-                            <button className="text-xs text-red-500 hover:underline" onClick={() => setPendingDelete(leaf)}>删除</button>
+                            <Button variant="ghost" size="sm" className="text-primary hover:underline" onClick={() => setEditingId(lEditing ? null : leaf.id)}>{lEditing ? "收起" : "编辑"}</Button>
+                            <Button variant="ghost" size="sm" className="text-slate-500 hover:underline" onClick={() => void mutate(leaf.id, { isVisible: !leaf.isVisible }, leaf.isVisible ? "已隐藏" : "已显示")}>{leaf.isVisible ? "隐藏" : "显示"}</Button>
+                            <Button variant="ghost" size="sm" className="text-[var(--danger)] hover:underline" onClick={() => setPendingDelete(leaf)}>删除</Button>
                           </div>
                         </div>
                         {lEditing && (
@@ -277,7 +277,7 @@ function CreateLeafForm({ groupCode, onDone }: { groupCode: string; onDone: () =
   }
 
   if (!open) {
-    return <button className="text-xs text-primary hover:underline" onClick={() => setOpen(true)}>+ 在此分组新建子项</button>;
+    return <Button variant="ghost" size="sm" className="text-primary hover:underline" onClick={() => setOpen(true)}>+ 在此分组新建子项</Button>;
   }
   return (
     <div className="space-y-2 rounded border border-slate-200 bg-slate-50 p-2">

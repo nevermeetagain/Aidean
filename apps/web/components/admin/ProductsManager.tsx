@@ -442,28 +442,20 @@ export function ProductsManager() {
       className: "px-3 py-2",
       render: p => (
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => openEdit(p)}
-            className="rounded border border-slate-200 px-2 py-1 text-xs text-slate-600 transition-colors hover:bg-slate-50"
-          >
+          <Button variant="outline" size="sm" className="text-slate-600" onClick={() => openEdit(p)}>
             编辑
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void toggleStatus(p)}
-            className="rounded border border-slate-200 px-2 py-1 text-xs text-slate-600 transition-colors hover:bg-slate-50"
-          >
+          </Button>
+          <Button variant="outline" size="sm" className="text-slate-600" disabled={busy} onClick={() => void toggleStatus(p)}>
             {p.status === "ACTIVE" ? "下架" : "上架"}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-[var(--danger)]"
             onClick={() => setDeleteTarget(p)}
-            className="rounded border border-rose-200 px-2 py-1 text-xs text-rose-600 transition-colors hover:bg-rose-50"
           >
             删除
-          </button>
+          </Button>
         </div>
       ),
     },
@@ -479,22 +471,18 @@ export function ProductsManager() {
 
       <div className="flex items-center justify-between">
         <span className="text-xs text-slate-500">共 {rows.length} 个产品</span>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="rounded-md bg-primary px-3 py-1.5 text-sm text-[var(--primary-foreground)] transition-opacity hover:opacity-90"
-        >
+        <Button variant="primary" onClick={openCreate}>
           新建产品
-        </button>
+        </Button>
       </div>
 
       {selectedIds.size > 0 ? (
         <div className="mb-3 flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2">
           <span className="text-xs text-primary">已选 {selectedIds.size} 项</span>
-          <button onClick={() => void handleBatch("activate")} disabled={batchBusy} className="rounded bg-emerald-500 px-2 py-1 text-xs text-white disabled:opacity-40">批量启用</button>
-          <button onClick={() => void handleBatch("deactivate")} disabled={batchBusy} className="rounded bg-amber-500 px-2 py-1 text-xs text-white disabled:opacity-40">批量停用</button>
-          <button onClick={() => void handleBatch("delete")} disabled={batchBusy} className="rounded bg-rose-600 px-2 py-1 text-xs text-white disabled:opacity-40">批量删除</button>
-          <button onClick={() => setSelectedIds(new Set())} className="ml-auto text-xs text-slate-500">取消选择</button>
+          <Button size="sm" disabled={batchBusy} onClick={() => void handleBatch("activate")}>批量启用</Button>
+          <Button variant="dark" size="sm" disabled={batchBusy} onClick={() => void handleBatch("deactivate")}>批量停用</Button>
+          <Button variant="danger" size="sm" disabled={batchBusy} onClick={() => void handleBatch("delete")}>批量删除</Button>
+          <Button variant="ghost" size="sm" className="ml-auto text-slate-500" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
         </div>
       ) : null}
 
@@ -653,23 +641,25 @@ export function ProductsManager() {
                     </option>
                   ))}
                 </Select>
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 text-[var(--danger)]"
                   onClick={() => setForm({ ...form, links: form.links.filter((_, idx) => idx !== i) })}
-                  className="shrink-0 rounded border border-rose-200 px-2 py-1 text-xs text-rose-600 transition-colors hover:bg-rose-50"
                 >
                   删
-                </button>
+                </Button>
               </div>
             ))}
             {form.links.length < 6 ? (
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2 text-slate-600"
                 onClick={() => setForm({ ...form, links: [...form.links, { label: "", url: "", kind: "other" }] })}
-                className="mt-2 rounded border border-slate-200 px-2 py-1 text-xs text-slate-600 transition-colors hover:bg-slate-50"
               >
                 ＋ 添加链接
-              </button>
+              </Button>
             ) : null}
           </div>
           <Label className="block text-xs font-medium text-slate-500">

@@ -133,13 +133,14 @@ export function PartnerKeysManager() {
       header: "操作",
       className: "px-3 py-2",
       render: k => (
-        <button
+        <Button
+          variant={k.isActive ? "dark" : "primary"}
+          size="sm"
           onClick={() => toggleActive(k.id, k.isActive)}
           disabled={busy}
-          className={`rounded px-2 py-1 text-xs ${k.isActive ? "bg-amber-500 text-white" : "bg-emerald-500 text-white"} disabled:opacity-40`}
         >
           {k.isActive ? "停用" : "启用"}
-        </button>
+        </Button>
       ),
     },
   ];
@@ -153,15 +154,15 @@ export function PartnerKeysManager() {
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
           <div className="text-sm font-medium text-amber-800">⚠ 新密钥（仅本次显示，请立即保存）</div>
           <code className="mt-1 block break-all text-xs text-amber-900">{newKey}</code>
-          <button onClick={() => setNewKey(null)} className="mt-2 text-xs text-amber-600">已保存，关闭</button>
+          <Button variant="ghost" size="sm" className="mt-2 text-amber-600" onClick={() => setNewKey(null)}>已保存，关闭</Button>
         </div>
       )}
 
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium text-slate-700">密钥列表（{rows.length}）</h2>
-        <button onClick={() => setShowCreate(s => !s)} className="rounded bg-primary px-3 py-1.5 text-xs text-white">
+        <Button variant={showCreate ? "outline" : "primary"} size="sm" onClick={() => setShowCreate(s => !s)}>
           {showCreate ? "取消" : "新建密钥"}
-        </button>
+        </Button>
       </div>
 
       {showCreate && (
@@ -181,9 +182,9 @@ export function PartnerKeysManager() {
       {selectedIds.size > 0 ? (
         <div className="mb-3 flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2">
           <span className="text-xs text-primary">已选 {selectedIds.size} 项</span>
-          <button onClick={() => void handleBatch("disable")} disabled={batchBusy} className="rounded bg-amber-500 px-2 py-1 text-xs text-white disabled:opacity-40">批量停用</button>
-          <button onClick={() => void handleBatch("delete")} disabled={batchBusy} className="rounded bg-rose-600 px-2 py-1 text-xs text-white disabled:opacity-40">批量删除</button>
-          <button onClick={() => setSelectedIds(new Set())} className="ml-auto text-xs text-slate-500">取消选择</button>
+          <Button variant="dark" size="sm" disabled={batchBusy} onClick={() => void handleBatch("disable")}>批量停用</Button>
+          <Button variant="danger" size="sm" disabled={batchBusy} onClick={() => void handleBatch("delete")}>批量删除</Button>
+          <Button variant="ghost" size="sm" className="ml-auto text-slate-500" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
         </div>
       ) : null}
 
