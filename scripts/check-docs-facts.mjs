@@ -132,10 +132,10 @@ const assertions = [
   },
   {
     id: "spec-count",
-    desc: "spec 文件总数 = 206（RK-11-07/09 新增 admin/__tests__/rk11-prod-scripts.spec.ts + B11-06 新增 session-store/middleware-session-hint/favorites-session-gate 3 spec + B11-10/11 新增 pagination/pagination-guard/api-envelope-exits 3 spec + B11-03 新增 matrix-constants/matrix-backfill/matrix-routes/panel-state 4 spec 195→206，R10-01；前次 B11-08 新增 apps/web/lib/features/admin/__tests__/scripts-executions-route.spec.ts 194→195，R10-01；前次 TASK-030 新增 e2e/tests/promotion-billing.spec.ts 193→194，R10-01）",
+    desc: "spec 文件总数 = 207（B11-11 新增 apps/web/lib/features/admin/__tests__/admin-list-pagination.spec.ts 覆盖 15 个列表端点分页守卫 206→207 + RK-11-07/09 新增 admin/__tests__/rk11-prod-scripts.spec.ts 205→206，R10-01；前次 B11-06 新增 session-store/middleware-session-hint/favorites-session-gate 3 spec + B11-10/11 新增 pagination/pagination-guard/api-envelope-exits 3 spec + B11-03 新增 matrix-constants/matrix-backfill/matrix-routes/panel-state 4 spec 195→205，R10-01；前次 B11-08 新增 apps/web/lib/features/admin/__tests__/scripts-executions-route.spec.ts 194→195，R10-01；前次 TASK-030 新增 e2e/tests/promotion-billing.spec.ts 193→194，R10-01）",
     check: () =>
       String(walk("e2e", (n) => n.endsWith(".spec.ts")).length + walk("apps/web", (n) => n.endsWith(".spec.ts")).length),
-    expect: "206",
+    expect: "207",
   },
   {
     id: "queryraw-biz",

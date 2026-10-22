@@ -6,6 +6,7 @@
  */
 import { prisma } from "../../../../../lib/db/prisma";
 import { requireAdminApi } from "../../../../../lib/features/auth/session";
+import { parseOptionalInt, parseIntParam, parsePagination } from "../../../../../lib/http/pagination";
 import { ApiError, ERROR_CODES } from "../../_lib/errors";
 import { withApi, type RouteContext } from "../../_lib/handler";
 import { writeAudit } from "../../_lib/audit";
@@ -16,21 +17,32 @@ export const GET = withApi(async (req: Request) => {
   await requireAdminApi("admin.evaluations.read");
 
   const url = new URL(req.url);
-  const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1"));
-  const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get("pageSize") ?? "20")));
+  // B11-11（Q-11-05=A / DEF-011-15）：非法整数串显式 400（不再 500，也不静默回退）；
+  // 空串视同缺省；合法值仍由 parsePagination 钳制到既有区间。
+  for (const key of ["page", "pageSize"] as const) {
+    const raw = url.searchParams.get(key);
+    if (raw !== null && raw !== "" && Number.isNaN(parseIntParam(raw, Number.NaN))) {
+      throw new ApiError(ERROR_CODES.BAD_REQUEST, `参数 ${key} 必须为整数`);
+    }
+  }
+  const { page, pageSize, skip, take } = parsePagination(url, { defaultPageSize: 20, maxPageSize: 100 });
   const status = url.searchParams.get("status");
 
-  const where = {
-    deletedAt: null,
-    ...(status !== null ? { status: parseInt(status) } : {}),
-  };
+  const where: { deletedAt: null; status?: number } = { deletedAt: null };
+  if (status !== null && status !== "") {
+    const parsedStatus = parseOptionalInt(url, "status");
+    if (parsedStatus === undefined) {
+      throw new ApiError(ERROR_CODES.BAD_REQUEST, "参数 status 必须为整数");
+    }
+    where.status = parsedStatus;
+  }
 
   const [items, total] = await Promise.all([
     prisma.evaluation.findMany({
       where,
       orderBy: { createdAt: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
+      skip,
+      take,
       include: {
         evaluationModels: {
           select: { id: true, modelId: true, model: { select: { nameDisplay: true, nameCn: true, slug: true } } },

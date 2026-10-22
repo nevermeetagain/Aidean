@@ -4,6 +4,8 @@
 import { withApi } from "../../../_lib/handler";
 import { requireAdminApi } from "../../../../../../lib/features/auth/session";
 import { prisma } from "../../../../../../lib/db/prisma";
+import { parseIntParam, parsePagination } from "../../../../../../lib/http/pagination";
+import { ApiError, ERROR_CODES } from "../../../_lib/errors";
 import { writeAudit } from "../../../_lib/audit";
 import { revalidatePath } from "next/cache";
 
@@ -12,9 +14,15 @@ export const dynamic = "force-dynamic";
 export const GET = withApi(async (req: Request) => {
   const session = await requireAdminApi("admin.discovery.read");
   const url = new URL(req.url);
-  // S8.4 / WC#8：分页封顶——page≥1、pageSize 经 Math.min 封顶 100（防超大 take 扫全表），NaN 回落默认
-  const page = Math.max(1, Number.parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
-  const pageSize = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get("pageSize") ?? "20", 10) || 20));
+  // B11-11（Q-11-05=A / DEF-011-15）：原写法 `Number.parseInt(...) || 20` 虽不产生 NaN，
+  // 但把非法串静默当缺省；现统一为显式 400。合法值仍按 pageSize 上限 100 钳制（S8.4 / WC#8）。
+  for (const key of ["page", "pageSize"] as const) {
+    const raw = url.searchParams.get(key);
+    if (raw !== null && raw !== "" && Number.isNaN(parseIntParam(raw, Number.NaN))) {
+      throw new ApiError(ERROR_CODES.BAD_REQUEST, `参数 ${key} 必须为整数`);
+    }
+  }
+  const { page, pageSize, skip, take } = parsePagination(url, { defaultPageSize: 20, maxPageSize: 100 });
   const status = url.searchParams.get("status");
   const type = url.searchParams.get("type");
 
@@ -27,8 +35,8 @@ export const GET = withApi(async (req: Request) => {
     prisma.discoveryCandidate.findMany({
       where,
       orderBy: { discoveredAt: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
+      skip,
+      take,
       include: { evidence: { take: 5, orderBy: { confidence: "desc" } } },
     }),
     prisma.discoveryCandidate.count({ where }),

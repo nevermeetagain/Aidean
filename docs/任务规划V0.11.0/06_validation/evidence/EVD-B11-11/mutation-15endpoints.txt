@@ -1,0 +1,86 @@
+# B11-11 变异检验：15 个列表端点逐个回退为原写法，定向单测必须失败
+DATE=2026-10-22T12:10:00+08:00（第二轮：审核修复 benchmarks 空过滤值分支 + 新增空白串/下界用例后重跑）
+SPEC=apps/web/lib/features/admin/__tests__/admin-list-pagination.spec.ts（107 tests）
+METHOD=每个端点：记 SHA256 → `git checkout HEAD -- <route>`（回退为未接入写法）→ 跑 vitest（-t 端点名）→ 记录退出码 → finally 还原编辑版 → 校验 SHA256 → 再跑一次确认全绿
+SCRIPT=.scratch/mutate-all.ps1（工作区，未入库）
+RAW_LOG=.scratch/mutation-<endpoint>.txt（15 份原始日志，未入库）
+
+## 汇总
+| # | 端点 | mutant 失败数 | mutant exit | 还原后通过 | 还原后 exit | SHA 一致 |
+|---|------|--------------|-------------|-----------|------------|---------|
+| 1 | announcements | 5 | 1 | 7 | 0 | True |
+| 2 | api-stations | 5 | 1 | 7 | 0 | True |
+| 3 | audit-logs | 6 | 1 | 9 | 0 | True |
+| 4 | benchmarks | 7 | 1 | 9 | 0 | True |
+| 5 | capabilities | 4 | 1 | 7 | 0 | True |
+| 6 | discovery/candidates | 4 | 1 | 7 | 0 | True |
+| 7 | evaluations | 7 | 1 | 9 | 0 | True |
+| 8 | free-quotas | 5 | 1 | 7 | 0 | True |
+| 9 | intelligence/reports | 5 | 1 | 5 | 0 | True |
+| 10 | intelligence/snapshots | 5 | 1 | 5 | 0 | True |
+| 11 | protocols | 4 | 1 | 7 | 0 | True |
+| 12 | scripts | 5 | 1 | 7 | 0 | True |
+| 13 | sync/batches | 5 | 1 | 7 | 0 | True |
+| 14 | sync/changes | 5 | 1 | 7 | 0 | True |
+| 15 | tier-mappings | 5 | 1 | 7 | 0 | True |
+
+**结论：15/15 全部 MUT_EXIT=1、RESTORE_EXIT=0、SHA_MATCH=True。**
+所有 mutant 均出现 `AssertionError: expected 200 to be 400`——回退原写法后非法串重新变成「静默回退 + NaN 进 Prisma」，单测立即捕获。
+
+## 逐端点 SHA256（前 16 位）
+| 端点 | SHA_BEFORE（编辑版） | SHA_MUTANT（HEAD 原版） |
+|------|---------------------|------------------------|
+| announcements | F37F3D09E59E5CE7 | 7217B078C77234B7 |
+| api-stations | 59FCD9F8A223CC4C | 1676E58C197F0D4B |
+| audit-logs | 41A2038D842F3FCD | DB204B68CBBB6C80 |
+| benchmarks | CEA1FB995D9E56B0 | D1424ABD8EBBA0CE |
+| capabilities | 980FF08E7AFADF2D | 513676D5B42427C2 |
+| discovery/candidates | EECAB4D545AC8E35 | 9C942762615B6AF8 |
+| evaluations | 54C444ADD36A3EDF | F61AC43DCBD461CB |
+| free-quotas | 4AE94A58655468EE | 0417375C9C5F9E06 |
+| intelligence/reports | AC0B96DD12FF5BA7 | 68E35449ACFFB25B |
+| intelligence/snapshots | 290514D6AD67024E | F835EE4BD47B0ADE |
+| protocols | A813B7991420DC56 | 148CBC1341F8CB61 |
+| scripts | FC412676FD8772AD | 9ADAEC3F8EC1DE77 |
+| sync/batches | E333C719F7B07C92 | 8DD182291323CCD0 |
+| sync/changes | 55565247D02B3B6B | 4BEDB035DED66BC0 |
+| tier-mappings | DADD9CEC14D4974A | BE2C848D1D78FB82 |
+
+注：`benchmarks` 的 SHA_BEFORE 由首轮 `F01CD6D6…` 变为 `CEA1FB99…`，原因是审核后修复了 `verifiedStatus !== undefined` 死分支（改为 `!== ""`），使 `?verifiedStatus=` 空过滤值回到「视同缺省」。
+
+## 为什么失败数是 4~7 而非全部 107 例
+变异只回退「分页解析」这一处，失败的恰是依赖该行为的用例：
+- 基础 4 例：`?page=abc`、`?pageSize=xyz`、`?page=abc&pageSize=xyz`、`?page=%20`（空白串在原写法下 parseInt→NaN→`||1` 回退 200）。
+- 带整数过滤参数的端点（audit-logs/benchmarks/evaluations）：再加 `?<filter>=abc` 与非空过滤参数相关用例，共 6~7 例。
+- capabilities/protocols/discovery：默认值不同，4 例。
+- intelligence 两组：`?limit=abc`、`?limit=xyz`、`?limit=%20`、`?limit=0`、`?limit=-1` 共 5 例。
+正常值/钳制用例在原写法下同样通过（原写法已有 Math.max/min 钳制），故不失败——属预期。
+
+## 原始日志摘录（audit-logs，验收点）
+```
+== MUTATION audit-logs ==
+ROUTE=apps/web/app/api/v1/admin/audit-logs/route.ts
+SHA_BEFORE=41A2038D842F3FCDF5E096E6246CA97119435775178134B38FD1B5D69883FEC8
+SHA_MUTANT=DB204B68CBBB6C80411B1BE8143E5811F7942C2A81F3BECDCF9AA531C1BD5AB4
+MUTANT_DIFFERS_FROM_EDIT=True
+>>> pnpm --filter web exec vitest run lib/features/admin/__tests__/admin-list-pagination.spec.ts -t audit-logs  [mutant]
+ × GET /api/v1/admin/audit-logs 分页守卫（B11-11） > ?page=abc → 400 且不触达 Prisma（NaN 不可能进 skip/take/where）
+   → expected 200 to be 400 // Object.is equality
+（另有 ?pageSize=xyz / ?page=abc&pageSize=xyz / ?page=%20 / ?action=abc 等，共 6 例失败）
+EXIT(mutant)=1
+SHA_AFTER=41A2038D842F3FCDF5E096E6246CA97119435775178134B38FD1B5D69883FEC8
+MATCH=True
+>>> 还原后重跑（-t audit-logs）
+Test Files  1 passed (1)
+     Tests  9 passed (9)
+EXIT(restored)=0
+```
+
+## 守卫侧交叉验证
+- 棘轮模式：`node scripts/guard/pagination-guard.mjs` → 扫描 route.ts=158，P1 命中文件=0（名单内 0），failures=0 warnings=0，RESULT: PASS，exit 0。
+- strict 模式：`node scripts/guard/pagination-guard.mjs --strict` → exit 0（名单已清空，strict 与 ratchet 同义）。
+- 守卫单测：`lib/http/pagination-guard.spec.ts` 3 tests passed（含「strict 在名单非空时 exit 1、清空后 exit 0」断言）。
+
+## 说明
+- 变异脚本首版曾因 `$ErrorActionPreference="Stop"` + 原生命令 stderr 导致中断且未还原文件；已当场用 `.mutbak` 还原并校验 SHA 一致，随后重写为 `try/finally` 强制还原。本文记录重写后的完整两轮 15×2 结果（第一轮 87 tests 基线，第二轮 107 tests 含审核补充用例）。
+- 变异脚本与原始日志位于工作区 `.scratch/`（.gitignore 覆盖），本文件为入库的精简证据；如需逐字节复核可重跑 `.scratch/mutate-all.ps1`。

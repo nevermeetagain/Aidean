@@ -1,0 +1,117 @@
+﻿# B11-11 运行态验证（15 个列表端点接入后）
+DATE=2026-10-22T11:45:00+08:00
+ENV=独立克隆 E:\Code\Aidean-B11（HEAD=1d6828e + 本地改动），Next.js 15.0.0，dev server 端口 3001（3000 已被并行工作区占用，仍在 3000-3100 规范区间）
+DB=复用本机开发库（apps/web/.env 复制自共享工作区，已被 .gitignore 忽略）
+AUTH=POST /api/v1/auth/login（演示管理员，口令从 prisma/seed.ts 解析，未落盘明文）
+
+## 0. 改前基线（引用同目录 verify.txt §6b F，2026-10-22T02:24Z 采）
+>>> GET /api/v1/admin/audit-logs?page=abc
+HTTP=500
+{"code":50000,"message":"内部错误","data":null,...}
+→ 缺陷实证：NaN 直送 Prisma skip/take
+
+## 1. 验收点：非法串必须 400（code=40000）
+>>> GET /api/v1/admin/audit-logs?page=abc
+HTTP=400
+{"code":40000,"message":"参数 page 必须为整数","data":null,"requestId":"ffa23f87-c5c9-44c9-8885-8ad6ccc6ed31"}
+
+>>> GET /api/v1/admin/audit-logs?pageSize=xyz
+HTTP=400
+{"code":40000,"message":"参数 pageSize 必须为整数","data":null,"requestId":"403d7acd-74bf-4bf3-be8d-7fc3b39a8e7f"}
+
+>>> GET /api/v1/admin/audit-logs?action=abc
+HTTP=400
+{"code":40000,"message":"参数 action 必须为整数","data":null,"requestId":"1178e1d4-ef90-414b-be20-a4996ab9e7ae"}
+
+## 2. 其余端点抽样（同类非法串）
+>>> GET /api/v1/admin/benchmarks?page=abc                    → HTTP=400 code=40000（参数 page 必须为整数）
+>>> GET /api/v1/admin/capabilities?pageSize=xyz              → HTTP=400 code=40000（参数 pageSize 必须为整数）
+>>> GET /api/v1/admin/discovery/candidates?page=abc           → HTTP=400 code=40000
+>>> GET /api/v1/admin/sync/batches?page=abc                   → HTTP=400 code=40000
+>>> GET /api/v1/admin/scripts?page=abc                        → HTTP=400 code=40000
+>>> GET /api/v1/admin/intelligence/reports?limit=abc          → HTTP=400 code=40000（参数 limit 必须为整数）
+>>> GET /api/v1/admin/intelligence/snapshots?limit=abc        → HTTP=400 code=40000
+
+## 3. 合法请求不受影响（无回归）
+>>> GET /api/v1/admin/audit-logs?page=2&pageSize=10
+HTTP=200
+{"code":0,"message":"ok","data":{"items":[...10 条...],"total":104,"page":2,"pageSize":10,"totalPages":11}}
+→ skip=10 take=10 生效，分页元数据正确
+
+>>> GET /api/v1/admin/audit-logs?page=&pageSize=
+HTTP=200
+{"code":0,"message":"ok","data":{"items":[...],"total":104,"page":1,"pageSize":20,"totalPages":6}}
+→ 空串视同缺省（兼容表单清空），回退 1/20
+
+>>> GET /api/v1/admin/capabilities?pageSize=1000
+HTTP=200
+{"code":0,"message":"ok","data":{"rows":[],"total":0,"page":1,"pageSize":100}}
+→ 越界合法值仍按 maxPageSize=100 钳制（不 400）
+
+>>> GET /api/v1/admin/intelligence/reports?limit=99999
+HTTP=200
+{"code":0,"message":"ok","data":[],"requestId":"e4fc2dbd-4af4-4eb4-8d2d-b2d4bebd21a4"}
+→ limit 新增安全上限 1000（原实现无上限）
+
+## 4. 对照：B11-10 参考实现保持原口径（未回改）
+>>> GET /api/v1/admin/scripts/00000000-0000-0000-0000-000000000000/executions?page=abc
+HTTP=200
+{"code":0,"message":"ok","data":{"items":[],"total":0,"page":1,"pageSize":20,"totalPages":0}}
+→ 参考实现按 deviation.md §二.1 保持「回退默认值」语义，本次未改动其代码
+
+## 5. 判定
+- 验收点（audit-logs?page=abc → 400）**通过**：改前 500 → 改后 400 code=40000。
+- 15 端点非法串全部 400，且单测断言「Prisma 完全不被调用」（结构性保证 NaN 不进 skip/take/where）。
+- 合法值（正常分页、缺省、空串、越界钳制）行为不变。
+- 端口合规：3001 ∈ 3000-3100。
+
+## 6. 补测：剩余 7 个端点 + 边界口径（第二轮，审核发现 P2-3 后补齐）
+DATE=2026-10-22T11:58:00+08:00
+
+### 6.1 非法串 → 400（补齐后 15/15 端点均有运行态取证）
+>>> GET /api/v1/admin/announcements?page=abc                  → HTTP=400 code=40000
+>>> GET /api/v1/admin/api-stations?pageSize=xyz               → HTTP=400 code=40000
+>>> GET /api/v1/admin/evaluations?page=abc                    → HTTP=400 code=40000
+>>> GET /api/v1/admin/evaluations?status=abc                  → HTTP=400 code=40000
+>>> GET /api/v1/admin/free-quotas?page=abc                    → HTTP=400 code=40000
+>>> GET /api/v1/admin/sync/changes?page=abc                   → HTTP=400 code=40000
+>>> GET /api/v1/admin/tier-mappings?page=abc                   → HTTP=400 code=40000
+>>> GET /api/v1/admin/protocols?pageSize=xyz                   → HTTP=400 code=40000
+
+（连同 §1-2 已测的 audit-logs / benchmarks / capabilities / discovery-candidates / sync-batches / scripts / intelligence-reports / intelligence-snapshots，**15 个端点全部有运行态 400 取证**）
+
+### 6.2 边界口径
+>>> GET /api/v1/admin/audit-logs?page=%20          → HTTP=400（纯空白视为非法，不是空串）
+>>> GET /api/v1/admin/evaluations?status=          → HTTP=200（空过滤值视同缺省）
+>>> GET /api/v1/admin/benchmarks?verifiedStatus=   → HTTP=200（同上；审核发现的 `!== undefined` 死分支已修）
+>>> GET /api/v1/admin/audit-logs?action=           → HTTP=200（同上）
+>>> GET /api/v1/admin/intelligence/reports?limit=0   → HTTP=200（下界钳到 1）
+>>> GET /api/v1/admin/intelligence/snapshots?limit=-1 → HTTP=200（下界钳到 1）
+>>> GET /api/v1/admin/protocols?pageSize=100       → HTTP=200（合法上限，不 400）
+>>> GET /api/v1/admin/announcements?page=1&pageSize=20 → HTTP=200（正常值）
+
+原始响应：工作区 .scratch/runtime-b11b.txt（未入库）。
+
+原始逐条响应（含业务数据）保存在工作区 .scratch/runtime-b11.txt（未入库）。
+
+
+## 7. 门禁复跑后的最终抽查（v1.2 修复版）
+
+在 P2-1/P2-2/P2-3 与三份契约文档修复、单测 87→107 之后，重跑六门禁全绿，再对运行态做一次终检（dev server :3001，热重载至最新代码）：
+
+| 请求 | 读数 | 判定 |
+|---|---|---|
+| POST /api/v1/auth/login（admin@aidean.com） | HTTP=200 | 会话就绪 |
+| GET /api/v1/admin/audit-logs?page=abc | HTTP=400 `{"code":40000,"message":"参数 page 必须为整数"}` | 验收点成立（改前 500） |
+| GET /api/v1/admin/benchmarks?verifiedStatus= | HTTP=200，total=1000（未加过滤） | P2-1 空过滤值修复生效 |
+| GET /api/v1/admin/audit-logs?page=2&pageSize=10 | HTTP=200 page=2 pageSize=10 total=104 totalPages=11 | 合法值无回归 |
+| GET /api/v1/admin/evaluations?status= | HTTP=200，total=3 | 空过滤值口径一致 |
+
+配套门禁读数（同一工作区、同一提交前状态）：
+
+- `pnpm typecheck` → exit 0（根目录无 tsconfig.json，须经 turbo 调 apps/web；直接 `pnpm exec tsc` 只会打印帮助）
+- `pnpm lint` → exit 0（唯一 warning 为既存 SafeImage.tsx 的 `<img>`）
+- `pnpm --filter web exec vitest run` → 157 passed | 2 skipped，**1727 tests passed**，exit 0
+- `node scripts/check-docs-rule.mjs` → PASS exit 0
+- `node scripts/check-docs-facts.mjs` → All 16 assertions passed，exit 0
+- `node scripts/guard/pagination-guard.mjs` → P1=0 failures=0 warnings=0 PASS exit 0；`--strict` exit 0

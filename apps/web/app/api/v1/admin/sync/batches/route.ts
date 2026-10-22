@@ -15,8 +15,10 @@ import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../../../../../lib/db/prisma';
 import { requireAdminApi } from '../../../../../../lib/features/auth/session';
+import { parseIntParam, parsePagination } from '../../../../../../lib/http/pagination';
 import { SyncOrchestrator } from '../../../../../../lib/sync/sync-orchestrator';
 import { ADAPTER_REGISTRY } from '../../../../../../lib/sync/sources/adapters';
+import { ApiError, ERROR_CODES } from '../../../_lib/errors';
 import { writeAudit } from '../../../_lib/audit';
 import { withApi } from '../../../_lib/handler';
 import type { SyncConfig, SyncSource } from '../../../../../../lib/sync/types/sync';
@@ -26,8 +28,15 @@ export const GET = withApi(async (req: Request) => {
   await requireAdminApi("admin.sync.read");
 
   const url = new URL(req.url);
-  const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1'));
-  const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get('pageSize') ?? '20')));
+  // B11-11（Q-11-05=A / DEF-011-15）：非法整数串显式 400（不再 500，也不静默回退）；
+  // 空串视同缺省；合法值仍由 parsePagination 钳制到既有区间。
+  for (const key of ['page', 'pageSize'] as const) {
+    const raw = url.searchParams.get(key);
+    if (raw !== null && raw !== '' && Number.isNaN(parseIntParam(raw, Number.NaN))) {
+      throw new ApiError(ERROR_CODES.BAD_REQUEST, `参数 ${key} 必须为整数`);
+    }
+  }
+  const { page, pageSize, skip, take } = parsePagination(url, { defaultPageSize: 20, maxPageSize: 100 });
   const status = url.searchParams.get('status');
 
   const where = status ? { status } : {};
@@ -35,8 +44,8 @@ export const GET = withApi(async (req: Request) => {
     prisma.syncBatch.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
+      skip,
+      take,
       include: {
         _count: { select: { changeLogs: true } },
       },

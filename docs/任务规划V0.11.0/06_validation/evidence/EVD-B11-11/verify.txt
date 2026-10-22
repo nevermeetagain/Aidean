@@ -211,4 +211,22 @@ PG_STOP_EXIT=0
 000 3481_DOWN
 
 ======== 7. 变异检验 ========
-见同目录 mutation.txt
+见同目录 mutation.txt（参考实现）与 mutation-15endpoints.txt（15 端点，15/15 全通过）
+
+======== 8. 15 端点接入后的复验（v1.2 追加，2026-10-22T12:00+08:00）========
+见同目录 runtime.txt。摘要：
+- 验收点 GET /api/v1/admin/audit-logs?page=abc：改前 HTTP=500（本文 §6b F）→ 改后 HTTP=400 code=40000「参数 page 必须为整数」。
+- **运行态 15/15 端点均有非法串 400 取证**（runtime.txt §1-2 + §6.1）。
+- 边界口径：`?page=%20`（纯空白）→ 400；`?page=` / `?action=` / `?status=` / `?verifiedStatus=` 空串 → 200（视同缺省）；`limit=0|-1` → 钳到 1；`pageSize=1000` → 钳制 100；`page=2&pageSize=10` → 200 page=2/10（runtime.txt §3、§6.2）。
+- 参考实现 executions?page=abc 仍为 200 回退（runtime.txt §4），未回改。
+
+======== 9. 门禁读数（v1.2 追加，独立克隆 E:\Code\Aidean-B11）========
+- pnpm --filter web exec tsc --noEmit --incremental false → exit 0
+- pnpm --filter web lint → exit 0（唯一 warning：既存 components/common/SafeImage.tsx 的 <img>，与本次无关）
+- pnpm --filter web exec vitest run（全量）→ 157 passed | 2 skipped，1707 tests passed，exit 0
+- node scripts/check-docs-rule.mjs → PASS，exit 0（schema model=73 / enum=37 / admin API 基 38 / admin 页面 34 / Next 15.0.x）
+- node scripts/check-docs-facts.mjs → All 16 assertions passed，exit 0（spec-count 205→206）
+- node scripts/guard/pagination-guard.mjs → failures=0 warnings=0 RESULT: PASS，exit 0
+- node scripts/guard/pagination-guard.mjs --strict → exit 0
+- pnpm --filter web exec vitest run lib/http/pagination-guard.spec.ts → 3 passed，exit 0
+- pnpm --filter web exec vitest run lib/features/admin/__tests__/admin-list-pagination.spec.ts → 107 passed，exit 0（审核后由 87 增至 107：补空白串、空过滤值、limit 下界）

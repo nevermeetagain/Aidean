@@ -1,6 +1,6 @@
 # API 接口文档
 
-> 版本: v1.63 | 更新: 2026-10-22 | 变更: **B11-03a 协议兼容/能力矩阵投入运营（Q-11-01=A）**——新建 §5.8.11（anchor `matrix-admin-api`）登记 `/api/v1/admin/protocols{,/[id]}` 与 `/api/v1/admin/capabilities{,/[id]}` 列表 GET/POST + 单资源 GET/PATCH/DELETE（新增 4 端点、2 route 文件），zod strict 校验、错误码复用既有 40000/20001/10008，协议维度唯一真源 `ModelProtocol`；与《API架构设计方案》§7.15 双向互引（铁律 2）。
+> 版本: v1.64 | 更新: 2026-10-22 | 变更: **B11-11 15 个后台列表端点接入分页共享件**——§4.2 口径由「非法串回退默认 200」改为「非法整数串 → HTTP 400 + `code=40000`，且先于任何 Prisma 调用」；空串视同缺省、纯空白视为非法、越界合法值仍钳制；`intelligence` 的 `limit` 新增上限 1000；守卫名单已清空（strict 接线待裁定）。前次（v1.63 | 更新: 2026-10-22）变更: **B11-03a 协议兼容/能力矩阵投入运营（Q-11-01=A）**——新建 §5.8.11（anchor `matrix-admin-api`）登记 `/api/v1/admin/protocols{,/[id]}` 与 `/api/v1/admin/capabilities{,/[id]}` 列表 GET/POST + 单资源 GET/PATCH/DELETE（新增 4 端点、2 route 文件），zod strict 校验、错误码复用既有 40000/20001/10008，协议维度唯一真源 `ModelProtocol`；与《API架构设计方案》§7.15 双向互引（铁律 2）。
 > 前次（v1.62 | 更新: 2026-10-22）变更: **B11-10 / B11-11（Q-11-03=B · Q-11-05=A）**——§4 新增 §4.1 非 2xx 出口信封（anchor `api-envelope-exits`：未实现方法 → HTTP 405 + `Allow` + 信封 `code=40000`；未匹配 `/api/*` → HTTP 404 + 信封 `code=40000`，替代 0 字节空体与 27KB HTML）与 §4.2 分页参数解析口径（anchor `pagination-params`：共享件 `lib/http/pagination.ts`，非法串回退默认、越界钳制、绝不送 NaN）；与《API架构设计方案》§7.14 / §五 建立铁律 2 双向互引锚；不新增错误码（复用已登记 40000），不新增单资源 GET。
 > 前次（v1.61） | 更新: 2026-10-20 | 变更: **同步 26_用户裁决记录**——§5.2.1 补用户裁决口径注（U-15 / U-23=B / U-24=A）。
 > 前次（v1.60） | 更新: 2026-10-20 | 变更: **TASK-054 EffectivePrice 字段表（计价口径归一）**——§5.2.1 新建（anchor `effective-price-fields`）登记 `EffectivePriceSchema` v0.2 全字段，含归一字段 currency/unit/sourceCurrency/sourceUnit/sourcePrice*/fxRate/fxDate；回链《网关计费时序契约》§12 与术语表「计价口径归一」（铁律 2 双向锚）。
@@ -97,16 +97,17 @@ Route（Zod 校验 / 鉴权 / 响应归一化）→ Service（业务）→ Repos
 
 <a id="pagination-params"></a>
 
-### 4.2 分页参数解析口径（B11-11 · **共享件已落地，端点接入进行中** · DEF-011-15 · Q-11-05=A）
+### 4.2 分页参数解析口径（B11-11 · **15 个后台列表端点已接入** · DEF-011-15 · Q-11-05=A）
 
 列表端点的 `page` / `pageSize` / `limit` 及整数过滤参数（如 `status`）统一经 [分页参数解析](../governance/术语表.md#term-pagination-parse) 共享件 `apps/web/lib/http/pagination.ts`：
 
-- `page`：缺省/非数字 → `1`；`< 1` → `1`；`(page-1)*pageSize` 封顶 `2147483647`。
-- `pageSize`：缺省/非数字 → 端点默认（缺省 20）；钳制到 `[1, 端点上限]`（缺省上限 100）。
-- `limit`（如 intelligence `reports`/`snapshots`）：缺省/非数字 → 端点默认；钳制到 `[min, max]`。
-- 整数过滤参数：不可解析 → 视为未过滤（不报错）。
-- **非法分页串不再 500**：`?page=abc` 返回 200（回退默认），不会把 `NaN` 送进 Prisma。
-- 现状：参考实现 `admin/scripts/{id}/executions` 已接入；其余 15 个列表端点的接入由守卫 `scripts/guard/pagination-guard.mjs` 以棘轮名单跟踪（名单清空前，不得表述为「全站已修」）。
+- `page`：缺省 → `1`；`< 1` → `1`；`(page-1)*pageSize` 封顶 `2147483647`。
+- `pageSize`：缺省 → 端点默认（缺省 20）；钳制到 `[1, 端点上限]`（缺省上限 100）。
+- `limit`（intelligence `reports`/`snapshots`）：缺省 → 30；钳制到 `[1, 1000]`。
+- **非法整数串不再 500**（DEF-011-15）：15 个后台列表端点对 `?page=abc`、`?pageSize=xyz` 及整数过滤参数（`action`/`verifiedStatus`/`status`）非数字 → **HTTP 400 + `code=40000`**，且校验发生在任何 Prisma 调用之前（NaN 结构上不可能进 `skip`/`take`/`where`）。
+- **边界口径**：空串（`?page=`）视同缺省；纯空白串（`?page=%20`）视为非法 → 400；越界合法值（如 `pageSize=1000`）仍钳制到上限，不 400；`"10abc"` 这类可解析前缀按 `parseInt` 语义取 10（共享件既有语义，未引入全串正则）。
+- 整数过滤参数：空串 → 视为未过滤；非数字 → 400。
+- 现状：15 个端点全部接入，守卫 `scripts/guard/pagination-guard.mjs` 的 `ALLOWLIST_P1` 已清空（新增裸 `parseInt` / `Number(searchParams…)` 一律 FAIL）。参考实现 `admin/scripts/{id}/executions` 仍为「非法串回退默认（200）」历史口径，是否统一待裁定。走 Zod `z.coerce` 的其余列表端点（`holds`/`models`/`orders`/`users` 等）非法值 → 400 + `40000`，不在共享件范围。
 - 架构约束：[《API架构设计方案》§五 分页](API架构设计方案.md#pagination-params-architecture)（铁律 2 双向锚）。
 
 ## 5. 接口清单（按模块）

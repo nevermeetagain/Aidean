@@ -21,26 +21,12 @@ import { ROOT, makeReporter } from "./_lib.mjs";
 
 const API_DIR = path.join(ROOT, "apps", "web", "app", "api");
 
-/** 既存待接入名单（B11-11；接入一个删一行）。路径相对仓库根、posix 分隔。 */
-export const ALLOWLIST_P1 = [
-  // —— 无守卫 12 个（DEF-011-15 高危名单）——
-  "apps/web/app/api/v1/admin/announcements/route.ts",
-  "apps/web/app/api/v1/admin/api-stations/route.ts",
-  "apps/web/app/api/v1/admin/audit-logs/route.ts",
-  "apps/web/app/api/v1/admin/benchmarks/route.ts",
-  "apps/web/app/api/v1/admin/evaluations/route.ts",
-  "apps/web/app/api/v1/admin/free-quotas/route.ts",
-  "apps/web/app/api/v1/admin/intelligence/reports/route.ts",
-  "apps/web/app/api/v1/admin/intelligence/snapshots/route.ts",
-  "apps/web/app/api/v1/admin/scripts/route.ts",
-  "apps/web/app/api/v1/admin/sync/batches/route.ts",
-  "apps/web/app/api/v1/admin/sync/changes/route.ts",
-  "apps/web/app/api/v1/admin/tier-mappings/route.ts",
-  // —— `|| 默认值` 兜底 3 个（行为安全但口径不统一）——
-  "apps/web/app/api/v1/admin/capabilities/route.ts",
-  "apps/web/app/api/v1/admin/discovery/candidates/route.ts",
-  "apps/web/app/api/v1/admin/protocols/route.ts",
-];
+/**
+ * 既存待接入名单（B11-11；接入一个删一行）。路径相对仓库根、posix 分隔。
+ * 2026-10-22：15/15 已全部接入 `lib/http/pagination.ts`，名单清空。
+ * 例外清单为空 → 任一 route.ts 再出现裸 `parseInt` / `Number(searchParams…)` 均直接 FAIL（ratchet 亦阻断）。
+ */
+export const ALLOWLIST_P1 = [];
 
 /** P2 已人工复核的安全写法（2026-10-22 复核：均有显式兜底，不会把 NaN 送入下游） */
 export const ALLOWLIST_P2 = [

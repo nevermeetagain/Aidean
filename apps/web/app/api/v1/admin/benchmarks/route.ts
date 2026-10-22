@@ -9,6 +9,8 @@ import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../../../../lib/db/prisma';
 import { requireAdminApi } from '../../../../../lib/features/auth/session';
+import { parseOptionalInt, parseIntParam, parsePagination } from '../../../../../lib/http/pagination';
+import { ApiError, ERROR_CODES } from '../../_lib/errors';
 import { withApi } from '../../_lib/handler';
 
 export const dynamic = 'force-dynamic';
@@ -17,8 +19,15 @@ export const GET = withApi(async (req: Request) => {
   await requireAdminApi("admin.benchmarks.read");
 
   const url = new URL(req.url);
-  const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1'));
-  const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get('pageSize') ?? '20')));
+  // B11-11（Q-11-05=A / DEF-011-15）：非法整数串显式 400（不再 500，也不静默回退）；
+  // 空串视同缺省；合法值仍由 parsePagination 钳制到既有区间。
+  for (const key of ['page', 'pageSize'] as const) {
+    const raw = url.searchParams.get(key);
+    if (raw !== null && raw !== '' && Number.isNaN(parseIntParam(raw, Number.NaN))) {
+      throw new ApiError(ERROR_CODES.BAD_REQUEST, `参数 ${key} 必须为整数`);
+    }
+  }
+  const { page, pageSize, skip, take } = parsePagination(url, { defaultPageSize: 20, maxPageSize: 100 });
   const modelCode = url.searchParams.get('modelCode');
   const benchmarkType = url.searchParams.get('benchmarkType');
   const verifiedStatus = url.searchParams.get('verifiedStatus');
@@ -30,16 +39,20 @@ export const GET = withApi(async (req: Request) => {
   if (benchmarkType) {
     where.benchmarkType = { contains: benchmarkType, mode: 'insensitive' };
   }
-  if (verifiedStatus !== null && verifiedStatus !== undefined) {
-    where.verifiedStatus = parseInt(verifiedStatus);
+  if (verifiedStatus !== null && verifiedStatus !== "") {
+    const parsedVerifiedStatus = parseOptionalInt(url, 'verifiedStatus');
+    if (parsedVerifiedStatus === undefined) {
+      throw new ApiError(ERROR_CODES.BAD_REQUEST, '参数 verifiedStatus 必须为整数');
+    }
+    where.verifiedStatus = parsedVerifiedStatus;
   }
 
   const [items, total] = await Promise.all([
     prisma.benchmark.findMany({
       where,
       orderBy: { testDate: 'desc' },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
+      skip,
+      take,
       include: {
         model: {
           select: { modelCode: true, nameDisplay: true },

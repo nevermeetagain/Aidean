@@ -1,6 +1,6 @@
 # EVD-B11-11 · 偏差与裁量记录（分页参数有限性守卫统一口径，Q-11-05=A）
 
-> 版本: v1.0 | 更新: 2026-10-22 | 变更: 初版——按 2026-10-22 分工调整，本证据只覆盖 B11-11 的核心件与参考实现；其余 15 端点接入见同目录 `handoff.md`。
+> 版本: v1.3 | 更新: 2026-10-22 | 变更: 追加 §六.8（审核后修订：benchmarks 空过滤值、空白串口径、运行态 15/15、107 tests、三文档同步）与 §六.9（rebase 至 6cac347 后的远程既有失败登记）；§四为交接时快照，保留不改。
 
 ## 一、交付范围（分工调整后）
 
@@ -34,4 +34,34 @@
 
 ## 五、需升级
 
-- 无契约改动；无。
+- **契约语义变化（v1.1 修订）**：本次对 15 个后台列表端点把「非法整数串 → 200 回退」改为「→ HTTP 400 + `code=40000`」，对 API 消费方是可见行为变化，已在《API接口文档》v1.64 §4.2、《API架构设计方案》v1.21 §五、术语表 v1.25 同步；无需新增错误码（复用 `40000`），无需 ADR（不偏离技术栈）。
+- 参考实现 `admin/scripts/{id}/executions` 的口径是否统一，待 Hark 裁定（见 §六.3）。
+
+## 六、15 端点接入后的偏离与现状（v1.1 追加）
+
+1. **非法串口径：400 而非 200 回退（主动偏离 handoff §3/§5）**
+   - handoff §3 模板断言 `res.status === 200`（非法串回退默认值），本轮按用户 2026-10-22 验收指令改为 **HTTP 400 + code=40000，且 Prisma 完全不被调用**。
+   - 依据：① 用户明确验收「`audit-logs?page=abc` 返回 400」；② 本节 §二.1 已预留「需要严格校验的端点可继续用 Zod」；③ 静默回退会掩盖客户端 bug，且 15 个兄弟端点属同类缺陷，不修一半。
+   - 边界：空串 `?page=`、`?pageSize=` 仍视同缺省（兼容表单清空）；越界合法值（`pageSize=1000`）仍钳制到 `maxPageSize`，不 400；`"10abc"` 这类可解析前缀仍按 `parseIntParam` 语义取 10（与共享件保持一致，未引入全串正则）。
+   - 整数过滤参数同口径：`audit-logs.action`、`benchmarks.verifiedStatus`、`evaluations.status` 非整数 → 400。
+2. **`intelligence/reports|snapshots` 的 `limit` 新增上限 1000**：原实现 `listReports(limit=30)` 无上限（`limit=999999` 会直达查询）。改用 `parseLimit(url,{defaultLimit:30,max:1000})`，属防御性收紧，非契约变更（合法区间内行为不变）。
+3. **参考实现（`scripts/[id]/executions`）未回改**：仍是「非法串回退默认值」的 200 口径（`runtime.txt` §4 对照）。两类口径并存是本次唯一的不一致点，是否统一由 Hark 裁定；未擅自改动已完成卡（B11-10）的验收基线。
+4. **`evaluations` 改造中修正一处自造缺陷**：首版用 `...(cond ? {status: parseOptionalInt(...)} : {})` + `if (where.status === undefined) throw`，会在「未传 status」时误抛 400；已改为显式 `const where: {deletedAt:null; status?:number}` + 条件赋值，并由单测覆盖（缺省 → 200）。
+5. **守卫名单已清空但未切 strict 接线**：`ALLOWLIST_P1` 由 15 行改为 `[]`（每接入一个删一行，符合 §二.5 棘轮约定），`--strict` 已 exit 0。**`scripts/guard/run-all.mjs` 的 strict 开关未改**——按用户指令需先报例外清单、等 Hark 裁定后再切。
+6. **文档事实同步**：新增 1 个 spec（`admin-list-pagination.spec.ts`）→ `scripts/check-docs-facts.mjs` 的 `spec-count` 205→206（R10-01 惯例；该脚本是 handoff §5 五门禁之一，不同步则门禁必红）。**rebase 到 6cac347 后**该值再合并为 206→207（远程 RK-11-07/09 另新增 `rk11-prod-scripts.spec.ts`），实测 E2E 48 + web 159 = 207。
+7. **§四第 1、2 条已失效**：15 端点接入后，`audit-logs?page=abc` 实测 **400**（`runtime.txt` §1），运行态取证已补齐至 **15/15 端点**（`runtime.txt` §1-2 + §6.1）；「不得表述为全站修复」的告诫仍有效——本次只覆盖后台 15 个列表端点，其他走 Zod 的端点未动。
+8. **审核后修订（v1.2）**：
+   - `benchmarks` 的 `verifiedStatus !== undefined` 死分支改为 `!== ""`，`?verifiedStatus=` 空过滤值回到「视同缺省」（P2-1）。
+   - 空白串口径显式化：`?page=%20` → 400（「空白不是整数」），写入 API 文档 §4.2 边界段与本节；补单测 + 运行态取证（P2-2）。
+   - 运行态由 8 端点补测到 **15/15**（P2-3）。
+   - 单测 87 → **107** 例（补空白串、空过滤值、limit 下界）；变异第二轮 15/15 仍全部捕获（`mutation-15endpoints.txt`）。
+   - 契约文档同步：《API接口文档》v1.64 §4.2、《API架构设计方案》v1.21 §五、术语表 v1.25（P1）。
+   - 范围外既有问题（未修，建议单开卡）：`free-quotas?tier=FOO` / `tier-mappings?tierLevel=FOO` 非法枚举值仍会 500（改前即如此）；`PricesManager` 请求 `models?pageSize=200` 与 Zod 上限可能冲突。
+
+9. **rebase 到 6cac347 后发现的远程既有失败（非本卡引入，未修）**：
+   - `git pull --rebase` 后 `origin/main` 含 `66ce864`（B11-04a：packages/ui 新增 Select/Textarea/Label）与 `6cac347`（RK-11-07/09：bundle-scripts + node-modules-integrity）。
+   - 全量 `vitest run` 出现 **1 个 Failed Suite**：`lib/features/admin/__tests__/rk11-prod-scripts.spec.ts` → `SyntaxError: Invalid or unexpected token`（首行 `const bundle = await import("../../../../../../scripts/build/bundle-scripts.mjs")`，顶层 await 处）。单文件复现：`pnpm --filter web exec vitest run lib/features/admin/__tests__/rk11-prod-scripts.spec.ts` → `Test Files 1 failed (1) / Tests no tests`。
+   - 归因证据：`git diff origin/main HEAD -- <该 spec>` = 0 行、`git diff origin/main HEAD -- apps/web/vitest.config.ts` = 0 行 → 文件字节与 CI 配置均与我方提交无关；清 `.vite` 缓存、单文件复跑仍失败；文件内无不可见字符（U+00A0/200B/3000/FEFF 扫描为 0），行尾 CRLF 正常。
+   - 影响：本地全量 vitest 为 **1734 passed / 5 skipped / 1 failed suite**；其余 157 个文件全绿且 `Test Files 1 failed | 157 passed | 2 skipped (160)`。
+   - 处置：**未修**（超出 B11-11 白名单：属 RK-11-07/09 责任范围，修改该 spec 或 vitest 配置均需另行授权）。CI 的 `Unit tests (web)` 预计会因此红灯，需 RK 卡负责人处理；B11-11 自身的 107 例与 15 端点证据不受影响。
+
