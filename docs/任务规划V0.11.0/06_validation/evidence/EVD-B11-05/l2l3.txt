@@ -1,0 +1,57 @@
+B11-05 · L2-L 取证（失败注入单测 + 500 截图 + 运行态重试）
+生成时间：2026-10-22  环境：本地 dev（http://localhost:3000，Next.js 15.0.0 turbo）
+口令一律经环境变量注入（由 .scratch 包装脚本从 apps/web/prisma/seed.ts 读入，本文件与命令行均不含凭据）。
+
+────────────────────────────────────────
+L1 单测：apps/web/lib/features/admin/__tests__/panel-five-state.spec.ts（新建）
+命令：pnpm --filter web exec vitest run lib/features/admin/__tests__/panel-five-state.spec.ts
+结果：Test Files 1 passed (1) / Tests 12 passed (12)（Providers、AuditLogs、FreeQuotas 各 4 条）
+  每面板 4 条 = ① 首屏静态渲染 loading（根 testid + data-state=loading + -loading 子态）
+                ② 500 信封 → error 且 retryable=true（断言不落 empty）+ 首屏 URL 与改造前一致
+                ③ 断网（fetch reject）→ error httpStatus=0 retryable=true
+                ④ 403 → forbidden；200 items 空 → empty
+回归：pnpm --filter web exec vitest run lib/admin lib/features/admin
+      Test Files 26 passed (26) / Tests 340 passed (340)（前值 25 files / 328 tests，+1 file +12 tests）
+门禁局部：tsc --noEmit --incremental false exit 0；eslint 新 spec exit 0
+facts：scripts/check-docs-facts.mjs spec-count 209→210（R10-01），node scripts/check-docs-facts.mjs → All 16 assertions passed
+      （aidean-ui-refs 只统计 apps/web/components/**，新 spec 在 lib/** 故 72 不变）
+实现口径：Dialog 内含 useEffect，vitest 下 @aidean/ui 解析到包内独立 react 副本会抛 null dispatcher，
+      故按 EVD-B11-03/handoff.md §四 注与 lib/monitoring/__tests__/model-detail-ui.spec.ts 口径，
+      仅 vi.mock("@aidean/ui") 覆盖 Dialog 为替身，Button/Table/Input 等 forwardRef 组件保持真实实现。
+
+────────────────────────────────────────
+前置：dev server 重启
+B11-03b 门禁的 `pnpm --filter web build` 覆盖了 .next，导致在跑的 dev :3000 全站 500
+（GET /admin/providers、/api/v1/health 均 500）→ 结束旧进程并重启 `pnpm --filter web dev`，
+Ready in 1127ms 后页面恢复正常。运行态取证一律在重启后的 dev 上完成。
+另：本轮多次真实登录触发登录 IP 限流（LOGIN_IP_RATE_LIMIT=20 / 600s → 429，
+    表现为后续 admin 端点全部 401 code=10004「请先登录」），故 dev 以
+    AIDEAN_BYPASS_LOGIN_RATE_LIMIT=1 启动（lib/features/auth/constants.ts:141 双条件保护，
+    仅非生产生效，生产限流逻辑逐字节不变）。
+
+────────────────────────────────────────
+L2 截图：注入 500（每路由单独跑一次，桌面 1440 + 移动 390）
+命令形态：node scripts/audit/admin-shots.mjs --out <dir> --routes /admin/<seg> --inject 500:/api/v1/admin/<seg>
+读数（shots.json 的 data-state）：
+  /admin/providers      desktop state=error   mobile state=error
+  /admin/audit-logs     desktop state=error   mobile state=error
+  /admin/free-quotas    desktop state=error   mobile state=error
+产物 6 张：shots/{providers,audit-logs,free-quotas}-500.{desktop,mobile}.png
+判据核对：截图可见红底「加载失败：注入的服务端错误」+ 居中「重试」按钮；
+  工具栏（如「新增提供商」「新建额度」）在外壳之外，错误态下仍可操作 —— 符合预期。
+
+────────────────────────────────────────
+L3 运行态点重试（注入一次 500 后放行，点 -retry）
+读数（.scratch/05/l3-retry.mjs，SUMMARY rows=3 pass=true）：
+  /admin/providers      before=error  retryBtn=1(visible=true)  after=ready
+  /admin/audit-logs     before=error  retryBtn=1(visible=true)  after=ready
+  /admin/free-quotas    before=error  retryBtn=1(visible=true)  after=ready
+产物 6 张：shots/<seg>-retry-before.desktop.png（error）、shots/<seg>-retry-after.desktop.png（ready）
+
+fixture 说明（唯一数据侧妥协，已复原）：
+  首轮 free-quotas 重试后落 empty 而非 ready —— 库里 UserFreeQuota 为 0 行（seed 未建，
+  与 B11-04b L2-B 记录一致），并非外壳判定错误；这恰好反向验证「失败=error、成功且无数据=empty」。
+  为满足 L3 的 ready 判据，经 admin API 临时建 1 条：
+    POST /api/v1/admin/free-quotas → HTTP 200 code=0（tier=NORMAL / 现有模型 / 1000 / DAY），建后 total=1
+  取证结束后删除：DELETE /api/v1/admin/free-quotas/<id> → 复原 total=0。
+  providers/audit-logs 用库内真实数据（total=3 / total=149），未用夹具。
