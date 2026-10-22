@@ -4,6 +4,7 @@ import { seedOfficialNewsItems } from './seed-official-news'
 import { seedOfficialPlatforms } from './seed-official-platforms'
 import { applyPricingTiers } from './seed/pricing-tiers'
 import { seedMatrixBackfill } from './seed-matrix-backfill'
+import { applyOfferingCoverage } from './seed/offerings-coverage'
 
 const prisma = new PrismaClient()
 
@@ -1240,6 +1241,8 @@ async function main() {
   console.log(`✅ ${monitoringSourcesData.length} monitoring sources upserted`)
 
   await applyPricingTiers(prisma) // B11-02 价格分层（DEF-011-02）
+
+  await applyOfferingCoverage(prisma) // B11-07 供给覆盖（DEF-011-10）
 
   // ============================================
   // 7. Count 取证（SubTask L.1.1 验收断言）

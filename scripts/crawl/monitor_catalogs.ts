@@ -23,7 +23,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { ProviderModelObservation } from "@aidean/shared";
@@ -242,7 +242,25 @@ type Deps = {
   syncOfferingsForSource: typeof import("../../apps/web/lib/sync/writers/offering-sync").syncOfferingsForSource;
 };
 
+/**
+ * 本地直跑兜底：npm 入口（pnpm --filter web crawl:monitor）cwd=apps/web 时从 .env 读 DATABASE_URL；
+ * 仓库根直跑时退到 apps/web/.env。只补空缺，不覆盖已注入的环境变量（调度执行器会继承 env）。
+ */
+function hydrateDatabaseUrlFromEnvFile(): void {
+  if (process.env.DATABASE_URL) return;
+  const candidates = [path.resolve(process.cwd(), ".env"), path.resolve(process.cwd(), "apps/web/.env")];
+  for (const file of candidates) {
+    if (!existsSync(file)) continue;
+    const matched = /^\s*DATABASE_URL\s*=\s*["']?([^"'\r\n]+)/m.exec(readFileSync(file, "utf8"));
+    if (matched) {
+      process.env.DATABASE_URL = matched[1].trim();
+      return;
+    }
+  }
+}
+
 async function loadDeps(): Promise<Deps> {
+  hydrateDatabaseUrlFromEnvFile();
   if (!process.env.DATABASE_URL) {
     throw new Error("缺少 DATABASE_URL（写库/无 fixture 的 dry-run 需要数据库；离线请设 MONITOR_FIXTURE_DIR）");
   }
