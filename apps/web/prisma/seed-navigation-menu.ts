@@ -60,7 +60,6 @@ const GROUPS: GroupSeed[] = [
       { code: "adm_scripts", name: "脚本调度", href: "/admin/scripts", icon: "M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" },
       { code: "adm_discovery", name: "市场发现", href: "/admin/discovery", icon: "M11 5L6 9H2v6h4l5 4V5ZM15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14" },
       { code: "adm_intelligence", name: "智能仪表盘", href: "/admin/intelligence", icon: "M3 3v18h18M7 16l4-4 3 3 5-5" },
-      { code: "adm_protocols", name: "协议矩阵", href: "/admin/protocols", icon: "M4 6h16M4 12h16M4 18h16" },
       { code: "adm_capabilities", name: "兼容矩阵", href: "/admin/capabilities", icon: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" },
       { code: "adm_logs", name: "日志中心", href: "/admin/logs", icon: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01", perms: ["admin.logs.read"] },
     ],

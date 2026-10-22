@@ -263,7 +263,7 @@ export default async function PricingPage() {
           </div>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">
             下表为当前在售模型的上游官方单价，统一按 <span data-testid="display-currency">{displaySymbol} / 百万 Tokens</span>{" "}
-            展示（按访问地区：中国大陆显示人民币，其他地区显示美元）；源币种不同的行并列官方原币原价。按官方单价与实际
+            展示（按访问地区：中国大陆显示人民币，其他地区显示美元）；源币种不同的行并列官方原币原价。按实际
             Token 用量计费，按账户余额币种结算，明细在用量页可查。
           </p>
 

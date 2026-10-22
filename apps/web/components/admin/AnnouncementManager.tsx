@@ -82,7 +82,7 @@ export function AnnouncementManager() {
     (signal: AbortSignal) => loadAnnouncements(signal, page, typeFilter),
     [page, typeFilter],
   );
-  const { resource, reload, refresh } = usePanelResource(loader, (d) => d.items.length === 0);
+  const { resource, reload, refresh } = usePanelResource(loader, (d) => d.total === 0);
 
   // 筛选/翻页/主动刷新才重新取数（签名比对，StrictMode 双跑不重复请求）
   const signature = `${typeFilter}|${page}|${queryNonce}`;

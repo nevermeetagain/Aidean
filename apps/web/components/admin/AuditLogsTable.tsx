@@ -71,7 +71,7 @@ export function AuditLogsTable({
   initialPage?: number;
   initialTable?: string;
   initialAction?: string;
-} = {}) {
+}) {
   const ids = panelTestIds(AUDIT_PANEL_PREFIX);
   const [page, setPage] = useState(initialPage);
   const [tableFilter, setTableFilter] = useState(initialTable);

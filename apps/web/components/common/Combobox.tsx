@@ -147,7 +147,7 @@ export function Combobox({
         role="combobox"
         aria-label={label}
         aria-expanded={open}
-        aria-controls={listId}
+        aria-controls={open ? listId : undefined}
         aria-autocomplete="list"
         aria-activedescendant={open && options.length ? optionId(active) : undefined}
         autoComplete="off"

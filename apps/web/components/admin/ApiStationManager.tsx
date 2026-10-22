@@ -66,7 +66,7 @@ export function ApiStationManager() {
     (signal: AbortSignal) => loadApiStations(signal, page, appliedSearch),
     [page, appliedSearch],
   );
-  const { resource, reload, refresh } = usePanelResource(loader, (d) => d.items.length === 0);
+  const { resource, reload, refresh } = usePanelResource(loader, (d) => d.total === 0);
 
   const signature = `${appliedSearch}|${page}|${queryNonce}`;
   const lastSignature = useRef(signature);
