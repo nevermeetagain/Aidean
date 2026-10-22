@@ -7,13 +7,15 @@
  * 操作 UserTierMapping 表（OPUS/SONNET/FABLE/HAIKU 四档绑定）。
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge, Button, Dialog, Input } from "@aidean/ui";
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { PanelState, usePanelResource } from "./PanelState";
+import { panelTestIds } from "../../lib/admin/panel-resource";
 
-interface TierMappingRow {
+export interface TierMappingRow {
   id: string;
   userId: string;
   tierLevel: string;
@@ -30,39 +32,53 @@ const TIER_VARIANT: Record<string, "default" | "secondary" | "destructive"> = {
   HAIKU: "secondary",
 };
 
+/** 列表数据形状（信封 data） */
+export type TierMappingsListData = { items: TierMappingRow[]; total: number };
+
+/** 五态外壳 testid 前缀（B11-05） */
+export const TIER_MAPPINGS_PANEL_PREFIX = "admin-tier-mappings";
+
+export const TIER_MAPPINGS_PAGE_SIZE = 20;
+
+export function buildTierMappingsUrl(page = 1, tierLevel = ""): string {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(TIER_MAPPINGS_PAGE_SIZE) });
+  if (tierLevel) params.set("tierLevel", tierLevel);
+  return `/api/v1/admin/tier-mappings?${params}`;
+}
+
+/** 首屏地址（单测锁定 loader 无参调用的请求 URL，与改造前完全一致） */
+export const TIER_MAPPINGS_LIST_URL = buildTierMappingsUrl();
+
+export const loadTierMappings = (signal?: AbortSignal, page = 1, tierLevel = "") =>
+  adminFetch<TierMappingsListData>(buildTierMappingsUrl(page, tierLevel), { signal });
+
 export function TierMappingsManager() {
-  const [rows, setRows] = useState<TierMappingRow[]>([]);
-  // #35③：列表请求在途（参照 UsersTable #68 模式），首载不闪空态
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
+  const ids = panelTestIds(TIER_MAPPINGS_PANEL_PREFIX);
   const [page, setPage] = useState(1);
   const [tierFilter, setTierFilter] = useState("");
   const [busy, setBusy] = useState(false);
+  // 写操作反馈专用；列表取数失败由外壳 error 态承载
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ userId: "", tierLevel: "OPUS", modelId: "" });
   const [pendingDelete, setPendingDelete] = useState<TierMappingRow | null>(null);
-  const pageSize = 20;
+  // 「查询」重复点击也要重取：nonce 计入签名，但不进 URL
+  const [queryNonce, setQueryNonce] = useState(0);
 
-  const load = useCallback(async (p: number) => {
-    const params = new URLSearchParams({ page: String(p), pageSize: String(pageSize) });
-    if (tierFilter) params.set("tierLevel", tierFilter);
-    setLoading(true);
-    const res = await adminFetch<{ items: TierMappingRow[]; total: number }>(
-      `/api/v1/admin/tier-mappings?${params}`
-    );
-    setLoading(false);
-    if (res.ok && res.data) {
-      setRows(res.data.items);
-      setTotal(res.data.total);
-    } else {
-      setError(res.message ?? "加载失败");
-    }
-  }, [tierFilter]);
+  const loader = useCallback(
+    (signal: AbortSignal) => loadTierMappings(signal, page, tierFilter),
+    [page, tierFilter],
+  );
+  const { resource, reload, refresh } = usePanelResource(loader, (d) => d.items.length === 0);
 
+  // 筛选/翻页/主动查询才重新取数：以查询签名比对（StrictMode 下 effect 双跑也不会重复请求）
+  const signature = `${tierFilter}|${page}|${queryNonce}`;
+  const lastSignature = useRef(signature);
   useEffect(() => {
-    load(page);
-  }, [page, load]);
+    if (lastSignature.current === signature) return;
+    lastSignature.current = signature;
+    reload();
+  }, [signature, reload]);
 
   async function handleCreate() {
     setBusy(true);
@@ -75,8 +91,9 @@ export function TierMappingsManager() {
     if (res.ok) {
       setShowCreate(false);
       setForm({ userId: "", tierLevel: "OPUS", modelId: "" });
-      load(1);
-      setPage(1);
+      // 新建后回到首页：非首页交给签名重载，首页则静默刷新（避免一次操作发两请求）
+      if (page === 1) refresh();
+      else setPage(1);
     } else {
       setError(res.message ?? "创建失败");
     }
@@ -86,7 +103,7 @@ export function TierMappingsManager() {
     const res = await adminFetch(`/api/v1/admin/tier-mappings/${row.id}`, { method: "DELETE" });
     if (res.ok) {
       setPendingDelete(null);
-      load(page);
+      refresh();
     } else {
       setError(res.message ?? "删除失败");
     }
@@ -135,27 +152,33 @@ export function TierMappingsManager() {
           onChange={(e) => setTierFilter(e.target.value.toUpperCase())}
           className="max-w-xs"
         />
-        <Button variant="outline" size="sm" onClick={() => { setPage(1); load(1); }}>
+        <Button variant="outline" size="sm" onClick={() => { setPage(1); setQueryNonce((n) => n + 1); }}>
           查询
         </Button>
-        <Button size="sm" onClick={() => setShowCreate(true)}>
+        <Button size="sm" data-testid={`${ids.root}-create`} onClick={() => setShowCreate(true)}>
           新建映射
         </Button>
       </div>
 
-      <AdminDataTable
-        columns={columns}
-        rows={rows}
-        rowKey={(r) => r.id}
-        busy={busy || loading}
-        page={page}
-        totalPages={Math.max(1, Math.ceil(total / pageSize))}
-        total={total}
-        onPageChange={setPage}
-      />
+      <PanelState testId={ids.root} resource={resource} onRetry={reload} emptyText="暂无等级映射">
+        {(d) => (
+          <AdminDataTable
+            columns={columns}
+            rows={d.items}
+            rowKey={(r) => r.id}
+            rowTestId={(r) => `${ids.root}-row-${r.id}`}
+            busy={busy}
+            page={page}
+            totalPages={Math.max(1, Math.ceil(d.total / TIER_MAPPINGS_PAGE_SIZE))}
+            total={d.total}
+            onPageChange={setPage}
+          />
+        )}
+      </PanelState>
 
+      {showCreate ? (
       <Dialog
-        open={showCreate}
+        open
         onClose={() => setShowCreate(false)}
         title="新建等级映射"
         className="max-w-md"
@@ -192,14 +215,17 @@ export function TierMappingsManager() {
           </div>
         </div>
       </Dialog>
+      ) : null}
 
+      {pendingDelete ? (
       <ConfirmDialog
-        open={!!pendingDelete}
+        open
         title="删除等级映射"
-        message={`确认删除 ${pendingDelete?.tierLevel} → ${pendingDelete?.model?.nameDisplay ?? "模型"} 的映射？`}
-        onConfirm={() => pendingDelete && handleDelete(pendingDelete)}
+        message={`确认删除 ${pendingDelete.tierLevel} → ${pendingDelete.model?.nameDisplay ?? "模型"} 的映射？`}
+        onConfirm={() => handleDelete(pendingDelete)}
         onCancel={() => setPendingDelete(null)}
       />
+      ) : null}
     </div>
   );
 }

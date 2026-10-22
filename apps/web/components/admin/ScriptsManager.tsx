@@ -11,14 +11,16 @@
  * - 查看执行历史（GET /api/v1/admin/scripts/[id]/executions）
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { PanelState, usePanelResource } from "./PanelState";
+import { panelTestIds } from "../../lib/admin/panel-resource";
 import { Badge, Button, Dialog, Input } from "@aidean/ui";
 
-interface ScriptRow {
+export interface ScriptRow {
   id: string;
   name: string;
   description: string | null;
@@ -75,16 +77,32 @@ function draftFromRow(row: ScriptRow): Draft {
   };
 }
 
+/** 列表数据形状（信封 data） */
+export type ScriptsListData = { items: ScriptRow[]; total: number };
+
+/** 五态外壳 testid 前缀（B11-05） */
+export const SCRIPTS_PANEL_PREFIX = "admin-scripts";
+
+export const SCRIPTS_PAGE_SIZE = 20;
+
+export function buildScriptsUrl(page = 1): string {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(SCRIPTS_PAGE_SIZE) });
+  return `/api/v1/admin/scripts?${params}`;
+}
+
+/** 首屏地址（单测锁定 loader 无参调用的请求 URL，与改造前完全一致） */
+export const SCRIPTS_LIST_URL = buildScriptsUrl();
+
+export const loadScripts = (signal?: AbortSignal, page = 1) =>
+  adminFetch<ScriptsListData>(buildScriptsUrl(page), { signal });
+
 export function ScriptsManager() {
-  const [rows, setRows] = useState<ScriptRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const ids = panelTestIds(SCRIPTS_PANEL_PREFIX);
   const [loadingExec, setLoadingExec] = useState(false);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [execView, setExecView] = useState<ScriptRow | null>(null);
   const [executions, setExecutions] = useState<ExecutionRow[]>([]);
   const [busy, setBusy] = useState(false);
-  const pageSize = 20;
 
   // 新建/编辑 Dialog 状态
   const [formOpen, setFormOpen] = useState(false);
@@ -96,22 +114,17 @@ export function ScriptsManager() {
   const [message, setMessage] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<ScriptRow | null>(null);
 
-  const load = useCallback(async (p: number) => {
-    const params = new URLSearchParams({ page: String(p), pageSize: String(pageSize) });
-    setLoading(true);
-    const res = await adminFetch<{ items: ScriptRow[]; total: number }>(
-      `/api/v1/admin/scripts?${params}`
-    );
-    setLoading(false);
-    if (res.ok && res.data) {
-      setRows(res.data.items);
-      setTotal(res.data.total);
-    }
-  }, []);
+  const loader = useCallback((signal: AbortSignal) => loadScripts(signal, page), [page]);
+  const { resource, reload, refresh } = usePanelResource(loader, (d) => d.items.length === 0);
 
-  useEffect(() => { void load(page); }, [load, page]);
-
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  // 翻页才重新取数：以查询签名比对（StrictMode 下 effect 双跑也不会重复请求）
+  const signature = `${page}`;
+  const lastSignature = useRef(signature);
+  useEffect(() => {
+    if (lastSignature.current === signature) return;
+    lastSignature.current = signature;
+    reload();
+  }, [signature, reload]);
 
   function openCreate() {
     setEditingId(null);
@@ -173,7 +186,7 @@ export function ScriptsManager() {
     setBusy(false);
     if (res.ok) {
       setFormOpen(false);
-      void load(page);
+      refresh();
     } else {
       setFormError(res.message ?? "保存失败");
     }
@@ -184,7 +197,7 @@ export function ScriptsManager() {
     const res = await adminFetch(`/api/v1/admin/scripts/${script.id}/trigger`, { method: "POST", body: "{}" });
     setBusy(false);
     if (res.ok) {
-      void load(page);
+      refresh();
       setMessage(`已触发「${script.name}」`);
     } else {
       setMessage(res.message ?? "触发失败");
@@ -198,7 +211,7 @@ export function ScriptsManager() {
       body: JSON.stringify({ isActive: !script.isActive }),
     });
     setBusy(false);
-    if (res.ok) { void load(page); setMessage(script.isActive ? `已停用「${script.name}」` : `已启用「${script.name}」`); }
+    if (res.ok) { refresh(); setMessage(script.isActive ? `已停用「${script.name}」` : `已启用「${script.name}」`); }
     else setMessage(res.message ?? "操作失败");
   }
 
@@ -213,7 +226,7 @@ export function ScriptsManager() {
     setBusy(true);
     const res = await adminFetch(`/api/v1/admin/scripts/${script.id}`, { method: "DELETE" });
     setBusy(false);
-    if (res.ok) { void load(page); setMessage(`脚本「${script.name}」已删除（软删除，历史执行保留）`); }
+    if (res.ok) { refresh(); setMessage(`脚本「${script.name}」已删除（软删除，历史执行保留）`); }
     else setMessage(res.message ?? "删除失败");
   }
 
@@ -295,7 +308,7 @@ export function ScriptsManager() {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <Button variant="primary" size="sm" onClick={openCreate}>新建脚本</Button>
+        <Button variant="primary" size="sm" data-testid={`${ids.root}-create`} onClick={openCreate}>新建脚本</Button>
       </div>
 
       {message ? (
@@ -304,17 +317,21 @@ export function ScriptsManager() {
         </p>
       ) : null}
 
-      <AdminDataTable
-        columns={columns}
-        rows={rows}
-        rowKey={row => row.id}
-        emptyText="暂无脚本"
-        busy={busy || loading}
-        page={page}
-        totalPages={totalPages}
-        total={total}
-        onPageChange={setPage}
-      />
+      <PanelState testId={ids.root} resource={resource} onRetry={reload} emptyText="暂无脚本">
+        {(d) => (
+          <AdminDataTable
+            columns={columns}
+            rows={d.items}
+            rowKey={row => row.id}
+            rowTestId={(row) => `${ids.root}-row-${row.id}`}
+            busy={busy}
+            page={page}
+            totalPages={Math.max(1, Math.ceil(d.total / SCRIPTS_PAGE_SIZE))}
+            total={d.total}
+            onPageChange={setPage}
+          />
+        )}
+      </PanelState>
 
       {/* 新建/编辑 Dialog — L2 自定义频率闭环 */}
       <Dialog

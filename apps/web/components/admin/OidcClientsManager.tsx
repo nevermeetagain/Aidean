@@ -5,13 +5,15 @@
  * 列出平台 SSO 应用（不展示 secret）+ 编辑元数据（名称/回调 URI/scope/登出 URI）+ 启停。
  * secret 由 seed/env 供用，后台不提供发放/轮换入口（避免密钥落盘/回显）。
  */
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
+import { PanelState, usePanelResource } from "./PanelState";
+import { panelTestIds } from "../../lib/admin/panel-resource";
 import { Dialog, Button, Input } from "@aidean/ui";
 
-interface ClientRow {
+export interface ClientRow {
   id: string;
   clientId: string;
   name: string;
@@ -39,29 +41,27 @@ function fromLines(text: string): string[] {
   return text.split("\n").map((s) => s.trim()).filter(Boolean);
 }
 
+/** 列表数据形状（信封 data；非 {items}/{rows} 形状，故用自定义 isEmpty） */
+export type OidcClientsListData = { clients: ClientRow[] };
+
+/** 五态外壳 testid 前缀（B11-05） */
+export const OIDC_CLIENTS_PANEL_PREFIX = "admin-oidc-clients";
+
+/** 首屏地址（单测锁定 loader 无参调用的请求 URL，与改造前完全一致） */
+export const OIDC_CLIENTS_LIST_URL = "/api/v1/admin/oidc-clients";
+
+export const loadOidcClients = (signal?: AbortSignal) =>
+  adminFetch<OidcClientsListData>(OIDC_CLIENTS_LIST_URL, { signal });
+
 export function OidcClientsManager({ canWrite = false }: { canWrite?: boolean }) {
-  const [rows, setRows] = useState<ClientRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const ids = panelTestIds(OIDC_CLIENTS_PANEL_PREFIX);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<ClientRow | null>(null);
   const [form, setForm] = useState<ClientForm>({ name: "", redirectUrisText: "", logoutUri: "", scopesText: "", isActive: true });
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const res = await adminFetch<{ clients: ClientRow[] }>("/api/v1/admin/oidc-clients");
-    setLoading(false);
-    if (res.ok && res.data) {
-      setRows(res.data.clients);
-      setMessage(null);
-    } else {
-      setMessage(res.message ?? "加载失败");
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const { resource, reload, refresh } = usePanelResource(loadOidcClients, (d) => d.clients.length === 0);
+  const data = resource.status === "ready" ? resource.data : null;
 
   function openEdit(c: ClientRow) {
     setForm({
@@ -103,7 +103,7 @@ export function OidcClientsManager({ canWrite = false }: { canWrite?: boolean })
     }
     setMessage("已保存");
     setEditing(null);
-    await load();
+    refresh();
   }
 
   async function toggleActive(c: ClientRow) {
@@ -115,7 +115,7 @@ export function OidcClientsManager({ canWrite = false }: { canWrite?: boolean })
     setBusy(false);
     if (res.ok) {
       setMessage(c.isActive ? `已停用 ${c.clientId}` : `已启用 ${c.clientId}`);
-      await load();
+      refresh();
     } else {
       setMessage(res.message ?? "操作失败");
     }
@@ -158,9 +158,21 @@ export function OidcClientsManager({ canWrite = false }: { canWrite?: boolean })
       {message ? (
         <p role="status" className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">{message}</p>
       ) : null}
-      <div className="text-xs text-slate-500">共 {rows.length} 个 OIDC 客户端（secret 不经此界面发放/展示）</div>
+      <div className="text-xs text-slate-500">
+        {data ? `共 ${data.clients.length} 个 OIDC 客户端（secret 不经此界面发放/展示）` : "OIDC 客户端（secret 不经此界面发放/展示）"}
+      </div>
 
-      <AdminDataTable columns={columns} rows={rows} rowKey={(c) => c.id} emptyText="暂无 OIDC 客户端" busy={busy || loading} />
+      <PanelState testId={ids.root} resource={resource} onRetry={reload} emptyText="暂无 OIDC 客户端">
+        {(d) => (
+          <AdminDataTable
+            columns={columns}
+            rows={d.clients}
+            rowKey={(c) => c.id}
+            rowTestId={(c) => `${ids.root}-row-${c.id}`}
+            busy={busy}
+          />
+        )}
+      </PanelState>
 
       <Dialog
         open={!!editing}

@@ -8,13 +8,15 @@
  * 网关 FREE 路径消费此表——admin 配置后控制台自动加载。
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge, Button, Dialog, Input } from "@aidean/ui";
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { PanelState, usePanelResource } from "./PanelState";
+import { panelTestIds } from "../../lib/admin/panel-resource";
 
-interface FreeQuotaRow {
+export interface FreeQuotaRow {
   id: string;
   tier: string;
   modelId: string;
@@ -42,14 +44,32 @@ function formatTokens(n: number): string {
   return String(n);
 }
 
+/** 列表数据形状（信封 data） */
+export type FreeQuotasListData = { items: FreeQuotaRow[]; total: number };
+
+/** 五态外壳 testid 前缀（B11-05） */
+export const FREE_QUOTAS_PANEL_PREFIX = "admin-free-quotas";
+
+export const FREE_QUOTAS_PAGE_SIZE = 20;
+
+export function buildFreeQuotasUrl(page = 1, tier = ""): string {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(FREE_QUOTAS_PAGE_SIZE) });
+  if (tier) params.set("tier", tier);
+  return `/api/v1/admin/free-quotas?${params}`;
+}
+
+/** 首屏地址（单测锁定 loader 无参调用的请求 URL，与改造前完全一致） */
+export const FREE_QUOTAS_LIST_URL = buildFreeQuotasUrl();
+
+export const loadFreeQuotas = (signal?: AbortSignal, page = 1, tier = "") =>
+  adminFetch<FreeQuotasListData>(buildFreeQuotasUrl(page, tier), { signal });
+
 export function FreeQuotasManager() {
-  const [rows, setRows] = useState<FreeQuotaRow[]>([]);
-  // #35③：列表请求在途（参照 UsersTable #68 模式），首载不闪空态
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
+  const ids = panelTestIds(FREE_QUOTAS_PANEL_PREFIX);
   const [page, setPage] = useState(1);
   const [tierFilter, setTierFilter] = useState("");
   const [busy, setBusy] = useState(false);
+  // 写操作反馈专用；列表取数失败由外壳 error 态承载（不再自建 error 分支）
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [editTarget, setEditTarget] = useState<FreeQuotaRow | null>(null);
@@ -57,27 +77,23 @@ export function FreeQuotasManager() {
   const [editCycle, setEditCycle] = useState("DAY");
   const [form, setForm] = useState({ tier: "NORMAL", modelId: "", quotaTokens: "", refreshCycle: "DAY" });
   const [pendingDelete, setPendingDelete] = useState<FreeQuotaRow | null>(null);
-  const pageSize = 20;
+  // 「查询」重复点击也要重取：nonce 计入签名，但不进 URL
+  const [queryNonce, setQueryNonce] = useState(0);
 
-  const load = useCallback(async (p: number) => {
-    const params = new URLSearchParams({ page: String(p), pageSize: String(pageSize) });
-    if (tierFilter) params.set("tier", tierFilter);
-    setLoading(true);
-    const res = await adminFetch<{ items: FreeQuotaRow[]; total: number }>(
-      `/api/v1/admin/free-quotas?${params}`
-    );
-    setLoading(false);
-    if (res.ok && res.data) {
-      setRows(res.data.items);
-      setTotal(res.data.total);
-    } else {
-      setError(res.message ?? "加载失败");
-    }
-  }, [tierFilter]);
+  const loader = useCallback(
+    (signal: AbortSignal) => loadFreeQuotas(signal, page, tierFilter),
+    [page, tierFilter],
+  );
+  const { resource, reload, refresh } = usePanelResource(loader, (d) => d.items.length === 0);
 
+  // 筛选/翻页/主动查询才重新取数：以查询签名比对（StrictMode 下 effect 双跑也不会重复请求）
+  const signature = `${tierFilter}|${page}|${queryNonce}`;
+  const lastSignature = useRef(signature);
   useEffect(() => {
-    load(page);
-  }, [page, load]);
+    if (lastSignature.current === signature) return;
+    lastSignature.current = signature;
+    reload();
+  }, [signature, reload]);
 
   async function handleCreate() {
     setBusy(true);
@@ -93,8 +109,9 @@ export function FreeQuotasManager() {
     if (res.ok) {
       setShowCreate(false);
       setForm({ tier: "NORMAL", modelId: "", quotaTokens: "", refreshCycle: "DAY" });
-      load(1);
-      setPage(1);
+      // 新建后回到首页：非首页交给签名重载，首页则静默刷新（避免一次操作发两请求）
+      if (page === 1) refresh();
+      else setPage(1);
     } else {
       setError(res.message ?? "创建失败");
     }
@@ -114,7 +131,7 @@ export function FreeQuotasManager() {
     setBusy(false);
     if (res.ok) {
       setEditTarget(null);
-      load(page);
+      refresh();
     } else {
       setError(res.message ?? "更新失败");
     }
@@ -124,7 +141,7 @@ export function FreeQuotasManager() {
     const res = await adminFetch(`/api/v1/admin/free-quotas/${row.id}`, { method: "DELETE" });
     if (res.ok) {
       setPendingDelete(null);
-      load(page);
+      refresh();
     } else {
       setError(res.message ?? "删除失败");
     }
@@ -191,27 +208,33 @@ export function FreeQuotasManager() {
           onChange={(e) => setTierFilter(e.target.value.toUpperCase())}
           className="max-w-xs"
         />
-        <Button variant="outline" size="sm" onClick={() => { setPage(1); load(1); }}>
+        <Button variant="outline" size="sm" onClick={() => { setPage(1); setQueryNonce((n) => n + 1); }}>
           查询
         </Button>
-        <Button size="sm" onClick={() => setShowCreate(true)}>
+        <Button size="sm" data-testid={`${ids.root}-create`} onClick={() => setShowCreate(true)}>
           新建额度
         </Button>
       </div>
 
-      <AdminDataTable
-        columns={columns}
-        rows={rows}
-        rowKey={(r) => r.id}
-        busy={busy || loading}
-        page={page}
-        totalPages={Math.max(1, Math.ceil(total / pageSize))}
-        total={total}
-        onPageChange={setPage}
-      />
+      <PanelState testId={ids.root} resource={resource} onRetry={reload} emptyText="暂无免费额度配置">
+        {(d) => (
+          <AdminDataTable
+            columns={columns}
+            rows={d.items}
+            rowKey={(r) => r.id}
+            rowTestId={(r) => `${ids.root}-row-${r.id}`}
+            busy={busy}
+            page={page}
+            totalPages={Math.max(1, Math.ceil(d.total / FREE_QUOTAS_PAGE_SIZE))}
+            total={d.total}
+            onPageChange={setPage}
+          />
+        )}
+      </PanelState>
 
+      {showCreate ? (
       <Dialog
-        open={showCreate}
+        open
         onClose={() => setShowCreate(false)}
         title="新建免费额度"
         className="max-w-md"
@@ -268,11 +291,13 @@ export function FreeQuotasManager() {
           </div>
         </div>
       </Dialog>
+      ) : null}
 
+      {editTarget ? (
       <Dialog
-        open={editTarget !== null}
+        open
         onClose={() => setEditTarget(null)}
-        title={`编辑额度 — ${editTarget?.model?.nameDisplay ?? "模型"}`}
+        title={`编辑额度 — ${editTarget.model?.nameDisplay ?? "模型"}`}
         className="max-w-sm"
         footer={
           <>
@@ -306,14 +331,17 @@ export function FreeQuotasManager() {
           </div>
         </div>
       </Dialog>
+      ) : null}
 
+      {pendingDelete ? (
       <ConfirmDialog
-        open={!!pendingDelete}
+        open
         title="删除免费额度"
-        message={`确认删除 ${pendingDelete?.tier} → ${pendingDelete?.model?.nameDisplay ?? "模型"} 的免费额度配置？`}
-        onConfirm={() => pendingDelete && handleDelete(pendingDelete)}
+        message={`确认删除 ${pendingDelete.tier} → ${pendingDelete.model?.nameDisplay ?? "模型"} 的免费额度配置？`}
+        onConfirm={() => handleDelete(pendingDelete)}
         onCancel={() => setPendingDelete(null)}
       />
+      ) : null}
     </div>
   );
 }

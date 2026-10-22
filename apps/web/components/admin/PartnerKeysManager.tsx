@@ -7,13 +7,15 @@
  * 安全：不显示 keyHash；新建后的明文 key 仅展示一次，刷新后不可见。
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Badge, Button, Input } from "@aidean/ui";
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { PanelState, usePanelResource } from "./PanelState";
+import { panelTestIds } from "../../lib/admin/panel-resource";
 
-interface KeyRow {
+export interface KeyRow {
   id: string;
   name: string;
   prefix: string;
@@ -31,12 +33,21 @@ interface CreateResponse {
   apiKey: string;
 }
 
+/** 五态外壳 testid 前缀（B11-05） */
+export const PARTNER_KEYS_PANEL_PREFIX = "admin-partner-keys";
+
+/** 首屏地址（单测锁定 loader 无参调用的请求 URL，与改造前完全一致） */
+export const PARTNER_KEYS_LIST_URL = "/api/v1/admin/partner-keys";
+
+export const loadPartnerKeys = (signal?: AbortSignal) =>
+  adminFetch<KeysResponse>(PARTNER_KEYS_LIST_URL, { signal });
+
 export function PartnerKeysManager() {
-  const [rows, setRows] = useState<KeyRow[]>([]);
-  // #35③：初值 true——首帧不闪空态（load 挂载即置在途；表格 busy={busy} 已接）
-  const [busy, setBusy] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const ids = panelTestIds(PARTNER_KEYS_PANEL_PREFIX);
   const [message, setMessage] = useState<string | null>(null);
+
+  const { resource, reload, refresh } = usePanelResource(loadPartnerKeys, (d) => d.keys.length === 0);
+  const data = resource.status === "ready" ? resource.data : null;
 
   // Batch selection state (R-28)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -63,7 +74,7 @@ export function PartnerKeysManager() {
     if (res.ok) {
       setSelectedIds(new Set());
       setMessage(`批量${action} 完成: ${res.data?.affected ?? 0} 条受影响`);
-      void load();
+      refresh();
     } else {
       setMessage(res.message);
     }
@@ -74,20 +85,6 @@ export function PartnerKeysManager() {
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
   const [newKey, setNewKey] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    const res = await adminFetch<KeysResponse>("/api/v1/admin/partner-keys");
-    setBusy(false);
-    if (res.ok && res.data) {
-      setRows(res.data.keys);
-    } else {
-      setError(res.message);
-    }
-  }, []);
-
-  useEffect(() => { void load(); }, [load]);
 
   async function handleCreate() {
     if (!name.trim()) return;
@@ -102,7 +99,7 @@ export function PartnerKeysManager() {
       setMessage(`密钥 ${res.data.key.name} 创建成功，请立即保存（仅本次显示）`);
       setName("");
       setShowCreate(false);
-      void load();
+      refresh();
     } else {
       setMessage(res.message);
     }
@@ -115,7 +112,7 @@ export function PartnerKeysManager() {
     });
     if (res.ok) {
       setMessage(`已${!isActive ? "启用" : "停用"}密钥`);
-      void load();
+      refresh();
     } else {
       setMessage(res.message);
     }
@@ -137,7 +134,7 @@ export function PartnerKeysManager() {
           variant={k.isActive ? "dark" : "primary"}
           size="sm"
           onClick={() => toggleActive(k.id, k.isActive)}
-          disabled={busy}
+          disabled={batchBusy}
         >
           {k.isActive ? "停用" : "启用"}
         </Button>
@@ -148,7 +145,6 @@ export function PartnerKeysManager() {
   return (
     <div className="space-y-4">
       {message && <div className="rounded bg-primary/5 p-2 text-sm text-primary">{message}</div>}
-      {error && <div className="rounded bg-red-50 p-2 text-sm text-red-600">{error}</div>}
 
       {newKey && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
@@ -159,8 +155,13 @@ export function PartnerKeysManager() {
       )}
 
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium text-slate-700">密钥列表（{rows.length}）</h2>
-        <Button variant={showCreate ? "outline" : "primary"} size="sm" onClick={() => setShowCreate(s => !s)}>
+        <h2 className="text-sm font-medium text-slate-700">密钥列表（{data ? data.keys.length : "—"}）</h2>
+        <Button
+          variant={showCreate ? "outline" : "primary"}
+          size="sm"
+          data-testid={`${ids.root}-create`}
+          onClick={() => setShowCreate(s => !s)}
+        >
           {showCreate ? "取消" : "新建密钥"}
         </Button>
       </div>
@@ -188,25 +189,30 @@ export function PartnerKeysManager() {
         </div>
       ) : null}
 
-      <AdminDataTable
-        columns={columns}
-        rows={rows}
-        rowKey={k => k.id}
-        emptyText="暂无密钥"
-        busy={busy}
-        selectable
-        selectedIds={selectedIds}
-        onToggleRow={id => {
-          const next = new Set(selectedIds);
-          if (next.has(id)) next.delete(id);
-          else next.add(id);
-          setSelectedIds(next);
-        }}
-        onToggleAll={() => {
-          if (rows.every(r => selectedIds.has(r.id))) setSelectedIds(new Set());
-          else setSelectedIds(new Set(rows.map(r => r.id)));
-        }}
-      />
+      <PanelState testId={ids.root} resource={resource} onRetry={reload} emptyText="暂无密钥">
+        {(d) => (
+          <AdminDataTable
+            columns={columns}
+            rows={d.keys}
+            rowKey={k => k.id}
+            rowTestId={k => `${ids.root}-row-${k.id}`}
+            emptyText="暂无密钥"
+            busy={batchBusy}
+            selectable
+            selectedIds={selectedIds}
+            onToggleRow={id => {
+              const next = new Set(selectedIds);
+              if (next.has(id)) next.delete(id);
+              else next.add(id);
+              setSelectedIds(next);
+            }}
+            onToggleAll={() => {
+              if (d.keys.every(r => selectedIds.has(r.id))) setSelectedIds(new Set());
+              else setSelectedIds(new Set(d.keys.map(r => r.id)));
+            }}
+          />
+        )}
+      </PanelState>
 
       <ConfirmDialog
         open={pendingDelete}
