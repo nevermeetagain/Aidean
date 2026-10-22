@@ -95,7 +95,7 @@ const assertions = [
   },
   {
     id: "aidean-ui-refs",
-    desc: "@aidean/ui 在 apps/web/components 的 import 数 = 70（TASK-064 新增 ChangeFeed/MonitoringPanel 68→70；前次 TASK-074 BenchmarkDialog 67→68）",
+    desc: "@aidean/ui 在 apps/web/components 的 import 数 = 71（B11-03 新增 components/admin/PanelState.tsx 70→71，R10-01；前次 TASK-064 新增 ChangeFeed/MonitoringPanel 68→70；前次 TASK-074 BenchmarkDialog 67→68）",
     check: () =>
       String(
         walk("apps/web/components", () => true).filter((f) => {
@@ -106,13 +106,13 @@ const assertions = [
           }
         }).length
       ),
-    expect: "70",
+    expect: "71",
   },
   {
     id: "route-count",
-    desc: "apps/web route.ts 文件数（含 app/ 全域）= 163（TASK-063 新增 admin/monitoring 4 端点 159→163，R10-01；前次 TASK-081 158→159）",
+    desc: "apps/web route.ts 文件数（含 app/ 全域）= 165（B11-03a 新增 admin/protocols/[id] + admin/capabilities/[id] 163→165，R10-01；前次 TASK-063 新增 admin/monitoring 4 端点 159→163，R10-01；前次 TASK-081 158→159）",
     check: () => String(walk("apps/web/app", (n) => n === "route.ts").length),
-    expect: "163",
+    expect: "165",
   },
   {
     id: "page-count",
@@ -132,10 +132,10 @@ const assertions = [
   },
   {
     id: "spec-count",
-    desc: "spec 文件总数 = 195（B11-08 新增 apps/web/lib/features/admin/__tests__/scripts-executions-route.spec.ts 194→195，R10-01；前次 TASK-030 新增 e2e/tests/promotion-billing.spec.ts 193→194，R10-01）",
+    desc: "spec 文件总数 = 199（B11-03 新增 matrix-constants/matrix-backfill/matrix-routes/panel-state 4 spec 195→199，R10-01；前次 B11-08 新增 apps/web/lib/features/admin/__tests__/scripts-executions-route.spec.ts 194→195，R10-01；前次 TASK-030 新增 e2e/tests/promotion-billing.spec.ts 193→194，R10-01）",
     check: () =>
       String(walk("e2e", (n) => n.endsWith(".spec.ts")).length + walk("apps/web", (n) => n.endsWith(".spec.ts")).length),
-    expect: "195",
+    expect: "199",
   },
   {
     id: "queryraw-biz",
