@@ -1,0 +1,121 @@
+B11-07 验收核验记录（DEF-011-09 / DEF-011-10 · 目录快照首跑 + 供给覆盖）
+环境：开发库 PG :5435（docker 共享容器）+ Redis :6379 + next dev :3000（AIDEAN_ENABLE_MOCK_UPSTREAM=1）
+时间：2026-10-22（UTC 02:35–02:55 取证窗口；本机显示 10:35–10:55）
+纪律：本文件不含任何连接串/凭据；seed 输出中的登录口令段一律不誊抄。
+
+交付物（白名单内）：
+  scripts/crawl/monitor_catalogs.ts            +19 行（.env 兜底 hydrateDatabaseUrlFromEnvFile；既有 497 行）
+  apps/web/package.json                        +1 行脚本 crawl:monitor
+  apps/web/prisma/seed/offerings-coverage.ts   新增（180 行，唯一实现）
+  apps/web/prisma/seed.ts                      +1 行 import、+1 行调用（L6 / pricing-tiers 之后）
+复现用探针（.scratch/ 被 gitignore，副本见本目录）：
+  node .scratch/b1107-probe.mjs        → DB 计数（快照/变更/源三态/offering 覆盖/价格同源/观测命中）→ probe-db.mjs
+  node .scratch/b1107-runtime.mjs      → 详情页「在哪里可调用」渲染文本 → probe-runtime.mjs
+  node .scratch/b1107-admin.mjs        → /admin/monitoring 源状态与变更流（.auth/admin-auth.json）→ probe-admin.mjs
+
+──────────────────────────────────────────────
+【前置基线】B11-07 首跑前（探针 b1107-probe.mjs 首跑，见 deviation §四）
+  catalogSnapshot=0  catalogChangeEvent=0  providerModelObservation=0
+  providerModelOffering=5  offeringsDistinctModels=5（seed.ts 6.y siliconflow 示例：demo-model-918…922）
+  monitoringSource=5：openrouter/aihubmix/quanzil enabled=true，huggingface/llmtest enabled=false
+  五源 lastStatus 全部 = never，lastCount/lastError 全 null
+  结论：后台变更流与详情页观测块无数据（DEF-011-09），offering 仅 5 个模型（DEF-011-10）。
+
+──────────────────────────────────────────────
+【验收①】catalog_snapshot 行数 > 0，且 /admin/monitoring 变更流 ≥1 条事件
+首跑（写库，绕开 npm 入口直接执行）：
+  npx tsx ../../scripts/crawl/monitor_catalogs.ts --source all      → RUNALL_EXIT = 0
+    [ok] openrouter: 692 条 | 新快照=yes | 幂等=no | 事件=1200
+    [ok] quanzil: 332 条 | 新快照=yes | 幂等=no | 事件=529
+    [failed] aihubmix: fetch failed
+复跑（npm 入口，验证幂等 + 入口可用）：
+  pnpm --filter web crawl:monitor --source all                       → RUN2_EXIT = 0
+    [ok] openrouter: 692 条 | 新快照=yes | 幂等=no | 事件=0
+    [ok] quanzil: 332 条 | 新快照=yes | 幂等=no | 事件=0
+    [failed] aihubmix: fetch failed
+  === total: 2 source(s) ok / 1 failed ===
+DB 计数（node .scratch/b1107-probe.mjs → PROBE_EXIT = 0，落盘 .scratch/b1107-final.txt）：
+  catalogSnapshot=4            ← 2 源 × 2 次运行（快照为历史留痕，每次运行每源一条）
+  snapshots（最近 4 条）:
+    quanzil    itemCount=332  rawBytes=523386   sha256=c866f7fb7df0…
+    openrouter itemCount=692  rawBytes=1027700  sha256=a84ba8950c3b…
+  catalogChangeEvent=1729      ← 首跑 1200+529；复跑事件=0（幂等）
+  changeByKind=[model_first_seen:798, listed:931]
+  providerModelObservation=1024 ← 692+332
+运行态（node .scratch/b1107-admin.mjs → ADMIN_EXIT = 0；会话由 playwright --project=admin-setup 重建）：
+  /admin/monitoring → status=200（非登录重定向），textBytes=1471
+  OpenRouter 2026-10-22 10:37 成功 692 条 / Quanzil 10:37 成功 332 条
+  AIHubMix 10:37 失败 "fetch failed"
+  Hugging Face Hub / llmtest 已停用 · 从未运行
+  变更流：上架 qwen3.6-plus、gemini-3.8-flash-tts、glm-5.2、gpt-4…；首次发现 mj_low_variation…
+  分页行：「第 1 / 173 页 · 1–10 / 共 1729 条」
+
+【验收②】源不可达时显示错误态而非空表
+  aihubmix → lastStatus=failed，lastCount=null，lastError="fetch failed"（DB）
+  /admin/monitoring → 「AIHubMix … 失败 — 条 / fetch failed」（运行态，上一节）
+  类别判定：为网络不可达（fetch failed），非 credential_missing——五源 authRequired 均 false，
+    本批源实测无凭证可访问（V0.4.0 19_外部来源核验证据口径）；EVD 如实记 network 类，不冒充凭证类。
+  huggingface / llmtest → enabled=false + lastStatus=never（「已停用 · 从未运行」），与失败态区分。
+
+【验收③】至少 20 个模型的详情页 offerings 有行
+  A. 人工挂载侧（provider_model_offering；页面「平台挂载与折扣价」区块）——已达成：
+     seed 输出：[offerings-coverage] requested=20 upserted=20 skippedNoPrice=0 aligned=5 distinctModels=25
+     探针：providerModelOffering=25  offeringDistinctModels=25
+       offeringsByProvider=[openrouter:20, siliconflow:5]   priceMismatches=0
+       offeringSamples: demo-model-041 → openrouter 0.1/0.3 per_million_tokens
+                        effectiveFrom=2026-10-22T00:00:00Z isActive=true
+     运行态（RUNTIME_EXIT=0）：
+       /models/demo-model-041 → status=200 htmlBytes=82159  OpenRouter 出现 2 次
+         「平台挂载与折扣价」→ OpenRouter 上线时间 2026-10-22 标价 USD/M Tokens 输入 $0.1 · 输出 $0.3
+         （与同页「输入价格 $0.100 / 输出价格 $0.300」同源）
+       /models/demo-model-060 → status=200 htmlBytes=82172  标价 $1.43 / $4.29（与详情页一致）
+  B. 观测侧（ModelOfferings 组件，data-testid=offerings-*；页面「多源上架观测」区块）——字面未达成：
+     /api/v1/models/demo-model-041/offerings → 200 code=0 items=0
+     /api/v1/models/gpt-4o/offerings         → 200 code=0 items=0（gpt-4o-mini / o1 / o3-mini / phi-4 同）
+     根因①：五源 tosStatus 全为 pending（seed.ts L1217 契约「pending=未核验，仅后台可见、禁止对外展示」，
+       U-M6 未裁决）→ lib/monitoring/offerings.ts 按 PUBLIC_TOS_STATUSES 过滤后为空。
+     根因②：观测命中 aiModel.modelCode 的去重模型数=12（gpt-4o/gpt-4o-mini/o1/o3-mini/phi-4/qwen-plus/
+       qwen-max/minimax-01/bge-m3/text-embedding-3-large/-small/bge-reranker-v2-m3），
+       与 demo-model-041…060 零交集（demo 模型无上游观测）。
+     处置：不伪造 tosStatus（合规字段，不得代签）；缺口与裁决请求见 deviation §一。
+
+【验收④】未产生「官方来源」伪标记
+  offerings-coverage 不写 sourceType/sourceName（ProviderModelOffering 无该字段），
+  且只处理 modelCode 前缀 demo-model- 的演示模型；seed-no-official 断言读数见下节门禁。
+
+──────────────────────────────────────────────
+【幂等】seed 连续 3 次 + 采集复跑
+  pricing-tiers（3 次逐字一致）：
+    demo=922 free=20 cnyPaid=20 usdPaid=882 promo=2 originalCurrency=922 crossCurrency=60 fx=6.673@2026-10-22
+  offerings-coverage（每轮）：requested=20 upserted=20 skippedNoPrice=0 aligned=5 distinctModels=25
+    aligned 每轮恒为 5 而非 0：seed.ts 6.y 在每轮先以固定公式重置 siliconflow 示例价（10..18），
+    本模块随后对齐；结束态恒定——探针 priceMismatches=0、distinctModels=25 连续两次一致。
+  crawl:monitor 复跑：两源均「事件=0」，catalogChangeEvent 保持 1729（不产生重复变更）。
+
+──────────────────────────────────────────────
+【入口】npm 入口 + 缺 DATABASE_URL 兜底
+  改动前取证：loadDeps() L246 硬检查 process.env.DATABASE_URL；脚本无 dotenv；scheduledScriptsData 无 monitor 项。
+  改动：monitor_catalogs.ts 增 hydrateDatabaseUrlFromEnvFile()（cwd/.env → cwd/apps/web/.env，只补空缺不覆盖）；
+        package.json 增 "crawl:monitor": "tsx ../../scripts/crawl/monitor_catalogs.ts"。
+  验证（干净会话，未注入 DATABASE_URL）：
+    PRE_DBURL_EMPTY=True
+    pnpm --filter web crawl:monitor --source openrouter --dry-run --limit 3 → ENTRY_EXIT = 0
+    [dry-run] openrouter: 3 条（未写库）  === total: 1 source(s) ok / 0 failed ===
+
+【门禁】提交前五连（全部 exit 0；vitest/tsc 均在 pnpm install 后的非缓存态）
+  pnpm --filter web exec tsc --noEmit --incremental false   → TSC_EXIT=0（无输出）
+  pnpm --filter web lint                                    → LINT_EXIT=0
+    唯一 warning：components/common/SafeImage.tsx:19 no-img-element（既有，非本卡引入）
+  pnpm --filter web test                                    → VITEST_EXIT=0
+    Test Files 146 passed | 2 skipped (148)
+    Tests     1487 passed | 5 skipped (1492)
+  node scripts/check-docs-rule.mjs                          → DOCSRULE_EXIT=0
+    [铁律1] docs rule PASS；[铁律-数字] schema model=73, enum=37, admin API 基=38, admin 页面=34, Next.js=15.0.x
+  node scripts/check-docs-facts.mjs                         → DOCSFACTS_EXIT=0
+    All 16 assertions passed（含 seed-no-official expected=0 actual=0 → 验收④）
+
+──────────────────────────────────────────────
+【判据边界】
+1. 「幂等」对采集器指「不产生重复变更事件」，不指「不写新快照」——快照是历史留痕，每次运行每源一条（2→4）。
+2. 「至少 20 模型 offerings」按 provider_model_offering 去重模型数计（25），不含观测侧 API 的 items。
+3. 未改 e2e、未改 tosStatus、未改 UI/API 读侧、未改 offering-sync 写侧；真实采集与演示 seed 互不覆盖。

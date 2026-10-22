@@ -26,6 +26,7 @@
     "crawl:mcp": "tsx ../../scripts/crawl/crawl_mcp.ts",
     "crawl:skills": "tsx ../../scripts/crawl/crawl_skills.ts",
     "crawl:fx": "tsx ../../scripts/crawl/fx_daily.ts",
+    "crawl:monitor": "tsx ../../scripts/crawl/monitor_catalogs.ts",
     "ranking:update": "tsx ../../scripts/ranking/update_ranking.ts"
   },
   "dependencies": {
