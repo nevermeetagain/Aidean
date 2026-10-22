@@ -1,6 +1,6 @@
 # 子平台 SSO 接入指南
 
-> 版本: v1.4 | 更新: 2026-09-28 | 变更: **新增 §2.1「二级域名接入约定」**——子平台统一以二级域名（`<product>.aidean.com`）对外：域名规划与 DNS/TLS（通配符证书）、redirect_uri 白名单按完整二级域地址登记、主平台会话 Cookie 保持 **host-only** 不跨子域共享（代码依据 `apps/web/lib/features/auth/constants.ts:139-146`，`baseCookieOptions()` 不设 `domain`）、禁止父域 Cookie 扩散、SameSite=Lax 与跨子域授权跳转兼容性、CORS 边界与本地联调例外；§7 安全红线新增第 8 条。前次（v1.3 | 2026-09-26）：**§10 修正自相矛盾**——back-channel logout 广播已实现（v1.1 §4 表记 ADR-0003 L4.1：2 次重试/单次 5s 超时 best-effort，`lib/features/oauth/backchannel.ts:47,81`），删除「主平台登出不会自动通知子平台」旧表述；新增 §10.1「子平台 logout 端点清单」验收模板（#13 验收载体）。前次（v1.2 | 2026-09-18）：§4 补记 refresh 链重放告警（ADR-0003 L4.5：重放→整链撤销+auth-security 结构化日志）。前次（v1.1）：§4 登出语义补记 back-channel logout 广播（ADR-0003 L4.1）：主站自身登出时向该用户全部活跃 SSO 产品链广播 logout_token。前次（v1.0）：首版（随 M-SSO 里程碑落地；端点契约对应 ADR-0002 与《API接口文档》§5.7）
+> 版本: v1.5 | 更新: 2026-10-22 | 变更: §2.1 本地/联调例外补「`/oauth/dev/callback` 生产环境 404」（UX-21）。前次（v1.4 | 更新: 2026-09-28）变更: **新增 §2.1「二级域名接入约定」**——子平台统一以二级域名（`<product>.aidean.com`）对外：域名规划与 DNS/TLS（通配符证书）、redirect_uri 白名单按完整二级域地址登记、主平台会话 Cookie 保持 **host-only** 不跨子域共享（代码依据 `apps/web/lib/features/auth/constants.ts:139-146`，`baseCookieOptions()` 不设 `domain`）、禁止父域 Cookie 扩散、SameSite=Lax 与跨子域授权跳转兼容性、CORS 边界与本地联调例外；§7 安全红线新增第 8 条。前次（v1.3 | 2026-09-26）：**§10 修正自相矛盾**——back-channel logout 广播已实现（v1.1 §4 表记 ADR-0003 L4.1：2 次重试/单次 5s 超时 best-effort，`lib/features/oauth/backchannel.ts:47,81`），删除「主平台登出不会自动通知子平台」旧表述；新增 §10.1「子平台 logout 端点清单」验收模板（#13 验收载体）。前次（v1.2 | 2026-09-18）：§4 补记 refresh 链重放告警（ADR-0003 L4.5：重放→整链撤销+auth-security 结构化日志）。前次（v1.1）：§4 登出语义补记 back-channel logout 广播（ADR-0003 L4.1）：主站自身登出时向该用户全部活跃 SSO 产品链广播 logout_token。前次（v1.0）：首版（随 M-SSO 里程碑落地；端点契约对应 ADR-0002 与《API接口文档》§5.7）
 > 受众：AideanRag / WeChatRag / SkillsCloud 及后续接入主平台账号体系的子平台开发者。
 > 端点权威清单见《[API接口文档](../../architecture/API接口文档.md)》§5.7；架构决策背景见《[ADR-0005-SSO统一认证选型](../../ADR/ADR-0005-SSO统一认证选型.md)》与《[ADR-0003-多平台账号与余额共享路线](../../ADR/ADR-0003-多平台账号与余额共享路线.md)》。
 
@@ -40,7 +40,7 @@
 5. **CORS 边界**：`/oauth/token`、`/oauth/userinfo`、权益/钱包查询均为**服务端对服务端**调用，不涉及浏览器 CORS，无需任何配置；仅当公共客户端（SPA）需要从浏览器直调主平台端点时，才需主平台侧为该二级域名 origin 显式放行（默认不开放）。
 6. **issuer 与发现文档不受影响**：`issuer`、`/.well-known/openid-configuration`、`/.well-known/jwks.json`、`/oauth/*` 恒在主平台域名下（由 `NEXT_PUBLIC_SITE_URL` 决定），子平台域名只出现在自身站点与 `redirect_uri` / `logoutUri` 白名单登记中。
 
-**本地/联调例外**：开发环境不使用二级域名，`redirect_uri` 白名单可另行登记 `http://localhost:<port>/...` 条目（或使用 §2 端点清单中的 `/oauth/dev/callback` 联调回调页）；生产二级域条目与本地条目**分开登记、互不复用**。
+**本地/联调例外**：开发环境不使用二级域名，`redirect_uri` 白名单可另行登记 `http://localhost:<port>/...` 条目（或使用 §2 端点清单中的 `/oauth/dev/callback` 联调回调页，仅非生产环境挂载，生产 `NODE_ENV=production` 下返回 404，不得登记进生产白名单）；生产二级域条目与本地条目**分开登记、互不复用**。
 
 ### 2.2 注册你的 client
 

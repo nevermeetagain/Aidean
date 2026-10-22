@@ -1,6 +1,6 @@
 # API 接口文档
 
-> 版本: v1.64 | 更新: 2026-10-22 | 变更: **B11-11 15 个后台列表端点接入分页共享件**——§4.2 口径由「非法串回退默认 200」改为「非法整数串 → HTTP 400 + `code=40000`，且先于任何 Prisma 调用」；空串视同缺省、纯空白视为非法、越界合法值仍钳制；`intelligence` 的 `limit` 新增上限 1000；守卫名单已清空（strict 接线待裁定）。前次（v1.63 | 更新: 2026-10-22）变更: **B11-03a 协议兼容/能力矩阵投入运营（Q-11-01=A）**——新建 §5.8.11（anchor `matrix-admin-api`）登记 `/api/v1/admin/protocols{,/[id]}` 与 `/api/v1/admin/capabilities{,/[id]}` 列表 GET/POST + 单资源 GET/PATCH/DELETE（新增 4 端点、2 route 文件），zod strict 校验、错误码复用既有 40000/20001/10008，协议维度唯一真源 `ModelProtocol`；与《API架构设计方案》§7.15 双向互引（铁律 2）。
+> 版本: v1.65 | 更新: 2026-10-22 | 变更: **UX-FIX-E（UX-21 / 用户裁定 2）**——`GET /oauth/dev/callback` 行补「仅非生产环境挂载，`NODE_ENV=production` 时 404」，端点语义不变。前次（v1.64 | 更新: 2026-10-22）变更: **B11-11 15 个后台列表端点接入分页共享件**——§4.2 口径由「非法串回退默认 200」改为「非法整数串 → HTTP 400 + `code=40000`，且先于任何 Prisma 调用」；空串视同缺省、纯空白视为非法、越界合法值仍钳制；`intelligence` 的 `limit` 新增上限 1000；守卫名单已清空（strict 接线待裁定）。前次（v1.63 | 更新: 2026-10-22）变更: **B11-03a 协议兼容/能力矩阵投入运营（Q-11-01=A）**——新建 §5.8.11（anchor `matrix-admin-api`）登记 `/api/v1/admin/protocols{,/[id]}` 与 `/api/v1/admin/capabilities{,/[id]}` 列表 GET/POST + 单资源 GET/PATCH/DELETE（新增 4 端点、2 route 文件），zod strict 校验、错误码复用既有 40000/20001/10008，协议维度唯一真源 `ModelProtocol`；与《API架构设计方案》§7.15 双向互引（铁律 2）。
 > 前次（v1.62 | 更新: 2026-10-22）变更: **B11-10 / B11-11（Q-11-03=B · Q-11-05=A）**——§4 新增 §4.1 非 2xx 出口信封（anchor `api-envelope-exits`：未实现方法 → HTTP 405 + `Allow` + 信封 `code=40000`；未匹配 `/api/*` → HTTP 404 + 信封 `code=40000`，替代 0 字节空体与 27KB HTML）与 §4.2 分页参数解析口径（anchor `pagination-params`：共享件 `lib/http/pagination.ts`，非法串回退默认、越界钳制、绝不送 NaN）；与《API架构设计方案》§7.14 / §五 建立铁律 2 双向互引锚；不新增错误码（复用已登记 40000），不新增单资源 GET。
 > 前次（v1.61） | 更新: 2026-10-20 | 变更: **同步 26_用户裁决记录**——§5.2.1 补用户裁决口径注（U-15 / U-23=B / U-24=A）。
 > 前次（v1.60） | 更新: 2026-10-20 | 变更: **TASK-054 EffectivePrice 字段表（计价口径归一）**——§5.2.1 新建（anchor `effective-price-fields`）登记 `EffectivePriceSchema` v0.2 全字段，含归一字段 currency/unit/sourceCurrency/sourceUnit/sourcePrice*/fxRate/fxDate；回链《网关计费时序契约》§12 与术语表「计价口径归一」（铁律 2 双向锚）。
@@ -178,7 +178,7 @@ Route（Zod 校验 / 鉴权 / 响应归一化）→ Service（业务）→ Repos
 | GET | /oauth/userinfo | Bearer 用户资料（sub/email/nickname/tier/role） |
 | POST | /oauth/revoke | 撤销 refresh 链（RFC 7009 子集；恒 200 不泄露存在性） |
 | POST | /oauth/introspect | refresh 内省（强实时撤销需求的接入方） |
-| GET | /oauth/dev/callback | dev 联调模拟回调页（子平台授权码跳转联调用：回显 code/state/error 等查询参数；force-dynamic no-store，非协议端点无鉴权，仅本地/联调环境使用） |
+| GET | /oauth/dev/callback | dev 联调模拟回调页（子平台授权码跳转联调用：回显 code/state/error 等查询参数；force-dynamic no-store，非协议端点无鉴权，仅本地/联调环境使用；**生产 404**：`NODE_ENV=production` 时 `notFound()`，UX-21 / 2026-10-22） |
 | GET | /api/v1/internal/billing/wallet?userId= | **服务间**钱包/套餐实时查询（client 认证 + scope `wallet:read`） |
 
 **接入约定**：新平台接入 = `oidc_clients` 注册一行（clientId/secret 哈希/redirect 白名单/scopes）+ 标准授权码跳转流；子平台统一以**二级域名**（`<product>.aidean.com` 示意）对外，`redirect_uri` 白名单登记完整二级域地址（域名/TLS/Cookie 作用域口径见《[子平台SSO接入指南](../product/modules/子平台SSO接入指南.md)》§2.1）；用户身份锚点为 `sub=User.id`，claims 携带 `tier`（NORMAL/PRO/MAX）与 `ver`（tokenVersion）。错误码新增：10006 TOO_MANY_REQUESTS(429)、10007 FORBIDDEN_CLIENT_SCOPE(403)。**分步接入操作手册见《[子平台SSO接入指南](../product/modules/子平台SSO接入指南.md)》（本节为端点权威清单，参数与响应形态以代码为准）。**
