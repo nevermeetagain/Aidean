@@ -163,6 +163,15 @@ function describePaginated(opts: {
         const where = argOf(modelMock(model).findMany).where ?? {};
         for (const key of intFilters) expect(where).not.toHaveProperty(key);
       });
+
+      // 合法整数过滤值必须真正写进 where：若实现把 where 赋值整段删掉，
+      // 过滤器会静默失效但仍返回 200 —— 仅靠「空串不含键」断言无法捕获。
+      it.each(intFilters.map((k) => `?${k}=2`))("%s → 200 且 where 写入解析后的整数 2", async (qs) => {
+        const { res } = await callRoute(path, qs);
+        expect(res.status).toBe(200);
+        const where = argOf(modelMock(model).findMany).where ?? {};
+        for (const key of intFilters) expect(where[key]).toBe(2);
+      });
     }
 
     it("正常值不变：page=2&pageSize=10 → skip=10 take=10", async () => {

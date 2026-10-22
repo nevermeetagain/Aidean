@@ -1,7 +1,8 @@
 # B11-11 变异检验：15 个列表端点逐个回退为原写法，定向单测必须失败
-DATE=2026-10-22T12:10:00+08:00（第二轮：审核修复 benchmarks 空过滤值分支 + 新增空白串/下界用例后重跑）
-SPEC=apps/web/lib/features/admin/__tests__/admin-list-pagination.spec.ts（107 tests）
-METHOD=每个端点：记 SHA256 → `git checkout HEAD -- <route>`（回退为未接入写法）→ 跑 vitest（-t 端点名）→ 记录退出码 → finally 还原编辑版 → 校验 SHA256 → 再跑一次确认全绿
+DATE=2026-10-22T12:35:00+08:00（第三轮：终审补「合法整数过滤值写入 where」3 例 + rebase 后改以基线 6cac347 回退）
+SPEC=apps/web/lib/features/admin/__tests__/admin-list-pagination.spec.ts（110 tests）
+METHOD=每个端点：记 SHA256 → `git checkout 6cac347 -- <route>`（回退为接入前写法）→ 跑 vitest（-t 端点名）→ 记录退出码 → finally 还原编辑版 → 校验 SHA256 → 再跑一次确认全绿
+BASELINE=6cac347（origin/main 前一点；**非 HEAD**——HEAD 已含接入代码，对 HEAD checkout 不会产生变异）
 SCRIPT=.scratch/mutate-all.ps1（工作区，未入库）
 RAW_LOG=.scratch/mutation-<endpoint>.txt（15 份原始日志，未入库）
 
@@ -10,26 +11,26 @@ RAW_LOG=.scratch/mutation-<endpoint>.txt（15 份原始日志，未入库）
 |---|------|--------------|-------------|-----------|------------|---------|
 | 1 | announcements | 5 | 1 | 7 | 0 | True |
 | 2 | api-stations | 5 | 1 | 7 | 0 | True |
-| 3 | audit-logs | 6 | 1 | 9 | 0 | True |
-| 4 | benchmarks | 7 | 1 | 9 | 0 | True |
-| 5 | capabilities | 4 | 1 | 7 | 0 | True |
-| 6 | discovery/candidates | 4 | 1 | 7 | 0 | True |
-| 7 | evaluations | 7 | 1 | 9 | 0 | True |
-| 8 | free-quotas | 5 | 1 | 7 | 0 | True |
-| 9 | intelligence/reports | 5 | 1 | 5 | 0 | True |
-| 10 | intelligence/snapshots | 5 | 1 | 5 | 0 | True |
-| 11 | protocols | 4 | 1 | 7 | 0 | True |
-| 12 | scripts | 5 | 1 | 7 | 0 | True |
-| 13 | sync/batches | 5 | 1 | 7 | 0 | True |
-| 14 | sync/changes | 5 | 1 | 7 | 0 | True |
-| 15 | tier-mappings | 5 | 1 | 7 | 0 | True |
+| 3 | audit-logs | 6 | 1 | 10 | 0 | True |
+| 4 | benchmarks | 7 | 1 | 10 | 0 | True |
+| 5 | evaluations | 7 | 1 | 10 | 0 | True |
+| 6 | free-quotas | 5 | 1 | 7 | 0 | True |
+| 7 | scripts | 5 | 1 | 7 | 0 | True |
+| 8 | sync/batches | 5 | 1 | 7 | 0 | True |
+| 9 | sync/changes | 5 | 1 | 7 | 0 | True |
+| 10 | tier-mappings | 5 | 1 | 7 | 0 | True |
+| 11 | capabilities | 4 | 1 | 7 | 0 | True |
+| 12 | discovery/candidates | 4 | 1 | 7 | 0 | True |
+| 13 | protocols | 4 | 1 | 7 | 0 | True |
+| 14 | intelligence/reports | 5 | 1 | 5 | 0 | True |
+| 15 | intelligence/snapshots | 5 | 1 | 5 | 0 | True |
 
 **结论：15/15 全部 MUT_EXIT=1、RESTORE_EXIT=0、SHA_MATCH=True。**
 所有 mutant 均出现 `AssertionError: expected 200 to be 400`——回退原写法后非法串重新变成「静默回退 + NaN 进 Prisma」，单测立即捕获。
 
 ## 逐端点 SHA256（前 16 位）
-| 端点 | SHA_BEFORE（编辑版） | SHA_MUTANT（HEAD 原版） |
-|------|---------------------|------------------------|
+| 端点 | SHA_BEFORE（编辑版） | SHA_MUTANT（6cac347 原版） |
+|------|---------------------|--------------------------|
 | announcements | F37F3D09E59E5CE7 | 7217B078C77234B7 |
 | api-stations | 59FCD9F8A223CC4C | 1676E58C197F0D4B |
 | audit-logs | 41A2038D842F3FCD | DB204B68CBBB6C80 |
@@ -46,15 +47,17 @@ RAW_LOG=.scratch/mutation-<endpoint>.txt（15 份原始日志，未入库）
 | sync/changes | 55565247D02B3B6B | 4BEDB035DED66BC0 |
 | tier-mappings | DADD9CEC14D4974A | BE2C848D1D78FB82 |
 
-注：`benchmarks` 的 SHA_BEFORE 由首轮 `F01CD6D6…` 变为 `CEA1FB99…`，原因是审核后修复了 `verifiedStatus !== undefined` 死分支（改为 `!== ""`），使 `?verifiedStatus=` 空过滤值回到「视同缺省」。
+注 1：`benchmarks` 的 SHA_BEFORE 由首轮 `F01CD6D6…` 变为 `CEA1FB99…`，原因是审核后修复了 `verifiedStatus !== undefined` 死分支（改为 `!== ""`）。
+注 2：第三轮 SHA_BEFORE 与第二轮一致（本轮回退只改 spec，不动 route.ts）。
 
-## 为什么失败数是 4~7 而非全部 107 例
+## 为什么失败数是 4~7 而非全部 110 例
 变异只回退「分页解析」这一处，失败的恰是依赖该行为的用例：
 - 基础 4 例：`?page=abc`、`?pageSize=xyz`、`?page=abc&pageSize=xyz`、`?page=%20`（空白串在原写法下 parseInt→NaN→`||1` 回退 200）。
-- 带整数过滤参数的端点（audit-logs/benchmarks/evaluations）：再加 `?<filter>=abc` 与非空过滤参数相关用例，共 6~7 例。
+- 带整数过滤参数的端点（audit-logs/benchmarks/evaluations）：再加 `?<filter>=abc` 等，共 6~7 例。
 - capabilities/protocols/discovery：默认值不同，4 例。
 - intelligence 两组：`?limit=abc`、`?limit=xyz`、`?limit=%20`、`?limit=0`、`?limit=-1` 共 5 例。
-正常值/钳制用例在原写法下同样通过（原写法已有 Math.max/min 钳制），故不失败——属预期。
+- **新增的 `?<filter>=2 → where.<key>===2` 3 例在 mutant 下仍通过**（原写法也把合法整数写进 where），因此失败数未增加——它们防的是「where 赋值被整段删除」这类**静默失效**回归，与原写法无关，属预期的正交保护。
+- 正常值/钳制用例在原写法下同样通过（原写法已有 Math.max/min 钳制），故不失败——属预期。
 
 ## 原始日志摘录（audit-logs，验收点）
 ```
@@ -72,7 +75,7 @@ SHA_AFTER=41A2038D842F3FCDF5E096E6246CA97119435775178134B38FD1B5D69883FEC8
 MATCH=True
 >>> 还原后重跑（-t audit-logs）
 Test Files  1 passed (1)
-     Tests  9 passed (9)
+     Tests  10 passed (10)
 EXIT(restored)=0
 ```
 
@@ -82,5 +85,6 @@ EXIT(restored)=0
 - 守卫单测：`lib/http/pagination-guard.spec.ts` 3 tests passed（含「strict 在名单非空时 exit 1、清空后 exit 0」断言）。
 
 ## 说明
-- 变异脚本首版曾因 `$ErrorActionPreference="Stop"` + 原生命令 stderr 导致中断且未还原文件；已当场用 `.mutbak` 还原并校验 SHA 一致，随后重写为 `try/finally` 强制还原。本文记录重写后的完整两轮 15×2 结果（第一轮 87 tests 基线，第二轮 107 tests 含审核补充用例）。
+- 变异脚本首版曾因 `$ErrorActionPreference="Stop"` + 原生命令 stderr 导致中断且未还原文件；已当场用 `.mutbak` 还原并校验 SHA 一致，随后重写为 `try/finally` 强制还原。本文记录重写后的完整三轮 15×2 结果（第一轮 87 tests 基线、第二轮 107 tests、第三轮 110 tests + 基线改 6cac347）。
+- 第三轮前发现：脚本原先用 `git checkout HEAD` 回退，而 HEAD 已含接入代码（提交后），会导致「变异体 == 编辑版」；已改为 `git checkout 6cac347`，并以 `MUTANT_DIFFERS_FROM_EDIT=True` 自证变异生效。
 - 变异脚本与原始日志位于工作区 `.scratch/`（.gitignore 覆盖），本文件为入库的精简证据；如需逐字节复核可重跑 `.scratch/mutate-all.ps1`。

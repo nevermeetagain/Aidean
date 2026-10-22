@@ -1,16 +1,18 @@
 # EVD-B11-11 · 偏差与裁量记录（分页参数有限性守卫统一口径，Q-11-05=A）
 
-> 版本: v1.3 | 更新: 2026-10-22 | 变更: 追加 §六.8（审核后修订：benchmarks 空过滤值、空白串口径、运行态 15/15、107 tests、三文档同步）与 §六.9（rebase 至 6cac347 后的远程既有失败登记）；§四为交接时快照，保留不改。
+> 版本: v1.4 | 更新: 2026-10-22 | 变更: 追加 §六.8（审核后修订）、§六.9（rebase 既有失败）、§六.10（终审修订）；§一「15 端点接入」由「未做」改为已完成，§四仍为交接时快照保留不改。
 
 ## 一、交付范围（分工调整后）
+
+> 注：本表随交付推进更新；§四为交接时刻的历史快照，仅作对照，不代表最终状态。
 
 | 项 | 状态 | 载体 |
 |---|---|---|
 | 共享件 `apps/web/lib/http/pagination.ts`（`parsePagination`/`parseLimit`/`parseOptionalInt`/`parseIntParam`/`clampInt`/`toSearchParams`） | ✅ | 32 例单测 `lib/http/pagination.spec.ts`（含 20×20 畸形输入两两组合穷举） |
 | 参考实现 `admin/scripts/[id]/executions` 迁移 | ✅（行为与原 `toInt()` 等价，既有 7 例全绿） | `verify.txt` §3、`mutation.txt` |
-| 棘轮守卫 `scripts/guard/pagination-guard.mjs`（`run-all` 第 6 项） | ✅ 名单外新增裸 `parseInt` / `Number(searchParams…)` → FAIL；名单内 15 个 → WARN；`--strict` 名单内也 FAIL | 3 例单测 `lib/http/pagination-guard.spec.ts` |
-| 其余 15 个端点接入 + 逐端点单测 + 逐端点变异检验 | ⏸ **未做（按分工移交）** | `handoff.md` |
-| 文档 | ✅ 《API接口文档》§4.2 `pagination-params` ↔ 《API架构设计方案》§五 `pagination-params-architecture`；术语表 `term-pagination-parse`；目录结构文档 §五 `lib/http/` | — |
+| 棘轮守卫 `scripts/guard/pagination-guard.mjs`（`run-all` 第 6 项） | ✅ 名单外新增裸 `parseInt` / `Number(searchParams…)` → FAIL；`ALLOWLIST_P1` 已清空（15 个全部接入）；`--strict` 已 exit 0，但 `run-all` strict 接线未切（等 Hark 裁定） | 3 例单测 `lib/http/pagination-guard.spec.ts` |
+| 其余 15 个端点接入 + 逐端点单测 + 逐端点变异检验 | ✅ **已完成**：15 个 `route.ts` 全部接入 `parsePagination`/`parseLimit`/`parseOptionalInt`；`admin-list-pagination.spec.ts` **110 例**（15 个 describe）；变异 15/15 全部捕获 | `runtime.txt`（15/15 运行态 400）、`mutation-15endpoints.txt`、`执行过程-B11-11.md` §3-4 |
+| 文档 | ✅ 《API接口文档》v1.64 §4.2 `pagination-params` ↔ 《API架构设计方案》v1.21 §五 `pagination-params-architecture`；术语表 v1.25 `term-pagination-parse`（**均属白名单外必要同步，请求追认**） | — |
 
 ## 二、设计决策
 
@@ -63,5 +65,12 @@
    - 全量 `vitest run` 出现 **1 个 Failed Suite**：`lib/features/admin/__tests__/rk11-prod-scripts.spec.ts` → `SyntaxError: Invalid or unexpected token`（首行 `const bundle = await import("../../../../../../scripts/build/bundle-scripts.mjs")`，顶层 await 处）。单文件复现：`pnpm --filter web exec vitest run lib/features/admin/__tests__/rk11-prod-scripts.spec.ts` → `Test Files 1 failed (1) / Tests no tests`。
    - 归因证据：`git diff origin/main HEAD -- <该 spec>` = 0 行、`git diff origin/main HEAD -- apps/web/vitest.config.ts` = 0 行 → 文件字节与 CI 配置均与我方提交无关；清 `.vite` 缓存、单文件复跑仍失败；文件内无不可见字符（U+00A0/200B/3000/FEFF 扫描为 0），行尾 CRLF 正常。
    - 影响：本地全量 vitest 为 **1734 passed / 5 skipped / 1 failed suite**；其余 157 个文件全绿且 `Test Files 1 failed | 157 passed | 2 skipped (160)`。
-   - 处置：**未修**（超出 B11-11 白名单：属 RK-11-07/09 责任范围，修改该 spec 或 vitest 配置均需另行授权）。CI 的 `Unit tests (web)` 预计会因此红灯，需 RK 卡负责人处理；B11-11 自身的 107 例与 15 端点证据不受影响。
+   - 处置：**未修**（超出 B11-11 白名单：属 RK-11-07/09 责任范围，修改该 spec 或 vitest 配置均需另行授权）。CI 的 `Unit tests (web)` 预计会因此红灯，需 RK 卡负责人处理；B11-11 自身的 110 例与 15 端点证据不受影响。
+
+10. **终审修订（v1.4，子智能体第二轮独立复核后）**：
+    - **P1-1（已修）**：§一 表格原写「其余 15 个端点接入 … ⏸ 未做」，与本卡最终状态直接矛盾 → 改为 ✅ 已完成，并加「本表随交付推进更新」注记。
+    - **P1-2（已修）**：`verify.txt` §9 的全量读数 1707 采自 87 例口径，却与同列表的「107 passed」并列；已改为按时代分列（87 例口径 1707 → 107 例口径 1727 → rebase 及 110 例后 1737 待实测），并与 `runtime.txt` §7 对齐。
+    - **P2-3（已修）**：执行过程 §3 的 `spec-count 205→206` 过期 → 统一为 207（205→206 RK + 206→207 本卡）。
+    - **P2-4（已修）**：`pagination-guard.mjs` 头部注释仍写「名单内 15 个 → WARN」，与名单已空不符 → 改为「ALLOWLIST_P1 已清空 → ratchet 与 strict 等价，`run-all` 接线未切」；三份契约文档属白名单外必要同步，已在 §一 与执行过程 §5 标注「请求追认」。
+    - **P2-5（已修）**：单测缺「合法整数过滤值真正写入 where」的断言（实现若整段删掉 `where[filter]=n`，过滤器静默失效仍 200，107 例全绿）→ 新增 3 例（`audit-logs?action=2` / `benchmarks?verifiedStatus=2` / `evaluations?status=2` 断言 `where.<key>===2`），单测 107 → **110**；变异对基线 6cac347 复跑 **15/15** 仍全部捕获（`mutation-15endpoints.txt` 第三轮）。
 

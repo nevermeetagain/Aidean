@@ -6,10 +6,13 @@
 //   P2) 出现 `Number(…searchParams…)` 直接转换查询参数 → 违规（同样可能得 NaN），除非已人工复核并登记。
 //
 // 棘轮（ratchet）模式：
-//   - ALLOWLIST 里的既存文件（B11-11 待接入的 15 个端点 + 2 处已复核安全写法）命中 → WARN，不阻断 CI；
+//   - ALLOWLIST_P1 为「既存待接入」名单：名单内命中 → WARN，不阻断 CI（每接入一个删一行）；
 //   - 名单外的文件命中 → FAIL（新增代码不得再引入裸 parseInt）；
 //   - 名单内文件已经干净 → WARN「请从 ALLOWLIST 移除」，提示收紧棘轮；
 //   - `--strict`：名单内命中也算 FAIL（全部接入完成后，CI 可切换为 strict 并清空名单）。
+//   - 现状（2026-10-22，B11-11）：ALLOWLIST_P1 已清空 → 名单内外无差别，ratchet 与 `--strict` 等价；
+//     `scripts/guard/run-all.mjs` 的 strict 接线尚未切换（等 Hark 裁定）。
+//   - P2 名单（ALLOWLIST_P2）为已人工复核的安全写法，ratchet 与 strict 下均只 WARN。
 //
 // 用法：node scripts/guard/pagination-guard.mjs [--strict] [--json]
 // 零新依赖：仅 node 内置 fs/path/url。
