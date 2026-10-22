@@ -62,13 +62,20 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 COPY tsconfig.base.json ./
 COPY apps/web ./apps/web
 COPY packages ./packages
+# RK-11-07：可调度脚本源（scripts/crawl|ranking）+ 预编译器；产物 apps/web/scripts-dist 随 runner 拷出，
+# 使容器内 script-executor 以 `node <name>.mjs` 执行（runner 无 .ts 源、无 tsx）。
+COPY scripts/crawl ./scripts/crawl
+COPY scripts/ranking ./scripts/ranking
+COPY scripts/build ./scripts/build
 # 构建期契约校验（strict：缺失/非法/localhost 基址一律 fail-closed）。
 # --env-path 指向镜像内必然不存在的文件：仅进程环境（ARG 注入的 ENV）生效，
 # 杜绝 .env 残留干扰。见 apps/web/scripts/check-runtime-contract.mjs 与 .docs/REL-ENG-02 §2.1。
 RUN pnpm --filter web exec node scripts/check-runtime-contract.mjs --mode build --strict --env-path /no-env-file-in-image \
     && pnpm --filter web exec prisma generate \
     && pnpm --filter web exec next build \
-    && pnpm --filter web exec node scripts/postbuild-standalone.mjs
+    && pnpm --filter web exec node scripts/postbuild-standalone.mjs \
+    && node scripts/build/bundle-scripts.mjs \
+    && node scripts/build/bundle-scripts.mjs --check
 
 # ---------- 阶段 3: runner —— standalone 运行时 ----------
 FROM node:20-alpine AS runner
@@ -91,6 +98,8 @@ RUN apk add --no-cache openssl \
 COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder /app/apps/web/public ./apps/web/public
+# RK-11-07：预编译调度脚本（@prisma/client 经 standalone 的 apps/web/node_modules 解析）
+COPY --from=builder /app/apps/web/scripts-dist ./apps/web/scripts-dist
 # 运行期契约（SSO-02）：Next standalone 不拷贝 .env，以下变量必须由容器编排显式注入：
 #   DATABASE_URL / REDIS_URL（缺失 → 登录/授权码路径 500）、JWT_SECRET（缺失 → 签名失败）。
 # 部署前执行：node apps/web/scripts/check-runtime-contract.mjs --mode runtime --strict

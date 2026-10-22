@@ -1,0 +1,9 @@
+EVD-RK-11-09 · node_modules 空壳：侦测 + 取证（未根治，不得宣称已消停）
+[交付] scripts/guard/node-modules-integrity.mjs；apps/web build = 前置深扫 → next build → postbuild → 后置深扫
+  签名：.pnpm/<id>/node_modules/<本包> 目录 entries=0 或缺 package.json（与 shellscan2_011 同签名；不扫依赖 symlink）
+  异常：exit 1 + 修复口径提示 + 追加 .scratch/nm-integrity.log（空壳清单、mtime 窗口、node/pnpm/IDE/杀软进程快照）
+[实测] 本仓：scanned=631 shells=0（1.2s）exit 0
+       构造仓：next entries=0 + @prisma/client 缺 package.json → FAIL 2（关键包 next,@prisma/client）exit 1，日志写出
+[单测] rk11-prod-scripts.spec.ts：健康仓 0 空壳；scope 包；同 id 依赖位不计入；关键包清单
+[归因推断·待确认] 甲乙曾共用一个工作树，一方 pnpm install --force 修复时另一方在 build；已改为独立克隆。
+  需在 Windows 侧观察：若再发生，取 .scratch/nm-integrity.log 的进程快照定位删除者（杀软/IDE 自动 install/并行助手）。

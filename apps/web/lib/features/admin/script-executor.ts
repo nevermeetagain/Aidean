@@ -230,6 +230,8 @@ type PlanEnv = {
  *   POSIX 下 npx 可无 shell 启动；win32 下 `npx`/`npx.cmd` 无 shell 分别 ENOENT/EINVAL，
  *   而开 `shell:true` 会把后台可编辑的 params 拼进命令行（命令注入），故宁可直接报错。
  * - 全程 args 数组，**绝不开 shell**。
+ * - RK-11-07：源码或 tsx 缺失时，回落到预编译产物 `apps/web/scripts-dist/<dir>/<name>.mjs`，以 `node` 直接执行
+ *   （生产镜像口径）。优先级：源码+tsx（dev）> 预编译产物（prod）> POSIX npx > 报错。
  */
 /** 仓库根探测的候选根上限：cwd 本身 + 向上两级父目录（共 3 个候选，与上方口径一致） */
 const MAX_ROOT_LOOKUP = 3;
@@ -271,17 +273,21 @@ export function planScriptRun(scriptPath: string, env: PlanEnv = {}): ScriptRunP
       base = parent;
     }
   }
+  // 1b) RK-11-07：生产镜像只有预编译产物（scripts/build/bundle-scripts.mjs 产出），没有 .ts 源与 tsx
+  const compiledTried: string[] = [];
+  const compiled = findCompiled(scriptPath, cwd, exists, compiledTried);
+
   if (!scriptAbs || !root) {
-    throw new Error(`脚本不存在：${scriptPath}（已尝试 ${tried.join(' | ')}）`);
+    if (compiled) {
+      return { cmd: execPath, args: [compiled.abs, ...expandParams(env.params)], scriptAbs: compiled.abs, root: compiled.root };
+    }
+    throw new Error(
+      `脚本不存在：${scriptPath}（已尝试 ${tried.join(' | ')}${compiledTried.length ? `；预编译产物 ${compiledTried.join(' | ')}` : ''}）`,
+    );
   }
 
   // 2) 参数展开：与旧实现同口径 `--key value`，仍走 args 数组
-  const paramArgs: string[] = [];
-  if (env.params) {
-    for (const [key, value] of Object.entries(env.params)) {
-      paramArgs.push(`--${key}`, String(value));
-    }
-  }
+  const paramArgs = expandParams(env.params);
 
   // 3) 启动器：本地 tsx CLI 优先（从仓库根与 cwd 两个上下文各试一次）
   const tsxCandidates: string[] = [];
@@ -296,6 +302,11 @@ export function planScriptRun(scriptPath: string, env: PlanEnv = {}): ScriptRunP
     return { cmd: execPath, args: [tsxCli, scriptAbs, ...paramArgs], scriptAbs, root };
   }
 
+  // 有源无 tsx（如精简镜像里误带了 .ts）：预编译产物优先于 npx（npx 在离线容器里会尝试联网安装）
+  if (compiled) {
+    return { cmd: execPath, args: [compiled.abs, ...paramArgs], scriptAbs: compiled.abs, root: compiled.root };
+  }
+
   if (platform === 'win32') {
     throw new Error(
       `未找到本地 tsx CLI（已尝试 ${tsxCandidates.join(' | ')}）；Windows 下不可用 shell 包裹 npx（参数含后台可编辑值，开 shell 即命令注入）`,
@@ -303,6 +314,47 @@ export function planScriptRun(scriptPath: string, env: PlanEnv = {}): ScriptRunP
   }
 
   return { cmd: 'npx', args: ['tsx', scriptAbs, ...paramArgs], scriptAbs, root };
+}
+
+/** 参数展开：与旧实现同口径 `--key value`，始终走 args 数组（绝不拼 shell 字符串） */
+function expandParams(params?: Record<string, unknown>): string[] {
+  const out: string[] = [];
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
+      out.push(`--${key}`, String(value));
+    }
+  }
+  return out;
+}
+
+/**
+ * RK-11-07：定位预编译产物。只接受白名单形态 `scripts/<crawl|ranking>/<name>.ts`，
+ * 映射为 `<repoRoot>/apps/web/scripts-dist/<dir>/<name>.mjs`（与 bundle-scripts.mjs 的 distRelOf 同口径）。
+ * 候选根与源码探测一致：cwd 起至多 MAX_ROOT_LOOKUP 级；另加 cwd 即 apps/web 的情形（`<cwd>/scripts-dist/...`）。
+ */
+function findCompiled(
+  scriptPath: string,
+  cwd: string,
+  exists: (p: string) => boolean,
+  tried: string[],
+): { abs: string; root: string } | null {
+  const m = /^scripts\/(crawl|ranking)\/([\w.-]+)\.ts$/.exec(scriptPath.replace(/\\/g, '/'));
+  if (!m) return null;
+  const [, dir, name] = m;
+  let base = resolve(cwd);
+  for (let i = 0; i < MAX_ROOT_LOOKUP; i += 1) {
+    for (const cand of [
+      join(base, 'apps', 'web', 'scripts-dist', dir, `${name}.mjs`),
+      join(base, 'scripts-dist', dir, `${name}.mjs`),
+    ]) {
+      tried.push(cand);
+      if (exists(cand)) return { abs: cand, root: base };
+    }
+    const parent = dirname(base);
+    if (parent === base) break;
+    base = parent;
+  }
+  return null;
 }
 
 /**

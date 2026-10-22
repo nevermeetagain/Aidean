@@ -73,3 +73,4 @@ tmp/
 # ── 临时数据/生成产物 ──
 data/tmp_wt02/
 .archify/
+apps/web/scripts-dist/

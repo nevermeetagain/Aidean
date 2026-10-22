@@ -312,7 +312,7 @@ async function main(argv: string[]): Promise<number> {
 
 const isEntry = (() => {
   try {
-    return typeof process !== "undefined" && !!process.argv[1] && /fx_daily\.ts$/.test(process.argv[1]);
+    return typeof process !== "undefined" && !!process.argv[1] && /fx_daily\.(?:ts|mjs)$/.test(process.argv[1]); // RK-11-07：生产镜像执行预编译产物 fx_daily.mjs
   } catch {
     return false;
   }

@@ -188,3 +188,59 @@ describe("planScriptRun", () => {
     expect(planFromWeb.root).toBe(repoRoot);
   });
 });
+
+// ── RK-11-07：生产镜像口径（无 .ts 源 / 无 tsx，仅预编译产物）────────────────────
+describe("planScriptRun · 预编译产物（RK-11-07）", () => {
+  const IMG = resolve("/app"); // runner WORKDIR
+  const DIST_IMG = join(IMG, "apps", "web", "scripts-dist", "crawl", "fx_daily.mjs");
+
+  it("镜像内（cwd=/app，无源无 tsx）→ node 直接执行 scripts-dist 产物", () => {
+    const plan = planScriptRun(SCRIPT, {
+      cwd: IMG,
+      platform: "linux",
+      execPath: "/usr/local/bin/node",
+      exists: existsFrom(filesOf(DIST_IMG)),
+      params: { source: "all" },
+    });
+    expect(plan.cmd).toBe("/usr/local/bin/node");
+    expect(plan.args).toEqual([DIST_IMG, "--source", "all"]);
+    expect(plan.scriptAbs).toBe(DIST_IMG);
+    expect(plan.root).toBe(IMG);
+  });
+
+  it("cwd=apps/web 时也能命中 <cwd>/scripts-dist", () => {
+    const dist = join(WEB, "scripts-dist", "crawl", "fx_daily.mjs");
+    const plan = planScriptRun(SCRIPT, { cwd: WEB, platform: "linux", execPath: "/n", exists: existsFrom(filesOf(dist)) });
+    expect(plan.args[0]).toBe(dist);
+  });
+
+  it("源码+tsx 同时存在时仍优先 tsx（dev 口径不变）", () => {
+    const dist = join(ROOT, "apps", "web", "scripts-dist", "crawl", "fx_daily.mjs");
+    const plan = planScriptRun(SCRIPT, { cwd: WEB, platform: "linux", execPath: "/n", exists: existsFrom(filesOf(SCRIPT_ABS, TSX_WEB, dist)) });
+    expect(plan.args[0]).toBe(TSX_WEB);
+  });
+
+  it("有源无 tsx 但有产物 → 产物优先于 npx（离线容器里 npx 会尝试联网）", () => {
+    const dist = join(ROOT, "apps", "web", "scripts-dist", "crawl", "fx_daily.mjs");
+    const plan = planScriptRun(SCRIPT, { cwd: ROOT, platform: "linux", execPath: "/n", exists: existsFrom(filesOf(SCRIPT_ABS, dist)) });
+    expect(plan.cmd).toBe("/n");
+    expect(plan.args[0]).toBe(dist);
+  });
+
+  it("win32 无 tsx 但有产物 → 可执行，不再报错", () => {
+    const dist = join(ROOT, "apps", "web", "scripts-dist", "crawl", "fx_daily.mjs");
+    const plan = planScriptRun(SCRIPT, { cwd: ROOT, platform: "win32", execPath: "node.exe", exists: existsFrom(filesOf(SCRIPT_ABS, dist)) });
+    expect(plan.cmd).toBe("node.exe");
+  });
+
+  it("白名单外的路径不做产物映射（防止借产物目录执行任意文件）", () => {
+    const evil = join(IMG, "apps", "web", "scripts-dist", "evil", "x.mjs");
+    expect(() =>
+      planScriptRun("scripts/evil/x.ts", { cwd: IMG, platform: "linux", exists: existsFrom(filesOf(evil)) }),
+    ).toThrow(/脚本不存在/);
+  });
+
+  it("源与产物都缺 → 报错且列出产物候选路径", () => {
+    expect(() => planScriptRun(SCRIPT, { cwd: IMG, platform: "linux", exists: () => false })).toThrow(/预编译产物/);
+  });
+});

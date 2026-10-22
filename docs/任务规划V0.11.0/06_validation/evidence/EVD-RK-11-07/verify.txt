@@ -1,0 +1,28 @@
+EVD-RK-11-07 · 生产镜像内调度链可执行（U-3 仅对本项解冻，用户 2026-10-22 11:35 CST）
+环境：Linux arm64 沙箱，Node 20，PG（embedded）5435/aidean_rk（db push + seed.ts，PUSH=0 SEED=0）
+
+[设计]
+- builder：COPY scripts/{crawl,ranking,build} → node scripts/build/bundle-scripts.mjs && --check
+- runner：COPY apps/web/scripts-dist（@prisma/client 外置，经 standalone 的 apps/web/node_modules 解析）
+- planScriptRun 优先级：源+tsx（dev）> 预编译产物 apps/web/scripts-dist/<dir>/<name>.mjs（prod）> POSIX npx > 报错
+- 产物映射只接受白名单形态 scripts/(crawl|ranking)/<name>.ts，不可借产物目录执行任意文件
+
+[打包] node scripts/build/bundle-scripts.mjs → 10 scripts（esbuild 0.28.2，取自 tsx 依赖，不改 lockfile）；--check OK 10
+[构建期拦截] 还原 fx_daily 旧入口判定 /fx_daily\.ts$/ → bundle 报错「入口判定只认 .ts，打包后不会执行」exit 1
+
+[仿镜像运行态] /tmp/img/app = .next/standalone + apps/web/scripts-dist；无 scripts/ 目录、无 tsx（find tsx/dist/cli.mjs 为空）
+  NODE_ENV=production node apps/web/server.js（cwd=/tmp/img/app，PORT 3901）
+  POST /api/v1/auth/login admin → 200
+  POST /admin/scripts/<排名更新>/trigger → 200 status=1，output「排名更新脚本（13 维加权 · R-72）…」
+  POST /admin/scripts/<每日汇率采集>/trigger（修复前）→ status=1 但 output='' durationMs=93 ← 假成功（入口判定只认 .ts）
+  POST /admin/scripts/<每日汇率采集>/trigger（修复后）→ status=1 durationMs=346，output「写入 2026-10-22 USD/CNY=6.673（源 frankfurter）」
+  POST /admin/scripts/run-due  Bearer <ADMIN_API_TOKEN>（排名更新 nextRunAt 置为过去）→ 200 triggered=1 [success 4024ms]
+  POST /admin/scripts/run-due  Bearer <错误 token> → 401
+
+[单测] script-executor.spec.ts 21 passed（新增 7 例：镜像口径、cwd=apps/web、dev 优先 tsx、产物优先于 npx、win32 有产物、白名单外拒、双缺报错）
+       rk11-prod-scripts.spec.ts：bundle distRelOf 与 executor 探测同口径；4 个已登记脚本在打包范围
+[变异] 去掉「无源→产物」分支 → 2 failed；放宽产物白名单为任意目录 → 1 failed（均已还原）
+
+[待确认]
+- 真 docker build / compose up（沙箱无 docker）；alpine musl 查询引擎；runner USER nextjs 下读取 scripts-dist
+- crawl_models / crawl_llmtest 等外呼脚本在容器内的网络与耗时（5 min 超时口径未变）

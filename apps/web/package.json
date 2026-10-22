@@ -5,7 +5,8 @@
   "scripts": {
     "postinstall": "prisma generate",
     "dev": "next dev --turbo",
-    "build": "next build && node scripts/postbuild-standalone.mjs",
+    "build": "node ../../scripts/guard/node-modules-integrity.mjs --phase prebuild && next build && node scripts/postbuild-standalone.mjs && node ../../scripts/guard/node-modules-integrity.mjs --phase postbuild",
+    "build:scripts": "node ../../scripts/build/bundle-scripts.mjs",
     "typecheck": "tsc --noEmit",
     "start": "next start",
     "lint": "next lint",
