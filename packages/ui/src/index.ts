@@ -10,6 +10,12 @@ export { cn, type ClassValue } from "./lib/cn";
 
 export { Button, type ButtonProps } from "./components/ui/button";
 export { Input, type InputProps } from "./components/ui/input";
+// B11-04a（2026-10-22）：补齐 admin 表单原语（Select / Textarea / Label），消解 DEF-011-07。
+// 三件同 Button/Input 基线：forwardRef + rounded-md + focus-visible:ring-2 ring-[var(--ring)]
+// + disabled:opacity-50 + aria-invalid 映射;不引入 cva/radix。
+export { Select, type SelectProps } from "./components/ui/select";
+export { Textarea, type TextareaProps } from "./components/ui/textarea";
+export { Label, type LabelProps } from "./components/ui/label";
 export {
   Card,
   CardHeader,

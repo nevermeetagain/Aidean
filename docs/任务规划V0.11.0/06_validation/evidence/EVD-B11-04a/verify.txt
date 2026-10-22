@@ -1,0 +1,107 @@
+EVD-B11-04a · verify.txt
+========================
+> 版本: v1.0 | 更新: 2026-10-22 | 变更: 首建（B11-04a Select/Textarea/Label 三原语）
+> 工作树：E:/Code/Aidean-ui（助手甲独立克隆，per 30_分工 v0.3 §零 L23）
+> 基线：origin/main = 1d6828e7fa19e1cfe34298c20f99fd0f2480159a（pull --rebase 后本地=远端 0/0）
+
+【验收①】三件与 Button 同一基线（rounded-md + focus-visible:ring-2 ring-[var(--ring)] + disabled:opacity-50），N6 悬停可读性铁律（不叠实心底）
+  命令：Grep "rounded-md|focus-visible:ring-2|disabled:opacity-50" packages/ui/src/components/ui/{select,textarea,label}.tsx
+  结果：Select/Textarea 三基线类均落在 `cn(...)` 首参常量段；Label 走 peer-disabled:opacity-70（label 无原生 disabled 属性）
+  证据：select.tsx L26-29、textarea.tsx L18-22、label.tsx L22-23（同帧 grep 命中）
+  状态：已确认
+
+【验收②】单测覆盖四条：默认渲染 / className 合并 / disabled / ref 透传
+  命令：pnpm --filter @aidean/ui exec vitest run
+  输出：
+    RUN  v3.2.7 E:/Code/Aidean-ui/packages/ui
+     ✓ src/lib/__tests__/cn.spec.ts (4 tests) 6ms
+     ✓ src/lib/__tests__/label.spec.tsx (7 tests) 9ms
+     ✓ src/lib/__tests__/textarea.spec.tsx (8 tests) 11ms
+     ✓ src/lib/__tests__/select.spec.tsx (8 tests) 10ms
+    Test Files  4 passed (4)
+    Tests  27 passed (27)
+    Duration  647ms
+  EXIT=0
+  覆盖矩阵（对照四条）：
+    Select:   ① forwardRef ② 默认渲染+基线 ③ size scale ④ className 合并 ⑤ disabled 透传 ⑥/⑦ invalid+aria-invalid ⑧ ref 线程
+    Textarea: ① forwardRef ② 默认渲染+基线+rows ③ rows 覆写 ④ className 合并 ⑤ disabled 透传 ⑥/⑦ invalid+aria-invalid ⑧ ref 线程
+    Label:    ① forwardRef ② 默认渲染+基线+htmlFor→for ③ htmlFor 缺失不误关联 ④ required 星号 ⑤ 默认无星号 ⑥ className 合并 ⑦ ref 线程
+  测试环境：node（零 DOM），react-dom/server.renderToStaticMarkup 渲染字符串 + createElement 结构断言；无 jsdom / testing-library 新依赖（工作区现状即无）
+  状态：已确认
+
+【验收③】pnpm --filter @aidean/ui build（tsc --noEmit 类型检查）
+  命令：pnpm --filter @aidean/ui build
+  输出：
+    > @aidean/ui@0.1.0 build E:\Code\Aidean-ui\packages\ui
+    > tsc --noEmit
+  EXIT=0
+  注：SelectProps 采用 Omit<SelectHTMLAttributes<HTMLSelectElement>, "size"> 让位 scale 三档（原生 size=number 语义与 scale 冲突）
+  状态：已确认
+
+【判定级门禁 · 30_分工 §零 L49 五项必过】
+
+【验收④】pnpm --filter web exec tsc --noEmit --incremental false（冷跑，禁缓存态代替）
+  命令：pnpm --filter web exec tsc --noEmit --incremental false
+  前置：apps/web/tsconfig.tsbuildinfo 不存在（新克隆未生成，非缓存态）
+  后置：apps/web/tsconfig.tsbuildinfo 不存在（--incremental=false 不写 tsbuildinfo）
+  EXIT=0
+  说明：新克隆首轮，无「前后 byte+mtime 一致」对比锚；判定为「无缓存态介入」的冷跑，等价于 §9.2 判定口径的意图
+  状态：已确认
+
+【验收⑤】pnpm --filter web exec next lint
+  命令：pnpm --filter web exec next lint
+  输出末段：
+    ./components/common/SafeImage.tsx
+    19:14  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` ... @next/next/no-img-element
+  EXIT=0
+  说明：仅基线 SafeImage `<img>` warning（既有,非本卡引入）；无 error
+  状态：已确认
+
+【验收⑥】pnpm --filter web exec vitest run（全量 web 单测）
+  命令：pnpm --filter web exec vitest run
+  输出末段：
+    Test Files  156 passed | 2 skipped (158)
+         Tests  1620 passed | 5 skipped (1625)
+      Duration  10.86s
+  EXIT=0
+  说明：与 30_分工 §零 L20 Linux 沙箱读数完全一致（156/2 skipped · 1620/5 skipped）
+  状态：已确认（Windows 侧补跑）
+
+【验收⑦】node scripts/check-docs-rule.mjs
+  命令：node scripts/check-docs-rule.mjs
+  输出末段：
+    [铁律1] docs rule PASS：apps/ 下无实体 .md（README.md 豁免）。
+    [铁律-数字] 数字真源断言 PASS（锚=文档，代码=实测）：schema model=73, enum=37, admin API 域=38, admin 页面=34, Next.js=15.0.x
+  EXIT=0
+  状态：已确认
+
+【验收⑧】node scripts/check-docs-facts.mjs
+  命令：node scripts/check-docs-facts.mjs
+  输出：All 16 assertions passed.（含 spec-count=205 未动、aidean-ui-refs=71 未动）
+  EXIT=0
+  R10-01 说明：B11-04a 三件 spec 落在 packages/ui/**（非 e2e / apps/web 扫描路径），故 spec-count 保持 205；
+    apps/web/components 未新增 @aidean/ui import，故 aidean-ui-refs 保持 71；两者期望值**无需同步**
+  状态：已确认
+
+【附·Windows 门禁兜底】pnpm gates
+  命令：pnpm gates
+  首轮：Total: 7 | PASS: 6 | FAIL/ERROR: 1（prisma-check FAIL：新克隆 apps/web/.env 未就位）
+  修复：从主克隆 E:/Code/Aidean/apps/web/.env 与 .env.local 拷贝到本克隆（本地磁盘拷贝，两文件均在 .gitignore 内、git status 无出现）
+  重跑：
+    [PASS] deps-check : root=True, apps/web=True
+    [PASS] build-check : dry-run JSON 解析成功, tasks=3, web 任务在图内
+    [PASS] tsc-check : tsc Version 5.5.4; typecheck 0 errors (5s)
+    [PASS] prisma-check : schema 有效 (DATABASE_URL from apps\web\.env)
+    [PASS] barrel-check : index.ts 数量 0 <= 容忍值 3
+    [PASS] button-antipattern : ghost/outline + 实色深底覆盖 反模式 0 命中 (114 tsx)
+    [PASS] store-check : pnpm store status: untouched
+    Total: 7 | PASS: 7 | FAIL/ERROR: 0
+  GATES_EXIT=0
+  说明：packages/ui 目录树无 index.ts 增删（原 index.ts 只加 3 行 export 语句，路径未变），barrel-check 无回归
+  状态：已确认
+
+【未跑（本卡未列验收项）】
+  next build：B11-04a 卡片 §B.2.1 未要求全量 build；仅 @aidean/ui build EXIT=0 + web tsc EXIT=0 已覆盖类型面
+  e2e 全量：B11-04a 未涉及运行时/UI 交互路径变更；由 B11-RTM 收口时统一补跑
+  Playwright 截图对比：属 B11-04b（admin 表单热区迁移）验收项，本卡不涉及
+  运行态冒烟：packages/ui 新原语尚无消费者（apps/web 未 import Select/Textarea/Label），运行态影响面为零
