@@ -1,0 +1,34 @@
+> 版本: v1.0 | 更新: 2026-10-22 | 变更: B11-03b（MatrixPanel 外壳 + 两矩阵接外壳）验收读数——audit / 截图 12 / CRUD 6 / 门禁
+
+基线：HEAD=8aa32fd9（= origin/main），范围=31_ 计划 B11-03b（E 外壳 / F 协议 / G 能力 / H 验收）；Windows 本机。口令只经环境变量传递。
+
+======== 1. H1 audit（scripts/audit/admin-ui-audit.mjs --files）========
+前（8aa32fd9 的两矩阵文件）：{"files":2,"rawTable":2,"mixedFiles":0,"filesWithTestid":1,"filesWithPanelState":1}
+后（含新建 MatrixPanel）：{"files":3,"rawButton":0,"rawSelect":0,"rawTextarea":0,"rawLabel":0,"rawTable":0,"filesWithTestid":3,"filesWithPanelState":3}
+逐文件：ProtocolMatrix btn/sel/ta/lbl/tbl=0 testid=15 panel=Y err=Y retry=Y；CapabilityMatrix 同（testid=15）；MatrixPanel tbl=0 testid=5 panel=Y。
+判据达成：tbl 全 0，两个矩阵 panel=Y。
+
+======== 2. H2 截图（2 路由 × ready/500/empty × 1440/390 = 12 张）========
+shots.json state：protocols ready→error→empty、capabilities ready→error→empty（每态桌面+移动各 1 张），归档 shots/。
+目视：协议页 vendor 33 条/1 页、能力页 1704 条/35 页；表头列数 5 与 8（取 MATRIX_PROTOCOLS / MATRIX_CAPABILITIES）；500 态为「加载失败：注入的服务端错误」+ 重试钮。
+前置修正：卡起点 protocol_compatibilities / capability_matrices 均 0 行 → 首拍两页 empty；跑 `pnpm --filter web db:seed:matrix`（B11-03a 幂等回填，先 --dry-run 验派生 1033/1704）后达到 ready。
+
+======== 3. H3 运行态 CRUD（.scratch/03b/h3-smoke.mjs，UI 点击驱动，不直连接口）========
+protocols：POST /api/v1/admin/protocols 200 → PATCH /{id} 200 → DELETE /{id} 200（删除后该单元格残留 0）
+capabilities：POST /api/v1/admin/capabilities 200 → PATCH /{id} 200 → DELETE /{id} 200（同上）
+SMOKE_PASS 6/6；收尾复测两表计数回到 1033 / 1704（零残留）。
+
+======== 4. H4 facts（scripts/check-docs-facts.mjs）========
+spec-count 207→209（+matrix-panel.spec.ts、+capability-matrix.spec.ts，计划「+2」成立）；aidean-ui-refs 71→72（+components/admin/MatrixPanel.tsx，实测 +1）。
+docs-facts 16/16 PASS。
+
+======== 5. 门禁（Windows，推送前全量）========
+tsc --noEmit --incremental false 0｜lint 0｜web vitest 160 files passed | 2 skipped（1766 tests passed | 5 skipped）｜@aidean/ui 27 passed
+docs-rule PASS｜docs-facts 16/16｜guard run-all 6/6 PASS｜build 0（Middleware 160 kB，postbuild nm-integrity shells=0）
+build 首跑 exit 1：`next/dist/compiled/jest-worker/processChild.js` MODULE_NOT_FOUND（RK-11-09 同型；prebuild 守卫 scanned=818 shells=0 仍缺该文件）→ 按归档流程 `pnpm install --force --frozen-lockfile`（resolved 818 / reused 818 / downloaded 0）后复绿，lockfile 零改动；postinstall prisma generate 报 EPERM（dev 进程占用 query_engine dll，既有良性记录）。
+
+======== 6. 提交 ========
+f2b7c6a5 B11-03b.E MatrixPanel + matrix-panel.spec（6 passed）
+d41f3eae B11-03b.F ProtocolMatrix（含弹窗条件挂载修复）
+61861826 B11-03b.G CapabilityMatrix + capabilities GET 筛选配套
+本 EVD 与 facts 更新随 H 收尾提交。

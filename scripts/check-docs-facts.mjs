@@ -95,7 +95,7 @@ const assertions = [
   },
   {
     id: "aidean-ui-refs",
-    desc: "@aidean/ui 在 apps/web/components 的 import 数 = 71（B11-03 新增 components/admin/PanelState.tsx 70→71，R10-01；前次 TASK-064 新增 ChangeFeed/MonitoringPanel 68→70；前次 TASK-074 BenchmarkDialog 67→68）",
+    desc: "@aidean/ui 在 apps/web/components 的 import 数 = 72（B11-03b 新增 components/admin/MatrixPanel.tsx 71→72，R10-01；前次 B11-03 新增 components/admin/PanelState.tsx 70→71；前次 TASK-064 新增 ChangeFeed/MonitoringPanel 68→70；前次 TASK-074 BenchmarkDialog 67→68）",
     check: () =>
       String(
         walk("apps/web/components", () => true).filter((f) => {
@@ -106,7 +106,7 @@ const assertions = [
           }
         }).length
       ),
-    expect: "71",
+    expect: "72",
   },
   {
     id: "route-count",
@@ -132,10 +132,10 @@ const assertions = [
   },
   {
     id: "spec-count",
-    desc: "spec 文件总数 = 207（B11-11 新增 apps/web/lib/features/admin/__tests__/admin-list-pagination.spec.ts 覆盖 15 个列表端点分页守卫 206→207 + RK-11-07/09 新增 admin/__tests__/rk11-prod-scripts.spec.ts 205→206，R10-01；前次 B11-06 新增 session-store/middleware-session-hint/favorites-session-gate 3 spec + B11-10/11 新增 pagination/pagination-guard/api-envelope-exits 3 spec + B11-03 新增 matrix-constants/matrix-backfill/matrix-routes/panel-state 4 spec 195→205，R10-01；前次 B11-08 新增 apps/web/lib/features/admin/__tests__/scripts-executions-route.spec.ts 194→195，R10-01；前次 TASK-030 新增 e2e/tests/promotion-billing.spec.ts 193→194，R10-01）",
+    desc: "spec 文件总数 = 209（B11-03b 新增 lib/features/admin/__tests__/matrix-panel.spec.ts + capability-matrix.spec.ts 207→209，R10-01；前次 B11-11 新增 apps/web/lib/features/admin/__tests__/admin-list-pagination.spec.ts 覆盖 15 个列表端点分页守卫 206→207 + RK-11-07/09 新增 admin/__tests__/rk11-prod-scripts.spec.ts 205→206，R10-01；前次 B11-06 新增 session-store/middleware-session-hint/favorites-session-gate 3 spec + B11-10/11 新增 pagination/pagination-guard/api-envelope-exits 3 spec + B11-03 新增 matrix-constants/matrix-backfill/matrix-routes/panel-state 4 spec 195→205，R10-01；前次 B11-08 新增 apps/web/lib/features/admin/__tests__/scripts-executions-route.spec.ts 194→195，R10-01；前次 TASK-030 新增 e2e/tests/promotion-billing.spec.ts 193→194，R10-01）",
     check: () =>
       String(walk("e2e", (n) => n.endsWith(".spec.ts")).length + walk("apps/web", (n) => n.endsWith(".spec.ts")).length),
-    expect: "207",
+    expect: "209",
   },
   {
     id: "queryraw-biz",
