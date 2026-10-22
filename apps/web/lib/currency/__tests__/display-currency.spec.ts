@@ -10,7 +10,7 @@ import {
   readDisplayCurrency,
   resolveDisplayCurrencyFromHeaders,
   withDisplayCurrencyHeader,
-} from "../index";
+} from "../display";
 
 const h = (init: Record<string, string>) => new Headers(init);
 

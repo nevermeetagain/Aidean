@@ -29,7 +29,7 @@ import path from "node:path";
 import type { ProviderModelObservation } from "@aidean/shared";
 import { CATALOG_COLLECTORS, getCatalogCollector } from "../../apps/web/lib/monitoring/catalog/registry";
 import { CATALOG_MAX_BYTES, collect } from "../../apps/web/lib/monitoring/catalog/types";
-import { getPublicPricingCollector } from "../../apps/web/lib/monitoring/public-pricing";
+import { getPublicPricingCollector } from "../../apps/web/lib/monitoring/public-pricing/registry";
 import { blockedPageReason } from "../../apps/web/lib/monitoring/public-pricing/types";
 import { readCappedText, safeFetch } from "../../apps/web/lib/security/url-policy";
 

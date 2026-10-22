@@ -17,8 +17,8 @@
 
 import { prisma } from '../db/prisma';
 import type { SyncAdapter } from './adapters/base';
-import { mapModel } from './mappers';
-import { writeBatch } from './writers';
+import { mapModel } from './mappers/model-mappers';
+import { writeBatch } from './writers/model-writers';
 import { crossValidator } from './cross-validator';
 import type { SyncConfig, SyncBatchResult, NormalizedModelData } from './types/sync';
 

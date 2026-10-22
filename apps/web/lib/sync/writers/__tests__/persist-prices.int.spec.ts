@@ -46,7 +46,7 @@ suite("persistPrices 多次采集写价（R-01 / REQ-F-019）", () => {
   beforeAll(async () => {
     const mod = await import("../../../db/prisma");
     prisma = mod.prisma;
-    const writers = await import("../index");
+    const writers = await import("../model-writers");
     upsertModel = writers.upsertModel;
 
     const vendor = await prisma.vendor.create({

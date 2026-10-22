@@ -5,7 +5,7 @@
 import { headers } from "next/headers";
 import type { SupportedCurrency } from "@aidean/shared";
 
-import { readDisplayCurrency } from "./index";
+import { readDisplayCurrency } from "./display";
 
 export async function getRequestDisplayCurrency(): Promise<SupportedCurrency> {
   return readDisplayCurrency(await headers());

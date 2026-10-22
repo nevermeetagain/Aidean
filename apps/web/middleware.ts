@@ -22,7 +22,7 @@ import { jwtVerify } from "jose/jwt/verify";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { AUTH_AUDIENCE_SELF, AUTH_ISSUER, AUTH_ISSUERS_ACCEPTED, COOKIE_ACCESS } from "./lib/features/auth/constants";
-import { withDisplayCurrencyHeader } from "./lib/currency";
+import { withDisplayCurrencyHeader } from "./lib/currency/display";
 
 const jwks = createRemoteJWKSet(new URL("/.well-known/jwks.json", AUTH_ISSUER), {
   cooldownDuration: 60_000,

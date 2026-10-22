@@ -26,8 +26,8 @@ const writerStub = vi.hoisted(() => ({
 }));
 
 vi.mock("../../db/prisma", () => ({ prisma: prismaState }));
-vi.mock("../mappers", () => mapperStub);
-vi.mock("../writers", () => writerStub);
+vi.mock("../mappers/model-mappers", () => mapperStub);
+vi.mock("../writers/model-writers", () => writerStub);
 
 // Import after mocks
 const { SyncOrchestrator } = await import("../sync-orchestrator");

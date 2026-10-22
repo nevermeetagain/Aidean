@@ -47,7 +47,7 @@ vi.mock("../dedup", () => ({
 
 vi.mock("../../db/prisma", () => ({ prisma: prismaState }));
 
-const { upsertModel } = await import("../writers");
+const { upsertModel } = await import("../writers/model-writers");
 import type { NormalizedModelData } from "../types/sync";
 
 const BASE_DATA: NormalizedModelData = {

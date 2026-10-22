@@ -25,7 +25,7 @@ const prismaState = vi.hoisted(() => ({
 vi.mock("../../../sync/writers/dedup", () => ({ shouldSkip: vi.fn(async () => false) }));
 vi.mock("../../../db/prisma", () => ({ prisma: prismaState }));
 
-const { upsertModel } = await import("../../../sync/writers/index");
+const { upsertModel } = await import("../../../sync/writers/model-writers");
 const { writeModelChangeLog } = await import("../model-change-log");
 
 describe("model_change_logs 写入面覆盖（REQ-F-055）", () => {
@@ -78,7 +78,7 @@ describe("model_change_logs 写入面覆盖（REQ-F-055）", () => {
   });
 
   it("静态扫描：sync/admin 已知漏斗留痕调用数锁定（sync×2 + admin×1），防已知路径被删痕", () => {
-    const writersSrc = readFileSync(fileURLToPath(new URL("../../../sync/writers/index.ts", import.meta.url)), "utf8");
+    const writersSrc = readFileSync(fileURLToPath(new URL("../../../sync/writers/model-writers.ts", import.meta.url)), "utf8");
     const adminSrc = readFileSync(fileURLToPath(new URL("../model-change-log.ts", import.meta.url)), "utf8");
 
     const syncCreates = writersSrc.match(/modelChangeLog\.create\(/g) ?? [];

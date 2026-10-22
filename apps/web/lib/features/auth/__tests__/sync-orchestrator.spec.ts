@@ -15,7 +15,7 @@ const prismaState = vi.hoisted(() => ({
 
 vi.mock("../../../db/prisma", () => ({ prisma: prismaState }));
 
-const { upsertModel } = await import("../../../sync/writers/index");
+const { upsertModel } = await import("../../../sync/writers/model-writers");
 
 const BASE_DATA = {
   modelCode: "gpt-4o",

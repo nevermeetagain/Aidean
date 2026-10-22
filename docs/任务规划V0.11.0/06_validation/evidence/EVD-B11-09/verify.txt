@@ -1,0 +1,106 @@
+B11-09 验收核验记录（DEF-011-14 · 拆 4 个业务 barrel 到红线以内）
+环境：Windows 24H2 / PowerShell 5.1 / pnpm workspace；一次性 PG 未启动（本卡仅重构类型层与引用，不连库）；Redis 未启动（本卡不测缓存路径）；`next build` 在 dev 停止后单独执行。
+时间：2026-10-22（UTC 02:09–02:20 取证窗口）
+纪律：本文件不含任何连接串/凭据；只录命令、关键输出与 exit code。
+基线：`git pull --rebase origin main` 已 fast-forward 至 `c54280ff`（协调方新增 `30_助手分工.md`），本地 = nevermeetagain/main `0 0`。
+
+──────────────────────────────────────────────
+【裁决】Q-11-04 = A（拆 barrel，回到红线以内）— 已由用户在任务书 verbatim 下达；调容忍值（B 方案）不适用。
+
+──────────────────────────────────────────────
+【验收①】barrel-check 从 FAIL(4>3) 归零到 PASS(0≤3)
+命令：`powershell -ExecutionPolicy Bypass -File scripts/check-gates.ps1`（即 `pnpm gates`）
+关键输出（`.scratch/b1109-gates.log` L11/L24/L30）：
+  [PASS ] barrel-check : index.ts 数量 0 <= 容忍值 3
+      barrel -> (none)
+  ...
+  Total: 7 | PASS: 7 | FAIL/ERROR: 0
+GATES_EXIT=0
+七项 PASS 明细：deps-check / build-check / tsc-check / prisma-check / barrel-check / button-antipattern / store-check。
+容忍值未调（`scripts/check-gates.ps1` L23 `$script:BarrelTolerance = 3` 未修改）。
+
+【被拆 barrel 定位方法】以 `Test-GateBarrel`（L183–213）实际扫描逻辑为唯一权威：
+  `Get-ChildItem apps\web\{app,lib} -Recurse -File -Filter 'index.ts'`（排除 node_modules），而非文档口径。
+Glob 实测 4 个业务 barrel（DEF-011-14 名单一致）：
+  - apps/web/lib/currency/index.ts（65 行，Edge 安全解析实现体）
+  - apps/web/lib/monitoring/public-pricing/index.ts（43 行，re-export + registry 混合）
+  - apps/web/lib/sync/mappers/index.ts（98 行，mapModel + computeChecksum）
+  - apps/web/lib/sync/writers/index.ts（344 行，upsertModel + writeBatch + persistPrices/Benchmarks）
+
+──────────────────────────────────────────────
+【验收②】4 个 index.ts git mv 到具名文件（保留历史）
+命令：`git mv` × 4，mv exit=0；工作树 diff 显示为 R（rename）而非 A+D。
+  apps/web/lib/currency/index.ts             → apps/web/lib/currency/display.ts
+  apps/web/lib/monitoring/public-pricing/index.ts → apps/web/lib/monitoring/public-pricing/registry.ts
+  apps/web/lib/sync/mappers/index.ts         → apps/web/lib/sync/mappers/model-mappers.ts
+  apps/web/lib/sync/writers/index.ts         → apps/web/lib/sync/writers/model-writers.ts
+命名依据：
+  - `display.ts` 承 currency 域「展示币种」语义（同域 `server.ts` 依赖 `readDisplayCurrency`）；
+  - `registry.ts` 与同层 sibling `lib/monitoring/catalog/registry.ts` 命名一致（本仓既有约定）；
+  - `model-mappers.ts` / `model-writers.ts` 承 sync 域「模型映射 / 模型写入」语义（sibling 有 `dedup.ts` / `catalog-snapshot.ts` / `offering-sync.ts`）。
+
+`registry.ts` 内容重构：只保留 `PUBLIC_PRICING_COLLECTORS` 常量与 `getPublicPricingCollector()`（22 行）；删除原 index.ts L1–26 的 `export from './types|./deepseek|./siliconflow'` re-export 块。
+依据：`lib/monitoring/public-pricing/__tests__/public-pricing.spec.ts` 已用 concrete `../deepseek`/`../siliconflow`/`../types`（非 barrel），无消费者依赖被删除的 re-export 汇出。
+
+──────────────────────────────────────────────
+【验收③】全仓 grep 重指向所有引用点（分三轮补漏）
+
+轮次 1（初轮，静态 `from`/`export from`/`require`）—— 7 处：
+  - apps/web/middleware.ts L25：`from "./lib/currency"` → `"./lib/currency/display"`
+  - apps/web/lib/currency/server.ts L8：`from "./index"` → `"./display"`
+  - apps/web/lib/currency/__tests__/display-currency.spec.ts L13：`from "../index"` → `"../display"`
+  - apps/web/lib/sync/sync-orchestrator.ts L20/L21：`'./mappers'`→`'./mappers/model-mappers'`；`'./writers'`→`'./writers/model-writers'`
+  - apps/web/lib/sync/writers/__tests__/persist-prices.spec.ts L27：`await import("../index")` → `"../model-writers"`
+  - apps/web/lib/sync/writers/__tests__/persist-prices.int.spec.ts L49：同上
+  - scripts/crawl/monitor_catalogs.ts L32：`from ".../public-pricing"` → `".../public-pricing/registry"`（白名单例外：import 行允许）
+
+轮次 2（判定级 tsc 兜底，暴露 `import()` 动态形式）—— 4 处：
+  - apps/web/lib/features/admin/__tests__/change-log-coverage.spec.ts L28：`await import("../../../sync/writers/index")` → `"model-writers"`
+  - apps/web/lib/features/admin/__tests__/field-ownership.spec.ts L26：同上
+  - apps/web/lib/features/auth/__tests__/sync-orchestrator.spec.ts L18：同上
+  - apps/web/lib/sync/__tests__/writer-prices-benchmarks.spec.ts L50：`await import("../writers")` → `"../writers/model-writers"`
+
+轮次 3（vitest 全量兜底，暴露运行时字符串层 `readFileSync(new URL())` / `vi.mock`）—— 2 处：
+  - apps/web/lib/features/admin/__tests__/change-log-coverage.spec.ts L81：`readFileSync(new URL("../../../sync/writers/index.ts", import.meta.url))` → `".../model-writers.ts"`（该用例做「sync/admin 已知漏斗留痕调用数锁定」静态扫描，直读源文本；tsc 不检字符串路径）
+  - apps/web/lib/sync/__tests__/sync-orchestrator.spec.ts L29/L30：`vi.mock("../mappers", ...)` / `vi.mock("../writers", ...)` → `"../mappers/model-mappers"` / `"../writers/model-writers"`（vitest mock 属运行时字符串，tsc 与静态 grep 均漏）
+
+终态宽搜（组合正则 `(from|import\(|require\()` + 4 个 barrel 路径变体 + `readFileSync(new URL)` 内的 `/index.ts`）：**0 匹配**（工作代码层）。
+残留（不在本卡处理，见 deviation.md）：
+  - 历史证据文档 `docs/任务规划V0.2.0–V0.5.0/06_validation/evidence/EVD-BASELINE-V2/*.{mjs,sql}` 内文提及 `writers/index.ts` — 铁律 4 历史只读，不改。
+  - `apps/web/lib/features/admin/model-change-log.ts` L6 doc 注释仍写 `writers/index.ts`（无代码 import，仅注释措辞）— 不在本卡白名单（该文件非 barrel 引用点的代码 import 面），记入 deviation.md 作为遗留观察。
+
+──────────────────────────────────────────────
+【验收④·判定级】`pnpm --filter web exec tsc --noEmit --incremental false` EXIT=0
+冷跑同帧（禁缓存态代替，见 25_ §9.2 判定口径）：
+  前：324045 @ 2026-10-21T10:28:44.966Z；后：324045 @ 2026-10-21T10:28:44.966Z（本轮 tsc 未回写 buildinfo，`--incremental false` 生效）→ TSC_EXIT=0
+  终帧：272780 @ 2026-10-22T10:14:25；前后 byte+mtime 一致 → TSC_FINAL_EXIT=0
+（`next build` 在 tsc 之后重写 buildinfo 属正常，与本卡 tsc 判定读数不同帧，互不污染。）
+
+【验收⑤·lint】`pnpm --filter web exec next lint` EXIT=0
+仅存 `components/common/SafeImage.tsx:19:14 @next/next/no-img-element` warning（基线既有，非本卡引入）。
+
+【验收⑥·全量 vitest】`pnpm --filter web exec vitest run` EXIT=0
+  Test Files  146 passed | 2 skipped (148)
+  Tests  1487 passed | 5 skipped (1492)
+  Duration  9.05s (transform 20.53s, setup 0ms, collect 103.12s, tests 17.73s, environment 40ms, prepare 43.01s)
+（首轮曾 FAIL 6 用例 → 定位 L81 readFileSync + L29/30 vi.mock 两处字符串层 → 修复后二次全绿；见 deviation.md。）
+
+【验收⑦·check-docs】
+  `node scripts/check-docs-rule.mjs` → RULE_EXIT=0（铁律 1 apps 无实体 .md；数字真源 schema model=73, enum=37, admin API 域=38, admin 页面=34, Next.js=15.0.x）
+  `node scripts/check-docs-facts.mjs` → All 16 assertions passed, FACTS_EXIT=0（spec-count 195 未变、route-count 163 未变、rtm-row-count 158、batch-count 15 …… 全绿）
+
+【验收⑧·全量 next build】`pnpm --filter web build` EXIT=0
+  Compiled successfully
+  Generating static pages (0/33 → 33/33)
+  First Load JS shared by all 99.3 kB
+  Middleware 160 kB
+  [postbuild] copied apps/web\.next\static → apps/web\.next\standalone\apps\web\.next\static
+  [postbuild] copied apps/web\public → apps/web\.next\standalone\apps\web\public
+未触发 RK-11-09 环境脆弱性（node_modules 空壳），一次通过；无需归档修复命令 `pnpm install --frozen-lockfile --force --prefer-offline --config.confirm-modules-purge=false` 打回。
+
+──────────────────────────────────────────────
+【同步】《目录结构文档》v3.23 → v3.24（铁律 3 版本锚定 + 铁律 6 文档即结构）
+  - 版本头新增 v3.24 条目（2026-10-22），完整登记 DEF-011-14 关闭与 4 barrel 拆分；
+  - §二 docs 树补 `任务规划V0.11.0/` 行（基线 main@c54280ff + Q-11-01…05 裁决 + 30_助手分工 + 06_validation/evidence/EVD-B11-*）；
+  - §六 barrel file 行补注「V0.11.0 B11-09 落地」，明确从 `4>3 FAIL` 归零为 `0≤3 PASS`，并列出 4 个新具名文件与运行时字符串层四类引用（import / import() / vi.mock / readFileSync(new URL)）。
+本 EVD 与 verify.txt 及 deviation.md 同 push 于本卡提交中。

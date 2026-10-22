@@ -24,7 +24,7 @@ const prismaState = vi.hoisted(() => ({
 vi.mock("../dedup", () => ({ shouldSkip: vi.fn(async () => false) }));
 vi.mock("../../../db/prisma", () => ({ prisma: prismaState }));
 
-const { upsertModel } = await import("../index");
+const { upsertModel } = await import("../model-writers");
 import type { NormalizedModelData } from "../../types/sync";
 
 const NEWER = new Date("2026-06-01T00:00:00Z");

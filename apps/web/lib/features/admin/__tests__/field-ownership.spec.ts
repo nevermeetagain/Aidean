@@ -23,7 +23,7 @@ const prismaState = vi.hoisted(() => ({
 vi.mock("../../../sync/writers/dedup", () => ({ shouldSkip: vi.fn(async () => false) }));
 vi.mock("../../../db/prisma", () => ({ prisma: prismaState }));
 
-const { upsertModel } = await import("../../../sync/writers/index");
+const { upsertModel } = await import("../../../sync/writers/model-writers");
 import type { NormalizedModelData } from "../../../sync/types/sync";
 
 // 明确禁止 sync 写入的人工/受控字段（功能设计文档 §五 字段所有权矩阵）
