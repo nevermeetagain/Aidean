@@ -25,3 +25,6 @@ BASE=c84efff2081ac7a63e0823bb78fbc5e8b79634a4（克隆时 origin/main；收尾�
 实际使用技能/工具：Hark 无专用 UI 评审技能，按任务书工具序用 Playwright（自写 crawl/inject/journeys/theme/ovf 脚本）、@axe-core/playwright 4、生产构建性能测量（Playwright+CDP 替代 Lighthouse）、admin-ui-audit.mjs、静态度量脚本、run_subagent 独立审查
 独立审查结论（run_subagent ux01-review，只读）：总体通过。12 条 file:line 抽检 9 条支持、3 条行号偏移（UX-12→:349、UX-14→page.tsx:44、UX-16→:115-118）已修正；static 7 项复算一致；report 128 行、六项结构齐全；38 图一一引用；证据无口令。
 采纳建议：UX-15 两处页面级 H1 划入批次 B、UX-13 限定令牌层，A/B 文件不再交叉；AdminMobileNav 改标「B11-05 范围内未点名」
+
+== UX-FIX 修复与复测（2026-10-22 22:30 CST）==
+见 retest.md。门禁 tsc/lint/vitest/docs-rule/docs-facts/build 全 0；独立审查 1 阻塞已修；复测脚本同前，结果前后对照写入 retest.md；新增截图 9 张（shots/after/）。
