@@ -1,0 +1,94 @@
+B11-02 验收核验记录（DEF-011-02 · 价格分层 seed：原币维度可见 + 付费/促销样本进前台）
+环境：开发库 PG :5435（docker 共享容器）+ Redis :6379 + next dev :3000（AIDEAN_ENABLE_MOCK_UPSTREAM=1）
+时间：2026-10-22（UTC 02:00–02:25 取证窗口）
+纪律：本文件不含任何连接串/凭据；seed 输出中的登录口令段一律不誊抄。
+
+交付物（白名单内）：
+  apps/web/prisma/seed/pricing-tiers.ts      新增（278 行，唯一实现）
+  apps/web/prisma/seed.ts                    +1 行 import、+1 行调用（L5 / monitoringSources 之后）
+复现用探针（.scratch/ 被 gitignore，副本见本目录 probe-db.mjs / probe-runtime.mjs）：
+  node .scratch/b1102-probe.mjs      → DB 侧计数（含 /pricing 120 条窗口模拟）
+  node .scratch/b1102-runtime.mjs    → 运行态（cf-ipcountry: CN / US 双视角抓 SSR HTML）
+
+──────────────────────────────────────────────
+【前置基线】改动前（node .scratch/b11-dbcount.mjs → .scratch/b11-pre-seed.txt）
+  aiModel=1000  modelPrice=1000  zeroInputPrice=949  zeroBoth=949
+  originalCurrencyNotNull=0          ← 卡面缺陷①「原币 100% null」
+  bySourceType=[OFFICIAL:1000]       ← 全部冒充官方来源
+  byCurrency=[USD:966, CNY:34]  byUnit=[per_million:966, per_1k:34]
+  fxDailyRate=0  catalogSnapshot=0  providerModelOffering=5  monitoringSource=0
+  结论：949/1000 = 94.9% 零价行，且 /pricing 以 priceInput asc 取前 120 行 → 前台只会出现免费模型。
+
+──────────────────────────────────────────────
+【验收①】原币非 null 的行数 > 0
+命令：node .scratch/b1102-probe.mjs            → PROBE_EXIT = 0
+关键读数：
+  total=1002  zeroInput=48/1002（4.8%）  zeroBoth=48
+  originalNotNull=922            ← 基线 0 → 922，硬验收达成
+  crossCurrencyRows=60           ← billingCurrency=USD 且 originalCurrency=CNY（跨币种样本）
+  bySource=[CRAWLER:922, OFFICIAL:78, PROMOTION:2]
+  口径说明：originalCurrency 由本模块写入、值域 {USD,CNY}；跨币种行的 exchangeRate 一律取自
+    fx_daily_rates（本轮 6.673@2026-10-22，由 pnpm crawl:fx 真实采集，见下），模块内无硬编码汇率。
+  汇率采集：pnpm crawl:fx → FX_EXIT=0
+    {"status":"inserted","row":{"rateDate":"2026-10-22","base":"USD","quote":"CNY","rate":"6.673",
+     "source":"frankfurter","sourceUrl":"https://api.frankfurter.dev/v2/rate/usd/cny"}}
+
+──────────────────────────────────────────────
+【验收②】前台能看到付费样本和促销样本
+命令：node .scratch/b1102-runtime.mjs          → RUNTIME_EXIT = 0
+CN 视角（cf-ipcountry: CN）：
+  status=200 displayCurrency=¥ priceRows=120 pendingCount=0
+  sourceNoteCount=56      ← 「官方 $x」原币注记行
+  promoTagCount=4 promoBadgeCount=2 basePriceTagCount=4 freeTextCount=100
+US 视角（cf-ipcountry: US）：
+  status=200 displayCurrency=$ priceRows=120 pendingCount=0 sourceNoteCount=84
+行内样本（纯文本，逐字）：
+  demo-model-062 限时免费 · 截至 11/21 08:00 DemoVendor-2 免费 ¥10.48 免费 ¥31.43
+  demo-model-061 限时优惠 · 截至 11/21 08:00 DemoVendor-1 ¥0.334 ¥10.01 官方 $0.050
+  Doubao-Lite-32k ByteDance $0.045 官方 ¥0.0003 /K
+  读法：促销价 + 划线原价（price-base）+ 徽标（price-promo-badge）+ 原币注记（price-source-note）
+        四要素同现于 120 行窗口内；pendingCount=0 表示无 fail-closed 到「价格待核」的行。
+  DB 侧窗口模拟（/pricing 同查询：isCurrent + billingMode=PER_TOKEN + 排除窗口内促销模型的当前价，
+  orderBy priceInput asc, take 120）：
+    rows=120 free=47 usdPaid=31 cnyPaid=42
+    firstPaid=doubao-lite-32k  firstUsdPaid=whisper-v3  firstCnyPaid=doubao-lite-32k
+  方案依据：把 demo 免费层压到 20 行（+curated 27 条零价 = 47），使 120 窗口内留出 73 个付费位。
+
+──────────────────────────────────────────────
+【验收③】seed 幂等且结果确定
+命令：pnpm --filter web db:seed（连续 4 次）  → SEED_EXIT = 0 / 0 / 0 / 0
+第 3 次与第 4 次输出逐字一致（第 4 次即本条读数）：
+  [pricing-tiers] demo=922 free=20 cnyPaid=20 usdPaid=882 promo=2
+                  originalCurrency=922 crossCurrency=60 fx=6.673@2026-10-22
+复跑探针读数不变：total=1002 / zeroInput=48 / originalNotNull=922 / crossCurrencyRows=60 /
+  pricingWindow120={rows:120,free:47,usdPaid:31,cnyPaid:42}
+幂等机制：按 modelCode 前缀圈定演示模型 → $transaction([deleteMany(modelId in ...), createMany])
+  重建；促销窗口锚定 UTC 日界（from=当日00:00Z−1h，until=+30d），同日重跑数值不变。
+不确定项（如实登记）：effectiveFrom 取执行时刻 now（新价自此刻生效的语义必需），
+  故该字段跨天重跑会变；行数/价格/币种/原币/汇率/notes/促销窗口均确定。详见 deviation.md §一。
+
+──────────────────────────────────────────────
+【验收④】门禁读数（全部为改动后重跑，非缓存态）
+  pnpm --filter web exec tsc --noEmit --incremental false   → TSC_EXIT=0（无输出）
+  pnpm --filter web lint                                    → LINT_EXIT=0
+      （唯一 warning：components/common/SafeImage.tsx:19 既有 no-img-element，非本卡改动）
+  pnpm --filter web exec vitest run                         → VITEST_EXIT=0
+      Test Files 146 passed | 2 skipped (148)   Tests 1487 passed | 5 skipped (1492)   7.87s
+  pnpm test:e2e -g "promotion|pricing"                      → E2E_EXIT=0
+      4 passed (11.4s)：ladder-filter-all 档位一致 / promotion-billing 优惠价0→免费(U-23)
+      / promotion-billing 删除优惠→恢复原价逐分扣费 / T11 / /models /pricing 200
+  node scripts/check-docs-rule.mjs                          → EXIT=0
+      [铁律1] PASS（apps/ 下无实体 .md）；[铁律-数字] PASS（schema model=73, enum=37, admin API 基=38, admin 页面=34, Next.js=15.0.x）
+  node scripts/check-docs-facts.mjs                         → EXIT=0  All 16 assertions passed
+      其中 seed-no-official: expected=0, actual=0  ← provenance 纪律：seed.ts 未出现 OFFICIAL/官方测试
+  provenance 侧证：bySource 中演示行为 CRAWLER(922) + sourceName=seed-pricing-tiers，
+      未产生任何「官方来源」伪标记；OFFICIAL(78) 与 PROMOTION(2) 分别来自 curated 模型与本模块促销行。
+
+──────────────────────────────────────────────
+【判据边界】
+1. 本卡只保证「原币字段非 null 且值域合法 + 前台可见付费/促销样本」；originalCurrency 目前全仓
+   无读侧消费方（读侧归一取 billingCurrency），故本卡不改变任何 UI 注记的来源口径。
+2. e2e 首次运行失败（E2E_EXIT=1）的根因是取证环境未设 AIDEAN_ENABLE_MOCK_UPSTREAM=1（mock 上游
+   路由 404），与 seed 无关；回归口径为「先回退 seed 配比、只有确认断言依赖『全免费』错误前提才改
+   e2e」——本轮未改任何 e2e 文件，改为修复环境后复跑即绿。详见 deviation.md §三。
+3. 未验证项：生产构建路径（next build）未跑；本卡不改动生产代码路径。
