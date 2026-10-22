@@ -2,11 +2,16 @@
 
 /**
  * ProtocolMatrix — 协议兼容性矩阵展示。
+ *
+ * B11-03（参考接入）：五态由 PanelState 外壳承载（失败渲染 error+重试，不再误显空态）；
+ * 列来自 MATRIX_PROTOCOLS（= Prisma enum ModelProtocol，与 ai_models.protocol 同源）。
+ * 表格规范化 / 增删改 UI 属 B11-03b 后续批（见 EVD-B11-03/handoff.md）。
  */
 
-import { useCallback, useEffect, useState } from "react";
 import { adminFetch } from "./adminFetch";
 import { Badge } from "@aidean/ui";
+import { PanelState, usePanelResource } from "./PanelState";
+import { MATRIX_PROTOCOLS } from "../../lib/features/admin/matrix/constants";
 
 interface ProtocolRow {
   id: string;
@@ -19,30 +24,25 @@ interface ProtocolRow {
   probedAt: string;
 }
 
-const PROTOCOLS = [
-  "openai_chat", "openai_responses", "anthropic_messages",
-  "streaming", "tool_calling", "structured_output",
-  "vision", "audio", "pdf", "reasoning", "mcp",
-];
+const PROTOCOLS = MATRIX_PROTOCOLS;
+
+/** 列表端点 pageSize 服务端封顶 100（WC#8），此处按上限请求 */
+export const PROTOCOL_LIST_URL = "/api/v1/admin/protocols?pageSize=100";
+
+export const loadProtocols = (signal?: AbortSignal) =>
+  adminFetch<{ rows: ProtocolRow[] }>(PROTOCOL_LIST_URL, { signal });
 
 export function ProtocolMatrix() {
-  const [rows, setRows] = useState<ProtocolRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { resource, reload } = usePanelResource(loadProtocols, (d) => d.rows.length === 0);
 
-  const fetchProtocols = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await adminFetch<{ rows: ProtocolRow[] }>("/api/v1/admin/protocols?pageSize=200");
-      if (res.ok && res.data) {
-        setRows(res.data.rows);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  return (
+    <PanelState testId="admin-protocols" resource={resource} onRetry={reload} emptyText="暂无协议兼容数据">
+      {(data) => <ProtocolTable rows={data.rows} />}
+    </PanelState>
+  );
+}
 
-  useEffect(() => { void fetchProtocols(); }, [fetchProtocols]);
-
+function ProtocolTable({ rows }: { rows: ProtocolRow[] }) {
   const entityGroups = new Map<string, ProtocolRow[]>();
   for (const row of rows) {
     const key = `${row.entityType}:${row.entityId}`;
@@ -52,11 +52,6 @@ export function ProtocolMatrix() {
 
   return (
     <div className="space-y-4">
-      {loading ? (
-        <p className="text-sm text-gray-500">加载中...</p>
-      ) : entityGroups.size === 0 ? (
-        <p className="text-sm text-gray-500">暂无协议兼容数据</p>
-      ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -90,7 +85,6 @@ export function ProtocolMatrix() {
             </tbody>
           </table>
         </div>
-      )}
     </div>
   );
 }

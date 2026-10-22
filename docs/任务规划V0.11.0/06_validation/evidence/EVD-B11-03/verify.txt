@@ -1,0 +1,155 @@
+# EVD-B11-03 verify.txt — 真实命令输出（2026-10-22，worktree wt/matrix，基线 origin/main 7f1fa22）
+
+## 1. pnpm --filter web exec tsc --noEmit --incremental false
+exit=0
+
+## 2. pnpm --filter web lint（仅 1 条既有 Warning：components/common/SafeImage.tsx no-img-element，非本轮文件）
+19:14  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+exit=0
+
+## 3. 全量 web vitest（120s 沙箱上限 → --shard=1..4/4 分片；在 service 文案修正前运行）
+### shard 1/4
+ Test Files  37 passed | 1 skipped (38)
+      Tests  462 passed | 3 skipped (465)
+exit=0
+### shard 2/4
+ Test Files  38 passed (38)
+      Tests  289 passed (289)
+exit=0
+### shard 3/4
+ Test Files  37 passed | 1 skipped (38)
+      Tests  385 passed | 2 skipped (387)
+exit=0
+### shard 4/4
+ Test Files  38 passed (38)
+      Tests  403 passed (403)
+exit=0
+合计：Test Files 150 passed + 2 skipped（152）；Tests 1539 passed + 5 skipped
+
+## 3b. service 文案修正（未知键/非法 id）后的定向复跑
+ ✓ lib/features/admin/matrix/__tests__/matrix-routes.spec.ts (25 tests) 813ms
+ ✓ lib/admin/__tests__/panel-state.spec.ts (15 tests) 37ms
+ ✓ lib/features/admin/matrix/__tests__/matrix-backfill.spec.ts (9 tests) 19ms
+ ✓ lib/features/admin/matrix/__tests__/matrix-constants.spec.ts (4 tests) 23ms
+ ✓ lib/admin/load-guard.spec.ts (4 tests) 3ms
+ Test Files  5 passed (5)
+      Tests  57 passed (57)
+exit=0
+
+## 4. node scripts/check-docs-rule.mjs
+[铁律1] docs rule PASS：apps/ 下无实体 .md（README.md 豁免）。
+[铁律-数字] 数字真源断言 PASS（锚=文档，代码=实测）：schema model=73, enum=37, admin API 域=38, admin 页面=34, Next.js=15.0.x
+exit=0
+
+## 5. node scripts/check-docs-facts.mjs
+✅ schema-models: schema.prisma model 数 = 73（TASK-047 新增 FxDailyRate 日汇率快照 72→73；前次 M-002 TASK-058 68→72） → expected=73, actual=73
+✅ seed-models: seed.ts 模型条数（modelsData 静态条目 + DEMO_MODEL_COUNT 生成器）≥ 50（下限式，R-83 T1：模型数不限由后台配置） → expected=>=50, actual=1000
+✅ seed-no-official: seed.ts 中无 OFFICIAL/官方测试（provenance 修复后） → expected=0, actual=0
+✅ lib-features-count: lib/features 子目录数 = 23（TASK-033 新增 lib/features/search 22→23，R10-01；前次 TASK-090 收口 18→22，含 lib/features/pricing 等新增目录） → expected=23, actual=23
+✅ aidean-ui-refs: @aidean/ui 在 apps/web/components 的 import 数 = 71（B11-03 新增 components/admin/PanelState.tsx 70→71，R10-01；前次 TASK-064 新增 ChangeFeed/MonitoringPanel 68→70；前次 TASK-074 BenchmarkDialog 67→68） → expected=71, actual=71
+✅ route-count: apps/web route.ts 文件数（含 app/ 全域）= 165（B11-03a 新增 admin/protocols/[id] + admin/capabilities/[id] 163→165，R10-01；前次 TASK-063 新增 admin/monitoring 4 端点 159→163，R10-01；前次 TASK-081 158→159） → expected=165, actual=165
+✅ page-count: apps/web page.tsx 文件数 = 58（TASK-064 新增 (admin)/admin/monitoring/page.tsx 57→58） → expected=58, actual=58
+✅ next-version: Next.js 版本 = 15.x → expected=15.x, actual=15.x
+✅ spec-count: spec 文件总数 = 199（B11-03 新增 matrix-constants/matrix-backfill/matrix-routes/panel-state 4 spec 195→199，R10-01；前次 B11-08 新增 apps/web/lib/features/admin/__tests__/scripts-executions-route.spec.ts 194→195，R10-01；前次 TASK-030 新增 e2e/tests/promotion-billing.spec.ts 193→194，R10-01） → expected=199, actual=199
+✅ queryraw-biz: apps/web 业务代码 $queryRaw/$executeRaw = 0 → expected=0, actual=0
+✅ batch-count: admin batch 路由数 = 15 → expected=15, actual=15
+✅ db-doc-product-fields: 《数据库文档》products 行已登记 display_name 与 ProductCategory（DB 模型变更文档同步） → expected=2/2, actual=2/2
+✅ category-label-single-source: apps/web 中硬编码「label: "特供"」式分类映射 = 0（文案唯一来源 lib/product-label.ts） → expected=0, actual=0
+✅ usage-stats-anchor-pair: 《API架构设计方案》含 usage-stats-architecture 锚 且《API接口文档》含其回链（铁律 2 双向互引） → expected=2/2, actual=2/2
+✅ rtm-row-count: 《需求追溯矩阵》REQ 行数 = V0.10.0 03a RTM 行数（TASK-051 入库，grep -c "^| REQ-"） → expected=158, actual=158
+✅ rtm-gap-has-task: 《需求追溯矩阵》中「未实现/部分实现」行均有任务号或「暂不执行」理由（TASK-051） → expected=0, actual=0
+
+All 16 assertions passed.
+exit=0
+
+## 6. 运行态：PostgreSQL 17.11（apt，非 16——见 deviation.md）+ prisma db push + seed.ts
+🚀  Your database is now in sync with your Prisma schema. Done in 4.66s
+exit=0
+🧩 matrix backfill: protocol +1033/1033, capability +1704/1704
+exit=0
+
+## 7. DB 事实（回填后 + 幂等重跑）
+$ select protocol,count(*) from ai_models where deleted_at is null group by 1 order by 2 desc
+ protocol | count 
+----------+-------
+ 1        |   971
+ 4        |    15
+ 3        |     6
+ 2        |     6
+ 5        |     2
+(5 rows)
+
+exit=0
+$ select entity_type,protocol,count(*) from protocol_compatibilities group by 1,2 order by 1,3 desc
+ entity_type | protocol  | count 
+-------------+-----------+-------
+ model       | OPENAI    |   971
+ model       | CUSTOM    |    15
+ model       | GOOGLE    |     6
+ model       | ANTHROPIC |     6
+ model       | RESPONSES |     2
+ vendor      | OPENAI    |    24
+ vendor      | CUSTOM    |     6
+ vendor      | ANTHROPIC |     1
+ vendor      | RESPONSES |     1
+ vendor      | GOOGLE    |     1
+(10 rows)
+
+exit=0
+$ select capability,supported,count(*) from capability_matrices group by 1,2 order by 1,2
+  capability  | supported | count 
+--------------+-----------+-------
+ long_context | f         |    39
+ long_context | t         |   961
+ reasoning    | t         |   235
+ vision       | t         |   469
+(4 rows)
+
+exit=0
+$ pnpm --filter web db:seed:matrix   (幂等重跑)
+{"models":1000,"protocolDerived":1033,"protocolInserted":0,"capabilityDerived":1704,"capabilityInserted":0,"protocolDistribution":{"OPENAI":971,"RESPONSES":2,"ANTHROPIC":6,"GOOGLE":6,"CUSTOM":15},"dryRun":false}
+exit=0
+
+## 8. next dev :3457 + curl 闭环 protocols（admin@aidean.com 登录 cookie）
+[create] POST /api/v1/admin/protocols -> HTTP 200
+{"code":0,"message":"ok","data":{"id":"01a1616c-ab00-7691-97a3-5d44ea2ca75b","entityType":"model","entityId":"01a1615d-c434-7a01-9356-1da979ba55e9","protocol":"ANTHROPIC","supported":true,"probeMethod":"documented","probeResult":null,"confidence":0.7,"probedAt":"2026-10-22T02:24:34.048Z","createdAt":"2026-10-22T02:24:34.048Z","updatedAt":"2026-10-22T02:24:34.048Z"},"requestId":"87254e47-551c-4fd8-b768-a0c567551a44"}
+id=01a1616c-ab00-7691-97a3-5d44ea2ca75b
+[get] GET /api/v1/admin/protocols/01a1616c-ab00-7691-97a3-5d44ea2ca75b -> HTTP 200
+{"code":0,"message":"ok","data":{"id":"01a1616c-ab00-7691-97a3-5d44ea2ca75b","entityType":"model","entityId":"01a1615d-c434-7a01-9356-1da979ba55e9","protocol":"ANTHROPIC","supported":true,"probeMethod":"documented","probeResult":null,"confidence":0.7,"probedAt":"2026-10-22T02:24:34.048Z","createdAt":"2026-10-22T02:24:34.048Z","updatedAt":"2026-10-22T02:24:34.048Z"},"requestId":"81879b64-a858-40bb-81d6-831593f6450e"}
+[patch] PATCH /api/v1/admin/protocols/01a1616c-ab00-7691-97a3-5d44ea2ca75b -> HTTP 200
+{"code":0,"message":"ok","data":{"id":"01a1616c-ab00-7691-97a3-5d44ea2ca75b","entityType":"model","entityId":"01a1615d-c434-7a01-9356-1da979ba55e9","protocol":"ANTHROPIC","supported":false,"probeMethod":"documented","probeResult":null,"confidence":0.9,"probedAt":"2026-10-22T02:24:35.770Z","createdAt":"2026-10-22T02:24:34.048Z","updatedAt":"2026-10-22T02:24:35.771Z"},"requestId":"ef73c6eb-4bdc-4762-ad06-ac9eb9549aa3"}
+[patch-conflict] PATCH /api/v1/admin/protocols/01a1616c-ab00-7691-97a3-5d44ea2ca75b -> HTTP 400
+{"code":40000,"message":"协议兼容记录已存在（唯一键冲突）","data":null,"requestId":"edc98e67-c0e7-462a-b27e-382d5925bad8"}
+[patch-invalid] PATCH /api/v1/admin/protocols/01a1616c-ab00-7691-97a3-5d44ea2ca75b -> HTTP 400
+{"code":40000,"message":"枚举值非法，允许 OPENAI/ANTHROPIC/GOOGLE/RESPONSES/CUSTOM","data":null,"requestId":"b4a646b7-4bd8-4d66-8174-1a18113dbefa"}
+[patch-unknown-key] PATCH /api/v1/admin/protocols/01a1616c-ab00-7691-97a3-5d44ea2ca75b -> HTTP 400
+{"code":40000,"message":"未知字段：foo","data":null,"requestId":"5320756a-12a1-47be-bcd7-8f7b88084a34"}
+[delete] DELETE /api/v1/admin/protocols/01a1616c-ab00-7691-97a3-5d44ea2ca75b -> HTTP 200
+{"code":0,"message":"ok","data":{"deleted":true,"id":"01a1616c-ab00-7691-97a3-5d44ea2ca75b"},"requestId":"6887f6f8-00ae-44ef-a825-93a9dc02433d"}
+[get-after-delete] GET /api/v1/admin/protocols/01a1616c-ab00-7691-97a3-5d44ea2ca75b -> HTTP 400
+{"code":40000,"message":"协议兼容记录不存在","data":null,"requestId":"0c614545-b285-467c-af41-e2e4d10d3503"}
+[bad-id] GET /api/v1/admin/protocols/not-a-uuid -> HTTP 400
+{"code":40000,"message":"id 非法（须为 UUID）","data":null,"requestId":"7da694cc-072b-420f-8cb5-c5f4da202434"}
+[anon-delete] DELETE /api/v1/admin/protocols/01a1616c-ab00-7691-97a3-5d44ea2ca75b -> HTTP 401
+{"code":10004,"message":"请先登录","data":null,"requestId":"96beb8d3-d273-40e6-a78c-bfc7cd07fb27"}
+audit_rows(protocols)=1,2,3
+exit=0
+
+## 9. curl 闭环 capabilities
+[create] POST /api/v1/admin/capabilities -> HTTP 200
+{"code":0,"message":"ok","data":{"id":"01a1616d-5c7d-71b1-870c-6ddb06a96252","modelId":"01a1615d-c434-7a01-9356-1da979ba55e9","capability":"function_calling","supported":true,"maxContextLength":null,"detail":null,"source":"observed","confidence":0.5,"detectedAt":"2026-10-22T02:25:19.485Z","createdAt":"2026-10-22T02:25:19.485Z","updatedAt":"2026-10-22T02:25:19.485Z"},"requestId":"02752969-bc76-49a6-b74f-7846e6365420"}
+id=01a1616d-5c7d-71b1-870c-6ddb06a96252
+[get] GET /api/v1/admin/capabilities/01a1616d-5c7d-71b1-870c-6ddb06a96252 -> HTTP 200
+{"code":0,"message":"ok","data":{"id":"01a1616d-5c7d-71b1-870c-6ddb06a96252","modelId":"01a1615d-c434-7a01-9356-1da979ba55e9","capability":"function_calling","supported":true,"maxContextLength":null,"detail":null,"source":"observed","confidence":0.5,"detectedAt":"2026-10-22T02:25:19.485Z","createdAt":"2026-10-22T02:25:19.485Z","updatedAt":"2026-10-22T02:25:19.485Z"},"requestId":"a3056aaf-b51a-4f0c-b27b-cd121defa557"}
+[patch] PATCH /api/v1/admin/capabilities/01a1616d-5c7d-71b1-870c-6ddb06a96252 -> HTTP 200
+{"code":0,"message":"ok","data":{"id":"01a1616d-5c7d-71b1-870c-6ddb06a96252","modelId":"01a1615d-c434-7a01-9356-1da979ba55e9","capability":"function_calling","supported":false,"maxContextLength":131072,"detail":null,"source":"observed","confidence":0.5,"detectedAt":"2026-10-22T02:25:21.434Z","createdAt":"2026-10-22T02:25:19.485Z","updatedAt":"2026-10-22T02:25:21.437Z"},"requestId":"4040d127-f718-4332-922f-9e053e65bac0"}
+[patch-invalid] PATCH /api/v1/admin/capabilities/01a1616d-5c7d-71b1-870c-6ddb06a96252 -> HTTP 400
+{"code":40000,"message":"枚举值非法，允许 function_calling/vision/reasoning/structured_output/prompt_caching/code_execution/web_search/long_context","data":null,"requestId":"d10a18de-a446-456d-b801-93f2afe33585"}
+[create-ghost-model] POST /api/v1/admin/capabilities -> HTTP 400
+{"code":20001,"message":"模型不存在","data":null,"requestId":"e7e8a5b4-05ac-4664-932c-2f304091d059"}
+[delete] DELETE /api/v1/admin/capabilities/01a1616d-5c7d-71b1-870c-6ddb06a96252 -> HTTP 200
+{"code":0,"message":"ok","data":{"deleted":true,"id":"01a1616d-5c7d-71b1-870c-6ddb06a96252"},"requestId":"acf0ffe0-d318-401a-9d55-2c9b23ce2e13"}
+[get-after-delete] GET /api/v1/admin/capabilities/01a1616d-5c7d-71b1-870c-6ddb06a96252 -> HTTP 400
+{"code":40000,"message":"能力矩阵记录不存在","data":null,"requestId":"113a40d8-4e3f-4504-bfb7-42c0e91b4cdb"}
+audit_rows(capabilities)=1,2,3
+exit=0

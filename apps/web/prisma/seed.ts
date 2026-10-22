@@ -3,6 +3,7 @@ import { hash, hashSync } from '@node-rs/bcrypt'
 import { seedOfficialNewsItems } from './seed-official-news'
 import { seedOfficialPlatforms } from './seed-official-platforms'
 import { applyPricingTiers } from './seed/pricing-tiers'
+import { seedMatrixBackfill } from './seed-matrix-backfill'
 
 const prisma = new PrismaClient()
 
@@ -1121,6 +1122,10 @@ async function main() {
   // 6.x2 官方平台目录种子（控制台 MVP 丁：N3）：六大主流官方平台 upsert + UPSTREAM 计费规则
   const officialPlatformCount = await seedOfficialPlatforms(prisma)
   console.log(`🌐 official_platforms: 新增/更新 ${officialPlatformCount} 个`)
+
+  // 6.x3 协议兼容/能力矩阵回填（B11-03a，Q-11-01=A）：由 ai_models.protocol 等真实字段派生，幂等不覆盖人工行；单独执行见 prisma/seed-matrix-backfill.ts
+  const matrix = await seedMatrixBackfill(prisma)
+  console.log(`🧩 matrix backfill: protocol +${matrix.protocolInserted}/${matrix.protocolDerived}, capability +${matrix.capabilityInserted}/${matrix.capabilityDerived}`)
 
 
   // ============================================

@@ -4,7 +4,7 @@
 import { withApi } from "../../_lib/handler";
 import { requireAdminApi } from "../../../../../lib/features/auth/session";
 import { prisma } from "../../../../../lib/db/prisma";
-import { writeAudit } from "../../_lib/audit";
+import { upsertCapability } from "../../../../../lib/features/admin/matrix/service";
 import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
@@ -38,46 +38,9 @@ export const GET = withApi(async (req: Request) => {
 
 export const POST = withApi(async (req: Request) => {
   const session = await requireAdminApi("admin.capabilities.write");
-  const body = await req.json() as {
-    modelId: string;
-    capability: string;
-    supported: boolean;
-    source?: string;
-    confidence?: number;
-    maxContextLength?: number;
-  };
-
-  const record = await prisma.capabilityMatrix.upsert({
-    where: {
-      modelId_capability_source: {
-        modelId: body.modelId,
-        capability: body.capability,
-        source: body.source ?? "official",
-      },
-    },
-    create: {
-      modelId: body.modelId,
-      capability: body.capability,
-      supported: body.supported,
-      source: body.source ?? "official",
-      confidence: body.confidence ?? 0.5,
-      maxContextLength: body.maxContextLength,
-    },
-    update: {
-      supported: body.supported,
-      confidence: body.confidence,
-      maxContextLength: body.maxContextLength,
-    },
-  });
-
-  await writeAudit({
-    actorId: session.userId,
-    tableName: "capability_matrices",
-    action: 1,
-    recordId: record.id,
-    newData: body,
-  });
-
+  // B11-03a：zod 校验 + 引用完整性 + 审计统一下沉 service（upsert 语义不变）
+  const body = (await req.json().catch(() => null)) as unknown;
+  const record = await upsertCapability(body, { userId: session.userId, requestId: req.headers.get("x-request-id") });
   revalidatePath("/admin/capabilities");
   return record;
 });

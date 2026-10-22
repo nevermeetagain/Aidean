@@ -1,6 +1,7 @@
 # API 接口文档
 
-> 版本: v1.62 | 更新: 2026-10-22 | 变更: **B11-10 / B11-11（Q-11-03=B · Q-11-05=A）**——§4 新增 §4.1 非 2xx 出口信封（anchor `api-envelope-exits`：未实现方法 → HTTP 405 + `Allow` + 信封 `code=40000`；未匹配 `/api/*` → HTTP 404 + 信封 `code=40000`，替代 0 字节空体与 27KB HTML）与 §4.2 分页参数解析口径（anchor `pagination-params`：共享件 `lib/http/pagination.ts`，非法串回退默认、越界钳制、绝不送 NaN）；与《API架构设计方案》§7.14 / §五 建立铁律 2 双向互引锚；不新增错误码（复用已登记 40000），不新增单资源 GET。
+> 版本: v1.63 | 更新: 2026-10-22 | 变更: **B11-03a 协议兼容/能力矩阵投入运营（Q-11-01=A）**——新建 §5.8.11（anchor `matrix-admin-api`）登记 `/api/v1/admin/protocols{,/[id]}` 与 `/api/v1/admin/capabilities{,/[id]}` 列表 GET/POST + 单资源 GET/PATCH/DELETE（新增 4 端点、2 route 文件），zod strict 校验、错误码复用既有 40000/20001/10008，协议维度唯一真源 `ModelProtocol`；与《API架构设计方案》§7.15 双向互引（铁律 2）。
+> 前次（v1.62 | 更新: 2026-10-22）变更: **B11-10 / B11-11（Q-11-03=B · Q-11-05=A）**——§4 新增 §4.1 非 2xx 出口信封（anchor `api-envelope-exits`：未实现方法 → HTTP 405 + `Allow` + 信封 `code=40000`；未匹配 `/api/*` → HTTP 404 + 信封 `code=40000`，替代 0 字节空体与 27KB HTML）与 §4.2 分页参数解析口径（anchor `pagination-params`：共享件 `lib/http/pagination.ts`，非法串回退默认、越界钳制、绝不送 NaN）；与《API架构设计方案》§7.14 / §五 建立铁律 2 双向互引锚；不新增错误码（复用已登记 40000），不新增单资源 GET。
 > 前次（v1.61） | 更新: 2026-10-20 | 变更: **同步 26_用户裁决记录**——§5.2.1 补用户裁决口径注（U-15 / U-23=B / U-24=A）。
 > 前次（v1.60） | 更新: 2026-10-20 | 变更: **TASK-054 EffectivePrice 字段表（计价口径归一）**——§5.2.1 新建（anchor `effective-price-fields`）登记 `EffectivePriceSchema` v0.2 全字段，含归一字段 currency/unit/sourceCurrency/sourceUnit/sourcePrice*/fxRate/fxDate；回链《网关计费时序契约》§12 与术语表「计价口径归一」（铁律 2 双向锚）。
 > 前次（v1.59） | 更新: 2026-10-20 | 变更: **TASK-031 登记限时优惠价 API-008..011**——新建 §5.8.10（anchor `promotion-prices-api`）登记 `/api/v1/admin/prices/promotions` GET/POST 与 `[id]` PATCH/DELETE 四端点（契约 `PromotionPriceCreateSchema`/`PromotionPricePatchSchema`，权限 `admin.models.read/write`）；生效价解析口径回链《网关计费时序契约》§11（anchor `effective-price-resolution`）与术语表「生效价」（铁律 2 双向锚）；与《API架构设计方案》§7.13 互引。
@@ -499,6 +500,27 @@ CSV 列头（与 schema 一一对照）：
 | DELETE | /api/v1/admin/prices/promotions/[id] | `admin.models.write` | 删除优惠（API-011）：仅允许 PROMOTION 行，返回 `{deleted:true}`；删除后下一次请求即回落当前价（e2e：EVD-030） |
 
 > 计费口径互引：生效价由 `lib/features/pricing/effective-price.ts` 唯一解析，网关预扣/结算与 `/api/v1/models/[id]`、`/pricing` 同源消费（[§11 生效价解析](网关计费时序契约.md#effective-price-resolution)，铁律 2）。
+
+<a id="matrix-admin-api"></a>
+
+### 5.8.11 协议兼容矩阵 / 能力矩阵 admin（V0.11.0 · B11-03a · Q-11-01=A）
+> 端点登记；架构约束见《API架构设计方案》[§7.15 协议/能力矩阵运营化边界](API架构设计方案.md#matrix-architecture)，术语见[「协议兼容矩阵」](../governance/术语表.md#term-protocol-matrix)。校验 schema 暂驻 `apps/web/lib/features/admin/matrix/schemas.ts`（`packages/shared` 冻结，未静默扩写），维度常量 `lib/features/admin/matrix/constants.ts`。`force-dynamic`。错误码均复用 §4 既有码，**零新增**。
+
+| 方法 | 路径 | 权限码 | 说明 |
+|---|---|---|---|
+| GET | /api/v1/admin/protocols | `admin.protocols.read` | 分页列表（`page≥1`、`pageSize≤100`）；过滤 `entityType`/`protocol`；`probedAt desc` |
+| POST | /api/v1/admin/protocols | `admin.protocols.write` | 按 `(entityType,entityId,protocol)` upsert；body `ProtocolCreateSchema`（strict）：`entityType∈{model,vendor,provider,station}`、`protocol∈ModelProtocol{OPENAI,ANTHROPIC,GOOGLE,RESPONSES,CUSTOM}`、`supported` 必填、`probeMethod∈{endpoint_check,minimal_request,documented,backfill}`、`confidence∈[0,1]`、`probeResult?`；实体不存在 → model `20001` / 其余 `40000`；审计 action=1（新建）/2（命中） |
+| GET | /api/v1/admin/protocols/[id] | `admin.protocols.read` | 单行；id 非 UUID → `40000`（不触库）；不存在 → `40000`「协议兼容记录不存在」 |
+| PATCH | /api/v1/admin/protocols/[id] | `admin.protocols.write` | body `ProtocolPatchSchema`（strict，≥1 字段，键同 POST 全可选）；改键撞唯一（P2002）→ `40000`「…已存在」；`supported`/`probeMethod` 变更刷新 `probedAt`；审计 action=2 |
+| DELETE | /api/v1/admin/protocols/[id] | `admin.protocols.write` | 物理删除（表无 `deleted_at`），返回 `{deleted:true,id}`；并发删除（P2025）→ `40000`；审计 action=3（oldData 全量快照） |
+| GET | /api/v1/admin/capabilities | `admin.capabilities.read` | 分页列表；过滤 `modelId`/`capability`；`detectedAt desc` |
+| POST | /api/v1/admin/capabilities | `admin.capabilities.write` | 按 `(modelId,capability,source)` upsert；body `CapabilityCreateSchema`（strict）：`capability∈{function_calling,vision,reasoning,structured_output,prompt_caching,code_execution,web_search,long_context}`、`source∈{official,benchmark,observed}`（缺省 official）、`maxContextLength?`、`detail?`；模型不存在 → `20001` |
+| GET | /api/v1/admin/capabilities/[id] | `admin.capabilities.read` | 单行；同协议矩阵口径 |
+| PATCH | /api/v1/admin/capabilities/[id] | `admin.capabilities.write` | body `CapabilityPatchSchema`（strict，≥1 字段）；P2002 → `40000`；`supported` 变更刷新 `detectedAt`；审计 action=2 |
+| DELETE | /api/v1/admin/capabilities/[id] | `admin.capabilities.write` | 物理删除，返回 `{deleted:true,id}`；审计 action=3 |
+
+> 通用异常：未登录 `10004`→401；缺权限码 `10008`→403；未知异常 `50000`→500（不泄露内部细节）。写成功后 `revalidatePath("/admin/protocols"|"/admin/capabilities")`。
+> 数据写入路径：`pnpm --filter web db:seed:matrix`（`prisma/seed-matrix-backfill.ts`，亦由 `seed.ts` 主流程调用）由 `ai_models.protocol`/`is_reasoning`/`is_multi_modal`/`context_length` 派生回填，`createMany skipDuplicates` 幂等且不覆盖人工行。架构约束互引：[§7.14](API架构设计方案.md#matrix-architecture)（铁律 2）。
 
 ### 5.9 财务 billing（implement-billing-module，MVP）
 | 方法 | 路径 | 说明 |

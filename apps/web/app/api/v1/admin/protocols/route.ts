@@ -4,7 +4,7 @@
 import { withApi } from "../../_lib/handler";
 import { requireAdminApi } from "../../../../../lib/features/auth/session";
 import { prisma } from "../../../../../lib/db/prisma";
-import { writeAudit } from "../../_lib/audit";
+import { upsertProtocol } from "../../../../../lib/features/admin/matrix/service";
 import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
@@ -38,46 +38,9 @@ export const GET = withApi(async (req: Request) => {
 
 export const POST = withApi(async (req: Request) => {
   const session = await requireAdminApi("admin.protocols.write");
-  const body = await req.json() as {
-    entityType: string;
-    entityId: string;
-    protocol: string;
-    supported: boolean;
-    probeMethod?: string;
-    confidence?: number;
-  };
-
-  const record = await prisma.protocolCompatibility.upsert({
-    where: {
-      entityType_entityId_protocol: {
-        entityType: body.entityType,
-        entityId: body.entityId,
-        protocol: body.protocol,
-      },
-    },
-    create: {
-      entityType: body.entityType,
-      entityId: body.entityId,
-      protocol: body.protocol,
-      supported: body.supported,
-      probeMethod: body.probeMethod ?? "documented",
-      confidence: body.confidence ?? 0.5,
-    },
-    update: {
-      supported: body.supported,
-      probeMethod: body.probeMethod,
-      confidence: body.confidence,
-    },
-  });
-
-  await writeAudit({
-    actorId: session.userId,
-    tableName: "protocol_compatibilities",
-    action: 1,
-    recordId: record.id,
-    newData: body,
-  });
-
+  // B11-03a：zod 校验 + 引用完整性 + 审计统一下沉 service（upsert 语义不变）
+  const body = (await req.json().catch(() => null)) as unknown;
+  const record = await upsertProtocol(body, { userId: session.userId, requestId: req.headers.get("x-request-id") });
   revalidatePath("/admin/protocols");
   return record;
 });

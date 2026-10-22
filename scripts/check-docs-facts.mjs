@@ -95,7 +95,7 @@ const assertions = [
   },
   {
     id: "aidean-ui-refs",
-    desc: "@aidean/ui 在 apps/web/components 的 import 数 = 70（TASK-064 新增 ChangeFeed/MonitoringPanel 68→70；前次 TASK-074 BenchmarkDialog 67→68）",
+    desc: "@aidean/ui 在 apps/web/components 的 import 数 = 71（B11-03 新增 components/admin/PanelState.tsx 70→71，R10-01；前次 TASK-064 新增 ChangeFeed/MonitoringPanel 68→70；前次 TASK-074 BenchmarkDialog 67→68）",
     check: () =>
       String(
         walk("apps/web/components", () => true).filter((f) => {
@@ -106,13 +106,13 @@ const assertions = [
           }
         }).length
       ),
-    expect: "70",
+    expect: "71",
   },
   {
     id: "route-count",
-    desc: "apps/web route.ts 文件数（含 app/ 全域）= 164（B11-10 新增 API 兜底 app/api/[[...slug]]/route.ts 163→164，R10-01；前次 TASK-063 新增 admin/monitoring 4 端点 159→163，R10-01；前次 TASK-081 158→159）",
+    desc: "apps/web route.ts 文件数（含 app/ 全域）= 166（B11-10 新增 app/api/[[...slug]] + B11-03a 新增 admin/protocols/[id]、admin/capabilities/[id] 163→166，R10-01；前次 TASK-063 新增 admin/monitoring 4 端点 159→163，R10-01；前次 TASK-081 158→159）",
     check: () => String(walk("apps/web/app", (n) => n === "route.ts").length),
-    expect: "164",
+    expect: "166",
   },
   {
     id: "page-count",
@@ -132,10 +132,10 @@ const assertions = [
   },
   {
     id: "spec-count",
-    desc: "spec 文件总数 = 198（B11-10/B11-11 新增 apps/web/lib/http/{pagination,pagination-guard,api-envelope-exits}.spec.ts 195→198，R10-01；前次 B11-08 新增 apps/web/lib/features/admin/__tests__/scripts-executions-route.spec.ts 194→195，R10-01；前次 TASK-030 新增 e2e/tests/promotion-billing.spec.ts 193→194，R10-01）",
+    desc: "spec 文件总数 = 202（B11-10/11 新增 pagination/pagination-guard/api-envelope-exits 3 spec + B11-03 新增 matrix-constants/matrix-backfill/matrix-routes/panel-state 4 spec 195→202，R10-01；前次 B11-08 新增 apps/web/lib/features/admin/__tests__/scripts-executions-route.spec.ts 194→195，R10-01；前次 TASK-030 新增 e2e/tests/promotion-billing.spec.ts 193→194，R10-01）",
     check: () =>
       String(walk("e2e", (n) => n.endsWith(".spec.ts")).length + walk("apps/web", (n) => n.endsWith(".spec.ts")).length),
-    expect: "198",
+    expect: "202",
   },
   {
     id: "queryraw-biz",
