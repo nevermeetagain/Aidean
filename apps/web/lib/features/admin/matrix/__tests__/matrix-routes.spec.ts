@@ -88,6 +88,7 @@ describe("protocols/[id]", () => {
     expect(status).toBe(400);
     expect(json.code).toBe(ERROR_CODES.BAD_REQUEST);
     expect(json.data).toBeNull();
+    expect(json.message).toBe("id 非法（须为 UUID）");
     expect(prisma.protocolCompatibility.findUnique).not.toHaveBeenCalled();
   });
 
@@ -138,6 +139,12 @@ describe("protocols/[id]", () => {
     expect(json.code).toBe(40000);
     expect(prisma.protocolCompatibility.update).not.toHaveBeenCalled();
     expect(prisma.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it("PATCH 未知键文案点名字段", async () => {
+    vi.mocked(prisma.protocolCompatibility.findUnique).mockResolvedValue(pRow as never);
+    const { json } = await call((await protoRoute()).PATCH as Handler, "PATCH", ID, { foo: 1 });
+    expect(json.message).toBe("未知字段：foo");
   });
 
   it("PATCH 改键撞唯一（P2002）→ 40000「…已存在」，不写审计", async () => {

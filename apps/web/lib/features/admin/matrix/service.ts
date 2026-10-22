@@ -36,14 +36,21 @@ type SafeParser<T> = {
   safeParse: (v: unknown) => { success: true; data: T } | { success: false; error: { issues: ZodLikeIssue[] } };
 };
 
+/** zod issue → 40000 文案：未知键/非法 id 给出具体字段（formatZodMessage 对二者只回落「参数非法：body」） */
+function issueMessage(issue: ZodLikeIssue & { keys?: readonly string[] }): string {
+  if (issue.code === "unrecognized_keys" && issue.keys?.length) return `未知字段：${issue.keys.join(", ")}`;
+  return formatZodMessage(issue);
+}
+
 function parseOrThrow<T>(schema: SafeParser<T>, body: unknown): T {
   const r = schema.safeParse(body);
-  if (!r.success) throw new ApiError(ERROR_CODES.BAD_REQUEST, formatZodMessage(r.error.issues[0]!));
+  if (!r.success) throw new ApiError(ERROR_CODES.BAD_REQUEST, issueMessage(r.error.issues[0]!));
   return r.data;
 }
 
 export function parseMatrixId(id: unknown): string {
-  return parseOrThrow(MatrixIdSchema as unknown as SafeParser<string>, id);
+  if (!MatrixIdSchema.safeParse(id).success) throw new ApiError(ERROR_CODES.BAD_REQUEST, "id 非法（须为 UUID）");
+  return id as string;
 }
 
 function prismaCode(err: unknown): string | undefined {
