@@ -1,5 +1,5 @@
 B11-07 偏差与未验证项（deviation）
-版本: v0.11.0-b11-07 | 更新: 2026-10-22 | 变更: 初始条目（快照首跑 + 供给覆盖 + 入口接线）
+版本: v0.11.0-b11-07-r1 | 更新: 2026-10-22 | 变更: 初始条目（快照首跑 + 供给覆盖 + 入口接线）；r1 校正 §二 行数口径（git 统计 +20/−1）
 
 ──────────────────────────────────────────────
 §一【需裁决】验收③的字面口径与「不伪造合规状态」冲突
@@ -31,7 +31,7 @@ B. 由人工完成 U-M6 裁决并在后台把 openrouter/quanzil 的 tosStatus �
 无论哪种，均不改变本次已交付的 25 个模型 offerings 事实。
 
 ──────────────────────────────────────────────
-§二 monitor_catalogs 缺 DATABASE_URL 的兜底（新增 19 行）
+§二 monitor_catalogs 缺 DATABASE_URL 的兜底（+20/−1 行）
 
 改动前取证：
 - `scripts/crawl/monitor_catalogs.ts` L246 `if (!process.env.DATABASE_URL) throw ...`；脚本无 dotenv 加载。

@@ -4,7 +4,7 @@ B11-07 验收核验记录（DEF-011-09 / DEF-011-10 · 目录快照首跑 + 供�
 纪律：本文件不含任何连接串/凭据；seed 输出中的登录口令段一律不誊抄。
 
 交付物（白名单内）：
-  scripts/crawl/monitor_catalogs.ts            +19 行（.env 兜底 hydrateDatabaseUrlFromEnvFile；既有 497 行）
+  scripts/crawl/monitor_catalogs.ts            +20/−1 行（.env 兜底 hydrateDatabaseUrlFromEnvFile；既有 497 行）
   apps/web/package.json                        +1 行脚本 crawl:monitor
   apps/web/prisma/seed/offerings-coverage.ts   新增（180 行，唯一实现）
   apps/web/prisma/seed.ts                      +1 行 import、+1 行调用（L6 / pricing-tiers 之后）
