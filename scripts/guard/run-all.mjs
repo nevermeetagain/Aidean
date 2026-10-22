@@ -12,14 +12,15 @@ const GUARDS = [
   "module-boundary.mjs",
   "port-consistency.mjs",
   "api-method-coverage.mjs", // B11-10：未实现方法 405 信封 + API 兜底 404
-  "pagination-guard.mjs", // B11-11：查询参数整数解析须走 lib/http/pagination.ts（棘轮模式）
+  ["pagination-guard.mjs", "--strict"], // B11-11：15 端点已接入、例外清单为空，Hark 2026-10-22 裁定切 strict
 ];
 
 let failures = 0;
 const results = [];
 
-for (const g of GUARDS) {
-  const r = spawnSync(process.execPath, [path.join(GUARD_DIR, g)], { stdio: "inherit" });
+for (const entry of GUARDS) {
+  const [g, ...args] = Array.isArray(entry) ? entry : [entry];
+  const r = spawnSync(process.execPath, [path.join(GUARD_DIR, g), ...args], { stdio: "inherit" });
   const code = r.status === null ? 1 : r.status; // 无法启动/被信号杀死 → 视为失败
   results.push({ g, code });
   if (code !== 0) failures++;
