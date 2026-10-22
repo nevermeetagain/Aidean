@@ -4,15 +4,18 @@
  * 公告管理（R-51）：
  * - Announcement 列表（类型过滤/分页）
  * - 新建/编辑/删除/置顶/发布
+ * - UX-04：列表区接入 B11-05 五态外壳（admin-announcements）：失败/断网落错误态 + 重试，不再显示「暂无公告」
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { adminFetch } from "./adminFetch";
+import { PanelState, usePanelResource } from "./PanelState";
+import { panelTestIds } from "../../lib/admin/panel-resource";
 import { Badge, Button, Label, Select, Textarea } from "@aidean/ui";
 import { AdminDataTable, type Column } from "./AdminDataTable";
 import { ConfirmDialog } from "./ConfirmDialog";
 
-interface AnnRow {
+export interface AnnRow {
   id: string;
   title: string;
   content: string;
@@ -26,6 +29,14 @@ interface AnnRow {
   createdAt: string;
 }
 
+const ANN_BATCH_LABEL: Record<"delete" | "publish" | "unpublish" | "pin" | "unpin", string> = {
+  delete: "批量删除",
+  publish: "批量发布",
+  unpublish: "批量撤回",
+  pin: "批量置顶",
+  unpin: "批量取消置顶",
+};
+
 const TYPE_LABELS: Record<string, string> = {
   system: "系统",
   maintenance: "维护",
@@ -33,11 +44,28 @@ const TYPE_LABELS: Record<string, string> = {
   promotion: "推广",
 };
 
+/** 列表数据形状（信封 data） */
+export type AnnouncementsListData = { items: AnnRow[]; total: number };
+
+/** 五态外壳 testid 前缀（UX-04，同 B11-05 口径） */
+export const ANNOUNCEMENTS_PANEL_PREFIX = "admin-announcements";
+
+export const ANNOUNCEMENTS_PAGE_SIZE = 20;
+
+export function buildAnnouncementsUrl(page = 1, type = ""): string {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(ANNOUNCEMENTS_PAGE_SIZE) });
+  if (type) params.set("type", type);
+  return `/api/v1/admin/announcements?${params}`;
+}
+
+/** 首屏地址（与改造前完全一致） */
+export const ANNOUNCEMENTS_LIST_URL = buildAnnouncementsUrl();
+
+export const loadAnnouncements = (signal?: AbortSignal, page = 1, type = "") =>
+  adminFetch<AnnouncementsListData>(buildAnnouncementsUrl(page, type), { signal });
+
 export function AnnouncementManager() {
-  const [items, setItems] = useState<AnnRow[]>([]);
-  // #35③：列表请求在途（参照 UsersTable #68 模式），首载不闪空态
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
+  const ids = panelTestIds(ANNOUNCEMENTS_PANEL_PREFIX);
   const [page, setPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState("");
   const [showCreate, setShowCreate] = useState(false);
@@ -47,25 +75,28 @@ export function AnnouncementManager() {
   const [batchBusy, setBatchBusy] = useState(false);
   // 内联状态提示（替代原生 alert）
   const [message, setMessage] = useState<string | null>(null);
-  const pageSize = 20;
+  // 「刷新」重复点击也要重取：nonce 计入签名
+  const [queryNonce, setQueryNonce] = useState(0);
 
-  const load = useCallback(async (p: number) => {
-    const params = new URLSearchParams({ page: String(p), pageSize: String(pageSize) });
-    if (typeFilter) params.set("type", typeFilter);
-    setLoading(true);
-    const res = await adminFetch<{ items: AnnRow[]; total: number }>(
-      `/api/v1/admin/announcements?${params}`
-    );
-    setLoading(false);
-    if (res.ok && res.data) {
-      setItems(res.data.items);
-      setTotal(res.data.total);
-    }
-  }, [typeFilter]);
+  const loader = useCallback(
+    (signal: AbortSignal) => loadAnnouncements(signal, page, typeFilter),
+    [page, typeFilter],
+  );
+  const { resource, reload, refresh } = usePanelResource(loader, (d) => d.items.length === 0);
 
-  useEffect(() => { void load(page); }, [load, page]);
+  // 筛选/翻页/主动刷新才重新取数（签名比对，StrictMode 双跑不重复请求）
+  const signature = `${typeFilter}|${page}|${queryNonce}`;
+  const lastSignature = useRef(signature);
+  useEffect(() => {
+    if (lastSignature.current === signature) return;
+    lastSignature.current = signature;
+    reload();
+  }, [signature, reload]);
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const data = resource.status === "ready" ? resource.data : null;
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / ANNOUNCEMENTS_PAGE_SIZE));
 
   function handleDelete(id: string) {
     setPendingDelete(id);
@@ -77,7 +108,7 @@ export function AnnouncementManager() {
     setPendingDelete(null);
     const res = await adminFetch(`/api/v1/admin/announcements/${id}`, { method: "DELETE" });
     if (res.ok) {
-      void load(page);
+      refresh();
       setMessage("公告已删除");
     } else {
       setMessage(res.message ?? "操作失败");
@@ -94,8 +125,8 @@ export function AnnouncementManager() {
     setBatchBusy(false);
     if (res.ok) {
       setSelectedIds(new Set());
-      void load(page);
-      setMessage(`批量${action}完成：${res.data?.affected ?? 0} 条受影响`);
+      refresh();
+      setMessage(`${ANN_BATCH_LABEL[action]}完成：${res.data?.affected ?? 0} 条受影响`);
     } else {
       setMessage(res.message ?? "批量操作失败");
     }
@@ -106,7 +137,7 @@ export function AnnouncementManager() {
       method: "PATCH",
       body: JSON.stringify({ isPinned: !row.isPinned }),
     });
-    if (res.ok) void load(page);
+    if (res.ok) refresh();
   }
 
   async function togglePublish(row: AnnRow) {
@@ -114,7 +145,7 @@ export function AnnouncementManager() {
       method: "PATCH",
       body: JSON.stringify({ isPublished: !row.isPublished }),
     });
-    if (res.ok) void load(page);
+    if (res.ok) refresh();
   }
 
   const columns: Column<AnnRow>[] = [
@@ -147,18 +178,18 @@ export function AnnouncementManager() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <Select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="bg-white">
+        <Select aria-label="按类型筛选" value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="bg-white">
           <option value="">全部类型</option>
           <option value="system">系统</option>
           <option value="maintenance">维护</option>
           <option value="update">更新</option>
           <option value="promotion">推广</option>
         </Select>
-        <Button variant="outline" size="sm" onClick={() => { setPage(1); void load(1); }}>刷新</Button>
+        <Button variant="outline" size="sm" onClick={() => { setPage(1); setQueryNonce((n) => n + 1); }}>刷新</Button>
         <Button variant="primary" size="sm" onClick={() => setShowCreate(!showCreate)} className="ml-auto">
           {showCreate ? "取消" : "新建公告"}
         </Button>
-        <span className="text-xs text-slate-500">共 {total} 条</span>
+        <span className="text-xs text-slate-500">{data ? `共 ${total} 条` : null}</span>
       </div>
 
       {message ? (
@@ -167,21 +198,23 @@ export function AnnouncementManager() {
         </p>
       ) : null}
 
-      {showCreate && <AnnouncementForm onDone={() => { setShowCreate(false); void load(page); }} />}
-      {editing && <AnnouncementForm existing={editing} onDone={() => { setEditing(null); void load(page); }} />}
+      {showCreate && <AnnouncementForm onDone={() => { setShowCreate(false); refresh(); }} />}
+      {editing && <AnnouncementForm existing={editing} onDone={() => { setEditing(null); refresh(); }} />}
 
       {selectedIds.size > 0 ? (
         <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
           <span className="text-xs text-primary">已选 {selectedIds.size} 项</span>
-          <Button variant="primary" size="sm" className="bg-emerald-500" onClick={() => executeBatch("publish")} disabled={batchBusy}>批量发布</Button>
+          <Button variant="primary" size="sm" onClick={() => executeBatch("publish")} disabled={batchBusy}>批量发布</Button>
           <Button variant="outline" size="sm" onClick={() => executeBatch("unpublish")} disabled={batchBusy}>批量撤回</Button>
           <Button variant="outline" size="sm" onClick={() => executeBatch("pin")} disabled={batchBusy}>批量置顶</Button>
           <Button variant="outline" size="sm" onClick={() => executeBatch("unpin")} disabled={batchBusy}>取消置顶</Button>
-          <Button variant="danger" size="sm" onClick={() => executeBatch("delete")} disabled={batchBusy}>批量删除</Button>
+          <Button variant="outline" size="sm" className="text-[var(--danger)]" onClick={() => executeBatch("delete")} disabled={batchBusy}>批量删除</Button>
           <Button variant="outline" size="sm" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
         </div>
       ) : null}
 
+      <PanelState testId={ids.root} resource={resource} onRetry={reload} emptyText="暂无公告">
+        {() => (
       <AdminDataTable
         selectable
         selectedIds={selectedIds}
@@ -203,8 +236,10 @@ export function AnnouncementManager() {
         totalPages={totalPages}
         total={total}
         onPageChange={p => setPage(p)}
-        busy={batchBusy || loading}
+        busy={batchBusy}
       />
+        )}
+      </PanelState>
 
       <ConfirmDialog
         open={pendingDelete !== null}

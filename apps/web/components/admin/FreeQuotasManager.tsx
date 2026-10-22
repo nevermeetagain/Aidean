@@ -254,7 +254,7 @@ export function FreeQuotasManager() {
         <div className="space-y-3">
           <div>
             <label className="text-xs text-slate-500">账户等级</label>
-            <select
+            <select aria-label="账户等级"
               className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
               value={form.tier}
               onChange={(e) => setForm({ ...form, tier: e.target.value })}
@@ -279,7 +279,7 @@ export function FreeQuotasManager() {
           </div>
           <div>
             <label className="text-xs text-slate-500">刷新周期</label>
-            <select
+            <select aria-label="刷新周期"
               className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
               value={form.refreshCycle}
               onChange={(e) => setForm({ ...form, refreshCycle: e.target.value })}
@@ -319,7 +319,7 @@ export function FreeQuotasManager() {
           </div>
           <div>
             <label className="text-xs text-slate-500">刷新周期</label>
-            <select
+            <select aria-label="刷新周期"
               className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
               value={editCycle}
               onChange={(e) => setEditCycle(e.target.value)}

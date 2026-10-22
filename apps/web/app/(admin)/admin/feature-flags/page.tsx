@@ -21,7 +21,7 @@ export default async function AdminFeatureFlagsPage() {
       <div>
         <h1 className="text-lg font-semibold tracking-tight text-slate-900">功能开关</h1>
         <p className="mt-1 text-xs text-slate-500">
-          运行时功能开关：切换即时对前台入口、受控页面与受控 API 生效——关闭时相应导航入口隐藏、受控页面呈「功能关闭」态、受控接口返回 50011。关闭核心开关（网关对话）需二次确认。
+          运行时功能开关：切换即时对前台入口、受控页面与受控 API 生效——关闭时相应导航入口隐藏、受控页面呈「功能关闭」态、受控接口返回「功能已关闭」错误。关闭核心开关（网关对话）需二次确认。
         </p>
       </div>
       <FeatureFlagsManager canWrite={canWrite} />

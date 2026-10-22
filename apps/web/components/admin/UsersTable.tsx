@@ -3,9 +3,10 @@
 /**
  * 用户管理表格（SubTask 2.1.2 + 3.6.2 + R-31 AdminDataTable + R-32 Button）：
  * 分页/搜索/徽章化 tier 与 status；
- * 行操作：调 tier、封禁/解封、详情抽屉（余额只读 + 调账表单，二次确认）。
+ * 行操作：调 tier、封禁/解封、详情抽屉（余额只读；UX-26 裁定 5：调账入口仅保留在 /admin/wallets，抽屉内只给跳转链接，调账 API 不变）。
  * 操作成功后重拉当前页；错误行内提示。
  */
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { adminFetch } from "./adminFetch";
@@ -26,6 +27,9 @@ interface UserRow {
 }
 
 import { TIER_ROW_CLS, TIER_SHORT_LABEL, tierShortLabelOf } from "../../lib/features/user/tier";
+
+/** UX-27：系统角色对运营展示中文 */
+const ROLE_LABEL: Record<string, string> = { GUEST: "访客", USER: "普通用户", ADMIN: "管理员", SUPER_ADMIN: "超级管理员", MODERATOR: "审核员" };
 
 interface AssignableRole {
   code: string;
@@ -67,9 +71,6 @@ export function UsersTable({
   const [loading, setLoading] = useState(true);
   const keepBannerRef = useRef(false);
   const [detail, setDetail] = useState<UserRow | null>(null);
-  const [adjustYuan, setAdjustYuan] = useState("");
-  const [adjustNote, setAdjustNote] = useState("");
-  const [confirming, setConfirming] = useState(false);
   // 角色分配（S3.5，仅 SUPER_ADMIN 露出）
   const [roleTarget, setRoleTarget] = useState<UserRow | null>(null);
   const [allRoles, setAllRoles] = useState<AssignableRole[]>([]);
@@ -125,41 +126,6 @@ export function UsersTable({
     setMessage(done);
     await load(page, search);
     return true;
-  }
-
-  async function submitAdjust() {
-    if (!detail?.walletId) {
-      setMessage("该用户无钱包，不可调账");
-      return;
-    }
-    const yuan = Number(adjustYuan);
-    if (!Number.isFinite(yuan) || yuan === 0 || !Number.isInteger(yuan * 100)) {
-      setMessage("金额须为非 0 数值且最多两位小数");
-      return;
-    }
-    if (!adjustNote.trim()) {
-      setMessage("调账备注必填");
-      return;
-    }
-    const amountMinor = BigInt(Math.round(yuan * 100));
-    setBusy(true);
-    const res = await adminFetch<{ balanceYuan: string }>("/api/v1/admin/wallets/adjust", {
-      method: "POST",
-      body: JSON.stringify({ walletId: detail.walletId, amountMinor: amountMinor.toString(), note: adjustNote.trim() }),
-    });
-    setBusy(false);
-    if (!res.ok) {
-      setMessage(res.message ?? "调账失败");
-      return;
-    }
-    keepBannerRef.current = true;
-    setMessage(`调账成功，当前余额 ¥${res.data?.balanceYuan ?? "?"}`);
-    setAdjustYuan("");
-    setAdjustNote("");
-    setConfirming(false);
-    setDetail(null);
-    await load(page, search);
-    keepBannerRef.current = false;
   }
 
   async function openRoleEditor(u: UserRow) {
@@ -364,7 +330,7 @@ export function UsersTable({
         onPageChange={setPage}
       />
 
-      {/* 详情抽屉：余额只读 + 调账 */}
+      {/* 详情抽屉：余额只读（调账入口在 /admin/wallets） */}
       {detail ? (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/50" onClick={() => setDetail(null)}>
           <aside
@@ -388,51 +354,23 @@ export function UsersTable({
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between"><dt className="text-slate-500">邮箱</dt><dd className="text-slate-800">{detail.email}</dd></div>
               <div className="flex justify-between"><dt className="text-slate-500">昵称</dt><dd className="text-slate-800">{detail.nickname ?? "—"}</dd></div>
-              <div className="flex justify-between"><dt className="text-slate-500">等级 / 角色</dt><dd className="text-slate-800">{tierShortLabelOf(detail.tier)} · {detail.role}</dd></div>
-              <div className="flex justify-between"><dt className="text-slate-500">状态</dt><dd className="text-slate-800">{detail.status}</dd></div>
+              <div className="flex justify-between"><dt className="text-slate-500">等级 / 角色</dt><dd className="text-slate-800">{tierShortLabelOf(detail.tier)} · {ROLE_LABEL[detail.role] ?? detail.role}</dd></div>
+              <div className="flex justify-between"><dt className="text-slate-500">状态</dt><dd className="text-slate-800">{detail.status === "ACTIVE" ? "正常" : "已封禁"}</dd></div>
               <div className="flex justify-between"><dt className="text-slate-500">钱包余额（只读）</dt><dd className="tabular-nums font-medium text-slate-900">¥{detail.balanceYuan}</dd></div>
               <div className="flex justify-between"><dt className="text-slate-500">注册时间</dt><dd className="text-slate-600">{detail.createdAt.slice(0, 19).replace("T", " ")}</dd></div>
               <div className="flex justify-between"><dt className="text-slate-500">最近登录</dt><dd className="text-slate-600">{detail.lastLoginAt ? detail.lastLoginAt.slice(0, 19).replace("T", " ") : "—"}</dd></div>
             </dl>
 
-            <h3 className="mt-6 text-sm font-semibold text-slate-800">余额调账</h3>
-            <p className="mt-1 text-xs text-slate-500">正数入账、负数扣减；须填写备注并确认（走 ledger ADJUST 双录）。</p>
-            <div className="mt-3 space-y-2">
-              <Input
-                type="number"
-                step="0.01"
-                value={adjustYuan}
-                onChange={(e) => setAdjustYuan(e.target.value)}
-                placeholder="金额（元，可为负）"
-                aria-label="调账金额"
-                className="w-full"
-              />
-              <Input
-                type="text"
-                value={adjustNote}
-                onChange={(e) => setAdjustNote(e.target.value)}
-                maxLength={200}
-                placeholder="备注（必填，≤200 字）"
-                aria-label="调账备注"
-                className="w-full"
-              />
-              {confirming ? (
-                <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
-                  确认为 {detail.email} 调账 {adjustYuan} 元？此操作入账本且不可逆。
-                  <div className="mt-2 flex gap-2">
-                    <Button variant="primary" size="sm" disabled={busy} onClick={() => void submitAdjust()}>
-                      确认调账
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => setConfirming(false)}>
-                      取消
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <Button variant="primary" size="md" disabled={busy || !detail.walletId} onClick={() => setConfirming(true)} className="w-full">
-                  提交调账
-                </Button>
-              )}
+            {/* UX-26 裁定 5：资金操作集中到钱包页，抽屉不再提供调账表单 */}
+            <div className="mt-6 rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600">
+              <p>余额调账请在「钱包管理」中操作（统一审计与幂等校验）。</p>
+              <Link
+                href="/admin/wallets"
+                className="mt-2 inline-flex items-center gap-1 font-medium text-primary hover:underline"
+                data-testid="admin-user-detail-wallet-link"
+              >
+                去钱包页调账 →
+              </Link>
             </div>
 
             {/* S4 密钥与渠道：只读脱敏列表 + 吊销（仅持 admin.users.write 露出入口） */}

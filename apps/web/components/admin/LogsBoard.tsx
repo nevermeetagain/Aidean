@@ -3,8 +3,8 @@
 /**
  * LogsBoard — S5「日志中心」只读聚合看板（restructure-admin-nav-rbac-cms）。
  *
- * 五类记录分 Tab 呈现，全部只读（无新增/编辑/删除入口）：
- *  · 审计      —— 复用既有 AuditLogsTable（/admin/audit-logs API，admin.audit-logs.read）
+ * 四类记录分 Tab 呈现，全部只读（无新增/编辑/删除入口）：
+ *  （UX-26 裁定 3：原「审计」Tab 与 /admin/audit-logs 同表重复，已移除；审计唯一入口为 /admin/audit-logs）
  *  · 网关调用  —— /api/v1/admin/logs/usage（admin.logs.read）
  *  · 采集同步  —— 复用 /api/v1/admin/sync/batches（admin.sync.read）
  *  · 脚本执行  —— /api/v1/admin/logs/scripts（admin.logs.read）
@@ -18,14 +18,12 @@ import { Button, Label, Select } from "@aidean/ui";
 
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
-import { AuditLogsTable } from "./AuditLogsTable";
 
 const PAGE_SIZE = 20;
 
-type TabKey = "audit" | "usage" | "sync" | "scripts" | "security";
+type TabKey = "usage" | "sync" | "scripts" | "security";
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "audit", label: "审计" },
   { key: "usage", label: "网关调用" },
   { key: "sync", label: "采集同步" },
   { key: "scripts", label: "脚本执行" },
@@ -67,6 +65,10 @@ function usePagedQuery<T>(buildUrl: (page: number) => string, deps: unknown[]) {
   }, [load]);
   return { rows, total, page, setPage, loading, totalPages, reload };
 }
+
+/** UX-27：状态码 → 运营可读中文（未知值原样显示） */
+const SYNC_STATUS_LABEL: Record<string, string> = { running: "运行中", completed: "已完成", partial: "部分成功", failed: "失败" };
+const TOKEN_STATUS_LABEL: Record<string, string> = { ACTIVE: "有效", ROTATED: "已轮换", REVOKED: "已撤销", EXPIRED: "已过期" };
 
 function ts(v: string) {
   return new Date(v).toLocaleString("zh-CN");
@@ -120,7 +122,7 @@ function UsageTab() {
     { key: "billingPath", header: "计费", render: (r) => <span className="text-xs">{r.billingPath}</span> },
     {
       key: "tokens",
-      header: "Tokens",
+      header: "Token 用量",
       render: (r) => <span className="text-xs tabular-nums">{r.promptTokens + r.completionTokens}</span>,
     },
     { key: "quotaYuan", header: "费用(元)", render: (r) => <span className="text-xs tabular-nums">{r.quotaYuan}</span> },
@@ -139,10 +141,10 @@ function UsageTab() {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="模型标识" className="rounded border border-slate-200 bg-white px-3 py-1.5 text-sm" />
-        <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="rounded border border-slate-200 bg-white px-2 py-1.5 text-sm" />
+        <input aria-label="模型标识" value={model} onChange={(e) => setModel(e.target.value)} placeholder="模型标识" className="rounded border border-slate-200 bg-white px-3 py-1.5 text-sm" />
+        <input aria-label="开始日期" type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="rounded border border-slate-200 bg-white px-2 py-1.5 text-sm" />
         <span className="text-xs text-slate-400">至</span>
-        <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="rounded border border-slate-200 bg-white px-2 py-1.5 text-sm" />
+        <input aria-label="结束日期" type="date" value={to} onChange={(e) => setTo(e.target.value)} className="rounded border border-slate-200 bg-white px-2 py-1.5 text-sm" />
         <Label className="flex items-center gap-1 text-xs text-slate-600 font-normal">
           <input type="checkbox" checked={onlyErrors} onChange={(e) => setOnlyErrors(e.target.checked)} />仅错误
         </Label>
@@ -216,7 +218,7 @@ function SyncTab() {
       header: "状态",
       render: (r) => (
         <span className={`rounded px-1.5 py-0.5 text-xs ${r.status === "completed" ? "bg-emerald-50 text-emerald-600" : r.status === "failed" ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"}`}>
-          {r.status}
+          {SYNC_STATUS_LABEL[r.status] ?? r.status}
         </span>
       ),
     },
@@ -229,12 +231,12 @@ function SyncTab() {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Select value={status} onChange={(e) => setStatus(e.target.value)} className="bg-white">
+        <Select aria-label="按状态筛选" value={status} onChange={(e) => setStatus(e.target.value)} className="bg-white">
           <option value="">全部状态</option>
-          <option value="running">running</option>
-          <option value="completed">completed</option>
-          <option value="partial">partial</option>
-          <option value="failed">failed</option>
+          <option value="running">运行中</option>
+          <option value="completed">已完成</option>
+          <option value="partial">部分成功</option>
+          <option value="failed">失败</option>
         </Select>
         <Button variant="primary" size="sm" onClick={q.reload}>查询</Button>
         <span className="ml-auto text-xs text-slate-500">共 {q.total} 条</span>
@@ -299,7 +301,7 @@ function ScriptsTab() {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Select value={status} onChange={(e) => setStatus(e.target.value)} className="bg-white">
+        <Select aria-label="按状态筛选" value={status} onChange={(e) => setStatus(e.target.value)} className="bg-white">
           <option value="">全部状态</option>
           <option value="0">执行中</option>
           <option value="1">成功</option>
@@ -365,13 +367,13 @@ function SecurityTab() {
     { key: "createdAt", header: "签发", render: (r) => <span>{ts(r.createdAt)}</span> },
     { key: "userEmail", header: "用户", render: (r) => <span className="text-xs">{r.userEmail}</span> },
     { key: "clientId", header: "签发方", render: (r) => <span className="font-mono text-xs">{r.clientId ?? "主站"}</span> },
-    { key: "jtiPrefix", header: "jti", render: (r) => <span className="font-mono text-xs text-slate-400">{r.jtiPrefix}…</span> },
+    { key: "jtiPrefix", header: "令牌编号", render: (r) => <span className="font-mono text-xs text-slate-400">{r.jtiPrefix}…</span> },
     {
       key: "status",
       header: "状态",
       render: (r) => (
         <span className={`rounded px-1.5 py-0.5 text-xs ${r.status === "ACTIVE" ? "bg-emerald-50 text-emerald-600" : r.status === "EXPIRED" ? "bg-slate-100 text-slate-500" : "bg-amber-50 text-amber-600"}`}>
-          {r.status}
+          {TOKEN_STATUS_LABEL[r.status] ?? r.status}
         </span>
       ),
     },
@@ -382,7 +384,7 @@ function SecurityTab() {
     { key: "createdAt", header: "时间", render: (r) => <span>{ts(r.createdAt)}</span> },
     { key: "userEmail", header: "用户", render: (r) => <span className="text-xs">{r.userEmail}</span> },
     { key: "clientName", header: "接入方", render: (r) => <span className="text-xs">{r.clientName}</span> },
-    { key: "clientId", header: "clientId", render: (r) => <span className="font-mono text-xs text-slate-400">{r.clientId}</span> },
+    { key: "clientId", header: "客户端 ID", render: (r) => <span className="font-mono text-xs text-slate-400">{r.clientId}</span> },
     { key: "scopes", header: "授权范围", render: (r) => <span className="text-xs">{r.scopes.join(", ")}</span> },
   ];
 
@@ -395,7 +397,7 @@ function SecurityTab() {
         </div>
         <input value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="用户 ID（精确）" className="rounded border border-slate-200 bg-white px-3 py-1.5 text-sm" />
         {kind === "TOKEN" && (
-          <Select value={status} onChange={(e) => setStatus(e.target.value)} className="bg-white">
+          <Select aria-label="按状态筛选" value={status} onChange={(e) => setStatus(e.target.value)} className="bg-white">
             <option value="">全部状态</option>
             <option value="ACTIVE">有效</option>
             <option value="ROTATED">已轮换</option>
@@ -446,7 +448,6 @@ export function LogsBoard() {
         ))}
       </div>
       <div role="tabpanel">
-        {tab === "audit" && <AuditLogsTable />}
         {tab === "usage" && <UsageTab />}
         {tab === "sync" && <SyncTab />}
         {tab === "scripts" && <ScriptsTab />}

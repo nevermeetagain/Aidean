@@ -181,7 +181,7 @@ export function PartnerKeysManager() {
       )}
 
       {selectedIds.size > 0 ? (
-        <div className="mb-3 flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2">
+        <div className="mb-3 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
           <span className="text-xs text-primary">已选 {selectedIds.size} 项</span>
           <Button variant="dark" size="sm" disabled={batchBusy} onClick={() => void handleBatch("disable")}>批量停用</Button>
           <Button variant="danger" size="sm" disabled={batchBusy} onClick={() => void handleBatch("delete")}>批量删除</Button>

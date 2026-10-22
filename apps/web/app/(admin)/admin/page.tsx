@@ -26,7 +26,7 @@ export default async function AdminPage() {
   const stats = [
     { label: "有效用户", value: userCount, href: "/admin/users", hint: "注册账号（未软删）" },
     { label: "模型总数", value: modelCount, href: "/admin/models", hint: "含上架与下架" },
-    { label: "厂商总数", value: vendorCount, href: "/admin/vendors", hint: "模型提供商" },
+    { label: "厂商总数", value: vendorCount, href: "/admin/vendors", hint: "厂商管理" },
     { label: "兑换码累计", value: redemptionCount, href: "/admin/redemptions", hint: "历史生成总数" },
   ];
 

@@ -114,7 +114,7 @@ export function HoldsPanel() {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <select
+        <select aria-label="按状态筛选"
           value={status}
           onChange={(e) => { setStatus(e.target.value); setPage(1); }}
           className="rounded border border-slate-200 bg-white px-3 py-1.5 text-sm"

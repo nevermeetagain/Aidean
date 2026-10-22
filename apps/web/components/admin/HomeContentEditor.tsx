@@ -38,7 +38,7 @@ function raw(res: { data: { configs: { configKey: string; configValue: string }[
 /** 图标下拉（受限枚举名） */
 function IconSelect({ value, onChange, disabled }: { value: HomeIconName; onChange: (v: HomeIconName) => void; disabled: boolean }) {
   return (
-    <Select className={inputClass} value={value} disabled={disabled} onChange={(e) => onChange(e.target.value as HomeIconName)}>
+    <Select aria-label="图标" className={inputClass} value={value} disabled={disabled} onChange={(e) => onChange(e.target.value as HomeIconName)}>
       {HOME_ICON_NAMES.map((n) => <option key={n} value={n}>{n}</option>)}
     </Select>
   );

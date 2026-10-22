@@ -19,7 +19,7 @@ export default async function AdminLogsPage() {
       <div>
         <h1 className="text-lg font-semibold tracking-tight text-slate-900">日志中心</h1>
         <p className="mt-1 text-xs text-slate-500">
-          审计、网关调用、采集同步、脚本执行与安全事件的统一只读视图。记录/账本类仅可查询与筛选，不提供新增、修改或删除。
+          网关调用、采集同步、脚本执行与安全事件的统一只读视图（审计记录见「审计日志」）。记录/账本类仅可查询与筛选，不提供新增、修改或删除。
         </p>
       </div>
       <LogsBoard />

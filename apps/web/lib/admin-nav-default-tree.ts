@@ -1,6 +1,10 @@
 // S2.1 出厂默认三级导航树（板块 level1 → 分组 level2 → 叶 level3）。
 // 纯数据 + 展平函数：供 prisma/seed-admin-nav-default.ts 落库，及 lib/admin-nav-default-tree.spec.ts 直接
-// 喂 buildAdminNav 校验「7 板块 / 33 叶 / href 零缺失」。URL 全部沿用现值，仅重组层级与归属（只增不减）。
+// 喂 buildAdminNav 校验「7 板块 / 32 叶 / href 零缺失」。URL 全部沿用现值，仅重组层级与归属。
+// UX-26（2026-10-22 用户裁定）：
+//   · 裁定 4：/admin/vendors 展示名「厂商管理」、/admin/providers 展示名「服务平台」（只改名，menuCode/URL 不变）；
+//   · 裁定 8：能力矩阵 + 协议矩阵合并为一个叶「兼容矩阵」（/admin/capabilities?tab=capability|protocol），
+//     旧 /admin/protocols 页面保留为重定向，故从侧栏移除 adm_protocols 叶（33→32；旧库行由 applyDefaultAdminNav 停用）。
 import type { NavRow } from "./admin-navigation-core";
 
 export interface LeafSeed {
@@ -75,8 +79,8 @@ export const SECTIONS: SectionSeed[] = [
         leaves: [
           { code: "adm_models", name: "模型管理", href: "/admin/models", icon: "M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5" },
           { code: "adm_prices", name: "模型定价", href: "/admin/prices", icon: "M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6", perms: ["admin.models.read"] },
-          { code: "adm_vendors", name: "提供商管理", href: "/admin/vendors", icon: "M5 17h14M6 17V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10M9 9h.01M15 9h.01M9 13h.01M15 13h.01" },
-          { code: "adm_providers", name: "模型提供商", href: "/admin/providers", icon: "M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5" },
+          { code: "adm_vendors", name: "厂商管理", href: "/admin/vendors", icon: "M5 17h14M6 17V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10M9 9h.01M15 9h.01M9 13h.01M15 13h.01" },
+          { code: "adm_providers", name: "服务平台", href: "/admin/providers", icon: "M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5" },
         ],
       },
       {
@@ -84,8 +88,7 @@ export const SECTIONS: SectionSeed[] = [
         name: "能力与协议",
         order: 1,
         leaves: [
-          { code: "adm_capabilities", name: "能力矩阵", href: "/admin/capabilities", icon: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" },
-          { code: "adm_protocols", name: "协议矩阵", href: "/admin/protocols", icon: "M4 6h16M4 12h16M4 18h16" },
+          { code: "adm_capabilities", name: "兼容矩阵", href: "/admin/capabilities", icon: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" },
         ],
       },
       {

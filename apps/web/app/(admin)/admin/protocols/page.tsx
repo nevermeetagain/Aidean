@@ -1,18 +1,9 @@
-// /admin/protocols —— 协议兼容性矩阵。
-import { ProtocolMatrix } from "../../../../components/admin/ProtocolMatrix";
+// /admin/protocols —— 旧路由保留（UX-26 裁定 8）：协议矩阵已并入「兼容矩阵」，重定向到对应 Tab。
+// 页面文件保留（admin page.tsx 数量 34 不变），旧书签/深链继续可用。
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminProtocolsPage() {
-  return (
-    <div className="mx-auto max-w-6xl space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold tracking-tight text-slate-900">协议兼容性矩阵</h1>
-        <p className="mt-1 text-xs text-slate-500">
-          各平台/模型对 OpenAI、Anthropic、Gemini 等协议的兼容性探测结果。
-        </p>
-      </div>
-      <ProtocolMatrix />
-    </div>
-  );
+export default function AdminProtocolsPage(): never {
+  redirect("/admin/capabilities?tab=protocol");
 }

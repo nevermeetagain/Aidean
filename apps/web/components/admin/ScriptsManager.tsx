@@ -102,6 +102,8 @@ export function ScriptsManager() {
   const [page, setPage] = useState(1);
   const [execView, setExecView] = useState<ScriptRow | null>(null);
   const [executions, setExecutions] = useState<ExecutionRow[]>([]);
+  // UX-04：执行历史拉取失败不落「暂无执行记录」，显示错误
+  const [execError, setExecError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   // 新建/编辑 Dialog 状态
@@ -232,6 +234,8 @@ export function ScriptsManager() {
 
   async function viewHistory(script: ScriptRow) {
     setExecView(script);
+    setExecError(null);
+    setExecutions([]);
     setLoadingExec(true);
     const res = await adminFetch<{ items: ExecutionRow[] }>(
       `/api/v1/admin/scripts/${script.id}/executions?pageSize=10`
@@ -239,6 +243,8 @@ export function ScriptsManager() {
     setLoadingExec(false);
     if (res.ok && res.data) {
       setExecutions(res.data.items);
+    } else {
+      setExecError(res.message ?? "加载失败");
     }
   }
 
@@ -389,13 +395,22 @@ export function ScriptsManager() {
         className="max-w-2xl"
         footer={<Button variant="outline" size="sm" onClick={() => setExecView(null)}>关闭</Button>}
       >
-        <AdminDataTable
-          columns={execColumns}
-          rows={executions}
-          rowKey={e => e.id}
-          emptyText="暂无执行记录"
-          busy={loadingExec}
-        />
+        {execError ? (
+          <div role="alert" className="rounded-md border border-red-200 bg-red-50 px-4 py-6 text-center text-sm text-red-700">
+            <p>加载失败：{execError}</p>
+            {execView ? (
+              <Button variant="outline" size="sm" className="mt-3" onClick={() => void viewHistory(execView)}>重试</Button>
+            ) : null}
+          </div>
+        ) : (
+          <AdminDataTable
+            columns={execColumns}
+            rows={executions}
+            rowKey={e => e.id}
+            emptyText="暂无执行记录"
+            busy={loadingExec}
+          />
+        )}
       </Dialog>
 
       <ConfirmDialog

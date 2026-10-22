@@ -460,7 +460,7 @@ export function RedemptionManager() {
               onChange={(e) => setFilterBatch(e.target.value)}
               className="w-40"
             />
-            <select
+            <select aria-label="按状态筛选"
               value={filterStatus}
               onChange={(e) => {
                 setFilterStatus(e.target.value);

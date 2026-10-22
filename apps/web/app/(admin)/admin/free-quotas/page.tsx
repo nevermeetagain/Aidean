@@ -9,7 +9,7 @@ export default function AdminFreeQuotasPage() {
       <div>
         <h1 className="text-lg font-semibold tracking-tight text-slate-900">免费额度</h1>
         <p className="mt-1 text-xs text-slate-500">
-          按账户等级（NORMAL/PRO/MAX）配置免费模型的 token 额度与刷新周期；网关 FREE 路径自动消费。
+          按账户等级（NORMAL/PRO/MAX）配置免费模型的 Token 额度与刷新周期；用户调用免费模型时自动扣减。
         </p>
       </div>
       <FreeQuotasManager />

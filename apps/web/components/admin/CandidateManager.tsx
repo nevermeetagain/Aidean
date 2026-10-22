@@ -122,7 +122,7 @@ export function CandidateManager() {
   return (
     <div className="space-y-4">
       <div className="flex gap-4 items-center">
-        <select
+        <select aria-label="按状态筛选"
           value={statusFilter}
           onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
           className="border rounded px-2 py-1 text-sm"
@@ -134,7 +134,7 @@ export function CandidateManager() {
           <option value="promoted">已升级</option>
           <option value="rejected">已拒绝</option>
         </select>
-        <select
+        <select aria-label="按类型筛选"
           value={typeFilter}
           onChange={e => { setTypeFilter(e.target.value); setPage(1); }}
           className="border rounded px-2 py-1 text-sm"

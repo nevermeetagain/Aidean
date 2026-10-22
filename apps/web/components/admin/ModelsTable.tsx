@@ -7,6 +7,9 @@
  * - 新增模型按钮 + 表单弹窗（POST /api/v1/admin/models）T-2.2.5
  * - 删除按钮 + 二次确认（DELETE /api/v1/admin/models/[id]）T-2.2.6
  * - 批量操作（R-16）
+ * - UX-22：行内删除降级为次要文字按钮（危险色描边弱化）+ 二次确认；新增「编辑」弹窗（仅 PATCH 白名单字段）
+ * - UX-23：page / q 回写 URL query（history.replaceState），刷新保持；初值由 page.tsx 从 searchParams 解析传入
+ * - UX-25：主色元素一律走 var(--primary)（随主题切换），不再硬编码 indigo
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -14,6 +17,7 @@ import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
 import { Dialog, Button, Input, Label, Select } from "@aidean/ui";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { replaceUrlQuery } from "./url-query";
 
 interface ModelRow {
   id: string;
@@ -54,6 +58,13 @@ const PROTOCOL_LABEL: Record<string, string> = {
   RESPONSES: "Responses",
 };
 
+const BATCH_ACTION_LABEL: Record<"activate" | "deactivate" | "hide" | "delete", string> = {
+  activate: "批量上架",
+  deactivate: "批量下架",
+  hide: "批量隐藏",
+  delete: "批量删除",
+};
+
 const EMPTY_FORM = {
   modelCode: "",
   nameDisplay: "",
@@ -66,7 +77,20 @@ const EMPTY_FORM = {
   description: "",
 };
 
-export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[]; total: number } }) {
+/** UX-23：本列表回写到 URL 的参数名 */
+export const MODELS_QUERY_KEYS = ["page", "q"] as const;
+
+export function ModelsTable({
+  initialData,
+  initialPage = 1,
+  initialQuery = "",
+}: {
+  initialData?: { models: ModelRow[]; total: number };
+  /** URL ?page= 解析值（page.tsx 传入；预取与之同参） */
+  initialPage?: number;
+  /** URL ?q= 解析值 */
+  initialQuery?: string;
+}) {
   // 首屏服务端预取命中时：直接用初始数据渲染，不进入 loading，并跳过挂载后的首次客户端往返。
   // 未命中（无 initialData / 预取失败降级）时，行为与旧版一致（loading 首帧 true + 挂载即拉）。
   const [rows, setRows] = useState<ModelRow[]>(initialData?.models ?? []);
@@ -74,9 +98,9 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
   const [loading, setLoading] = useState(!initialData);
   const [total, setTotal] = useState(initialData?.total ?? 0);
   const skipFirstFetch = useRef(!!initialData);
-  const [page, setPage] = useState(1);
-  const [q, setQ] = useState("");
-  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(initialPage);
+  const [q, setQ] = useState(initialQuery);
+  const [search, setSearch] = useState(initialQuery);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const pageSize = 20;
@@ -86,6 +110,11 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
   const [createForm, setCreateForm] = useState({ ...EMPTY_FORM });
   const [vendors, setVendors] = useState<VendorOption[]>([]);
   const [creating, setCreating] = useState(false);
+
+  // Edit state（UX-22：编辑入口，字段限 AdminModelPatchSchema 白名单）
+  const [editTarget, setEditTarget] = useState<ModelRow | null>(null);
+  const [editForm, setEditForm] = useState({ nameDisplay: "", visibility: "HIDDEN", sortOrder: "0" });
+  const [saving, setSaving] = useState(false);
 
   // Delete state
   const [deleteTarget, setDeleteTarget] = useState<ModelRow | null>(null);
@@ -119,7 +148,7 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
     setBatchBusy(false);
     if (res.ok) {
       setSelectedIds(new Set());
-      setMessage(`批量${action} 完成: ${res.data?.affected ?? 0} 条受影响`);
+      setMessage(`${BATCH_ACTION_LABEL[action]}完成：${res.data?.affected ?? 0} 条受影响`);
       void load(page, search);
     } else {
       setMessage(res.message);
@@ -140,6 +169,11 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
       setMessage(res.message ?? "加载失败");
     }
   }, []);
+
+  // UX-23：分页/搜索态回写地址栏（刷新保持）；默认值不入 URL
+  useEffect(() => {
+    replaceUrlQuery({ page, q: search }, MODELS_QUERY_KEYS);
+  }, [page, search]);
 
   useEffect(() => {
     // 预取命中：消费一次即置 false，跳过与首屏数据重复的 page=1/search="" 拉取。
@@ -173,7 +207,7 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
 
   async function handleCreate() {
     if (!createForm.modelCode || !createForm.nameDisplay) {
-      setMessage("modelCode 和 nameDisplay 为必填");
+      setMessage("模型代码与显示名称为必填");
       return;
     }
     setCreating(true);
@@ -193,6 +227,44 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
     setCreateForm({ ...EMPTY_FORM });
     await load(1, search);
     setPage(1);
+  }
+
+  function openEdit(m: ModelRow) {
+    setEditForm({ nameDisplay: m.nameDisplay, visibility: m.visibility, sortOrder: String(m.sortOrder) });
+    setEditTarget(m);
+  }
+
+  async function handleEdit() {
+    if (!editTarget) return;
+    const nameDisplay = editForm.nameDisplay.trim();
+    const sortOrder = Number(editForm.sortOrder);
+    if (!nameDisplay) {
+      setMessage("显示名称不能为空");
+      return;
+    }
+    if (!Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 9999) {
+      setMessage("排序值须为 0–9999 的整数");
+      return;
+    }
+    const body: Record<string, unknown> = {};
+    if (nameDisplay !== editTarget.nameDisplay) body.nameDisplay = nameDisplay;
+    if (editForm.visibility !== editTarget.visibility) body.visibility = editForm.visibility;
+    if (sortOrder !== editTarget.sortOrder) body.sortOrder = sortOrder;
+    if (Object.keys(body).length === 0) {
+      setEditTarget(null);
+      return;
+    }
+    setSaving(true);
+    setMessage(null);
+    const res = await adminFetch(`/api/v1/admin/models/${editTarget.id}`, { method: "PATCH", body: JSON.stringify(body) });
+    setSaving(false);
+    if (!res.ok) {
+      setMessage(res.message ?? "保存失败");
+      return;
+    }
+    setMessage(`已保存 ${editTarget.modelCode}（审计日志已记录）`);
+    setEditTarget(null);
+    await load(page, search);
   }
 
   async function handleDelete() {
@@ -240,7 +312,7 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
               void patchModel(m.id, { isActive: e.target.checked }, `已${e.target.checked ? "上架" : "下架"} ${m.modelCode}（前台 /models 即时生效）`)
             }
             aria-label={`${m.modelCode} 上架开关`}
-            className="h-4 w-4 accent-indigo-500"
+            className="h-4 w-4 accent-[var(--primary)]"
           />
           <span className={`text-xs ${m.isActive ? "text-emerald-600" : "text-slate-500"}`}>
             {m.isActive ? "上架" : "下架"}
@@ -313,9 +385,22 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
       header: "操作",
       className: "px-3 py-2",
       render: m => (
-        <Button variant="danger" size="sm" disabled={busy} onClick={() => setDeleteTarget(m)}>
-          删除
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" disabled={busy} onClick={() => openEdit(m)} aria-label={`编辑 ${m.modelCode}`}>
+            编辑
+          </Button>
+          {/* UX-22：危险操作降级为次要文字按钮（非实心红），点击后仍走二次确认弹窗 */}
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={busy}
+            onClick={() => setDeleteTarget(m)}
+            aria-label={`删除 ${m.modelCode}`}
+            className="text-[var(--danger)] hover:text-[var(--danger)]"
+          >
+            删除
+          </Button>
+        </div>
       ),
     },
   ];
@@ -340,15 +425,16 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
           type="text"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="按 modelCode / 名称搜索"
+          placeholder="按模型代码 / 名称搜索"
           aria-label="搜索模型"
           className="w-72"
         />
-        <Button type="submit">
+        <Button type="submit" variant="outline">
           搜索
         </Button>
         <Button
           type="button"
+          variant="primary"
           onClick={() => {
             void loadVendors();
             setShowCreate(true);
@@ -365,7 +451,7 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
           <Button variant="primary" size="sm" disabled={batchBusy} onClick={() => void handleBatch("activate")}>批量上架</Button>
           <Button variant="outline" size="sm" disabled={batchBusy} onClick={() => void handleBatch("deactivate")}>批量下架</Button>
           <Button variant="ghost" size="sm" disabled={batchBusy} onClick={() => void handleBatch("hide")}>批量隐藏</Button>
-          <Button variant="danger" size="sm" disabled={batchBusy} onClick={() => void handleBatch("delete")}>批量删除</Button>
+          <Button variant="outline" size="sm" disabled={batchBusy} className="text-[var(--danger)]" onClick={() => void handleBatch("delete")}>批量删除</Button>
           <Button variant="ghost" size="sm" className="ml-auto text-slate-400" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
         </div>
       ) : null}
@@ -411,7 +497,7 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
       >
         <div className="space-y-3">
           <Label className="block">
-            <span className="text-xs text-slate-500">模型代码 (modelCode) *</span>
+            <span className="text-xs text-slate-500">模型代码 *</span>
             <Input
               type="text"
               value={createForm.modelCode}
@@ -505,6 +591,60 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
         </div>
       </Dialog>
 
+      {/* Edit Model Dialog — UX-22 编辑入口（PATCH 白名单：显示名称 / 可见性 / 排序） */}
+      <Dialog
+        open={!!editTarget}
+        onClose={() => setEditTarget(null)}
+        title="编辑模型"
+        className="max-w-md"
+        footer={
+          <>
+            <Button variant="outline" size="sm" onClick={() => setEditTarget(null)}>取消</Button>
+            <Button variant="primary" size="sm" disabled={saving} onClick={() => void handleEdit()}>
+              {saving ? "保存中..." : "保存"}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-xs text-slate-500">模型代码：<span className="font-mono">{editTarget?.modelCode}</span>（不可修改）</p>
+          <Label className="block">
+            <span className="text-xs text-slate-500">显示名称 *</span>
+            <Input
+              type="text"
+              value={editForm.nameDisplay}
+              onChange={(e) => setEditForm({ ...editForm, nameDisplay: e.target.value })}
+              className="mt-1"
+            />
+          </Label>
+          <div className="grid grid-cols-2 gap-3">
+            <Label className="block">
+              <span className="text-xs text-slate-500">可见性</span>
+              <Select
+                value={editForm.visibility}
+                onChange={(e) => setEditForm({ ...editForm, visibility: e.target.value })}
+                className="mt-1 w-full"
+              >
+                {Object.entries(VISIBILITY_LABEL).map(([v, label]) => (
+                  <option key={v} value={v}>{label}</option>
+                ))}
+              </Select>
+            </Label>
+            <Label className="block">
+              <span className="text-xs text-slate-500">排序值（0–9999）</span>
+              <Input
+                type="number"
+                min={0}
+                max={9999}
+                value={editForm.sortOrder}
+                onChange={(e) => setEditForm({ ...editForm, sortOrder: e.target.value })}
+                className="mt-1"
+              />
+            </Label>
+          </div>
+        </div>
+      </Dialog>
+
       {/* Delete Confirmation Dialog — R-32 @aidean/ui Dialog */}
       <Dialog
         open={!!deleteTarget}
@@ -525,10 +665,10 @@ export function ModelsTable({ initialData }: { initialData?: { models: ModelRow[
           此操作会：
         </p>
         <ul className="list-disc pl-5 text-xs text-slate-500">
-          <li>设置 deletedAt 时间戳（数据保留，可恢复）</li>
-          <li>isActive 置为 false（前台立即不可见）</li>
-          <li>写入审计日志（actorId + 变更记录）</li>
-          <li>revalidatePath 刷新前台缓存</li>
+          <li>标记为已删除（数据保留，可恢复）</li>
+          <li>同时下架（前台立即不可见）</li>
+          <li>写入审计日志（操作人 + 变更记录）</li>
+          <li>刷新前台缓存</li>
         </ul>
       </Dialog>
 

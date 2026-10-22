@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 提供商管理（SubTask 2.3.2 + R-31 AdminDataTable 接入）：
+ * 厂商管理（UX-26 展示名；SubTask 2.3.2 + R-31 AdminDataTable 接入）：
  * 列表（logo 位用 code 首字母徽标）+ 新建/编辑弹层表单
  * + 软删确认；priority 行内可改（PATCH）。删除仅软删（deletedAt 置位）。
  * 批量操作（R-28）。
@@ -251,7 +251,7 @@ export function VendorsManager() {
       </div>
 
       {selectedIds.size > 0 ? (
-        <div className="mb-3 flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2">
+        <div className="mb-3 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
           <span className="text-xs text-primary">已选 {selectedIds.size} 项</span>
           <Button size="sm" disabled={batchBusy} onClick={() => void handleBatch("activate")}>批量启用</Button>
           <Button variant="dark" size="sm" disabled={batchBusy} onClick={() => void handleBatch("deactivate")}>批量停用</Button>
@@ -339,7 +339,7 @@ export function VendorsManager() {
               type="checkbox"
               checked={form.isActive}
               onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-              className="h-4 w-4 accent-indigo-500"
+              className="h-4 w-4 accent-[var(--primary)]"
             />
             启用
           </Label>
