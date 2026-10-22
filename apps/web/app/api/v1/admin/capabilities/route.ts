@@ -25,10 +25,14 @@ export const GET = withApi(async (req: Request) => {
   const { page, pageSize, skip, take } = parsePagination(url, { defaultPageSize: 50, maxPageSize: 100 });
   const modelId = url.searchParams.get("modelId");
   const capability = url.searchParams.get("capability");
+  // B11-03b G4（矩阵 UI）：新增 source 等值筛选（值域 = CAPABILITY_SOURCES，String 列，非法值只落空集不 500）；
+  // modelId 由等值放宽为子串检索，管理员可从矩阵行头复制 UUID 片段定位单个模型（表量级 ~1.7k 行，无索引风险可忽略）。
+  const source = url.searchParams.get("source");
 
   const where = {
-    ...(modelId ? { modelId } : {}),
+    ...(modelId ? { modelId: { contains: modelId } } : {}),
     ...(capability ? { capability } : {}),
+    ...(source ? { source } : {}),
   };
 
   const [rows, total] = await prisma.$transaction([

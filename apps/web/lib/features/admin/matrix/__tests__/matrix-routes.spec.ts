@@ -11,8 +11,9 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 vi.mock("../../../../db/prisma", () => ({
   prisma: {
-    protocolCompatibility: { findUnique: vi.fn(), update: vi.fn(), delete: vi.fn(), upsert: vi.fn() },
-    capabilityMatrix: { findUnique: vi.fn(), update: vi.fn(), delete: vi.fn(), upsert: vi.fn() },
+    $transaction: vi.fn(),
+    protocolCompatibility: { findUnique: vi.fn(), findMany: vi.fn(), count: vi.fn(), update: vi.fn(), delete: vi.fn(), upsert: vi.fn() },
+    capabilityMatrix: { findUnique: vi.fn(), findMany: vi.fn(), count: vi.fn(), update: vi.fn(), delete: vi.fn(), upsert: vi.fn() },
     aiModel: { findFirst: vi.fn() },
     vendor: { findFirst: vi.fn() },
     modelProvider: { findUnique: vi.fn() },
@@ -277,5 +278,35 @@ describe("列表 POST（校验下沉 service，upsert 语义不变）", () => {
     expect((await post(POST, { modelId: MODEL_ID, capability: "vision", supported: true })).json.code).toBe(0);
     const up = vi.mocked(prisma.capabilityMatrix.upsert).mock.calls[0]![0] as { where: { modelId_capability_source: { source: string } } };
     expect(up.where.modelId_capability_source.source).toBe("official");
+  });
+});
+
+describe("列表 GET 筛选（B11-03b G4 依赖：source 等值 + modelId 子串）", () => {
+  const get = async (qs: string) => {
+    vi.mocked(prisma.$transaction).mockResolvedValue([[cRow], 1] as never);
+    const { GET } = await capList();
+    const res = await (GET as (req: Request) => Promise<Response>)(new Request(`http://localhost/x?${qs}`));
+    return { status: res.status, code: ((await res.json()) as { code: number }).code };
+  };
+  const findManyWhere = (call = 0) =>
+    (vi.mocked(prisma.capabilityMatrix.findMany).mock.calls[call]![0] as { where: Record<string, unknown> }).where;
+
+  it("source 进 where（等值），modelId 走 contains；count 与 findMany 同 where", async () => {
+    const r = await get("page=1&pageSize=50&source=official&modelId=0001");
+    expect(r).toEqual({ status: 200, code: 0 });
+    expect(findManyWhere()).toEqual({ modelId: { contains: "0001" }, source: "official" });
+    const countArg = vi.mocked(prisma.capabilityMatrix.count).mock.calls[0]![0] as { where: Record<string, unknown> };
+    expect(countArg.where).toEqual(findManyWhere());
+  });
+
+  it("无筛选参数 → where 为空对象（全量分页）", async () => {
+    await get("page=1&pageSize=50");
+    expect(findManyWhere()).toEqual({});
+  });
+
+  it("source 值域外不 500（String 列只影响结果集）", async () => {
+    const r = await get("source=not_a_source");
+    expect(r.status).toBe(200);
+    expect(findManyWhere()).toEqual({ source: "not_a_source" });
   });
 });
