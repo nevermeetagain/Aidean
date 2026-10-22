@@ -1,0 +1,33 @@
+B11-05 · L2-M2 度量对比（scripts/audit/admin-ui-audit.mjs 全量 56 个 admin 组件文件）
+命令：node scripts/audit/admin-ui-audit.mjs            （无 --files，全量口径）
+前：.scratch/05-before.txt（L2-I1 开工基线，2026-10-22）
+后：.scratch/05-after.txt （L2-M2 收尾，2026-10-22）
+
+────────── SUMMARY 原文 ──────────
+BEFORE {"files":56,"rawButton":29,"rawSelect":18,"rawTextarea":8,"rawLabel":61,"rawTable":1,"mixedFiles":0,"filesWithTestid":13,"filesWithPanelState":4,"filesWithoutErrorState":12,"filesWithoutRetry":38}
+AFTER  {"files":56,"rawButton":29,"rawSelect":18,"rawTextarea":8,"rawLabel":61,"rawTable":1,"mixedFiles":0,"filesWithTestid":28,"filesWithPanelState":18,"filesWithoutErrorState":8,"filesWithoutRetry":24}
+
+────────── 四个验收数（判据：含 testid 的文件 ≥ 20）──────────
+filesWithTestid         13 → 28   (+15)   ✅ 超阈值 8
+filesWithPanelState      4 → 18   (+14)   14 个面板全部接外壳（J 批 4 + K 批 10）
+filesWithoutErrorState  12 →  8   (−4)
+filesWithoutRetry       38 → 24   (−14)   与新增外壳数一致
+
++15 与 +14 的差额说明：AdminDataTable（列表基座）因新增 `rowTestId` 透传而自身计入
+filesWithTestid，但它不是面板、不接 PanelState，故 filesWithPanelState 恰为 +14。
+
+────────── 原生标签零回归 ──────────
+rawButton 29 / rawSelect 18 / rawTextarea 8 / rawLabel 61 / rawTable 1 / mixedFiles 0
+前后完全一致 —— 本卡只加外壳与 testid，未触碰标签迁移（那是 B11-04b 的范围），
+也未引入任何新的原生标签。
+（rawTable=1 来自 SyncManager.tsx 注释里的 `<table>` 字样，基线同值，非真实原生表格；
+ 度量器正则 `/<table[\s>]/g` 会命中注释。）
+
+────────── 逐面板读数（admin-ui-audit --files 分批自检）──────────
+J 批（4）：ProvidersManager / AuditLogsTable / CandidateManager / IntelligenceDashboard
+  → testid>0、panel=Y、err=Y、retry=Y 全达判据
+K1–K5（5）：FreeQuotas / TierMappings / Scripts / OidcClients / PartnerKeys
+  SUMMARY {"files":5,"filesWithTestid":5,"filesWithPanelState":5,"filesWithoutErrorState":0,"filesWithoutRetry":0}
+K6–K10（5）：Redemption / Prices / Evaluation / Benchmarks / Sync
+  SUMMARY {"files":5,"filesWithTestid":5,"filesWithPanelState":5,"filesWithoutErrorState":0,"filesWithoutRetry":0}
+  逐文件 testid 数：Redemption 5（一页三外壳）、Prices 2、Evaluation 1、Benchmarks 2、Sync 2

@@ -1,0 +1,37 @@
+> 版本: v1.0 | 更新: 2026-10-22 | 变更: B11-05（14 面板接五态外壳）验收读数——audit 四数 / 单测 12 / 截图+运行态重试 / 门禁 8 条 / 环境事故
+
+基线：HEAD=be6d7dcf（= origin/main），范围=31_ 计划 B11-05（I 准备 / J 首批 4 / K 次批 10 / L 注入取证 / M 文档验收）；Windows 本机。口令只经环境变量传递。
+
+======== 1. audit 四数（scripts/audit/admin-ui-audit.mjs 全量 56 文件）========
+前 .scratch/05-before.txt → 后 .scratch/05-after.txt（逐数与 +15/+14 解释见 coverage.txt）：
+filesWithTestid 13→28（+15）｜filesWithPanelState 4→18（+14）｜filesWithoutErrorState 12→8｜filesWithoutRetry 38→24
+判据达成：含 testid 文件 28 ≥ 20。零回归：rawButton29/rawSelect18/rawTextarea8/rawLabel61/rawTable1/mixedFiles0 前后逐字未变。
+
+======== 2. L1 失败注入单测（lib/features/admin/__tests__/panel-five-state.spec.ts）========
+Providers / AuditLogs / FreeQuotas × 4 条 = 12 passed（loading 首屏、500→error retryable、断网→httpStatus0、403→forbidden 与 200空→empty）。
+定向回归 lib/admin + lib/features/admin：25→26 files、328→340 tests 全绿。
+
+======== 3. L2/L3 运行态取证（原始流程见 l2l3.txt）========
+500 注入截图 6 张（3 路由 × 1440/390）：data-state=error，红底「加载失败：注入的服务端错误」+ 重试钮（目视 2 张复核）。
+点重试（去掉注入后）：providers / audit-logs / free-quotas 三条 error→ready，SUMMARY rows=3 pass=true。
+free-quotas 库内 0 行 → 经 admin API 临时建 1 条夹具、验后 DELETE 复原（total 回 0）；未夹具时该页落 empty，反向验证「失败永不落 empty」。
+
+======== 4. M1/M3 文档与 facts ========
+界面交互文档 v2.11→v2.12：§八 新增 8.1「后台面板五态与 testid 契约」（6 条规则 + 8 行 testid 表 + 接入范围 + 取证口径）。
+spec-count 209→210（+panel-five-state.spec.ts）；aidean-ui-refs 保持 72（新 spec 在 lib/**，不计 components）。docs-facts 16/16 PASS。
+
+======== 5. 门禁（Windows，推送前全量 8 条）========
+tsc --noEmit --incremental false 0｜lint 0（仅既有 SafeImage <img> warning）｜web vitest 161 files passed | 2 skipped（1778 passed | 5 skipped）｜@aidean/ui 4 files / 27 passed
+docs-rule PASS｜docs-facts 16/16｜guard run-all 6/6 PASS｜build 0（Middleware 160 kB，postbuild nm-integrity shells=0）
+build 首跑 exit=1：`next/dist/compiled/jest-worker/processChild.js` MODULE_NOT_FOUND —— nm-integrity 深扫 FAIL 52 空壳（关键包 next/react/react-dom/@prisma/client），
+即 RK-11-09 同型环境病（B11-03b H 段已复现一次）。按计划 §0.5 跑一次归档修复
+`pnpm install --frozen-lockfile --force --prefer-offline --config.confirm-modules-purge=false` → exit 0
+（resolved 818 / reused 818 / downloaded 0，10.2s；prisma generate 成功，未再现 EPERM——修复前已停 dev）。
+复扫 shells=0 → build 复跑 exit=0；修复后复跑 tsc exit=0、vitest 161/1778 与修复前逐字一致。取证留 .scratch/nm-integrity.log，不做归因。
+
+======== 6. 提交 ========
+e92b126a B11-05.J 首批 4 面板接外壳
+303bc06e B11-05.K K1–K5（FreeQuotas/TierMappings/Scripts/OidcClients/PartnerKeys）
+bc4aa30c B11-05.K K6–K10（Redemption/Prices/Evaluation/Benchmarks/Sync）
+a7fa5aad B11-05.L 单测 12 条 + 6 张 500 截图 + 运行态重试
+本 EVD（coverage/deviation/verify/shots/l2l3）与 界面交互文档 v2.12 随 M 收尾提交（git log -1 即本卡第 5 个提交）。
