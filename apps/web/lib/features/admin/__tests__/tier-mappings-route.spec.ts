@@ -49,6 +49,29 @@ describe("tier-mappings admin route", () => {
     expect(json.data.items).toHaveLength(1);
   });
 
+  it("GET ?tierLevel=FOO → 400 且不触达 Prisma（P0.2：非法枚举不得 500）", async () => {
+    const { GET } = await import("../../../../app/api/v1/admin/tier-mappings/route");
+    const req = new Request("http://localhost/api/v1/admin/tier-mappings?tierLevel=FOO", { method: "GET" });
+
+    const res = await GET(req as never);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.code).toBe(40000);
+    expect(prisma.userTierMapping.findMany).not.toHaveBeenCalled();
+  });
+
+  it("GET ?tierLevel=SONNET → 200 且 where 写入 tierLevel=SONNET（合法枚举仍生效）", async () => {
+    const { GET } = await import("../../../../app/api/v1/admin/tier-mappings/route");
+    const req = new Request("http://localhost/api/v1/admin/tier-mappings?tierLevel=SONNET", { method: "GET" });
+
+    const res = await GET(req as never);
+    expect(res.status).toBe(200);
+    const arg = vi.mocked(prisma.userTierMapping.findMany).mock.calls[0]![0] as {
+      where: Record<string, unknown>;
+    };
+    expect(arg.where.tierLevel).toBe("SONNET");
+  });
+
   it("POST creates tier mapping with valid fields", async () => {
     vi.mocked(prisma.userTierMapping.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.userTierMapping.create).mockResolvedValue({

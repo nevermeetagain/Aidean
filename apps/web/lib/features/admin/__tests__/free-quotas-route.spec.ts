@@ -48,6 +48,29 @@ describe("free-quotas admin route", () => {
     expect(json.data.items).toHaveLength(1);
   });
 
+  it("GET ?tier=FOO → 400 且不触达 Prisma（P0.2：非法枚举不得 500）", async () => {
+    const { GET } = await import("../../../../app/api/v1/admin/free-quotas/route");
+    const req = new Request("http://localhost/api/v1/admin/free-quotas?tier=FOO", { method: "GET" });
+
+    const res = await GET(req as never);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.code).toBe(40000);
+    expect(prisma.userFreeQuota.findMany).not.toHaveBeenCalled();
+  });
+
+  it("GET ?tier=PRO → 200 且 where 写入 tier=PRO（合法枚举仍生效）", async () => {
+    const { GET } = await import("../../../../app/api/v1/admin/free-quotas/route");
+    const req = new Request("http://localhost/api/v1/admin/free-quotas?tier=PRO", { method: "GET" });
+
+    const res = await GET(req as never);
+    expect(res.status).toBe(200);
+    const arg = vi.mocked(prisma.userFreeQuota.findMany).mock.calls[0]![0] as {
+      where: Record<string, unknown>;
+    };
+    expect(arg.where.tier).toBe("PRO");
+  });
+
   it("POST creates free quota with valid fields", async () => {
     vi.mocked(prisma.userFreeQuota.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.userFreeQuota.create).mockResolvedValue({

@@ -5,6 +5,8 @@
  * #18 L4: 用户模型等级映射（UserTierMapping）admin CRUD。
  * 操作 OPUS/SONNET/FABLE/HAIKU 四档绑定关系。
  */
+import { ModelTierLevel } from "@prisma/client";
+
 import { prisma } from "../../../../../lib/db/prisma";
 import { requireAdminApi } from "../../../../../lib/features/auth/session";
 import { parseIntParam, parsePagination } from "../../../../../lib/http/pagination";
@@ -13,6 +15,9 @@ import { withApi } from "../../_lib/handler";
 import { writeAudit } from "../../_lib/audit";
 
 export const dynamic = "force-dynamic";
+
+/** 合法 tierLevel 白名单：取 Prisma 枚举 ModelTierLevel（OPUS/SONNET/FABLE/HAIKU），GET 与 POST 共用。 */
+const VALID_TIER_LEVELS: readonly string[] = Object.values(ModelTierLevel);
 
 export const GET = withApi(async (req: Request) => {
   await requireAdminApi("admin.tier-mappings.read");
@@ -29,6 +34,15 @@ export const GET = withApi(async (req: Request) => {
   const { page, pageSize, skip, take } = parsePagination(url, { defaultPageSize: 20, maxPageSize: 100 });
   const tierLevel = url.searchParams.get("tierLevel");
   const userId = url.searchParams.get("userId");
+  // P0.2（B11-11 待裁定第 5 项）：非法枚举在构造 where 之前拦成 400——
+  // tierLevel 是 Prisma 枚举列，交给 Prisma 转换会抛 PrismaClientValidationError → 500。
+  // 白名单取 ModelTierLevel 枚举本身，不手写字符串数组。空串视同缺省。
+  if (tierLevel !== null && tierLevel !== "" && !VALID_TIER_LEVELS.includes(tierLevel)) {
+    throw new ApiError(
+      ERROR_CODES.BAD_REQUEST,
+      `tierLevel 必须为 ${VALID_TIER_LEVELS.join("/")} 之一`,
+    );
+  }
 
   const where: Record<string, string> = {
     ...(tierLevel ? { tierLevel } : {}),
@@ -63,10 +77,12 @@ export const POST = withApi(
       throw new ApiError(ERROR_CODES.BAD_REQUEST, "userId、tierLevel、modelId 不能为空");
     }
 
-    // Validate tierLevel enum
-    const validTiers = ["OPUS", "SONNET", "FABLE", "HAIKU"];
-    if (!validTiers.includes(String(tierLevel))) {
-      throw new ApiError(ERROR_CODES.BAD_REQUEST, `tierLevel 必须为 ${validTiers.join("/")} 之一`);
+    // Validate tierLevel enum（白名单取 ModelTierLevel 枚举，与 GET 共用单点）
+    if (!VALID_TIER_LEVELS.includes(String(tierLevel))) {
+      throw new ApiError(
+        ERROR_CODES.BAD_REQUEST,
+        `tierLevel 必须为 ${VALID_TIER_LEVELS.join("/")} 之一`,
+      );
     }
 
     // 存在性校验：否则 FK 违约会以 50000「内部错误」暴露给前端

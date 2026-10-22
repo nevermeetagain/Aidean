@@ -6,6 +6,8 @@
  * 定义每个账户等级（NORMAL/PRO/MAX）的免费模型及 token 额度 + 刷新周期。
  * 网关 FREE 路径消费此表控制台自动加载。
  */
+import { AccountTier } from "@prisma/client";
+
 import { prisma } from "../../../../../lib/db/prisma";
 import { requireAdminApi } from "../../../../../lib/features/auth/session";
 import { parseIntParam, parsePagination } from "../../../../../lib/http/pagination";
@@ -14,6 +16,9 @@ import { withApi } from "../../_lib/handler";
 import { writeAudit } from "../../_lib/audit";
 
 export const dynamic = "force-dynamic";
+
+/** 合法 tier 白名单：取 Prisma 枚举 AccountTier（NORMAL/PRO/MAX），GET 校验与 POST 写入共用单点。 */
+const VALID_TIERS: readonly string[] = Object.values(AccountTier);
 
 export const GET = withApi(async (req: Request) => {
   await requireAdminApi("admin.free-quotas.read");
@@ -29,6 +34,11 @@ export const GET = withApi(async (req: Request) => {
   }
   const { page, pageSize, skip, take } = parsePagination(url, { defaultPageSize: 20, maxPageSize: 100 });
   const tier = url.searchParams.get("tier");
+  // P0.2（B11-11 待裁定第 5 项）：非法枚举必须在构造 where 之前拦成 400——
+  // 交给 Prisma 做枚举转换会抛 PrismaClientValidationError → 500。空串视同缺省。
+  if (tier !== null && tier !== "" && !VALID_TIERS.includes(tier)) {
+    throw new ApiError(ERROR_CODES.BAD_REQUEST, `tier 必须为 ${VALID_TIERS.join("/")} 之一`);
+  }
 
   const where: Record<string, string> = {
     ...(tier ? { tier } : {}),
@@ -61,9 +71,8 @@ export const POST = withApi(
       throw new ApiError(ERROR_CODES.BAD_REQUEST, "tier、modelId、quotaTokens、refreshCycle 不能为空");
     }
 
-    const validTiers = ["NORMAL", "PRO", "MAX"];
-    if (!validTiers.includes(String(tier))) {
-      throw new ApiError(ERROR_CODES.BAD_REQUEST, `tier 必须为 ${validTiers.join("/")} 之一`);
+    if (!VALID_TIERS.includes(String(tier))) {
+      throw new ApiError(ERROR_CODES.BAD_REQUEST, `tier 必须为 ${VALID_TIERS.join("/")} 之一`);
     }
 
     const validCycles = ["DAY", "WEEK", "MONTH"];
