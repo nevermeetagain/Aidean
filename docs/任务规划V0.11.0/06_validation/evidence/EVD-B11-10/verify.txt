@@ -1,0 +1,214 @@
+> 版本: v1.0 | 更新: 2026-10-22 | 变更: 初版——B11-10 非 2xx 出口信封化验证读数
+
+# 命令原文 + 输出 + 退出码（worktree wt/api-guard，基于 origin/main 7f1fa22；全部为本机实测转写，未改写数值）
+
+======== 1. typecheck（全量、非增量；tsbuildinfo 前后均不存在）========
+## typecheck: pnpm --filter web exec tsc --noEmit --incremental false
+START=2026-10-22T02:06:04+00:00
+TSBUILDINFO_BEFORE: ls: cannot access 'apps/web/tsconfig.tsbuildinfo': No such file or directory
+TSC_EXIT=0
+TSBUILDINFO_AFTER: ls: cannot access 'apps/web/tsconfig.tsbuildinfo': No such file or directory
+END=2026-10-22T02:07:57+00:00
+
+======== 2. lint ========
+## lint: pnpm --filter web lint
+START=2026-10-22T02:10:56+00:00
+LINT_EXIT=0
+LINT_WARNING_LINES=1
+19:14  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+19:14  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+END=2026-10-22T02:12:14+00:00
+
+======== 3. vitest web 全量 ========
+## vitest (web full): pnpm --filter web test
+START=2026-10-22T02:12:14+00:00
+VITEST_EXIT=0
+ Test Files  149 passed | 2 skipped (151)
+      Tests  1535 passed | 5 skipped (1540)
+END=2026-10-22T02:17:27+00:00
+
+======== 4. vitest @aidean/shared（含契约生成 spec）========
+## shared test
+SHARED_TEST_EXIT=0
+ Test Files  23 passed (23)
+      Tests  243 passed (243)
+
+======== 5. 文档门禁 / 守卫 / 契约漂移 ========
+## docs rule: node scripts/check-docs-rule.mjs  DATE=2026-10-22T02:28:08+00:00
+[铁律1] docs rule PASS：apps/ 下无实体 .md（README.md 豁免）。
+[铁律-数字] 数字真源断言 PASS（锚=文档，代码=实测）：schema model=73, enum=37, admin API 域=38, admin 页面=34, Next.js=15.0.x
+RULE_EXIT=0
+## docs facts: node scripts/check-docs-facts.mjs
+✅ route-count: apps/web route.ts 文件数（含 app/ 全域）= 164（B11-10 新增 API 兜底 app/api/[[...slug]]/route.ts 163→164，R10-01；前次 TASK-063 新增 admin/monitoring 4 端点 159→163，R10-01；前次 TASK-081 158→159） → expected=164, actual=164
+✅ spec-count: spec 文件总数 = 198（B11-10/B11-11 新增 apps/web/lib/http/{pagination,pagination-guard,api-envelope-exits}.spec.ts 195→198，R10-01；前次 B11-08 新增 apps/web/lib/features/admin/__tests__/scripts-executions-route.spec.ts 194→195，R10-01；前次 TASK-030 新增 e2e/tests/promotion-billing.spec.ts 193→194，R10-01） → expected=198, actual=198
+All 16 assertions passed.
+FACTS_EXIT=0
+## guard: node scripts/guard/run-all.mjs
+=== run-all: AGGREGATE ===
+  PASS root-pollution.mjs (exit 0)
+  PASS secret-scan.mjs (exit 0)
+  PASS module-boundary.mjs (exit 0)
+  PASS port-consistency.mjs (exit 0)
+  PASS api-method-coverage.mjs (exit 0)
+  PASS pagination-guard.mjs (exit 0)
+RESULT: PASS (6/6 守卫通过)
+GUARD_EXIT=0
+## api-method-coverage
+  [PASS] API 兜底路由覆盖 7/7 方法
+
+=== api-method-coverage: SUMMARY ===
+  failures=0 warnings=0
+RESULT: PASS (api-method-coverage)
+COVERAGE_EXIT=0
+## pagination-guard (ratchet / strict)
+
+=== pagination-guard: SUMMARY ===
+  failures=0 warnings=15
+RESULT: PASS (with 15 warning(s)) (pagination-guard)
+PAGINATION_GUARD_EXIT=0
+PAGINATION_GUARD_STRICT_EXIT=1 (预期 1：尚有 15 个待接入)
+## contract regen drift
+[gen-contract-tests] 生成 3 个契约 spec：码表 27 码 / HTTP 映射 12 条 / §4 登记 27 行 / 域 30 / AUTHZ deny 4 条 → packages/shared/src/__tests__/contract/
+CONTRACT_DRIFT_EXIT=0
+
+======== 6. 运行态（next dev :3481 + 本地一次性 PG16 :55481，prisma db push + seed；跑后已停：PG_STOP_EXIT=0、:3481 不可达）========
+-- 6a. 首轮 probe-1（首个请求遇 dev 冷编译，curl 90s 超时 CURL_EXIT=28；E 段因脚本 115s 总超时未跑完，不作判定，仅如实保留）--
+DATE=2026-10-22T02:22:14+00:00  base=http://127.0.0.1:3481 (next dev，worktree wt/api-guard，本地一次性 PG16 :55481 + seed)
+## A. 405 信封（路由存在、方法未实现）
+>>> curl -sS -X GET '/api/v1/admin/scripts/00000000-0000-0000-0000-000000000000' 
+curl: (28) Operation timed out after 90002 milliseconds with 0 bytes received
+HTTP=000 BYTES=0 CT=
+CURL_EXIT=28
+head: cannot open '/tmp/ag-body' for reading: No such file or directory
+
+>>> curl -sS -X POST '/api/v1/system/health' 
+HTTP=405 BYTES=152 CT=application/json
+CURL_EXIT=0
+allow: GET, HEAD, OPTIONS
+{"code":40000,"message":"不支持的请求方法 POST（允许：GET, HEAD, OPTIONS）","data":null,"requestId":"1628e654-a384-4381-b1a1-ad387e0042fc"}
+>>> curl -sS -X PUT '/api/v1/admin/audit-logs' 
+HTTP=405 BYTES=151 CT=application/json
+CURL_EXIT=0
+allow: GET, HEAD, OPTIONS
+{"code":40000,"message":"不支持的请求方法 PUT（允许：GET, HEAD, OPTIONS）","data":null,"requestId":"379d87a3-2ebd-4b83-b8a6-08710c049732"}
+## B. OPTIONS 204 + 准确 Allow
+>>> curl -sS -X OPTIONS '/api/v1/admin/scripts/00000000-0000-0000-0000-000000000000' 
+HTTP=204 BYTES=0 CT=
+CURL_EXIT=0
+allow: OPTIONS, DELETE, PATCH
+
+## C. 404 信封（未匹配 API 路径）
+>>> curl -sS -X GET '/api/v1/no-such-endpoint' 
+HTTP=404 BYTES=136 CT=application/json
+CURL_EXIT=0
+{"code":40000,"message":"接口不存在：GET /api/v1/no-such-endpoint","data":null,"requestId":"c6445194-6151-4fa6-b8f0-ed204e2550a9"}
+>>> curl -sS -X POST '/api/v1/admin/scripts/00000000-0000-0000-0000-000000000000/unknown' 
+HTTP=404 BYTES=179 CT=application/json
+CURL_EXIT=0
+{"code":40000,"message":"接口不存在：POST /api/v1/admin/scripts/00000000-0000-0000-0000-000000000000/unknown","data":null,"requestId":"e388121e-d1ff-4099-89d5-1df7bfbb025e"}
+>>> curl -sS -X GET '/api' 
+HTTP=404 BYTES=116 CT=application/json
+CURL_EXIT=0
+{"code":40000,"message":"接口不存在：GET /api","data":null,"requestId":"da756692-5ced-4458-8bdb-2c714069f569"}
+## D. 对照：既有端点正常方法不受影响
+>>> curl -sS -X GET '/api/v1/system/health' 
+HTTP=200 BYTES=133 CT=application/json
+CURL_EXIT=0
+{"code":0,"message":"ok","data":{"status":"ok","time":"2026-10-22T02:24:07.325Z"},"requestId":"33ef3134-1965-4dc4-9822-0e9d1d084da6"}
+## E. 分页参考实现（admin 登录后）
+>>> curl -sS -X POST '/api/v1/auth/login' -H content-type: application/json -c /tmp/ag-jar --data {"email":"admin@aidean.com","password":"Admin123!@#"}
+HTTP=200 BYTES=227 CT=application/json
+CURL_EXIT=0
+{"code":0,"message":"ok","data":{"user":{"id":"01a16167-b41c-7f51-8d8c-392413005043","email":"admin@aidean.com","nickname":"超级管理员","tier":"NORMAL","tokenVersion":0}},"requestId":"ecbc29fe-d163-485c-8741-9e8e9daa454b"}
+>>> curl -sS -X GET '/api/v1/admin/scripts/00000000-0000-0000-0000-000000000000/executions?page=abc' -b /tmp/ag-jar
+
+-- 6b. 判定轮 probe-2（预热后完整重跑）--
+DATE=2026-10-22T02:24:34+00:00  base=http://127.0.0.1:3481 (next dev，worktree wt/api-guard，本地一次性 PG16 :55481 + seed)
+## A. 405 信封（路由存在、方法未实现）
+>>> curl -sS -X GET '/api/v1/admin/scripts/00000000-0000-0000-0000-000000000000' 
+HTTP=405 BYTES=155 CT=application/json
+CURL_EXIT=0
+allow: OPTIONS, DELETE, PATCH
+{"code":40000,"message":"不支持的请求方法 GET（允许：OPTIONS, DELETE, PATCH）","data":null,"requestId":"09c2ba99-7e4f-45e6-811c-8a221d56d482"}
+>>> curl -sS -X POST '/api/v1/system/health' 
+HTTP=405 BYTES=152 CT=application/json
+CURL_EXIT=0
+allow: GET, HEAD, OPTIONS
+{"code":40000,"message":"不支持的请求方法 POST（允许：GET, HEAD, OPTIONS）","data":null,"requestId":"4edc52e7-7eaf-477c-8a5c-0fb0ebe3a3e4"}
+>>> curl -sS -X PUT '/api/v1/admin/audit-logs' 
+HTTP=405 BYTES=151 CT=application/json
+CURL_EXIT=0
+allow: GET, HEAD, OPTIONS
+{"code":40000,"message":"不支持的请求方法 PUT（允许：GET, HEAD, OPTIONS）","data":null,"requestId":"6f566039-e1eb-41b3-9334-f1926b0b15f4"}
+## B. OPTIONS 204 + 准确 Allow
+>>> curl -sS -X OPTIONS '/api/v1/admin/scripts/00000000-0000-0000-0000-000000000000' 
+HTTP=204 BYTES=0 CT=
+CURL_EXIT=0
+allow: OPTIONS, DELETE, PATCH
+
+## C. 404 信封（未匹配 API 路径）
+>>> curl -sS -X GET '/api/v1/no-such-endpoint' 
+HTTP=404 BYTES=136 CT=application/json
+CURL_EXIT=0
+{"code":40000,"message":"接口不存在：GET /api/v1/no-such-endpoint","data":null,"requestId":"174accdc-b77a-4db3-9d2d-fe0c0f67fa6f"}
+>>> curl -sS -X POST '/api/v1/admin/scripts/00000000-0000-0000-0000-000000000000/unknown' 
+HTTP=404 BYTES=179 CT=application/json
+CURL_EXIT=0
+{"code":40000,"message":"接口不存在：POST /api/v1/admin/scripts/00000000-0000-0000-0000-000000000000/unknown","data":null,"requestId":"09408009-4021-4e7a-bf61-5179a23cdb2f"}
+>>> curl -sS -X GET '/api' 
+HTTP=404 BYTES=116 CT=application/json
+CURL_EXIT=0
+{"code":40000,"message":"接口不存在：GET /api","data":null,"requestId":"fc31c4bd-2c09-4643-9f43-08525d399064"}
+## D. 对照：既有端点正常方法不受影响
+>>> curl -sS -X GET '/api/v1/system/health' 
+HTTP=200 BYTES=133 CT=application/json
+CURL_EXIT=0
+{"code":0,"message":"ok","data":{"status":"ok","time":"2026-10-22T02:24:39.186Z"},"requestId":"5dae5bd6-b2c9-480f-96da-f8679a64c9b9"}
+## E. 分页参考实现（admin 登录后）
+>>> curl -sS -X POST '/api/v1/auth/login' -H content-type: application/json -c /tmp/ag-jar --data {"email":"admin@aidean.com","password":"Admin123!@#"}
+HTTP=200 BYTES=227 CT=application/json
+CURL_EXIT=0
+{"code":0,"message":"ok","data":{"user":{"id":"01a16167-b41c-7f51-8d8c-392413005043","email":"admin@aidean.com","nickname":"超级管理员","tier":"NORMAL","tokenVersion":0}},"requestId":"c1947a8b-7466-4669-b608-cc53466960c0"}
+>>> curl -sS -X GET '/api/v1/admin/scripts/00000000-0000-0000-0000-000000000000/executions?page=abc' -b /tmp/ag-jar
+HTTP=200 BYTES=144 CT=application/json
+CURL_EXIT=0
+{"code":0,"message":"ok","data":{"items":[],"total":0,"page":1,"pageSize":20,"totalPages":0},"requestId":"9e8e64d6-9996-4d11-a122-1a35840d4f32"}
+>>> curl -sS -X GET '/api/v1/admin/scripts/00000000-0000-0000-0000-000000000000/executions?page=abc&pageSize=xyz' -b /tmp/ag-jar
+HTTP=200 BYTES=144 CT=application/json
+CURL_EXIT=0
+{"code":0,"message":"ok","data":{"items":[],"total":0,"page":1,"pageSize":20,"totalPages":0},"requestId":"14e91cfb-2d91-4c37-9a65-558790810db6"}
+>>> curl -sS -X GET '/api/v1/admin/scripts/00000000-0000-0000-0000-000000000000/executions?page=3&pageSize=1000' -b /tmp/ag-jar
+HTTP=200 BYTES=144 CT=application/json
+CURL_EXIT=0
+{"code":0,"message":"ok","data":{"items":[],"total":0,"page":3,"pageSize":50,"totalPages":0},"requestId":"10417703-28a7-4058-857b-1ef414de7bc4"}
+>>> curl -sS -X GET '/api/v1/admin/scripts/00000000-0000-0000-0000-000000000000/executions?status=abc' -b /tmp/ag-jar
+HTTP=200 BYTES=144 CT=application/json
+CURL_EXIT=0
+{"code":0,"message":"ok","data":{"items":[],"total":0,"page":1,"pageSize":20,"totalPages":0},"requestId":"4e274d11-56a1-425a-b7cb-2d24909046d4"}
+## F. 未接入兄弟端点（B11-11 交接范围，仅记录现状，预期仍 500）
+>>> curl -sS -X GET '/api/v1/admin/audit-logs?page=abc' -b /tmp/ag-jar
+HTTP=500 BYTES=102 CT=application/json
+CURL_EXIT=0
+{"code":50000,"message":"内部错误","data":null,"requestId":"801a955e-49c4-4db6-b387-dded59bec213"}
+
+-- 6c. HEAD 语义 probe-3 --
+## G. HEAD 语义（有 GET 时沿用 Next 派生；无 GET 时 405）DATE=2026-10-22T02:25:21+00:00
+>>> curl -sS -I '/api/v1/system/health'
+HTTP/1.1 200 OK
+content-type: application/json
+CURL_EXIT=0
+>>> curl -sS -I '/api/v1/admin/scripts/00000000-0000-0000-0000-000000000000'
+HTTP/1.1 405 Method Not Allowed
+allow: OPTIONS, DELETE, PATCH
+content-type: application/json
+CURL_EXIT=0
+
+waiting for server to shut down.... done
+server stopped
+PG_STOP_EXIT=0
+000 3481_DOWN
+
+======== 7. 变异检验 ========
+见同目录 mutation.txt

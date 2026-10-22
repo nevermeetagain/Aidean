@@ -1,0 +1,46 @@
+# B11-11 变异检验：把参考实现 executions 的分页改回无守卫写法（Math.max(1, parseInt(...))），定向单测必须失败
+DATE=2026-10-22T01:50:32+00:00
+SHA_BEFORE=ed6b71d784f1767c
+--- mutated hunk (diff original mutated) ---
+36c36,39
+<   const { page, pageSize, skip, take } = parsePagination(url, { defaultPageSize: 20, maxPageSize: 50 });
+---
+>   const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1', 10));
+>   const pageSize = Math.min(50, Math.max(1, parseInt(url.searchParams.get('pageSize') ?? '20', 10)));
+>   const skip = (page - 1) * pageSize;
+>   const take = pageSize;
+--- guard on mutated tree (pagination-guard 应把 executions 报为名单外 FAIL) ---
+  [FAIL] apps/web/app/api/v1/admin/scripts/[id]/executions/route.ts：裸 parseInt ×2（行 36,37）→ 改用 parsePagination/parseLimit/parseOptionalInt
+RESULT: FAIL (pagination-guard)
+MUT_GUARD_EXIT=1
+--- vitest (mutated) ---
+ RUN  v2.1.9 /workspace/work/aidean-wt/api-guard/apps/web
+ ❯ lib/features/admin/__tests__/scripts-executions-route.spec.ts (7 tests | 1 failed) 1024ms
+   ✓ GET /api/v1/admin/scripts/[id]/executions > 以路由段 id 作为 scriptId 过滤（DEF-011-12 主证） 982ms
+   × GET /api/v1/admin/scripts/[id]/executions > 分页越界钳制：pageSize=1000 → take=50；page=abc → 回退默认 1/20（不得送 NaN） 31ms
+     → expected NaN to be +0 // Object.is equality
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  lib/features/admin/__tests__/scripts-executions-route.spec.ts > GET /api/v1/admin/scripts/[id]/executions > 分页越界钳制：pageSize=1000 → take=50；page=abc → 回退默认 1/20（不得送 NaN）
+AssertionError: expected NaN to be +0 // Object.is equality
+- Expected
++ Received
+- 0
++ NaN
+ ❯ lib/features/admin/__tests__/scripts-executions-route.spec.ts:125:24
+    123|     const calls = vi.mocked(prisma.scriptExecution.findMany).mock.call…
+    124|     const clamp = calls[0]![0] as { skip: number; take: number };
+    125|     expect(clamp.skip).toBe(0); // page 非法 → 回退 1
+       |                        ^
+    126|     expect(clamp.take).toBe(50); // 上限钳制
+    127|     const fallback = calls[1]![0] as { skip: number; take: number };
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  01:50:33
+   Duration  2.83s (transform 615ms, setup 0ms, collect 118ms, tests 1.02s, environment 0ms, prepare 354ms)
+MUT_TEST_EXIT=1
+--- restore ---
+SHA_AFTER=ed6b71d784f1767c MATCH=True
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+RESTORED_TEST_EXIT=0
