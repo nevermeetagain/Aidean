@@ -77,6 +77,8 @@ export function PricesManager({ canWrite = false }: { canWrite?: boolean }) {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<PriceForm>(emptyForm);
   const [models, setModels] = useState<ModelOption[]>([]);
+  const [modelQuery, setModelQuery] = useState("");
+  const [modelsLoading, setModelsLoading] = useState(false);
   const [tab, setTab] = useState<"current" | "promotions">("current");
   const [promoCreateFor, setPromoCreateFor] = useState<{ modelId: string; nonce: number } | null>(null);
 
@@ -98,14 +100,30 @@ export function PricesManager({ canWrite = false }: { canWrite?: boolean }) {
     void load("");
   }, [load]);
 
-  async function ensureModels() {
-    if (models.length > 0) return;
-    const res = await adminFetch<{ models: ModelOption[] }>("/api/v1/admin/models?page=1&pageSize=200");
-    if (res.ok && res.data) setModels(res.data.models.map((m) => ({ id: m.id, nameDisplay: m.nameDisplay, modelCode: m.modelCode })));
-  }
+  /**
+   * P0.3（B11-11 待裁定 / 运行态缺陷）：原先请求 `pageSize=200`，而 AdminPageQuerySchema.pageSize ≤ 50，
+   * 必然 400 → 下拉恒为空。现按契约取 pageSize=50，并用 `q` 让服务端过滤候选（不新增端点）。
+   */
+  const loadModels = useCallback(async (q: string) => {
+    const params = new URLSearchParams({ page: "1", pageSize: "50" });
+    if (q.trim()) params.set("q", q.trim());
+    setModelsLoading(true);
+    const res = await adminFetch<{ models: ModelOption[] }>(`/api/v1/admin/models?${params}`);
+    setModelsLoading(false);
+    if (res.ok && res.data) {
+      setModels(res.data.models.map((m) => ({ id: m.id, nameDisplay: m.nameDisplay, modelCode: m.modelCode })));
+    }
+  }, []);
+
+  // 新建弹窗打开时按搜索词拉候选（300ms 防抖，避免逐字请求）；编辑态不改模型，跳过
+  useEffect(() => {
+    if (!creating || editing) return;
+    const timer = setTimeout(() => void loadModels(modelQuery), 300);
+    return () => clearTimeout(timer);
+  }, [creating, editing, modelQuery, loadModels]);
 
   function openCreate() {
-    void ensureModels();
+    setModelQuery("");
     setForm(emptyForm);
     setEditing(null);
     setCreating(true);
@@ -279,12 +297,20 @@ export function PricesManager({ canWrite = false }: { canWrite?: boolean }) {
           ) : (
             <label className="block text-xs font-medium text-slate-500">
               选择模型（仅可创建尚无当前价的模型）
+              <Input
+                type="search"
+                value={modelQuery}
+                onChange={(e) => setModelQuery(e.target.value)}
+                placeholder="搜索模型名称或编码，如 gpt"
+                className="mt-1"
+                aria-label="搜索模型"
+              />
               <select
                 value={form.modelId}
                 onChange={(e) => setForm({ ...form, modelId: e.target.value })}
                 className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-[var(--accent)]"
               >
-                <option value="">— 请选择 —</option>
+                <option value="">{modelsLoading ? "加载中…" : "— 请选择 —"}</option>
                 {models.filter((m) => !pricedModelIds.has(m.id)).map((m) => (
                   <option key={m.id} value={m.id}>{m.nameDisplay}（{m.modelCode}）</option>
                 ))}
