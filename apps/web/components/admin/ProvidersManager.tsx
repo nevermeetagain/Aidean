@@ -206,9 +206,9 @@ export function ProvidersManager() {
 
   const columns: Column<ProviderRow>[] = [
     { key: "code", header: "Code", render: (r) => (
-      <button className="font-mono text-sm text-primary hover:underline" onClick={() => toggleExpand(r.id)}>
+      <Button variant="ghost" className="font-mono text-primary hover:underline" onClick={() => toggleExpand(r.id)}>
         {r.code}
-      </button>
+      </Button>
     )},
     { key: "name", header: "名称", render: (r) => (
       <span>{r.name}{r.nameCn ? ` (${r.nameCn})` : ""}</span>
@@ -226,11 +226,11 @@ export function ProvidersManager() {
     )},
     { key: "actions", header: "操作", render: (r: ProviderRow) => (
       <div className="flex gap-2">
-        <button className="text-xs text-primary hover:underline" onClick={() => handleEdit(r)}>编辑</button>
-        <button className="text-xs text-red-500 hover:underline" onClick={() => setDeleteTarget(r)}>删除</button>
-        <button className="text-xs text-muted-foreground hover:underline" onClick={() => toggleExpand(r.id)}>
+        <Button variant="ghost" size="sm" className="text-primary hover:underline" onClick={() => handleEdit(r)}>编辑</Button>
+        <Button variant="ghost" size="sm" className="text-[var(--danger)] hover:underline" onClick={() => setDeleteTarget(r)}>删除</Button>
+        <Button variant="ghost" size="sm" className="text-muted-foreground hover:underline" onClick={() => toggleExpand(r.id)}>
           {expandedProvider === r.id ? "收起" : "挂载"}
-        </button>
+        </Button>
       </div>
     )},
   ];
@@ -240,7 +240,7 @@ export function ProvidersManager() {
       {message && (
         <div className="mb-4 rounded-lg border border-border bg-card px-4 py-3 text-sm">
           {message}
-          <button className="ml-3 text-xs text-muted-foreground hover:underline" onClick={() => setMessage(null)}>关闭</button>
+          <Button variant="ghost" size="sm" className="ml-3 text-muted-foreground hover:underline" onClick={() => setMessage(null)}>关闭</Button>
         </div>
       )}
 

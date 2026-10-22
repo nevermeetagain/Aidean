@@ -346,12 +346,9 @@ export function UsersTable({
           aria-label="按邮箱搜索"
           className="w-64"
         />
-        <button
-          type="submit"
-          className="rounded-lg bg-primary px-3.5 py-1.5 text-sm text-[var(--primary-foreground)] transition-opacity hover:opacity-90"
-        >
+        <Button type="submit">
           搜索
-        </button>
+        </Button>
         <span className="ml-auto text-xs text-slate-400">{loading ? "加载中…" : `共 ${total} 人`}</span>
       </form>
 
@@ -378,14 +375,15 @@ export function UsersTable({
           >
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-slate-900">用户详情</h2>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
                 aria-label="关闭详情"
                 onClick={() => setDetail(null)}
-                className="rounded px-2 py-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                className="text-slate-400 hover:text-slate-700"
               >
                 ✕
-              </button>
+              </Button>
             </div>
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between"><dt className="text-slate-500">邮箱</dt><dd className="text-slate-800">{detail.email}</dd></div>
@@ -585,9 +583,9 @@ function CredList({
               {r.meta ? <span className="text-slate-400">{r.meta}</span> : null}
               <span className={r.active ? "text-emerald-600" : "text-slate-400"}>{r.active ? "有效" : "已停用"}</span>
               {canRevoke && r.active ? (
-                <button type="button" disabled={busy} onClick={() => onRevoke(r)} className="text-rose-500 hover:underline disabled:opacity-50">
+                <Button variant="ghost" size="sm" className="text-[var(--danger)] hover:underline" disabled={busy} onClick={() => onRevoke(r)}>
                   吊销
-                </button>
+                </Button>
               ) : null}
             </span>
           </li>

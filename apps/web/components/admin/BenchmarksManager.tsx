@@ -200,9 +200,9 @@ export function BenchmarksManager() {
       header: "操作",
       className: "px-3 py-2",
       render: row => row.verifiedStatus === 0 ? (
-        <button onClick={() => handleVerify(row.id, 1)} className="text-xs text-primary hover:underline">审核通过</button>
+        <Button variant="ghost" size="sm" className="text-primary hover:underline" onClick={() => handleVerify(row.id, 1)}>审核通过</Button>
       ) : (
-        <button onClick={() => handleVerify(row.id, 0)} className="text-xs text-slate-400 hover:underline">撤销审核</button>
+        <Button variant="ghost" size="sm" className="text-slate-400 hover:underline" onClick={() => handleVerify(row.id, 0)}>撤销审核</Button>
       ),
     },
   ];
@@ -272,7 +272,7 @@ export function BenchmarksManager() {
           <Button variant="primary" size="sm" className="bg-emerald-500" onClick={() => handleBatch("verify")} disabled={batchBusy}>批量验证</Button>
           <Button variant="primary" size="sm" className="bg-amber-500" onClick={() => handleBatch("unverify")} disabled={batchBusy}>取消验证</Button>
           <Button variant="danger" size="sm" onClick={() => handleBatch("delete")} disabled={batchBusy}>批量删除</Button>
-          <button onClick={() => setSelectedIds(new Set())} className="ml-auto text-xs text-slate-500">取消选择</button>
+          <Button variant="ghost" size="sm" className="ml-auto text-slate-500" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
         </div>
       ) : null}
 

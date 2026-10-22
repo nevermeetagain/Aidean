@@ -136,10 +136,10 @@ export function AnnouncementManager() {
     { key: "createdAt", header: "创建时间", className: "px-3 py-2 text-xs text-slate-400", render: r => <span>{new Date(r.createdAt).toLocaleString("zh-CN")}</span> },
     { key: "actions", header: "操作", className: "px-3 py-2", render: r => (
       <div className="flex gap-2">
-        <button onClick={() => setEditing(r)} className="text-xs text-primary hover:underline">编辑</button>
-        <button onClick={() => togglePin(r)} className="text-xs text-slate-500 hover:underline">{r.isPinned ? "取消置顶" : "置顶"}</button>
-        <button onClick={() => togglePublish(r)} className="text-xs text-slate-500 hover:underline">{r.isPublished ? "撤回" : "发布"}</button>
-        <button onClick={() => handleDelete(r.id)} className="text-xs text-red-500 hover:underline">删除</button>
+        <Button variant="ghost" size="sm" className="text-primary hover:underline" onClick={() => setEditing(r)}>编辑</Button>
+        <Button variant="ghost" size="sm" className="text-slate-500 hover:underline" onClick={() => togglePin(r)}>{r.isPinned ? "取消置顶" : "置顶"}</Button>
+        <Button variant="ghost" size="sm" className="text-slate-500 hover:underline" onClick={() => togglePublish(r)}>{r.isPublished ? "撤回" : "发布"}</Button>
+        <Button variant="ghost" size="sm" className="text-[var(--danger)] hover:underline" onClick={() => handleDelete(r.id)}>删除</Button>
       </div>
     ) },
   ];

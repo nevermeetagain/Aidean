@@ -96,14 +96,16 @@ export function RolesManager() {
                   {isSuper ? <Badge variant="secondary">通配 *（全权）</Badge> : null}
                   <span className="text-xs text-slate-400">绑定 {role.userCount} 人</span>
                   <div className="ml-auto flex items-center gap-2">
-                    <button
-                      className="text-xs text-primary hover:underline"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-primary hover:underline"
                       onClick={() => { setEditingId(editing ? null : role.id); setShowCreate(false); }}
                     >
                       {editing ? "收起" : "编辑"}
-                    </button>
+                    </Button>
                     {!role.isSystem && (
-                      <button className="text-xs text-red-500 hover:underline" onClick={() => setPendingDelete(role)}>删除</button>
+                      <Button variant="ghost" size="sm" className="text-[var(--danger)] hover:underline" onClick={() => setPendingDelete(role)}>删除</Button>
                     )}
                   </div>
                 </div>
@@ -251,8 +253,8 @@ function PermissionsGrid({ value, onChange, note }: {
     <div className="space-y-1.5">
       <div className="flex items-center gap-2">
         <span className="text-xs font-medium text-slate-600">权限集（{value.size}/{allCodes.length}）</span>
-        <button type="button" className="text-xs text-primary hover:underline" onClick={selectAll}>全选</button>
-        <button type="button" className="text-xs text-slate-500 hover:underline" onClick={clearAll}>清空</button>
+        <Button variant="ghost" size="sm" className="text-primary hover:underline" onClick={selectAll}>全选</Button>
+        <Button variant="ghost" size="sm" className="text-slate-500 hover:underline" onClick={clearAll}>清空</Button>
       </div>
       {note ? <p className="text-[11px] text-amber-600">{note}</p> : null}
       <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
@@ -260,9 +262,9 @@ function PermissionsGrid({ value, onChange, note }: {
           const rc = readCode(d); const wc = writeCode(d);
           return (
             <div key={d} className="flex items-center justify-between gap-2 rounded border border-slate-100 bg-white px-2 py-1 text-xs">
-              <button type="button" className="text-left text-slate-700 hover:text-primary" onClick={() => toggleDomain(d)} title="点击切换该域读写">
+              <Button variant="ghost" size="sm" className="text-left text-slate-700 hover:text-primary" onClick={() => toggleDomain(d)} title="点击切换该域读写">
                 {ADMIN_DOMAINS[d]}
-              </button>
+              </Button>
               <span className="flex items-center gap-3">
                 <Label className="flex cursor-pointer items-center gap-1 font-normal">
                   <input type="checkbox" checked={value.has(rc)} onChange={() => toggle(rc)} />读

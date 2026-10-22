@@ -118,9 +118,9 @@ export function EvaluationManager() {
     { key: "cost", header: "费用", className: "px-3 py-2 text-xs text-slate-600", render: e => <span>¥{e.cost.toFixed(2)}</span> },
     { key: "actions", header: "操作", className: "px-3 py-2", render: e => (
       <div className="flex gap-2">
-        <button onClick={() => handleViewDetail(e.id)} className="text-xs text-primary hover:underline">详情</button>
-        <button onClick={() => handleArchive(e.id)} className="text-xs text-slate-500 hover:underline">归档</button>
-        <button onClick={() => handleDelete(e.id)} className="text-xs text-red-500 hover:underline">删除</button>
+        <Button variant="ghost" size="sm" className="text-primary hover:underline" onClick={() => handleViewDetail(e.id)}>详情</Button>
+        <Button variant="ghost" size="sm" className="text-slate-500 hover:underline" onClick={() => handleArchive(e.id)}>归档</Button>
+        <Button variant="ghost" size="sm" className="text-[var(--danger)] hover:underline" onClick={() => handleDelete(e.id)}>删除</Button>
       </div>
     ) },
   ];
