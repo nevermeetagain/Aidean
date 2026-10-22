@@ -124,7 +124,6 @@ export default async function ConsolePage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" data-testid="console-header-stats">
           <Link
             href="/user/balance"
-            aria-label="账户余额，前往余额、充值与兑换码页"
             className="block h-full rounded-lg transition-[box-shadow,transform] focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary hover:-translate-y-0.5 hover:shadow-md"
             data-testid="balance-entry"
           >
@@ -135,6 +134,7 @@ export default async function ConsolePage() {
               tone="primary"
               icon={<Wallet size={14} strokeWidth={2.2} />}
             />
+            <span className="sr-only">，前往余额、充值与兑换码页</span>
           </Link>
           <CoreInfoCard compact label="当前等级" value={profile.tierLabel} tone="accent" icon={<BadgeCheck size={14} strokeWidth={2.2} />} />
           <CoreInfoCard

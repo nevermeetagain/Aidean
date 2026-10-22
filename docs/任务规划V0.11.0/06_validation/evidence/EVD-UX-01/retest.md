@@ -24,3 +24,17 @@
 - 性能 TBT 下降（首页移动 1248→271ms）受沙箱负载影响大，只作参考，不作结论。
 - 未尽事项：管理端 500 注入仍只跑完 18 页（脚本 600s 超时，offline 33 页完整）；控制台「免费额度」为 SSR 取数，客户端注入无法模拟其失败（非回归）；剩余对比度主要是 emerald-600/rose 等状态色与 slate-300 编号，未在本轮主题层处理；首页区块容器 `components/home/SectionFrame.tsx` 仍 max-w-6xl。
 - 运营注意：已有数据库侧栏名称需在 /admin/menus 点「应用推荐分组」或重跑 `seed-admin-nav-default.ts` 才会更新。
+
+## 收尾复测（2026-10-22 23:50 CST）
+
+| 项 | 结果 |
+|---|---|
+| color-contrast（61 页 axe，1440） | 92 → **0**（状态色文字深一档 emerald/green/rose/amber/red-700、slate-300 文字→slate-400、console 青色强调文字→primary；见 UX-FIX-D 67c1a27） |
+| serious/critical 违规总数 | **0**（另修 /user/console 余额卡 label-content-name-mismatch、/user/balance 加载骨架 aria-prohibited-attr） |
+| 首页 SectionFrame 宽度 | max-w-6xl → 全宽 + px-4 md:px-6；1440 下页头内容与区块外框左右边一致（截图 shots/after/home-1440-sectionframe.png） |
+| 768/1024 横向溢出 | 0 |
+| 管理端 500 注入 | 33/33 页完成：32 页错误态，/admin/models 为服务端渲染无客户端 GET（no-client-fetch） |
+| 报告 §8 文档修订 | 9 条全部落实 + 管理端 IA 收口 / oauth 生产 404 同步（UX-FIX-E 15e6bb3；文档索引 v1.90） |
+| 门禁 | build/tsc/lint 0；Vitest 1826 passed / 5 skipped；check-docs-rule 0；check-docs-facts 16/16 |
+
+剩余非阻塞：TBT 受沙箱负载影响仅作参考；既有库需在 /admin/menus「应用推荐分组」刷新导航名；HeroBanner 居中文本仍内部限宽 max-w-6xl（非 SectionFrame，属可读性限宽）。

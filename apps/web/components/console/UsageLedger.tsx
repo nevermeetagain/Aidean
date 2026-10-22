@@ -170,7 +170,7 @@ export function UsageLedger() {
 
       {/* 加载骨架 */}
       {loading ? (
-        <div className="mt-4 space-y-2" aria-busy="true" aria-label="用量明细加载中" data-testid="usage-loading">
+        <div className="mt-4 space-y-2" role="status" aria-busy="true" aria-label="用量明细加载中" data-testid="usage-loading">
           {[0, 1, 2].map((row) => (
             <div key={row} className="h-6 w-full rounded bg-muted motion-safe:animate-pulse" aria-hidden="true" />
           ))}
