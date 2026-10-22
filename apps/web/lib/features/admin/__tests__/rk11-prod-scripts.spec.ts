@@ -4,21 +4,39 @@
  * - node-modules-integrity 深扫能识别 entries=0 / 缺 package.json 的空壳，且不把依赖 symlink 误报
  */
 import { describe, expect, it } from "vitest";
+import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { planScriptRun } from "../script-executor";
 
-const bundle = await import("../../../../../../scripts/build/bundle-scripts.mjs");
-const integrity = await import("../../../../../../scripts/guard/node-modules-integrity.mjs");
+// 被测的是仓库根下的 .mjs 运维脚本：**不经 vite 转换**，用子进程 node 直接加载
+// （Windows 侧 vitest 对仓库根外 .mjs 顶层 await import 报 SyntaxError，见 B11-11 执行报告 §9）。
+const REPO = resolve(fileURLToPath(new URL("../../../../../../", import.meta.url)));
+const BUNDLE = join(REPO, "scripts", "build", "bundle-scripts.mjs");
+const INTEGRITY = join(REPO, "scripts", "guard", "node-modules-integrity.mjs");
+const callModule = <T>(file: string, expr: string): T => {
+  const code = `import(${JSON.stringify(pathToFileURL(file).href)}).then(async (m) => { const r = await (${expr}); process.stdout.write(JSON.stringify(r)); })`;
+  return JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", code], { encoding: "utf8" })) as T;
+};
+const bundle = {
+  listEntries: () => callModule<string[]>(BUNDLE, "m.listEntries()"),
+  distRelOf: (src: string) => callModule<string>(BUNDLE, `m.distRelOf(${JSON.stringify(src)})`),
+};
+type Shell = { name: string };
+const integrity = {
+  scanPnpmStore: (dir: string) => callModule<{ scanned: number; shells: Shell[] }>(INTEGRITY, `m.scanPnpmStore(${JSON.stringify(dir)})`),
+  CRITICAL: () => callModule<string[]>(INTEGRITY, "m.CRITICAL"),
+};
 
 describe("RK-11-07 · 产物映射口径一致", () => {
   it("每个白名单源在 bundle 的 distRelOf 路径上，正是 executor 在镜像内会选中的文件", () => {
     const entries: string[] = bundle.listEntries();
     expect(entries.length).toBeGreaterThanOrEqual(4);
     for (const src of entries) {
-      const distAbs = join("/app", bundle.distRelOf(src));
-      const plan = planScriptRun(src, { cwd: "/app", platform: "linux", execPath: "/node", exists: (p: string) => p === distAbs });
+      const distAbs = join(resolve("/app"), ...bundle.distRelOf(src).split("/")); // resolve：Windows 下为 C:\app
+      const plan = planScriptRun(src, { cwd: resolve("/app"), platform: "linux", execPath: "/node", exists: (p: string) => p === distAbs });
       expect(plan.args[0]).toBe(distAbs);
     }
   });
@@ -70,7 +88,16 @@ describe("RK-11-09 · node_modules 空壳深扫", () => {
     expect(r.shells).toEqual([]);
   });
 
+  it("CLI：空壳仓 exit 1，健康仓 exit 0", () => {
+    const { pnpm, pkg } = mk();
+    pkg("ok@1.0.0", "ok", ["package.json"]);
+    const root = resolve(pnpm, "..", "..");
+    expect(spawnSync(process.execPath, [INTEGRITY, "--root", root, "--phase", "test"]).status).toBe(0);
+    pkg("next@15.0.3", "next", []);
+    expect(spawnSync(process.execPath, [INTEGRITY, "--root", root, "--phase", "test"]).status).toBe(1);
+  });
+
   it("关键包清单包含 next 与 @prisma/client", () => {
-    expect(integrity.CRITICAL).toEqual(expect.arrayContaining(["next", "@prisma/client"]));
+    expect(integrity.CRITICAL()).toEqual(expect.arrayContaining(["next", "@prisma/client"]));
   });
 });
