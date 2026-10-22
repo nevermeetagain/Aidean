@@ -189,7 +189,7 @@ export function SyncManager() {
         </Button>
         {tab === "batches" ? (
           <>
-            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="ml-2 bg-white">
+            <Select aria-label="按状态筛选" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="ml-2 bg-white">
               <option value="">全部状态</option>
               <option value="running">运行中</option>
               <option value="completed">已完成</option>
@@ -199,12 +199,12 @@ export function SyncManager() {
             <Button variant="outline" size="sm" onClick={handleDryRun} data-testid={`${ids.root}-create`} className="ml-auto">触发 dry-run</Button>
           </>
         ) : (
-          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="ml-2 bg-white">
+          <Select aria-label="按变更类型筛选" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="ml-2 bg-white">
             <option value="">全部类型</option>
-            <option value="CREATE">CREATE</option>
-            <option value="UPDATE">UPDATE</option>
-            <option value="DELETE">DELETE</option>
-            <option value="SYNC">SYNC</option>
+            <option value="CREATE">新增</option>
+            <option value="UPDATE">更新</option>
+            <option value="DELETE">删除</option>
+            <option value="SYNC">同步</option>
           </Select>
         )}
         <span className="ml-auto text-xs text-slate-500">{data ? `共 ${data.total} 条` : null}</span>
@@ -219,7 +219,7 @@ export function SyncManager() {
       {tab === "batches" && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/50 px-4 py-2.5">
           <span className="text-xs font-medium text-slate-600">数据源：</span>
-          <Select size="sm" value={primarySource} onChange={(e) => setPrimarySource(e.target.value)} className="bg-white">
+          <Select aria-label="主数据源" size="sm" value={primarySource} onChange={(e) => setPrimarySource(e.target.value)} className="bg-white">
             {SOURCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </Select>
           <span className="text-xs text-slate-400">额外源（交叉验证）：</span>

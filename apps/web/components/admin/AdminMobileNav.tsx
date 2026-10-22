@@ -4,6 +4,7 @@
  * S8.2 移动端响应式抽屉（restructure-admin-nav-rbac-cms）。
  * - 小屏（< md）显示汉堡按钮，点击从左侧滑出 off-canvas 抽屉，内嵌 AdminSidebar（forceExpanded 恒展开）；
  * - 遮罩点击 / ESC / 路由变化均关闭抽屉；md 及以上由桌面常驻侧栏承担，本组件整体不显示。
+ * - UX-28：汉堡触控区 44×44（h-11 w-11），满足移动端触控目标 ≥44px。
  */
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -36,7 +37,7 @@ export function AdminMobileNav({ nav }: { nav: AdminNavVM }) {
         aria-label="打开导航菜单"
         aria-expanded={open}
         data-testid="admin-mobile-menu-toggle"
-        className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 md:hidden"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 md:hidden"
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
           <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />

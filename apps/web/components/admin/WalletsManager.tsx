@@ -147,7 +147,7 @@ export function WalletsManager() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded border border-slate-200 bg-white px-3 py-1.5 text-sm">
+        <select aria-label="按状态筛选" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded border border-slate-200 bg-white px-3 py-1.5 text-sm">
           <option value="">全部状态</option>
           <option value="ACTIVE">活跃</option>
           <option value="FROZEN">冻结</option>

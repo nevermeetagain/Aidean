@@ -477,7 +477,7 @@ export function ProductsManager() {
       </div>
 
       {selectedIds.size > 0 ? (
-        <div className="mb-3 flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2">
+        <div className="mb-3 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
           <span className="text-xs text-primary">已选 {selectedIds.size} 项</span>
           <Button size="sm" disabled={batchBusy} onClick={() => void handleBatch("activate")}>批量启用</Button>
           <Button variant="dark" size="sm" disabled={batchBusy} onClick={() => void handleBatch("deactivate")}>批量停用</Button>
@@ -625,7 +625,7 @@ export function ProductsManager() {
                   }
                   className="min-w-0 flex-1"
                 />
-                <Select size="sm"
+                <Select aria-label="类型" size="sm"
                   value={row.kind}
                   onChange={(e) =>
                     setForm({

@@ -198,7 +198,7 @@ export function TierMappingsManager() {
           </div>
           <div>
             <label className="text-xs text-slate-500">等级</label>
-            <select
+            <select aria-label="等级"
               className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
               value={form.tierLevel}
               onChange={(e) => setForm({ ...form, tierLevel: e.target.value })}

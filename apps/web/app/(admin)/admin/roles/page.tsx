@@ -20,7 +20,7 @@ export default async function AdminRolesPage() {
         <h1 className="text-lg font-semibold tracking-tight text-slate-900">角色权限</h1>
         <p className="mt-1 text-xs text-slate-500">
           管理自定义角色与其权限集（按业务域勾选读 / 写），并为用户分配角色。
-          仅超级管理员可访问；改动后端即时生效（revalidateTag），侧边栏入口重新登录后刷新。
+          仅超级管理员可访问；改动即时生效，侧边栏入口在重新登录后刷新。
         </p>
       </div>
       <RolesManager />

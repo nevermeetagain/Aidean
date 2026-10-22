@@ -9,6 +9,8 @@ import {
 } from "./admin-nav-default-tree";
 
 // 旧两级 seed 的全部 ADMIN href（迁移后必须「只增不减」，一个都不能丢）
+// 例外（UX-26 裁定 8，2026-10-22）：/admin/protocols 并入「兼容矩阵」Tab，旧页保留为重定向，不再占侧栏叶。
+const MERGED_INTO_TABS = ["/admin/protocols"];
 const LEGACY_HREFS = [
   "/admin",
   "/admin/users", "/admin/models", "/admin/prices", "/admin/vendors", "/admin/providers",
@@ -30,7 +32,7 @@ describe("admin-nav-default-tree（S2.1 出厂三级 7 板块默认树）", () =
     expect(OVERVIEW.href).toBe("/admin");
   });
 
-  it("buildAdminNav(toNavRows()) 得 7 板块三级树，叶总数 = 33", () => {
+  it("buildAdminNav(toNavRows()) 得 7 板块三级树，叶总数 = 32", () => {
     const nav = buildAdminNav(toNavRows());
     expect(nav.overview?.href).toBe("/admin");
     expect(nav.groups).toHaveLength(7);
@@ -38,20 +40,23 @@ describe("admin-nav-default-tree（S2.1 出厂三级 7 板块默认树）", () =
     const leavesViaSections = nav.groups.flatMap((g) => (g.sections ?? []).flatMap((s) => s.children ?? []));
     const directLeaves = nav.groups.flatMap((g) => g.leaves);
     expect(directLeaves).toHaveLength(0);
-    expect(leavesViaSections).toHaveLength(33);
+    expect(leavesViaSections).toHaveLength(32);
     // 每个板块都至少有一个分组
     for (const g of nav.groups) expect((g.sections ?? []).length).toBeGreaterThan(0);
   });
 
-  it("href 唯一且既有 31 入口零缺失（只增不减）", () => {
+  it("href 唯一且既有入口零缺失（并入 Tab 的旧路由除外）", () => {
     const dup = EXPECTED_HREFS.filter((h, i) => EXPECTED_HREFS.indexOf(h) !== i);
     expect(dup).toEqual([]);
-    for (const legacy of LEGACY_HREFS) expect(EXPECTED_HREFS).toContain(legacy);
+    for (const legacy of LEGACY_HREFS) {
+      if (MERGED_INTO_TABS.includes(legacy)) expect(EXPECTED_HREFS).not.toContain(legacy);
+      else expect(EXPECTED_HREFS).toContain(legacy);
+    }
     // 较旧集合新增：/admin/reports、/admin/feature-flags（S2 功能开关）、/admin/monitoring（TASK-094 监控入口）
     expect(EXPECTED_HREFS).toContain("/admin/reports");
     expect(EXPECTED_HREFS).toContain("/admin/feature-flags");
     expect(EXPECTED_HREFS).toContain("/admin/monitoring");
-    expect(EXPECTED_HREFS.length).toBe(LEGACY_HREFS.length + 3);
+    expect(EXPECTED_HREFS.length).toBe(LEGACY_HREFS.length + 3 - MERGED_INTO_TABS.length);
   });
 
   it("menuCode 全局唯一（板块/分组/叶/概览无重名）", () => {
@@ -92,6 +97,15 @@ describe("admin-nav-default-tree（S2.1 出厂三级 7 板块默认树）", () =
     // 「权限」分组（roles+menus 全设门槛）被整组剪除 → 用户与权限板块仅剩「用户」分组
     const access = out.groups.find((g) => g.label === "用户与权限");
     expect(access?.sections?.map((s) => s.label)).toEqual(["用户"]);
+  });
+
+  it("UX-26 展示名：厂商管理 / 服务平台 / 兼容矩阵（menuCode 与 URL 不变）", () => {
+    const byHref = new Map<string, { code: string; name: string }>();
+    for (const s of SECTIONS) for (const g of s.groups) for (const l of g.leaves) byHref.set(l.href, { code: l.code, name: l.name });
+    expect(byHref.get("/admin/vendors")).toEqual({ code: "adm_vendors", name: "厂商管理" });
+    expect(byHref.get("/admin/providers")).toEqual({ code: "adm_providers", name: "服务平台" });
+    expect(byHref.get("/admin/capabilities")).toEqual({ code: "adm_capabilities", name: "兼容矩阵" });
+    expect(ALL_MENU_CODES).not.toContain("adm_protocols");
   });
 
   it("SUPER_ADMIN 通配 → 7 板块全可见", () => {

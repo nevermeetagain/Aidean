@@ -6,15 +6,18 @@
  * - 平台 Key 池管理（添加/状态切换/删除）
  * - 计费规则配置（markupRate / tokenMultiplier）
  * 使用 @aidean/ui 组件 + AdminDataTable。
+ * UX-04：列表区接入 B11-05 五态外壳（admin-api-stations）：失败/断网落错误态 + 重试，不再显示「暂无 API 站点」。
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { adminFetch } from "./adminFetch";
+import { PanelState, usePanelResource } from "./PanelState";
+import { panelTestIds } from "../../lib/admin/panel-resource";
 import { Badge, Button, Label, Textarea } from "@aidean/ui";
 import { AdminDataTable, type Column } from "./AdminDataTable";
 import { ConfirmDialog } from "./ConfirmDialog";
 
-interface StationRow {
+export interface StationRow {
   id: string;
   name: string;
   nameCn: string | null;
@@ -27,37 +30,61 @@ interface StationRow {
   createdAt: string;
 }
 
+/** 列表数据形状（信封 data） */
+export type ApiStationsListData = { items: StationRow[]; total: number };
+
+/** 五态外壳 testid 前缀（UX-04，同 B11-05 口径） */
+export const API_STATIONS_PANEL_PREFIX = "admin-api-stations";
+
+export const API_STATIONS_PAGE_SIZE = 20;
+
+export function buildApiStationsUrl(page = 1, search = ""): string {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(API_STATIONS_PAGE_SIZE) });
+  if (search) params.set("search", search);
+  return `/api/v1/admin/api-stations?${params}`;
+}
+
+/** 首屏地址（与改造前完全一致） */
+export const API_STATIONS_LIST_URL = buildApiStationsUrl();
+
+export const loadApiStations = (signal?: AbortSignal, page = 1, search = "") =>
+  adminFetch<ApiStationsListData>(buildApiStationsUrl(page, search), { signal });
+
 export function ApiStationManager() {
-  const [stations, setStations] = useState<StationRow[]>([]);
-  // #35③：列表请求在途（参照 UsersTable #68 模式），首载不闪空态
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
+  const ids = panelTestIds(API_STATIONS_PANEL_PREFIX);
   const [page, setPage] = useState(1);
+  // 输入框草稿 vs 已提交关键词：回车/「搜索」才提交（与改造前一致：键入不自动请求）
   const [search, setSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [queryNonce, setQueryNonce] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<StationRow | null>(null);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   // 内联状态提示（替代原生 alert）
   const [message, setMessage] = useState<string | null>(null);
-  const pageSize = 20;
+  const loader = useCallback(
+    (signal: AbortSignal) => loadApiStations(signal, page, appliedSearch),
+    [page, appliedSearch],
+  );
+  const { resource, reload, refresh } = usePanelResource(loader, (d) => d.items.length === 0);
 
-  const load = useCallback(async (p: number) => {
-    const params = new URLSearchParams({ page: String(p), pageSize: String(pageSize) });
-    if (search) params.set("search", search);
-    setLoading(true);
-    const res = await adminFetch<{ items: StationRow[]; total: number }>(
-      `/api/v1/admin/api-stations?${params}`
-    );
-    setLoading(false);
-    if (res.ok && res.data) {
-      setStations(res.data.items);
-      setTotal(res.data.total);
-    }
-  }, [search]);
+  const signature = `${appliedSearch}|${page}|${queryNonce}`;
+  const lastSignature = useRef(signature);
+  useEffect(() => {
+    if (lastSignature.current === signature) return;
+    lastSignature.current = signature;
+    reload();
+  }, [signature, reload]);
 
-  useEffect(() => { void load(page); }, [load, page]);
+  function submitSearch() {
+    setPage(1);
+    setAppliedSearch(search.trim());
+    setQueryNonce((n) => n + 1);
+  }
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const data = resource.status === "ready" ? resource.data : null;
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / API_STATIONS_PAGE_SIZE));
 
   function handleDelete(id: string) {
     setPendingDelete(id);
@@ -69,7 +96,7 @@ export function ApiStationManager() {
     setPendingDelete(null);
     const res = await adminFetch(`/api/v1/admin/api-stations/${id}`, { method: "DELETE" });
     if (res.ok) {
-      void load(page);
+      refresh();
       setMessage("API 站点已删除");
     } else {
       setMessage(res.message ?? "删除失败");
@@ -110,19 +137,19 @@ export function ApiStationManager() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <input
+        <input aria-label="搜索站点名称"
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") { setPage(1); void load(1); } }}
+          onKeyDown={(e) => { if (e.key === "Enter") submitSearch(); }}
           placeholder="搜索站点名称…"
           className="rounded border border-slate-200 bg-white px-3 py-1.5 text-sm"
         />
-        <Button variant="outline" size="sm" onClick={() => { setPage(1); void load(1); }}>搜索</Button>
+        <Button variant="outline" size="sm" onClick={submitSearch}>搜索</Button>
         <Button variant="primary" size="sm" onClick={() => setShowCreate(!showCreate)} className="ml-auto">
           {showCreate ? "取消" : "新建站点"}
         </Button>
-        <span className="text-xs text-slate-500">共 {total} 个站点</span>
+        <span className="text-xs text-slate-500">{data ? `共 ${total} 个站点` : null}</span>
       </div>
 
       {message ? (
@@ -131,20 +158,29 @@ export function ApiStationManager() {
         </p>
       ) : null}
 
-      {showCreate && <StationForm onDone={() => { setShowCreate(false); void load(page); }} />}
-      {editing && <StationForm existing={editing} onDone={() => { setEditing(null); void load(page); }} />}
+      {showCreate && <StationForm onDone={() => { setShowCreate(false); refresh(); }} />}
+      {editing && <StationForm existing={editing} onDone={() => { setEditing(null); refresh(); }} />}
 
-      <AdminDataTable
-        columns={columns}
-        rows={stations}
-        rowKey={s => s.id}
-        emptyText="暂无 API 站点"
-        busy={loading}
-        page={page}
-        totalPages={totalPages}
-        total={total}
-        onPageChange={p => setPage(p)}
-      />
+      <PanelState
+        testId={ids.root}
+        resource={resource}
+        onRetry={reload}
+        emptyText={appliedSearch ? "未找到匹配的 API 站点" : "暂无 API 站点"}
+      >
+        {(d) => (
+          <AdminDataTable
+            columns={columns}
+            rows={d.items}
+            rowKey={s => s.id}
+            rowTestId={(s) => `${ids.root}-row-${s.id}`}
+            emptyText="暂无 API 站点"
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            onPageChange={p => setPage(p)}
+          />
+        )}
+      </PanelState>
 
       <ConfirmDialog
         open={pendingDelete !== null}

@@ -230,7 +230,7 @@ export function BenchmarksManager() {
           placeholder="基准类型..."
           className="max-w-[180px]"
         />
-        <Select
+        <Select aria-label="按核验状态筛选"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="bg-white"
@@ -273,18 +273,18 @@ export function BenchmarksManager() {
           <Input value={formData.benchmarkType} onChange={(e) => setFormData({ ...formData, benchmarkType: e.target.value })} placeholder="基准类型（如 MMLU）*" required />
           <Input value={formData.totalScore} onChange={(e) => setFormData({ ...formData, totalScore: e.target.value })} placeholder="总分 *" required type="number" step="0.01" />
           <Input value={formData.sourceName} onChange={(e) => setFormData({ ...formData, sourceName: e.target.value })} placeholder="来源名称" />
-          <Select value={formData.sourceType} onChange={(e) => setFormData({ ...formData, sourceType: e.target.value })} className="h-9">
+          <Select aria-label="来源类型" value={formData.sourceType} onChange={(e) => setFormData({ ...formData, sourceType: e.target.value })} className="h-9">
             {Object.entries(SOURCE_TYPE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </Select>
-          <Input value={formData.testDate} onChange={(e) => setFormData({ ...formData, testDate: e.target.value })} placeholder="测试日期" type="date" />
+          <Input aria-label="测试日期" value={formData.testDate} onChange={(e) => setFormData({ ...formData, testDate: e.target.value })} placeholder="测试日期" type="date" />
           <Button type="submit" variant="primary" className="col-span-full">提交</Button>
         </form>
       ) : null}
 
       {selectedIds.size > 0 ? (
-        <div className="flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2">
+        <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
           <span className="text-xs text-primary">已选 {selectedIds.size} 项</span>
-          <Button variant="primary" size="sm" className="bg-emerald-500" onClick={() => handleBatch("verify")} disabled={batchBusy}>批量验证</Button>
+          <Button variant="primary" size="sm" onClick={() => handleBatch("verify")} disabled={batchBusy}>批量验证</Button>
           <Button variant="primary" size="sm" className="bg-amber-500" onClick={() => handleBatch("unverify")} disabled={batchBusy}>取消验证</Button>
           <Button variant="danger" size="sm" onClick={() => handleBatch("delete")} disabled={batchBusy}>批量删除</Button>
           <Button variant="ghost" size="sm" className="ml-auto text-slate-500" onClick={() => setSelectedIds(new Set())}>取消选择</Button>

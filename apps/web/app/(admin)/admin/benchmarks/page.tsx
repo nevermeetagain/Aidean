@@ -9,7 +9,7 @@ export default function AdminBenchmarksPage() {
       <div>
         <h1 className="text-lg font-semibold tracking-tight text-slate-900">基准测试管理</h1>
         <p className="mt-1 text-xs text-slate-500">
-          录入和审核模型基准测试数据（MMLU/HumanEval 等）；verifiedStatus 控制是否参与天梯排名计算。
+          录入和审核模型基准测试数据（MMLU/HumanEval 等）；「核验状态」决定是否参与天梯排名计算。
         </p>
       </div>
       <BenchmarksManager />

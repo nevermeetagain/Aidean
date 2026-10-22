@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 模型提供商管理（ModelProvider CRUD + ProviderModelOffering 管理）：
+ * 服务平台管理（UX-26 展示名；ModelProvider CRUD + ProviderModelOffering 管理）：
  * - 列表：code/name/rechargeRatio/priceCurrency/isActive/offerings 数
  * - 新建/编辑：AdminProviderCreateSchema/PatchSchema
  * - 软删确认 + 批量操作
@@ -244,7 +244,7 @@ export function ProvidersManager() {
       )}
 
       <div className="mb-4 flex items-center gap-3">
-        <Button data-testid={`${ids.root}-create`} onClick={handleCreate}>新增提供商</Button>
+        <Button data-testid={`${ids.root}-create`} onClick={handleCreate}>新增服务平台</Button>
         {selectedIds.size > 0 && (
           <>
             <Button variant="outline" disabled={batchBusy} onClick={() => void executeBatch("activate")}>批量启用</Button>
@@ -254,7 +254,7 @@ export function ProvidersManager() {
         )}
       </div>
 
-      <PanelState testId={ids.root} resource={resource} onRetry={reload} emptyText="暂无模型提供商">
+      <PanelState testId={ids.root} resource={resource} onRetry={reload} emptyText="暂无服务平台">
         {(data) => (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">共 {data.items.length} 条</p>
@@ -333,7 +333,7 @@ export function ProvidersManager() {
       <Dialog
         open
         onClose={() => setCreating(false)}
-        title={editing ? "编辑提供商" : "新增模型提供商"}
+        title={editing ? "编辑服务平台" : "新增服务平台"}
         className="max-w-lg"
         footer={
           <>
@@ -420,7 +420,7 @@ export function ProvidersManager() {
         open
         title="确认删除"
         message={pendingDelete
-          ? `确定批量删除 ${selectedIds.size} 个提供商？此操作为软删，可联系管理员恢复。`
+          ? `确定批量删除 ${selectedIds.size} 个服务平台？此操作为软删，可联系管理员恢复。`
           : `确定删除「${deleteTarget?.name}」？此操作为软删。`}
         onConfirm={() => {
           if (pendingDelete) {

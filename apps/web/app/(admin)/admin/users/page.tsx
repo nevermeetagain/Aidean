@@ -17,7 +17,7 @@ export default async function AdminUsersPage() {
       <div>
         <h1 className="text-lg font-semibold tracking-tight text-slate-900">用户管理</h1>
         <p className="mt-1 text-xs text-slate-500">
-          搜索、调级、封禁/解封与余额调账；封禁即时失效该用户全部令牌（tokenVersion++）。
+          搜索、调级、封禁 / 解封（余额调账请到「钱包管理」）；封禁即时使该用户全部登录令牌失效。
           超级管理员可另行为用户分配角色（多对多，改动即时生效）。
         </p>
       </div>

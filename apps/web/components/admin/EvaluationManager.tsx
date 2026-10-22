@@ -145,7 +145,7 @@ export function EvaluationManager() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <Select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="bg-white">
+        <Select aria-label="按状态筛选" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="bg-white">
           <option value="">全部状态</option>
           <option value="0">待执行</option>
           <option value="1">执行中</option>

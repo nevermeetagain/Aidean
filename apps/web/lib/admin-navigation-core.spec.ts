@@ -90,11 +90,11 @@ describe("admin-navigation-core.buildAdminNav（S2.3 侧边栏建树纯逻辑）
     expect(nav.groups[0].leaves.map((l) => l.href)).toEqual(["/admin/c1"]);
   });
 
-  it("DEFAULT_ADMIN_NAV = 7 板块三级树（33 叶经 sections，与 seed 同构）", () => {
+  it("DEFAULT_ADMIN_NAV = 7 板块三级树（32 叶经 sections，与 seed 同构；UX-26 裁定 8 合并兼容矩阵 33→32）", () => {
     expect(DEFAULT_ADMIN_NAV.overview?.href).toBe("/admin");
     expect(DEFAULT_ADMIN_NAV.groups).toHaveLength(7);
     const viaSections = DEFAULT_ADMIN_NAV.groups.flatMap((g) => (g.sections ?? []).flatMap((s) => s.children ?? []));
-    expect(viaSections).toHaveLength(33);
+    expect(viaSections).toHaveLength(32);
     // 所有 href 唯一
     const hrefs = DEFAULT_ADMIN_NAV.groups
       .flatMap((g) => [...g.leaves, ...(g.sections ?? []).flatMap((s) => s.children ?? [])])

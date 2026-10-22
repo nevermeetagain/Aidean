@@ -15,7 +15,7 @@ export default async function AdminOidcClientsPage() {
       <div>
         <h1 className="text-lg font-semibold tracking-tight text-slate-900">OIDC 客户端</h1>
         <p className="mt-1 text-xs text-slate-500">
-          平台 SSO 应用管理：编辑名称、回调 URI、scope 与启停；密钥不经此页发放或回显（由部署 env 供用）。停用即时使该客户端不可登录。
+          平台 SSO 应用管理：编辑名称、回调地址、授权范围与启停；密钥不经此页发放或回显（由部署环境变量提供）。停用即时使该客户端不可登录。
         </p>
       </div>
       <OidcClientsManager canWrite={canWrite} />

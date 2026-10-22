@@ -9,7 +9,7 @@ export default function AdminSyncPage() {
       <div>
         <h1 className="text-lg font-semibold tracking-tight text-slate-900">同步管理</h1>
         <p className="mt-1 text-xs text-slate-500">
-          查看同步批次状态与模型变更记录；支持回滚单条 SYNC/UPDATE 变更。
+          查看同步批次状态与模型变更记录；支持回滚单条同步 / 更新类变更。
         </p>
       </div>
       <SyncManager />
