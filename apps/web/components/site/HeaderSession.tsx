@@ -7,13 +7,13 @@
 // 挂载后探测 /api/v1/auth/me（HttpOnly Cookie 随请求自动携带），按结果渲染菜单/登录入口。
 // SSR 输出与加载态为同尺寸占位胶囊——静态壳可被 ISR 缓存，且无布局跳变。
 //
-// 导航性能优化（2026-10-09）：
-// 原实现每次 site 页面挂载都 fetch /api/v1/auth/me——site 导航间重复请求。
-// 改用 SWR 缓存：dedupingInterval=60s 内同 key 请求自动去重，跨页面导航复用缓存，
-// revalidateOnFocus 在用户切回标签页时静默刷新登录态。
-import useSWR from "swr";
+// 导航性能优化（2026-10-09）：原每次挂载 fetch → 改 SWR 60s 去重。
+// B11-06（2026-10-22，DEF-011-08 / Q-11-02=B）：SWR 改为全站单一会话 store（hooks/useSession）。
+// 无提示 Cookie 的游客零请求定案匿名（不再每页 401），有提示时全站最多探测一次并缓存；
+// 聚焦复核只在提示与已知态矛盾或已登录态过期时才发请求；跨标签登录/登出经 BroadcastChannel 同步。
 import { useEffect } from "react";
 
+import { useSession } from "../../hooks/useSession";
 import { refreshSession } from "../../lib/features/auth/client-refresh";
 
 import { UserMenu } from "./UserMenu";
@@ -23,30 +23,15 @@ type SessionState =
   | { status: "anonymous" }
   | { status: "authenticated"; nickname: string | null; tier: string | null };
 
-const authFetcher = async (url: string) => {
-  const res = await fetch(url, { credentials: "same-origin" });
-  if (!res.ok) throw new Error(String(res.status));
-  return (await res.json()) as {
-    data?: { user?: { nickname?: string | null; tier?: string | null } };
-  };
-};
-
 export function HeaderSession() {
-  const { data, error } = useSWR("/api/v1/auth/me", authFetcher, {
-    dedupingInterval: 60_000, // 60s 内同 key 请求去重——跨页面导航复用缓存
-    revalidateOnFocus: true, // 用户切回标签页时静默刷新
-    errorRetryCount: 1,
-  });
+  const session = useSession();
 
-  const state: SessionState = data
-    ? {
-        status: "authenticated",
-        nickname: data.data?.user?.nickname ?? null,
-        tier: data.data?.user?.tier ?? null,
-      }
-    : error
-      ? { status: "anonymous" }
-      : { status: "loading" };
+  const state: SessionState =
+    session.status === "authenticated"
+      ? { status: "authenticated", nickname: session.user?.nickname ?? null, tier: session.user?.tier ?? null }
+      : session.status === "anonymous"
+        ? { status: "anonymous" }
+        : { status: "loading" };
 
   // 静默续期：access TTL 15min，10min 周期换发避免使用中被弹回登录页
   useEffect(() => {

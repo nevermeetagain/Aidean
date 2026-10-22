@@ -14,11 +14,17 @@
  * - **乐观更新 + 回滚**：切换即时改本地映射再落库，失败回滚并按错误码归因（401→引导登录 / 20003→目标失效 / 其余→错误）。
  *
  * 复用：zustand（同 stores/compareStore 范式，本卡不新增 stores/ 文件，store 内联于此）。
+ *
+ * B11-06（2026-10-22，DEF-011-08 / Q-11-02=B）：登录判定改由全站会话 store（session-store.ts）给出。
+ * `features` 与会话定案并行发起；**已知匿名即跳过** `GET /user/favorites`（游客不再产生该 401）。
+ * 会话发生登录/登出/换号切换时清空本地映射，若此前已载入则按新身份重载（登录后收藏不回归）。
  */
 import { useEffect } from "react";
 import { create } from "zustand";
 
 import type { FavoriteItem, FavoriteRefType } from "@aidean/shared";
+
+import { sessionStore, type SessionStore } from "../lib/features/auth/session-store";
 
 /** 收藏唯一键（前端本地映射，非后端字段） */
 const favKey = (refType: FavoriteRefType, refId: string) => `${refType}:${refId}`;
@@ -40,6 +46,8 @@ interface FavoritesState {
 
 type FavoritesStore = FavoritesState & {
   ensureLoaded: () => Promise<void>;
+  /** 回到初始态（会话切换时调用） */
+  reset: () => void;
   setPending: (key: string, v: boolean) => void;
   applyCreate: (key: string, favoriteId: string) => void;
   applyDelete: (key: string) => void;
@@ -54,6 +62,9 @@ const initialState: FavoritesState = {
   pending: {},
 };
 
+/** ensureLoaded 代际计数（reset 自增） */
+let loadGeneration = 0;
+
 export const useFavoritesStore = create<FavoritesStore>()((set, get) => ({
   ...initialState,
 
@@ -62,37 +73,57 @@ export const useFavoritesStore = create<FavoritesStore>()((set, get) => ({
     const s = get();
     if (s.loaded || s.loading) return;
     set({ loading: true });
+    const session = sessionSource();
+    // 载入代际：会话切换触发 reset() 后，飞行中的旧身份结果一律丢弃（不回写旧用户的收藏映射）
+    const gen = loadGeneration;
+    const commit = (patch: Partial<FavoritesState>) => {
+      if (gen === loadGeneration) set(patch);
+    };
     try {
-      // ① 受控面：公开开关快照
-      const fRes = await fetch("/api/v1/system/features", { cache: "no-store" });
+      // ① 受控面：公开开关快照 ‖ 会话定案（并行；游客定案为零请求，见 session-store）
+      const [fRes, sess] = await Promise.all([
+        fetch("/api/v1/system/features", { cache: "no-store" }),
+        session.whenSettled(),
+      ]);
       const fBody = await fRes.json().catch(() => null);
       const enabled = !!(fBody?.data?.flags?.["favorites.enabled"] ?? false);
       if (!enabled) {
-        set({ enabled: false, authed: false, loaded: true, loading: false });
+        commit({ enabled: false, authed: false, loaded: true, loading: false });
+        return;
+      }
+      // 已知匿名：跳过 user/favorites 探针（DEF-011-08：此前游客每页一条 401）
+      if (sess.status !== "authenticated") {
+        commit({ enabled: true, authed: false, byKey: {}, loaded: true, loading: false });
         return;
       }
       // ② 会话收藏集合（首屏一次拉满 50 条覆盖常见量；401 视为未登录，403 视为开关已关）
       const favRes = await fetch("/api/v1/user/favorites?pageSize=50", { cache: "no-store" });
       if (favRes.status === 401) {
-        set({ enabled: true, authed: false, loaded: true, loading: false });
+        // 会话 store 认定已登录但收藏端点 401（令牌恰在两次请求间过期）：按未登录处理，并让会话复核
+        commit({ enabled: true, authed: false, loaded: true, loading: false });
+        void session.revalidate({ force: true });
         return;
       }
       if (favRes.status === 403) {
         // 载入窗口内后台关掉开关：按关闭处理，隐藏按钮/Tab
-        set({ enabled: false, authed: false, loaded: true, loading: false });
+        commit({ enabled: false, authed: false, loaded: true, loading: false });
         return;
       }
       const favBody = await favRes.json().catch(() => null);
       const items: FavoriteItem[] = Array.isArray(favBody?.data?.items) ? favBody.data.items : [];
       const byKey: Record<string, string> = {};
       for (const it of items) byKey[favKey(it.refType, it.refId)] = it.id;
-      set({ enabled: true, authed: favRes.ok, byKey, loaded: true, loading: false });
+      commit({ enabled: true, authed: favRes.ok, byKey, loaded: true, loading: false });
     } catch {
       // 网络/解析失败：保持 fail-open 隐藏（不阻断页面），标记 loaded 防风暴重试
-      set({ loaded: true, loading: false });
+      commit({ loaded: true, loading: false });
     }
   },
 
+  reset() {
+    loadGeneration++;
+    set({ ...initialState });
+  },
   setPending(key, v) {
     set((s) => ({ pending: { ...s.pending, [key]: v } }));
   },
@@ -107,6 +138,30 @@ export const useFavoritesStore = create<FavoritesStore>()((set, get) => ({
     });
   },
 }));
+
+/** 会话来源（默认全站单例；单测可注入） */
+let sessionSourceRef: SessionStore = sessionStore;
+function sessionSource(): SessionStore {
+  return sessionSourceRef;
+}
+let unbindSession: (() => void) | null = null;
+
+/** 绑定会话切换 → 收藏状态重置/重载（模块加载即绑定全站单例；单测可改绑注入的 store） */
+export function bindFavoritesToSession(store: SessionStore): () => void {
+  unbindSession?.();
+  sessionSourceRef = store;
+  const off = store.onTransition((_next, prev) => {
+    // 首次定案（unknown/loading → anonymous|authenticated）由 ensureLoaded 自身处理，不重置
+    if (prev.status !== "anonymous" && prev.status !== "authenticated") return;
+    const wasActive = useFavoritesStore.getState().loaded || useFavoritesStore.getState().loading;
+    useFavoritesStore.getState().reset();
+    // 已有消费者挂载过：按新身份重载（登录 → 拉收藏；登出 → 匿名短路，零 favorites 请求）
+    if (wasActive) void useFavoritesStore.getState().ensureLoaded();
+  });
+  unbindSession = off;
+  return off;
+}
+bindFavoritesToSession(sessionStore);
 
 /** 订阅受控开关：任一收藏相关组件挂载即触发一次载入。 */
 export function useFavoritesEnabled(): boolean {
