@@ -20,6 +20,18 @@ import AnnouncementBanner from "../../components/common/AnnouncementBanner";
 // 与 /partners 同口径 revalidate=300；后台保存 roadmap 组键时 revalidatePath("/") 即时失效。
 export const revalidate = 300;
 
+/**
+ * 裁定 6（EVD-UX-01，2026-10-22）：首页模型入口 4 卡保留，「API 平台详情入口」改指 /providers（原 /docs 名实不符）。
+ * 默认值/seed 已改；此处兼容库中已存的旧配置（同标题且仍指 /docs 才改写），管理员改成其它链接不受影响。
+ * 只在渲染层改写，不动 system_configs 数据（不导出：Next page 模块仅允许约定导出）。
+ */
+const API_PLATFORM_ENTRY_TITLE = "API 平台详情入口";
+function fixLegacyModelEntryHref<T extends { title: string; href?: string }>(entries: T[]): T[] {
+  return entries.map((e) =>
+    e.title === API_PLATFORM_ENTRY_TITLE && e.href === "/docs" ? { ...e, href: "/providers" } : e,
+  );
+}
+
 export default async function HomePage() {
   // S4「可见即可改」：首屏/价值点/模型入口三区块文案由 home.* 配置驱动（DB 不可用回退原文案）。
   // S7.4 公告消费闭环：首条有效公告作首页横幅（无则不渲染；跟随首页 revalidate，至多 5 分钟延迟）。
@@ -41,7 +53,8 @@ export default async function HomePage() {
         <PlatformIntro cards={valuePoints} />
       </SectionFrame>
 
-      <div aria-hidden="true" className="mx-auto max-w-6xl px-4 md:px-6"><div className="h-px bg-slate-200/70" /></div>
+      {/* UX-14：分隔线与页头/页脚同为全宽 + px-4/6 留白 */}
+      <div aria-hidden="true" className="w-full px-4 md:px-6"><div className="h-px bg-slate-200/70" /></div>
 
       <SectionFrame
         id="home-models"
@@ -49,7 +62,7 @@ export default async function HomePage() {
         title="模型能力入口"
         subtitle="从天梯图总览到逐维度对比，模型侧的四条常用路径。"
       >
-        <ModelSection entries={modelEntries} />
+        <ModelSection entries={fixLegacyModelEntryHref(modelEntries)} />
       </SectionFrame>
 
       <SectionFrame

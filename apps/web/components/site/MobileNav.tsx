@@ -8,9 +8,9 @@ import { NAV_ITEMS, type NavItem } from "../../lib/navigation";
 import { GlobalSearch } from "./GlobalSearch";
 
 /**
- * 移动端抽屉导航（<768px）。
- * 桌面端导航（SiteHeader 内 `hidden md:flex` 八项）保持 server 组件零 JS；
- * 本组件仅在 md 断点以下出现（整体 `md:hidden`），替换此前无功能的装饰汉堡占位。
+ * 抽屉导航（<1280px；UX-01 由 <768 调整，覆盖手机与 768–1279 平板/小屏）。
+ * 桌面端导航（SiteHeader 内 `hidden xl:flex` 八项）保持 server 组件零 JS；
+ * 本组件仅在 xl 断点以下出现（整体 `xl:hidden`，须与 SiteHeader 断点同步），替换此前无功能的装饰汉堡占位。
  *
  * 行为契约：
  * - 汉堡按钮切换抽屉开合（aria-expanded / aria-controls 可达）；
@@ -37,7 +37,7 @@ export function MobileNav({ items = NAV_ITEMS }: { items?: readonly NavItem[] } 
   }, [open]);
 
   return (
-    <div className="md:hidden">
+    <div className="xl:hidden">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

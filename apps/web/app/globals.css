@@ -17,6 +17,16 @@
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-danger: var(--danger);
+
+  /* UX-13（EVD-UX-01，WCAG 1.4.3 ≥4.5:1）：次要文字色在主题层统一重映射，不逐文件改类名。
+   * 默认 slate-400 #90a1b9 白底仅 2.63:1、slate-500 #62748e 在 slate-100 底 4.35:1 均不达标。
+   * 全仓 slate-400/500 仅用作文字/占位符/图标描边（无 bg/border 用法，亦无深色底承载），
+   * 重映射不影响边框与背景；保持 400 浅于 500 浅于 600 的层级：
+   *   slate-400 → #5f6f86：白 5.12 / slate-50 4.89 / slate-100 4.67
+   *   slate-500 → #526277：白 6.23 / slate-50 5.95 / slate-100 5.68
+   * 本仓无暗色令牌集（data-theme 仅覆盖品牌色相）；将来引入暗色主题时须在其选择器内回写这两个变量。 */
+  --color-slate-400: #5f6f86;
+  --color-slate-500: #526277;
 }
 
 /*
@@ -30,7 +40,7 @@
   --primary: #0f766e; /* teal-700 默认品牌主色（青碧深，切换器第一位；AA 小字≥4.5:1） */
   --primary-foreground: #ffffff;
   --muted: #f1f5f9; /* slate-100 */
-  --muted-foreground: #64748b; /* slate-500 */
+  --muted-foreground: #526277; /* UX-13：与重映射后 slate-500 同值（slate-100 底 5.68:1；原 #64748b 仅 4.34） */
   --card: #ffffff;
   --border: #e2e8f0; /* slate-200 */
   --accent: #14b8a6; /* teal-400 */

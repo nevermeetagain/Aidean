@@ -95,7 +95,7 @@ export async function SiteHeader() {
   const navItems = filterNavByFeatureFlags(NAV_ITEMS, await getFeatureFlags());
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/70">
-      <div className="mx-auto flex h-[64px] max-w-6xl items-center justify-between gap-6 px-4 md:px-6">
+      <div className="flex h-[64px] w-full items-center justify-between gap-6 px-4 md:px-6">
         {/* 品牌 logo：水墨手写体（用户设计稿生成，透明底；见 docs/assets/Aidean文字设计.svg） */}
         <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Aidean 首页">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -109,8 +109,10 @@ export async function SiteHeader() {
           <span className="hidden text-[11px] font-semibold tracking-[0.2em] text-slate-400 md:inline">AIDEAN</span>
         </Link>
 
-        {/* 桌面端八项导航（首页+资讯+产品/价格/文档/路线图/合作/关于；产品下拉含天梯图/服务商/AideanWiki） */}
-        <nav aria-label="主导航" className="hidden items-center gap-0.5 md:flex">
+        {/* 桌面端八项导航（首页+资讯+产品/价格/文档/路线图/合作/关于；产品下拉含天梯图/服务商/云服务天梯图/产品）。
+            UX-01（EVD-UX-01 §6）：断点 md→xl——768/1024 展开八项+搜索会横向溢出 103px、lg 在 1024 逐字竖排，
+            故 <1280 统一走 MobileNav 抽屉。UX-14：容器全宽 + px-4/6 留白（UI §2.4 M-WIDE，与正文同口径）。 */}
+        <nav aria-label="主导航" className="hidden items-center gap-0.5 xl:flex">
           {navItems.map((item) => (
             <NavEntry key={item.key} item={item} />
           ))}
@@ -118,14 +120,14 @@ export async function SiteHeader() {
 
         <div className="flex items-center gap-2.5">
           {/* 桌面端顶栏搜索（TASK-034，唯一搜索入口：桌面此处 / 移动端 MobileNav 抽屉内） */}
-          <div className="hidden md:block">
+          <div className="hidden xl:block">
             <GlobalSearch variant="desktop" />
           </div>
           <div className="hidden items-center gap-2 rounded-full border border-slate-200/80 bg-slate-50 px-2.5 py-1.5 shadow-sm sm:flex">
             <ThemeSwitcher />
           </div>
           <HeaderSession />
-          {/* 移动端抽屉导航（<768px）：替换此前 aria-hidden 装饰汉堡占位，提供可用导航；
+          {/* 抽屉导航（<1280px，UX-01）：替换此前 aria-hidden 装饰汉堡占位，提供可用导航；
               与桌面端共用同一按开关过滤后的 navItems（TASK-018，单一真源，client 端不二次取数）。 */}
           <MobileNav items={navItems} />
         </div>

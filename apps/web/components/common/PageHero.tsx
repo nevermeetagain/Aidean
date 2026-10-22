@@ -70,7 +70,8 @@ export function PageHero({ title, description, crumbs, children }: PageHeroProps
           {/* 主色竖条：标题视觉锚点（品牌色相随主题变体） */}
           <span aria-hidden="true" className="mt-1.5 h-9 w-1 shrink-0 rounded-full bg-gradient-to-b from-primary to-accent md:h-11" />
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-4xl">{title}</h1>
+            {/* UX-15（EVD-UX-01，UI §2.3 刻度上限 32px）：页面 H1 移动 24 / 桌面 32，原 md:text-4xl=36px 越界 */}
+            <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-[32px] md:leading-tight">{title}</h1>
             {description && (
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-[15px]">{description}</p>
             )}

@@ -67,7 +67,8 @@ export function SiteFooter() {
 
   return (
     <footer className="border-t border-slate-200 bg-slate-50/60">
-      <div className="mx-auto max-w-6xl px-4 py-12 md:px-6">
+      {/* UX-14：容器全宽 + px-4/6 留白，与页头/正文同口径（UI §2.4 M-WIDE） */}
+      <div className="w-full px-4 py-12 md:px-6">
         {/* 三栏共占整体宽度 50% 居中（窄屏退化全宽堆叠） */}
         <div className="mx-auto flex w-full flex-col gap-10 sm:w-1/2 sm:min-w-80 sm:flex-row sm:justify-between">
           <FooterColumn title="产品" links={PRODUCT_LINKS} />

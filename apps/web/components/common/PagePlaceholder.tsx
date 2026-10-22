@@ -55,7 +55,8 @@ export function PagePlaceholder({ title, description, children }: PagePlaceholde
               className="mt-1.5 h-9 w-1 shrink-0 rounded-full bg-gradient-to-b from-primary to-accent md:h-11"
             />
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-4xl">{title}</h1>
+              {/* UX-15（EVD-UX-01，UI §2.3 刻度上限 32px）：页面 H1 移动 24 / 桌面 32，原 md:text-4xl=36px 越界 */}
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-[32px] md:leading-tight">{title}</h1>
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-500 md:text-[15px]">
                 {description}
               </p>

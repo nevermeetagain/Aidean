@@ -55,7 +55,7 @@ export const HOME_VALUE_POINTS_JSON = `[{"icon":"BarChart3","title":"天梯图�
 export const HOME_VALUE_POINTS_DEFAULT: HomeCard[] = HomeCardsSchema.parse(JSON.parse(HOME_VALUE_POINTS_JSON));
 
 /** home.modelEntries 规范 JSON 真源（与重构前 ModelSection MODEL_ENTRIES 逐字一致） */
-export const HOME_MODEL_ENTRIES_JSON = `[{"icon":"Trophy","title":"模型对比天梯图","description":"实测性能矩阵可视化呈现，旗舰与高性价比模型一榜看尽。","href":"/models"},{"icon":"Cloud","title":"大模型云服务天梯图","description":"聚合主流云厂商 API 平台的价格、稳定性与限流观测。","href":"/ladder"},{"icon":"Scale","title":"模型对比","description":"把候选模型加入对比车，逐维度横向打分与取舍。","href":"/evaluations"},{"icon":"BookOpen","title":"API 平台详情入口","description":"各平台资费细则、免费额度与计费规则逐项拆解。","href":"/docs"}]`;
+export const HOME_MODEL_ENTRIES_JSON = `[{"icon":"Trophy","title":"模型对比天梯图","description":"实测性能矩阵可视化呈现，旗舰与高性价比模型一榜看尽。","href":"/models"},{"icon":"Cloud","title":"大模型云服务天梯图","description":"聚合主流云厂商 API 平台的价格、稳定性与限流观测。","href":"/ladder"},{"icon":"Scale","title":"模型对比","description":"把候选模型加入对比车，逐维度横向打分与取舍。","href":"/evaluations"},{"icon":"BookOpen","title":"API 平台详情入口","description":"各平台资费细则、免费额度与计费规则逐项拆解。","href":"/providers"}]`;
 export const HOME_MODEL_ENTRIES_DEFAULT: HomeCard[] = HomeCardsSchema.parse(JSON.parse(HOME_MODEL_ENTRIES_JSON));
 
 /** 前台读取兜底：合法 JSON → 校验后的 Hero；任何异常 → 回默认（深拷贝防篡改常量） */

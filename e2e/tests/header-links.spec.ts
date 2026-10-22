@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 // 冒烟：SiteHeader 八项导航契约顺序（2026-09-17 改版：一级「资讯」替代「模型」）+ Logo 回首页
-// #71 产品下拉七子项：模型天梯图 / 模型服务提供商（主站服务，不进分类组、绑定不变）+
+// #71 产品下拉八子项（UX-17 补云服务天梯图）：模型天梯图 / 模型服务提供商 / 云服务天梯图（主站服务，不进分类组、绑定不变）+
 // 四个产品统一模板介绍页，按二级分类分组：特供（AideanBot）/ 开源（AideanFleet）/
 // 合作（AideanWiki、AideanThesis）/ 其它（SkillsCloud）。
 // #73 契约：下拉 label 用纯中文名（下拉空间紧凑），介绍页/列表页才用双语；
@@ -23,6 +23,7 @@ test.describe("header-links", () => {
       // 主站服务入口（天梯图 / 服务提供商），非产品、不进分类组
       "/models",
       "/providers",
+      "/ladder", // UX-17 云服务天梯图
       // 产品按二级分类分组：特供 → 开源 → 合作 → 其它
       "/products/wechatrag",
       "/products/aideanfleet",
@@ -44,6 +45,7 @@ test.describe("header-links", () => {
     for (const cn of [
       "模型天梯图",
       "模型服务提供商",
+      "云服务天梯图",
       "信源引擎机器人",
       "自动化舰队引擎",
       "独立知识百科",
