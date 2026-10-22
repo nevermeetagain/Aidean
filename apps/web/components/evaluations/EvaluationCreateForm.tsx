@@ -2,24 +2,28 @@
 
 /**
  * EvaluationCreateForm：对比测评创建表单（EVAL-01）。
- * - 模型 chips 直接驱动 compareStore（与 Dock 共享同一选择源）；
+ * - 模型选择（UX-08）：可搜索 Combobox 按关键字服务端取一页（≤50 条，按厂商分组），
+ *   不再一次铺开全量模型 chips；已选模型以可移除 chips 呈现（aria-pressed=true），
+ *   选择直接驱动 compareStore（与 Dock 共享同一选择源）；
  * - 预计花费 = 已选数 × 每模型价（单价文本来自后端 props，客户端零硬编码价）；
  * - 提交防重复（submitting 禁用）；成功后跳转详情页轮询终态。
  */
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { EVALUATION_LIMITS } from "../../lib/features/evaluation/types";
 import { useCompareStore } from "../../stores/compareStore";
 import { formatEvalPrice, type PricingCurrency } from "@aidean/shared";
+import { Combobox, type ComboboxOption } from "../common/Combobox";
+import type { ModelOption } from "../../lib/features/ladder/model-options";
+import { createModelOptionsLoader } from "./model-combobox-loader";
 
 interface Props {
-  models: { id: string; nameDisplay: string; slug: string | null }[];
   perModelYuan: number; // 后端 pricing 配置（非客户端硬编码）
   currency: PricingCurrency;
   perModelLabel: string; // 后端格式化，如 ¥2.00
 }
 
-export function EvaluationCreateForm({ models, perModelYuan, currency, perModelLabel }: Props) {
+export function EvaluationCreateForm({ perModelYuan, currency, perModelLabel }: Props) {
   const router = useRouter();
   const selected = useCompareStore((s) => s.items);
   const toggle = useCompareStore((s) => s.toggle);
@@ -28,6 +32,23 @@ export function EvaluationCreateForm({ models, perModelYuan, currency, perModelL
   const [error, setError] = useState<string | null>(null);
 
   const count = selected.length;
+  // 搜索结果 id → 模型（取 slug 写入 compareStore）
+  const seenRef = useRef(new Map<string, ModelOption>());
+
+  const loadOptions = useMemo(() => createModelOptionsLoader(seenRef.current), []);
+
+  const isSelected = useCallback((id: string) => selected.some((s) => s.modelId === id), [selected]);
+  const isDisabled = useCallback(
+    (id: string) => !selected.some((s) => s.modelId === id) && selected.length >= EVALUATION_LIMITS.MAX_MODELS,
+    [selected],
+  );
+  const handlePick = useCallback(
+    (option: ComboboxOption) => {
+      const m = seenRef.current.get(option.value);
+      toggle({ modelId: option.value, nameDisplay: m?.name ?? option.label, slug: m?.slug ?? null });
+    },
+    [toggle],
+  );
   const canSubmit =
     count >= EVALUATION_LIMITS.MIN_MODELS &&
     count <= EVALUATION_LIMITS.MAX_MODELS &&
@@ -67,31 +88,41 @@ export function EvaluationCreateForm({ models, perModelYuan, currency, perModelL
 
   return (
     <div className="mt-8 space-y-6">
-      {/* 模型选择 chips */}
+      {/* 模型选择：可搜索 Combobox + 已选 chips */}
       <section aria-labelledby="model-pick-title">
         <h2 id="model-pick-title" className="text-sm font-semibold text-slate-700">
           选择模型（{count}/{EVALUATION_LIMITS.MAX_MODELS}）
         </h2>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {models.map((m) => {
-            const active = selected.some((s) => s.modelId === m.id);
-            return (
-              <button
-                key={m.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => toggle({ modelId: m.id, nameDisplay: m.nameDisplay, slug: m.slug })}
-                className={
-                  active
-                    ? "rounded-full border border-primary bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary transition-colors"
-                    : "rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 transition-colors hover:border-primary/40 hover:text-primary"
-                }
-              >
-                {m.nameDisplay}
-              </button>
-            );
-          })}
-        </div>
+        <Combobox
+          className="mt-3"
+          testId="eval-model-combobox"
+          label="搜索模型"
+          placeholder="输入模型名搜索，如 GPT、Claude、Qwen"
+          load={loadOptions}
+          onSelect={handlePick}
+          isSelected={isSelected}
+          isDisabled={isDisabled}
+          emptyText="没有匹配的模型，换个关键字试试"
+        />
+        {count > 0 ? (
+          <ul aria-label="已选模型" className="mt-3 flex flex-wrap gap-2">
+            {selected.map((m) => (
+              <li key={m.modelId}>
+                {/* 已选 chip：点击移除（aria-pressed=true，可访问名=模型名） */}
+                <button
+                  type="button"
+                  aria-pressed="true"
+                  title={`移除 ${m.nameDisplay}`}
+                  onClick={() => toggle(m)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-primary bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/15"
+                >
+                  {m.nameDisplay}
+                  <span aria-hidden="true" className="text-xs opacity-70">✕</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {count < EVALUATION_LIMITS.MIN_MODELS && (
           <p className="mt-2 text-xs text-slate-400">
             至少选择 {EVALUATION_LIMITS.MIN_MODELS} 个模型（当前 {count} 个）

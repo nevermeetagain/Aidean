@@ -8,6 +8,10 @@
  *   其余板块不展示版本切换。
  * - 键盘：tablist roving tabindex，左右方向键/Home/End 移动焦点；
  *   初始激活读 ?tab=（服务端忽略该参数），无参数默认「模型配置」。
+ * - UX-16：切换 Tab 回写 ?tab=<id>（replace 语义，不新增历史条目），刷新/分享保持当前板块。
+ *   采用 window.history.replaceState（Next 15 App Router 已与原生 history 集成，useSearchParams 同步），
+ *   而非 router.replace：后者会对 force-dynamic 的 /user/console 触发一次 RSC 服务端重渲染（4 路取数），
+ *   纯前端 Tab 切换无需服务端往返。
  *
  * 导航性能优化（2026-10-09）：
  * playground 面板加 playgroundMounted 门控——CallPlayground（898 行 + echarts）
@@ -39,6 +43,15 @@ const ALL_TAB_ITEMS: ReadonlyArray<{ id: ConsoleTabId; label: string }> = [...BA
 
 function isTabId(value: string): value is ConsoleTabId {
   return ALL_TAB_ITEMS.some((item) => item.id === value);
+}
+
+/** UX-16：把当前 Tab 回写到 ?tab=（替换当前历史条目，不新增；其余 query 原样保留） */
+function syncTabToUrl(id: ConsoleTabId) {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  if (url.searchParams.get("tab") === id) return;
+  url.searchParams.set("tab", id);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
 }
 
 /**
@@ -128,6 +141,7 @@ export function ConsoleWorkspace({
   function select(id: ConsoleTabId, focus = false) {
     setActive(id);
     if (focus) tabRefs.current[id]?.focus();
+    syncTabToUrl(id);
   }
 
   function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {

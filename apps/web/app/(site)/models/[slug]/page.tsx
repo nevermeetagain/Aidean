@@ -267,7 +267,7 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
         </nav>
 
         <div className="mx-auto mt-16 flex max-w-md flex-col items-center rounded-lg border border-[var(--border)] bg-[var(--card)] px-8 py-12 text-center shadow-sm">
-          <p className="text-base font-semibold text-slate-700">该模型暂未收录</p>
+          <h1 className="text-base font-semibold text-slate-700">该模型暂未收录</h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-500">
             你访问的模型不在当前天梯数据集中，可返回榜单查看已收录模型。
           </p>
@@ -320,7 +320,7 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
 
   return (
     <main className="px-4 py-14 md:px-6">
-      <nav aria-label="面包屑" className="mb-8 text-sm text-slate-500">
+      <nav aria-label="面包屑" className="mb-4 text-sm text-slate-500">
         <Link href="/" className="transition-colors hover:text-primary">
           首页
         </Link>
@@ -331,6 +331,11 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
         <span aria-hidden="true"> / </span>
         <span aria-current="page">{model.nameDisplay}</span>
       </nav>
+
+      {/* UX-12：页面唯一 H1 = 模型名（24–32px）；「基本介绍」等保持 h2 小节 */}
+      <h1 className="mb-8 text-2xl font-bold tracking-tight text-foreground md:text-[32px] md:leading-tight">
+        {model.nameDisplay}
+      </h1>
 
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
         {/* 左侧 sticky 锚点目录 */}

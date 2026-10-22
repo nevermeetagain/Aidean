@@ -67,7 +67,7 @@ export default async function ModelsPage() {
         hero={
           <>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">LADDER / 模型天梯图</p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">模型性能天梯图</h1>
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-foreground md:text-[32px] md:leading-tight">模型性能天梯图</h1>
           </>
         }
       />

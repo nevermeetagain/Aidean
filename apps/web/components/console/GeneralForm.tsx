@@ -4,6 +4,8 @@
  * 控制台通用形态表单 + 版本形态切换（Task A.4.1 / A.4.2；redesign-console-workspace 改版）。
  *
  * - GeneralForm：四档绑定分组卡（OPUS/SONNET/FABLE/HAIKU），绑定徽章删除/添加均为本地草稿；
+ *   添加绑定（UX-09）：每档一个可搜索模型 Combobox（按模型名搜索 GET /api/v1/models，≤50 条/次），
+ *   不再要求用户手输内部 modelId；已绑定到其他档的模型在下拉中置灰不可选；
  *   跨档（含同档）重复 modelId 前端先行红字并禁用保存，通过后整组平铺 PUT tier-mappings；
  *   free 区独立只读卡（「系统配置」徽章 + freeNote），无任何编辑控件。
  * - ModeSwitch：「通用版/专业版」Segmented 受控切换（consoleStore.mode 持久化），
@@ -14,7 +16,10 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MODEL_TIER_ORDER, type ModelTier } from "@aidean/shared";
 
 import type { TierMappingItem, TierMappingsView } from "../../lib/features/user/service";
-import { Button, Input } from "@aidean/ui";
+import { Button } from "@aidean/ui";
+import { Combobox, type ComboboxOption } from "../common/Combobox";
+import { createModelOptionsLoader } from "../evaluations/model-combobox-loader";
+import type { ModelOption } from "../../lib/features/ladder/model-options";
 import { useConsoleStore, type ConsoleMode } from "../../stores/consoleStore";
 
 /** 档名中文展示映射（自定义合理中文，与后台枚举解耦） */
@@ -53,13 +58,9 @@ interface GeneralFormProps {
 
 export function GeneralForm({ tierMappings }: GeneralFormProps) {
   const [draft, setDraft] = useState<TierDraft>(() => cloneTierDraft(tierMappings.tiers));
-  // 各档『+ 添加绑定』输入行的受控值
-  const [inputs, setInputs] = useState<Record<ModelTier, string>>({
-    OPUS: "",
-    SONNET: "",
-    FABLE: "",
-    HAIKU: "",
-  });
+  // 模型搜索（UX-09）：四档共用一个取数器与 id→模型缓存
+  const seenRef = useRef(new Map<string, ModelOption>());
+  const loadModelOptions = useMemo(() => createModelOptionsLoader(seenRef.current), []);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savedNotice, setSavedNotice] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -75,17 +76,34 @@ export function GeneralForm({ tierMappings }: GeneralFormProps) {
     [draft]
   );
 
-  /** 添加绑定：非空校验先行（红字），加入本地草稿后清空输入 */
-  function handleAdd(tier: ModelTier) {
-    const value = inputs[tier].trim();
-    if (!value) return;
-    setDraft((cur) => ({
-      ...cur,
-      [tier]: [...cur[tier], { modelId: value, modelName: "" }],
-    }));
-    setInputs((cur) => ({ ...cur, [tier]: "" }));
+  /** 添加绑定（Combobox 选中）：已在本档则移除（切换语义），否则加入本地草稿 */
+  function handlePick(tier: ModelTier, option: ComboboxOption) {
+    const name = seenRef.current.get(option.value)?.name ?? option.label;
+    setDraft((cur) => {
+      const exists = cur[tier].some((item) => item.modelId === option.value);
+      return {
+        ...cur,
+        [tier]: exists
+          ? cur[tier].filter((item) => item.modelId !== option.value)
+          : [...cur[tier], { modelId: option.value, modelName: name }],
+      };
+    });
     setSaveError(null);
   }
+
+  /** 该模型是否已绑定在指定档以外的档位（下拉置灰，前端先行防跨档重复） */
+  function boundElsewhere(tier: ModelTier, modelId: string): boolean {
+    return MODEL_TIER_ORDER.some((t) => t !== tier && draft[t].some((item) => item.modelId === modelId));
+  }
+
+  /** 重复提示用名称（无名称回退短 id） */
+  const nameOf = (modelId: string): string => {
+    for (const t of MODEL_TIER_ORDER) {
+      const hit = draft[t].find((item) => item.modelId === modelId && item.modelName);
+      if (hit) return hit.modelName;
+    }
+    return modelId.slice(0, 8);
+  };
 
   function handleRemove(tier: ModelTier, modelId: string) {
     setDraft((cur) => ({
@@ -192,32 +210,19 @@ export function GeneralForm({ tierMappings }: GeneralFormProps) {
               })}
             </ul>
 
-            {/* 添加绑定输入行 */}
-            <div className="mt-3 flex items-center gap-2">
-              <Input
-                value={inputs[tier]}
-                onChange={(e) => setInputs((cur) => ({ ...cur, [tier]: e.target.value }))}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAdd(tier);
-                  }
-                }}
-                placeholder="输入 modelId 后添加"
-                className="px-2.5 py-1.5 focus:border-primary"
-              />
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                onClick={() => handleAdd(tier)}
-                disabled={!inputs[tier].trim()}
-                className="shrink-0 whitespace-nowrap px-3 py-1.5 disabled:cursor-not-allowed"
-              >
-                + 添加绑定
-              </Button>
-            </div>
-            {/* 空值由按钮 disabled 拦截（非空校验先行），无红字分支需要渲染 */}
+            {/* 添加绑定：可搜索模型下拉（UX-09，替代手输 modelId） */}
+            <Combobox
+              className="mt-3"
+              testId={`tier-add-${tier}`}
+              label={`为${TIER_LABELS_CN[tier]}添加绑定模型`}
+              placeholder="+ 搜索模型添加绑定"
+              load={loadModelOptions}
+              onSelect={(option) => handlePick(tier, option)}
+              isSelected={(id) => draft[tier].some((item) => item.modelId === id)}
+              isDisabled={(id) => boundElsewhere(tier, id)}
+              emptyText="没有匹配的模型，换个关键字试试"
+              inputClassName="h-9"
+            />
           </article>
         ))}
       </div>
@@ -233,7 +238,7 @@ export function GeneralForm({ tierMappings }: GeneralFormProps) {
       {/* 去重校验红字（先于提交的前端守卫）+ 保存动作 */}
       {hasDuplicates && (
         <p role="alert" className="mt-4 text-sm text-red-600" data-testid="tier-dup-error">
-          同一模型不可绑定多个等级：{[...duplicateIds].join("、")}
+          同一模型不可绑定多个等级：{[...duplicateIds].map(nameOf).join("、")}
         </p>
       )}
       {saveError && (

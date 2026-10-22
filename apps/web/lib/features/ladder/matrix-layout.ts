@@ -10,6 +10,12 @@
  * - 刻度序列 [100, 100−g, …, 0]；100 不被 g 整除时末尾收敛到 0（如 g=3 → [100, 97, …, 1, 0]）；
  * - 档位行号 floor 自顶入档：第 k 行覆盖 (100−(k+1)·g, 100−k·g]；
  * - 以整数"百分位"参与运算（分数至多两位小数），规避浮点漂移。
+ *
+ * UX-07 轴顶规则（2026-10-22，用户裁定采纳调研报告建议；对应《界面交互文档》§三 2.4「顶格=最高综合分向上取整」）：
+ * - 顶格 = 已载条目最高综合分向上取整到整数，再上取整到分度值 g 的整数倍，封顶 100（computeAxisTop）；
+ *   例：最高 98、g=0.1 → 顶格 98（原恒 100 时首屏空 20 行）；最高 97.3、g=5 → 98 → 100。
+ * - buildLayout 的 axisTopScore 缺省仍为 100（保持 v2.1 纯函数口径与既有单测）；天梯组件传入 computeAxisTop。
+ * - 分带按分数自顶向下加载，首带即含最高分，故续载后轴顶不变、卡片行号跨带稳定。
  */
 import type { LadderRankEntry } from "./types";
 
@@ -138,12 +144,28 @@ function buildColumns(entries: LadderRankEntry[], bandOf: (v: number) => number,
   return cols;
 }
 
+/** UX-07：轴顶 = ceil(最高综合分) 再上取整到 g 的整数倍，封顶 100；无条目时 100 */
+export function computeAxisTop(entries: LadderRankEntry[], granularity: number): number {
+  if (!entries.length) return 100;
+  const bandCents = Math.max(1, Math.round(Math.max(granularity, 0.01) * 100));
+  let maxCents = 0;
+  for (const e of entries) {
+    const c = Math.min(10000, Math.max(0, Math.round(e.score.composite * 100)));
+    if (c > maxCents) maxCents = c;
+  }
+  const intCeil = Math.ceil(maxCents / 100) * 100;
+  const aligned = Math.ceil(intCeil / bandCents) * bandCents;
+  return Math.min(10000, Math.max(bandCents, aligned)) / 100;
+}
+
 export function buildLayout(
   entries: LadderRankEntry[],
   useSeries: boolean,
   granularity: number,
   /** v2.7 渐进轴底（分数）：轴只铺已加载区间 [axisFloor, 100]，随分带加载向下生长（缺省 0=全量程） */
-  axisFloorScore = 0
+  axisFloorScore = 0,
+  /** UX-07 轴顶（分数）：缺省 100（v2.1 恒 100 口径）；天梯组件传 computeAxisTop(entries, g) */
+  axisTopScore = 100
 ): MatrixLayout | null {
   if (!entries.length) return null;
 
@@ -157,11 +179,13 @@ export function buildLayout(
   const bandSize = Math.max(granularity, 0.01);
   const bandCents = Math.max(1, Math.round(bandSize * 100));
   const floorCents = Math.min(10000, Math.max(0, Math.round(axisFloorScore * 100)));
-  const bandCount = Math.max(1, Math.ceil((10000 - floorCents) / bandCents));
-  // 档位行号：第 k 行覆盖 (100−(k+1)·g, 100−k·g]，自顶向下取整入档（恰在刻度值上的分数归属其所在行）
+  // 轴顶（UX-07）：不低于「轴底 + 一档」，不高于 100
+  const topCents = Math.min(10000, Math.max(Math.round(axisTopScore * 100), floorCents + bandCents));
+  const bandCount = Math.max(1, Math.ceil((topCents - floorCents) / bandCents));
+  // 档位行号：第 k 行覆盖 (T−(k+1)·g, T−k·g]（T=轴顶），自顶向下取整入档（恰在刻度值上的分数归属其所在行）
   const bandOf = (v: number): number => {
-    const cents = Math.min(10000, Math.max(0, Math.round(v * 100)));
-    return Math.min(bandCount - 1, Math.floor((10000 - cents) / bandCents));
+    const cents = Math.min(topCents, Math.max(0, Math.round(v * 100)));
+    return Math.min(bandCount - 1, Math.floor((topCents - cents) / bandCents));
   };
 
   const dom = entries.filter((e) => e.vendorCountry === "CN");
@@ -201,7 +225,7 @@ export function buildLayout(
   // 底边刻度贴齐容器底缘（row=bandCount）。轴底随分带加载下移（80→60→…→0）
   const ticks: ScoreTick[] = [];
   for (let k = 0; k < bandCount; k += 1) {
-    ticks.push({ row: k, score: (10000 - k * bandCents) / 100 });
+    ticks.push({ row: k, score: (topCents - k * bandCents) / 100 });
   }
   ticks.push({ row: bandCount, score: floorCents / 100 });
 

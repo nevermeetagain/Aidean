@@ -63,7 +63,7 @@ export default function EvaluationDetailPage({ params }: { params: Promise<{ id:
 
   if (state === "guest") {
     return (
-      <main className="mx-auto w-full max-w-3xl px-4 py-14 text-center md:px-6">
+      <main className="w-full px-4 py-14 text-center md:px-6">
         <p className="text-base font-semibold text-slate-700">请先登录</p>
         <p className="mt-2 text-sm text-slate-500">登录后可查看测评详情。</p>
         <Link
@@ -78,7 +78,7 @@ export default function EvaluationDetailPage({ params }: { params: Promise<{ id:
 
   if (state === "loading") {
     return (
-      <main className="mx-auto w-full max-w-6xl px-4 py-14 md:px-6">
+      <main className="w-full px-4 py-14 md:px-6">
         <p className="py-10 text-center text-sm text-slate-400">加载中…</p>
       </main>
     );
@@ -86,7 +86,7 @@ export default function EvaluationDetailPage({ params }: { params: Promise<{ id:
 
   if (state === "error" || !evaluation) {
     return (
-      <main className="mx-auto w-full max-w-3xl px-4 py-14 text-center md:px-6">
+      <main className="w-full px-4 py-14 text-center md:px-6">
         <p className="text-base font-semibold text-slate-700">无法查看该测评</p>
         <p className="mt-2 text-sm text-slate-500">{message || "记录不存在或无权访问"}</p>
         <Link
@@ -102,7 +102,7 @@ export default function EvaluationDetailPage({ params }: { params: Promise<{ id:
   const statusMeta = STATUS_META[evaluation.status] ?? { label: String(evaluation.status), cls: "bg-slate-100 text-slate-500" };
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-14 md:px-6">
+    <main className="w-full px-4 py-14 md:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-xl font-bold text-slate-800">对比测评详情</h1>

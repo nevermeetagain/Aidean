@@ -22,6 +22,10 @@
  *   触底判定「距容器底 <240px」由此锚定已载末行；**停底自动续载链已删除**——新带加载后轴向下生长，
  *   用户必然离开底缘，再滚动才触发下一带（严格「下滑加载」，杜绝人未到末行先触底的静默级联）。
  * - v2.1：定距档口径（分度值 = 相邻两行性能差值）——分度值下拉（LadderBoard 行2，排序右方）切换即时重排。
+ * - UX-06（2026-10-22）：列宽下限 MIN_COL_W=128px——默认按视口宽度（纯 CSS 断点，SSR 即正确、零布局跳动）
+ *   只显示贴轴的前 N 列，保证卡片名称 ≥10 字符可见（原 1440 下卡宽 ~85px 仅露 3 字符、390 下出现 16px 窄卡）；
+ *   「展开全部」后列宽保持 ≥128px 并允许横向滚动。
+ * - UX-07（2026-10-22）：轴顶 = 已载最高综合分向上取整（computeAxisTop，见 matrix-layout），首屏即见首张卡。
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -31,13 +35,49 @@ import { CompareAddButton } from "../site/CompareAddButton";
 import { FavoriteButton } from "../site/FavoriteButton";
 import { LADDER_SHOWCASE_AUTO_SCROLL, type LadderRankEntry } from "../../lib/features/ladder/types";
 import { getTier, type TierThresholds, type PerformanceTier } from "../../lib/features/ladder/config";
-import { ROW_H, buildLayout } from "../../lib/features/ladder/matrix-layout";
+import { ROW_H, buildLayout, computeAxisTop } from "../../lib/features/ladder/matrix-layout";
 import type { MatrixColumn, MatrixLayout, ScoreTick } from "../../lib/features/ladder/matrix-layout";
 
 /** 卡片高度 */
 const CARD_H = 44;
 /** 中央性能轴宽 */
 const AXIS_W = 64;
+/** UX-06 列宽下限（px）：卡片名称 12px 字号下 ≥10 字符可见 */
+const MIN_COL_W = 128;
+/**
+ * UX-06 按视口宽度的列显隐（纯 CSS 断点，SSR 首帧即正确）：下标 i = 该侧列序（与热门收敛 slice 同序，靠前者优先保留）。
+ * 双侧：每侧容量 ≈ floor((视口 − 页边距 − 轴宽) / 2 / 128)：<640=1、sm=2、lg=3、xl=4、1440=5、1720=6、1980=7。
+ * 单侧（只看一个阵营时）：容量 ≈ floor((视口 − 页边距 − 轴宽) / 128)。
+ * 超出表长的列默认隐藏（"hidden"），仅「展开全部」后显示。字面量供 Tailwind 扫描，勿拼接。
+ */
+const COL_VIS_TWO_SIDES = [
+  "flex",
+  "hidden sm:flex",
+  "hidden lg:flex",
+  "hidden xl:flex",
+  "hidden min-[1440px]:flex",
+  "hidden min-[1720px]:flex",
+  "hidden min-[1980px]:flex",
+] as const;
+const COL_VIS_ONE_SIDE = [
+  "flex",
+  "flex",
+  "hidden sm:flex",
+  "hidden sm:flex",
+  "hidden md:flex",
+  "hidden lg:flex",
+  "hidden lg:flex",
+  "hidden xl:flex",
+  "hidden xl:flex",
+  "hidden min-[1440px]:flex",
+  "hidden 2xl:flex",
+  "hidden min-[1720px]:flex",
+] as const;
+function colVisibility(index: number, sides: 1 | 2, expanded: boolean): string {
+  if (expanded) return "flex";
+  const table = sides === 2 ? COL_VIS_TWO_SIDES : COL_VIS_ONE_SIDE;
+  return table[index] ?? "hidden";
+}
 /** 近底部触发加载的提前量（px）——v2.7 渐进轴下即「距已载末行」的提前量 */
 const LOAD_MORE_THRESHOLD = 240;
 /** L2-4：自动循环滚动的最小条目数——低于此值不启动自动滚动 */
@@ -265,15 +305,25 @@ function MatrixColumnTrack({
   tone,
   pageType,
   tierThresholds,
+  visibility,
+  expanded,
 }: {
   col: MatrixColumn;
   height: number;
   tone: ColumnTone;
   pageType: LadderPageType;
   tierThresholds: TierThresholds;
+  /** UX-06 显隐类（含 display，见 colVisibility） */
+  visibility: string;
+  /** 展开全部：列宽 ≥ MIN_COL_W，容器横向滚动 */
+  expanded: boolean;
 }) {
   return (
-    <div className="flex min-w-0 flex-1 basis-0 flex-col border-r border-slate-200 last:border-r-0">
+    <div
+      data-matrix-col=""
+      className={`${visibility} flex-1 basis-0 flex-col border-r border-slate-200 last:border-r-0`}
+      style={{ minWidth: expanded ? MIN_COL_W : 0 }}
+    >
       <div className="sticky top-0 z-10 bg-white">
         <div className={`h-1 w-full ${TONE_STRIP[tone]}`} aria-hidden="true" />
         <div className="flex h-11 flex-col justify-center border-b border-slate-200 bg-white/95 px-1">
@@ -369,9 +419,11 @@ interface LadderMatrixBoardProps {
 }
 
 export function LadderMatrixBoard({ entries, pageType, granularity, tierThresholds, hasMore, loadingMore, onLoadMore, hotVendorCount, loadingBandLabel, bandHint, axisFloor }: LadderMatrixBoardProps) {
+  // UX-07：轴顶 = 已载最高综合分向上取整（分带自顶向下加载，首带即含最高分，续载后不变）
+  const axisTop = useMemo(() => computeAxisTop(entries, granularity), [entries, granularity]);
   const layout = useMemo(
-    () => buildLayout(entries, pageType === "models", granularity, axisFloor ?? 0),
-    [entries, pageType, granularity, axisFloor]
+    () => buildLayout(entries, pageType === "models", granularity, axisFloor ?? 0, axisTop),
+    [entries, pageType, granularity, axisFloor, axisTop]
   );
   const showIntl = useLadderStore((s) => s.showIntl);
   const tiers = tierThresholds ?? { high: 80, mid: 60 };
@@ -453,6 +505,25 @@ export function LadderMatrixBoard({ entries, pageType, granularity, tierThreshol
 
   // ---- R-83 T4 热门开发商列收敛（usestate 在前满足 hooks 规则；派生计算在 layout 空检之后）----
   const [showAllVendors, setShowAllVendors] = useState(false);
+  // UX-06：挂载后统计被宽度断点隐藏的列数（仅用于提示条文案/按钮，不参与布局 → 无 CLS）
+  const [widthHidden, setWidthHidden] = useState<number | null>(null);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const count = () => {
+      const cols = el.querySelectorAll<HTMLElement>("[data-matrix-col]");
+      let hidden = 0;
+      cols.forEach((c) => {
+        if (window.getComputedStyle(c).display === "none") hidden += 1;
+      });
+      setWidthHidden(hidden);
+    };
+    count();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(count);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [layout, showAllVendors, showIntl, showDom, hotVendorCount]);
 
   if (!entries.length || !layout) {
     return (
@@ -468,6 +539,7 @@ export function LadderMatrixBoard({ entries, pageType, granularity, tierThreshol
   const perSide = Math.max(1, Math.ceil(vendorLimit / 2));
   const leftCols = collapsing ? layout.left.slice(0, perSide) : layout.left;
   const rightCols = collapsing ? layout.right.slice(0, perSide) : layout.right;
+  const expanded = showAllVendors;
 
   // 阵营开关仅对 models 双侧数据生效（stations/单阵营数据恒对称布局，不受开关影响）；
   // 开关只做呈现层显隐——布局高度与轴刻度仍按全量数据推导，切换不跳变、量尺恒定。
@@ -481,6 +553,15 @@ export function LadderMatrixBoard({ entries, pageType, granularity, tierThreshol
         : "center";
   const showLeft = !campControls || showIntl;
   const showRight = !campControls || showDom;
+  // UX-06：可见侧数决定每侧容量（单侧时容量翻倍）
+  const visibleSides: 1 | 2 = showLeft && showRight && leftCols.length > 0 && rightCols.length > 0 ? 2 : 1;
+  // 可能被宽度断点隐藏：任一可见侧列数超过最窄屏容量（双侧 1 / 单侧 2）——SSR 即确定，提示条高度恒定
+  const mayHideByWidth = !expanded && Math.max(showLeft ? leftCols.length : 0, showRight ? rightCols.length : 0) > (visibleSides === 2 ? 1 : 2);
+  const renderedCount = (showLeft ? leftCols.length : 0) + (showRight ? rightCols.length : 0);
+  const shownCount = Math.max(0, renderedCount - (widthHidden ?? 0));
+  // 是否有可展开的列：挂载前按 SSR 推断（mayHideByWidth），挂载后按实测隐藏列数
+  const canExpand = expanded || collapsing || (widthHidden === null ? mayHideByWidth : widthHidden > 0);
+  const showBar = collapsing || mayHideByWidth || expanded || (vendorLimit > 0 && totalVendors > vendorLimit);
   const axisTone: AxisTone = !campControls
     ? layout.split
       ? "both"
@@ -502,10 +583,12 @@ export function LadderMatrixBoard({ entries, pageType, granularity, tierThreshol
       visibleRows={{ from: viewFrom, to: viewTo }}
     />
   );
+  // 展开全部时侧容器不再 min-w-0：列宽 ≥128px 撑开网格，由滚动容器横向滚动
+  const sideCls = expanded ? "flex items-stretch" : "flex min-w-0 items-stretch";
   const leftEl = (
-    <div className="flex min-w-0 items-stretch">
+    <div className={sideCls}>
       {showLeft
-        ? leftCols.map((col) => (
+        ? leftCols.map((col, i) => (
             <MatrixColumnTrack
               key={col.key}
               col={col}
@@ -513,16 +596,29 @@ export function LadderMatrixBoard({ entries, pageType, granularity, tierThreshol
               tone={layout.split ? "intl" : "all"}
               pageType={pageType}
               tierThresholds={tiers}
+              // 显隐下标 = 列的优先级名次（保留最重要的列）：双侧阵营时左组按优先级正序排列（下标即名次）；
+              // 单侧对称布局时左组为倒序（最高优先级在末尾贴轴），名次自末尾计
+              visibility={colVisibility(layout.split ? i : leftCols.length - 1 - i, visibleSides, expanded)}
+              expanded={expanded}
             />
           ))
         : null}
     </div>
   );
   const rightEl = (
-    <div className="flex min-w-0 items-stretch">
+    <div className={sideCls}>
       {showRight
-        ? rightCols.map((col) => (
-            <MatrixColumnTrack key={col.key} col={col} height={layout.height} tone="dom" pageType={pageType} tierThresholds={tiers} />
+        ? rightCols.map((col, i) => (
+            <MatrixColumnTrack
+              key={col.key}
+              col={col}
+              height={layout.height}
+              tone="dom"
+              pageType={pageType}
+              tierThresholds={tiers}
+              visibility={colVisibility(i, visibleSides, expanded)}
+              expanded={expanded}
+            />
           ))
         : null}
     </div>
@@ -530,19 +626,24 @@ export function LadderMatrixBoard({ entries, pageType, granularity, tierThreshol
 
   return (
     <section aria-label="天梯矩阵图">
-      {/* R-83 T4 热门开发商收敛条：默认只显示前 N 家（按 vendors.priority 贴轴序），其余一键展开 */}
-      {collapsing || (vendorLimit > 0 && totalVendors > vendorLimit) ? (
-        <div className="mb-2 flex items-center justify-end gap-2 text-xs text-slate-500">
+      {/* R-83 T4 热门开发商收敛条 + UX-06 窄屏列收敛提示：默认只显示贴轴的前 N 家（热门优先级 + 屏宽容量），其余一键展开。
+          是否渲染在 SSR 即确定（mayHideByWidth），高度恒定；按钮在无隐藏列时 invisible 占位，挂载后的计数更新不引起位移 */}
+      {showBar ? (
+        <div className="mb-2 flex h-7 items-center justify-end gap-2 text-xs text-slate-500" data-testid="ladder-vendor-bar">
           <span>
-            已显示 {Math.min(vendorLimit, totalVendors)} / {totalVendors} 家开发商
+            {widthHidden === null && !collapsing
+              ? `共 ${totalVendors} 家开发商`
+              : `已显示 ${shownCount} / ${totalVendors} 家开发商`}
             {collapsing ? "（按后台热门优先级排序）" : ""}
           </span>
           <button
             type="button"
             onClick={() => setShowAllVendors((v) => !v)}
-            className="rounded-md border border-slate-200 bg-white px-2 py-1 font-medium text-primary transition-colors hover:border-primary/40 hover:bg-primary/5"
+            className={`rounded-md border border-slate-200 bg-white px-2 py-1 font-medium text-primary transition-colors hover:border-primary/40 hover:bg-primary/5 ${
+              canExpand ? "" : "invisible"
+            }`}
           >
-            {collapsing ? `展开全部 ${totalVendors} 家` : "仅看热门"}
+            {expanded ? (vendorLimit > 0 ? "仅看热门" : "收起") : `展开全部 ${totalVendors} 家`}
           </button>
         </div>
       ) : null}
@@ -554,7 +655,7 @@ export function LadderMatrixBoard({ entries, pageType, granularity, tierThreshol
         onScroll={handleScroll}
         onMouseEnter={() => setAutoScrollPaused(true)}
         onMouseLeave={() => setAutoScrollPaused(false)}
-        className="max-h-[72vh] overflow-x-hidden overflow-y-auto rounded-2xl border border-slate-200/80 bg-white shadow-[var(--shadow-md)]"
+        className={`max-h-[72vh] ${expanded ? "overflow-x-auto" : "overflow-x-hidden"} overflow-y-auto rounded-2xl border border-slate-200/80 bg-white shadow-[var(--shadow-md)]`}
       >
         <div className={`grid items-stretch ${GRID_COLS[axisPos]}`}>
           {axisPos === "left" ? (

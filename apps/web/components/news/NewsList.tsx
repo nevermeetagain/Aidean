@@ -76,6 +76,14 @@ function GridCard({ item }: { item: NewsCard }) {
 export function NewsList({ items }: { items: NewsCard[] }) {
   const catParam = useSearchParams().get("cat") ?? undefined;
   const activeCat = catParam && isNewsCategory(catParam) ? catParam : undefined;
+  return <NewsListView items={items} activeCat={activeCat} />;
+}
+
+/**
+ * 纯展示（不读 useSearchParams）：供 /news 的 Suspense fallback 服务端直出「全部」列表，
+ * 水合后与 NewsList 结构一致，消除 fallback→列表替换造成的布局位移（UX-29 CLS）。
+ */
+export function NewsListView({ items, activeCat }: { items: NewsCard[]; activeCat?: string }) {
   const filtered = activeCat ? items.filter((n) => n.category === activeCat) : items;
   const [lead, ...rest] = filtered;
 

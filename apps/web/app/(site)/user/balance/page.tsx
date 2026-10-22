@@ -72,7 +72,7 @@ export default async function BalancePage({
   const totalPages = Math.max(1, Math.ceil(ledger.total / PAGE_SIZE));
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 pb-14 pt-0 md:px-6">
+    <main className="w-full px-4 pb-14 pt-0 md:px-6">
       <PageHero
         title="余额"
         description="查看账户余额与可用余额，进行兑换码兑换、余额充值，并逐笔核对消费流水与用量明细。"

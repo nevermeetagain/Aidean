@@ -96,7 +96,8 @@ export const authService = {
           LOGIN_LOCK_MINUTES
         );
       }
-      throw new ApiError(ERROR_CODES.INVALID_CREDENTIALS, "凭据无效");
+      // UX-18：面向用户的主流文案（契约 §4 10003 语义「账号或密码错误」；防枚举同码同文案不变）
+      throw new ApiError(ERROR_CODES.INVALID_CREDENTIALS, "邮箱或密码错误");
     }
     // 凭据核验通过后才检查账号状态与锁定窗口（不破坏防枚举语义）
     if (user.status !== "ACTIVE") {

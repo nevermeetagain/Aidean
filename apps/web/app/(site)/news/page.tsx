@@ -9,7 +9,7 @@ import React from "react";
 import type { Metadata } from "next";
 
 import { PagePlaceholder } from "../../../components/common/PagePlaceholder";
-import { NewsList } from "../../../components/news/NewsList";
+import { NewsList, NewsListView } from "../../../components/news/NewsList";
 import { listPublishedNews } from "../../../lib/features/news/repository";
 
 export const revalidate = 300;
@@ -27,13 +27,9 @@ export default async function NewsPage() {
       title="资讯"
       description="平台动态与功能指引：记录 Aidean 的版本更新与使用说明；内容仅涉及本站事实，外部合作与服务承诺以合作页与沟通确认为准。"
     >
-      <React.Suspense
-        fallback={
-          <p className="rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center text-sm text-muted-foreground">
-            加载资讯列表…
-          </p>
-        }
-      >
+      {/* UX-29（CLS）：fallback 直出与「全部」分类同构的完整列表（原为一行「加载资讯列表…」占位，
+          水合后整块替换为列表 → 桌面 CLS 0.170 / 移动 0.414）；无 ?cat= 时水合前后 DOM 等高零位移 */}
+      <React.Suspense fallback={<NewsListView items={items} />}>
         <NewsList items={items} />
       </React.Suspense>
     </PagePlaceholder>

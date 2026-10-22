@@ -1,7 +1,8 @@
 /**
  * 公告读模型（S7.4 消费闭环）单测。
  * 覆盖：isStillActive 纯函数（null/未来/过去）；listActiveAnnouncements 映射（date 取 publishedAt??createdAt）
- *      + 前台过滤条件（isPublished/isActive/deletedAt null/expiredAt）+ DB 失败回落空数组。
+ *      + 前台过滤条件（isPublished/isActive/deletedAt null/expiredAt）
+ *      + 失败口径（UX-03）：listActiveAnnouncements 抛错、loadActiveAnnouncements 区分失败/空、横幅失败回落 null。
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -11,7 +12,12 @@ const prismaState = vi.hoisted(() => ({
 
 vi.mock("../../../db/prisma", () => ({ prisma: prismaState }));
 
-import { isStillActive, listActiveAnnouncements } from "../repository";
+import {
+  isStillActive,
+  listActiveAnnouncements,
+  loadActiveAnnouncements,
+  pickBannerAnnouncement,
+} from "../repository";
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -62,9 +68,33 @@ describe("listActiveAnnouncements", () => {
     expect(Array.isArray(arg.where.OR)).toBe(true);
   });
 
-  it("DB 失败 → 回落空数组（不抛错，非侵入）", async () => {
+  // UX-03：原口径「DB 失败 → 空数组」导致停库时页面显示「当前暂无公告」，与真实空数据不可区分；
+  // 改为失败上抛，由页面渲染错误态（期望随行为更新）。
+  it("DB 失败 → 抛错（不再伪装成空数组）", async () => {
     prismaState.announcement.findMany.mockRejectedValueOnce(new Error("db down"));
-    const list = await listActiveAnnouncements();
-    expect(list).toEqual([]);
+    await expect(listActiveAnnouncements()).rejects.toThrow("db down");
+  });
+});
+
+describe("loadActiveAnnouncements（页面读模型：失败≠空）", () => {
+  it("成功且无数据 → ok:true + 空列表（真实空态）", async () => {
+    prismaState.announcement.findMany.mockResolvedValueOnce([]);
+    expect(await loadActiveAnnouncements()).toEqual({ ok: true, items: [] });
+  });
+
+  it("DB 失败 → ok:false（错误态，不落空列表）", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    prismaState.announcement.findMany.mockRejectedValueOnce(new Error("db down"));
+    const res = await loadActiveAnnouncements();
+    expect(res.ok).toBe(false);
+    expect("items" in res).toBe(false);
+  });
+});
+
+describe("pickBannerAnnouncement（首页横幅非侵入）", () => {
+  it("DB 失败 → null（不阻断首页）", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    prismaState.announcement.findMany.mockRejectedValueOnce(new Error("db down"));
+    expect(await pickBannerAnnouncement()).toBeNull();
   });
 });

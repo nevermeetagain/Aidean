@@ -148,7 +148,7 @@ export function ApiKeysPanel() {
       </div>
       <p className="mt-1 text-sm text-slate-600">
         这是平台发给你的<strong>钥匙</strong>。第三方程序拿它来调用平台里的 AI 模型，花的钱从你的平台余额里扣。
-        钥匙只在创建时完整显示一次，请立即复制保存；删除后立即可用（历史消耗记录仍保留）。
+        钥匙只在创建时完整显示一次，请立即复制保存；删除后立即失效（历史消耗记录仍保留）。
       </p>
 
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
