@@ -1,0 +1,143 @@
+B11-06 验收核验记录（DEF-011-08 游客 401 噪声 · Q-11-02=B 不改 /auth/me 契约）
+版本: v0.1 | 更新: 2026-10-22 | 变更: 首版——代码/文档门禁 + 运行态前后对比 + 变异检验真实输出
+工作树: wt/auth-probe（基线 origin/main 7f1fa22）；代码提交 534c722，文档提交 b75166e；读数取自 HEAD 代码（b75166e 相对 534c722 仅改 docs/ 与 scripts/check-docs-facts.mjs）
+环境: Linux arm64 沙箱；Node v22.23.3；pnpm 9.0.0；PG 16.14（embedded-postgres 二进制，一次性库 :55461，trust 本地）；无 Redis（REDIS_URL 未设，RS256 密钥进程内生成）；next build + next start :3061
+纪律: 本文件不含连接串口令/令牌；测试账号为 seed 公开演示账号
+
+════ 1. 类型检查：pnpm --filter web exec tsc --noEmit --incremental false
+EXIT=0
+
+════ 2. Lint：pnpm --filter web lint（唯一 Warning 为既有 components/common/SafeImage.tsx <img>，非本卡改动）
+> web@0.1.0 lint /workspace/work/aidean-wt/auth-probe/apps/web
+> next lint
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+./components/common/SafeImage.tsx
+19:14  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+EXIT=0
+
+════ 3. 全量 web vitest（单命令 >120s 沙箱上限，按 --shard=1..4/4 分四片跑完；合计见末行）
+-- shard 1/4
+ Test Files  37 passed | 1 skipped (38)
+      Tests  481 passed | 3 skipped (484)
+EXIT=0
+-- shard 2/4
+ Test Files  38 passed (38)
+      Tests  278 passed (278)
+EXIT=0
+-- shard 3/4
+ Test Files  37 passed | 1 skipped (38)
+      Tests  377 passed | 2 skipped (379)
+EXIT=0
+-- shard 4/4
+ Test Files  37 passed (37)
+      Tests  383 passed (383)
+EXIT=0
+   [shard 1]  ✓ lib/features/auth/__tests__/session-store.spec.ts (21 tests) 175ms
+   [shard 2] stderr | lib/features/auth/__tests__/middleware.spec.ts > middleware RS256/JWKS 守卫 > 过期 access → 307 /login?redirect=…
+   [shard 2] stderr | lib/features/auth/__tests__/middleware.spec.ts > middleware RS256/JWKS 守卫 > kid 不在 JWKS（伪造/跨环境令牌）→ 307
+   [shard 2] stderr | lib/features/auth/__tests__/middleware.spec.ts > middleware RS256/JWKS 守卫 > JWKS 拉取失败且无缓存公钥 → fail-closed 307（不 crash）
+   [shard 2]  ✓ lib/features/auth/__tests__/middleware.spec.ts (10 tests) 242ms
+   [shard 2]  ✓ lib/features/favorites/__tests__/favorites-session-gate.spec.ts (6 tests) 126ms
+   [shard 3]  ✓ lib/features/auth/__tests__/middleware-session-hint.spec.ts (5 tests) 25ms
+合计: Test Files 149 passed | 2 skipped (151)；Tests 1519 passed | 5 skipped (1524)；四片 EXIT 均 0
+
+════ 4. node scripts/check-docs-rule.mjs
+[铁律1] docs rule PASS：apps/ 下无实体 .md（README.md 豁免）。
+[铁律-数字] 数字真源断言 PASS（锚=文档，代码=实测）：schema model=73, enum=37, admin API 域=38, admin 页面=34, Next.js=15.0.x
+EXIT=0
+
+════ 5. node scripts/check-docs-facts.mjs（R10-01：spec-count 期望 195→198，本卡新增 3 个 spec）
+✅ schema-models: schema.prisma model 数 = 73（TASK-047 新增 FxDailyRate 日汇率快照 72→73；前次 M-002 TASK-058 68→72） → expected=73, actual=73
+✅ seed-models: seed.ts 模型条数（modelsData 静态条目 + DEMO_MODEL_COUNT 生成器）≥ 50（下限式，R-83 T1：模型数不限由后台配置） → expected=>=50, actual=1000
+✅ seed-no-official: seed.ts 中无 OFFICIAL/官方测试（provenance 修复后） → expected=0, actual=0
+✅ lib-features-count: lib/features 子目录数 = 23（TASK-033 新增 lib/features/search 22→23，R10-01；前次 TASK-090 收口 18→22，含 lib/features/pricing 等新增目录） → expected=23, actual=23
+✅ aidean-ui-refs: @aidean/ui 在 apps/web/components 的 import 数 = 70（TASK-064 新增 ChangeFeed/MonitoringPanel 68→70；前次 TASK-074 BenchmarkDialog 67→68） → expected=70, actual=70
+✅ route-count: apps/web route.ts 文件数（含 app/ 全域）= 163（TASK-063 新增 admin/monitoring 4 端点 159→163，R10-01；前次 TASK-081 158→159） → expected=163, actual=163
+✅ page-count: apps/web page.tsx 文件数 = 58（TASK-064 新增 (admin)/admin/monitoring/page.tsx 57→58） → expected=58, actual=58
+✅ next-version: Next.js 版本 = 15.x → expected=15.x, actual=15.x
+✅ spec-count: spec 文件总数 = 198（B11-06 新增 auth/__tests__/session-store.spec.ts、auth/__tests__/middleware-session-hint.spec.ts、favorites/__tests__/favorites-session-gate.spec.ts 195→198，R10-01；前次 B11-08 新增 apps/web/lib/features/admin/__tests__/scripts-executions-route.spec.ts 194→195，R10-01；前次 TASK-030 新增 e2e/tests/promotion-billing.spec.ts 193→194，R10-01） → expected=198, actual=198
+✅ queryraw-biz: apps/web 业务代码 $queryRaw/$executeRaw = 0 → expected=0, actual=0
+✅ batch-count: admin batch 路由数 = 15 → expected=15, actual=15
+✅ db-doc-product-fields: 《数据库文档》products 行已登记 display_name 与 ProductCategory（DB 模型变更文档同步） → expected=2/2, actual=2/2
+✅ category-label-single-source: apps/web 中硬编码「label: "特供"」式分类映射 = 0（文案唯一来源 lib/product-label.ts） → expected=0, actual=0
+✅ usage-stats-anchor-pair: 《API架构设计方案》含 usage-stats-architecture 锚 且《API接口文档》含其回链（铁律 2 双向互引） → expected=2/2, actual=2/2
+✅ rtm-row-count: 《需求追溯矩阵》REQ 行数 = V0.10.0 03a RTM 行数（TASK-051 入库，grep -c "^| REQ-"） → expected=158, actual=158
+✅ rtm-gap-has-task: 《需求追溯矩阵》中「未实现/部分实现」行均有任务号或「暂不执行」理由（TASK-051） → expected=0, actual=0
+
+All 16 assertions passed.
+EXIT=0
+
+════ 6. 运行态：游客四页网络失败计数（Playwright headless chromium，探针 netfail-probe.mjs，详见 netfail.txt）
+-- 修前（7f1fa22 build）
+   / authMe=1 favorites=0 net401=1 consoleErrors=1
+   /models authMe=1 favorites=1 net401=2 consoleErrors=2
+   /pricing authMe=1 favorites=0 net401=1 consoleErrors=1
+   /ladder authMe=1 favorites=1 net401=2 consoleErrors=2
+   TOTAL 401=6
+-- 修后（534c722 代码 build，第 1 轮）
+   / authMe=0 favorites=0 net401=0 consoleErrors=0
+   /models authMe=0 favorites=0 net401=0 consoleErrors=0
+   /pricing authMe=0 favorites=0 net401=0 consoleErrors=0
+   /ladder authMe=0 favorites=0 net401=0 consoleErrors=0
+   TOTAL 401=0
+-- 修后（b75166e 重新 build，第 2 轮复跑）
+   / authMe=0 favorites=0 net401=0 consoleErrors=0
+   /models authMe=0 favorites=0 net401=0 consoleErrors=0
+   /pricing authMe=0 favorites=0 net401=0 consoleErrors=0
+   /ladder authMe=0 favorites=0 net401=0 consoleErrors=0
+   TOTAL 401=0
+探针 EXIT: 修前 EXIT=0 / 修后1 EXIT=0 / 修后2 EXIT=0
+
+════ 7. 运行态：跨标签登出同步（crosstab-probe.mjs）
+{"step":"api-login","status":200}
+{"step":"crosstab-logout","bUserMenuBefore":1,"bUserMenuAfter":0,"bLoginLinkAfter":1,"bAuthMeRequestsAfterLogout":0,"bFavoritesRequestsAfterLogout":0,"bReloaded":false}
+EXIT=0
+
+════ 8. 运行态：middleware 提示 Cookie 与契约（curl，修后 build）
+## guest GET / (no cookies)
+HTTP/1.1 200 OK
+x-nextjs-cache: HIT
+## GET / with aidean_token=x
+HTTP/1.1 200 OK
+set-cookie: aidean_session_hint=1; Path=/; SameSite=lax
+x-middleware-set-cookie: aidean_session_hint=1; Path=/; SameSite=lax
+## GET / with stale hint only
+HTTP/1.1 200 OK
+set-cookie: aidean_session_hint=; Path=/; Max-Age=0; SameSite=lax
+x-middleware-set-cookie: aidean_session_hint=; Path=/; Max-Age=0; SameSite=lax
+## contract: GET /api/v1/auth/me anonymous
+{"code":10004,"message":"请先登录","data":null,"requestId":"342d9897-a73d-424d-9dad-321700893107"}
+HTTP=401
+
+════ 9. 既有 e2e 定向复跑（E2E_BASE_URL=http://localhost:3061，修后 build）
+-- e2e/web/favorites.spec.ts（登录收藏→控制台→取消、未登录引导、越权）
+  ✓  1 [web] › e2e/web/favorites.spec.ts:81:7 › favorites：收藏→控制台可见→取消→未登录引导→他人越权 › ① + ②：登录收藏模型→控制台出现→取消后消失 (3.7s)
+  ✓  2 [web] › e2e/web/favorites.spec.ts:122:7 › favorites：收藏→控制台可见→取消→未登录引导→他人越权 › ③：未登录点击收藏 → 跳 /login?redirect=<站内回跳> (1.2s)
+  ✓  3 [web] › e2e/web/favorites.spec.ts:137:7 › favorites：收藏→控制台可见→取消→未登录引导→他人越权 › ④：他人 DELETE 本人收藏行 → 40000（越权即『不存在』，防枚举） (710ms)
+  3 passed (6.8s)
+EXIT=0
+-- e2e/tests/auth-guard.spec.ts
+  ✓  1 [flows] › e2e/tests/auth-guard.spec.ts:6:7 › auth-guard › 未登录访问 /user/console → 重定向登录页并携带 redirect 回跳参数 (726ms)
+  ✓  2 [flows] › e2e/tests/auth-guard.spec.ts:17:7 › auth-guard › /login 渲染：h1/h2 含「登录」、微信扫码块隐藏（D4）、邮箱+密码输入框存在 (754ms)
+  ✓  3 [flows] › e2e/tests/auth-guard.spec.ts:33:7 › auth-guard › 头部未登录态出现 /login 登录入口，主导航八项不受影响 (1.0s)
+  3 passed (3.7s)
+EXIT=0
+
+════ 10. 变异检验（证明新单测不是空断言；改动后按 git checkout 还原）
+M1: 删除 session-store.ts 中 3 处 'if (inflight) return inflight;'（拆掉单飞）
+   × createSessionStore > ② 有提示：20 个并发消费者 → auth/me 只发 1 次，且结果一致 18ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 20 passed (21)
+   还原: git checkout + sha256 前16位比对 MATCH=True
+M2: useFavorites.ts 匿名短路改为 if (false && …)（拆掉已知匿名跳过 favorites）
+   × useFavoritesStore × sessionStore > ① 游客（无提示 Cookie）：跳过 user/favorites，且不探测 auth/me 14ms
+   × useFavoritesStore × sessionStore > ④ 匿名 → 登录：会话切换自动重载收藏 3ms
+   × useFavoritesStore × sessionStore > ⑤ 登录 → 登出：清空映射，重载走匿名短路（零 favorites 请求） 53ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  lib/features/favorites/__tests__/favorites-session-gate.spec.ts > useFavoritesStore × sessionStore > ① 游客（无提示 Cookie）：跳过 user/favorites，且不探测 auth/me
+   还原: git checkout -q；git status 无残留
+MUT1_EXIT=1  MUT2_EXIT=1（变异后定向单测 exit=1 = 断言有效；还原后全量见 §3）
