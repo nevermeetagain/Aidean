@@ -7,14 +7,16 @@
  * - 软删确认 + 批量操作
  * - 点击行展开 offerings 管理子面板
  */
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Dialog, Button, Input, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Label } from "@aidean/ui";
 
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { PanelState, usePanelResource } from "./PanelState";
+import { panelTestIds } from "../../lib/admin/panel-resource";
 
-interface ProviderRow {
+export interface ProviderRow {
   id: string;
   code: string;
   name: string;
@@ -57,9 +59,20 @@ const emptyForm = {
   sortOrder: 0,
 };
 
+/** 列表数据形状（信封 data） */
+export type ProvidersListData = { items: ProviderRow[]; total: number };
+
+/** 五态外壳 testid 前缀（B11-05）；根/子态/重试一律经 panelTestIds 生成，不手拼 */
+export const PROVIDERS_PANEL_PREFIX = "admin-providers";
+
+/** 首屏地址（单测锁定 loader 无参调用的请求 URL，与改造前完全一致） */
+export const PROVIDERS_LIST_URL = "/api/v1/admin/providers?pageSize=50";
+
+export const loadProviders = (signal?: AbortSignal) =>
+  adminFetch<ProvidersListData>(PROVIDERS_LIST_URL, { signal });
+
 export function ProvidersManager() {
-  const [rows, setRows] = useState<ProviderRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const ids = panelTestIds(PROVIDERS_PANEL_PREFIX);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<ProviderRow | null>(null);
@@ -73,21 +86,7 @@ export function ProvidersManager() {
   const [offerings, setOfferings] = useState<OfferingRow[]>([]);
   const [offeringsLoading, setOfferingsLoading] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const res = await adminFetch<{ items: ProviderRow[]; total: number }>("/api/v1/admin/providers?pageSize=50");
-    setLoading(false);
-    if (res.ok && res.data) {
-      setRows(res.data.items);
-      setMessage(null);
-    } else {
-      setMessage(res.message);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const { resource, reload, refresh } = usePanelResource(loadProviders, (d) => d.items.length === 0);
 
   async function loadOfferings(providerId: string) {
     setOfferingsLoading(true);
@@ -144,7 +143,7 @@ export function ProvidersManager() {
       if (res.ok) {
         setCreating(false);
         setMessage("已更新");
-        void load();
+        refresh();
       } else {
         setMessage(res.message);
       }
@@ -157,7 +156,7 @@ export function ProvidersManager() {
       if (res.ok) {
         setCreating(false);
         setMessage("已创建");
-        void load();
+        refresh();
       } else {
         setMessage(res.message);
       }
@@ -172,7 +171,7 @@ export function ProvidersManager() {
     setDeleteTarget(null);
     if (res.ok) {
       setMessage("已删除");
-      void load();
+      refresh();
     } else {
       setMessage(res.message);
     }
@@ -189,7 +188,7 @@ export function ProvidersManager() {
     if (res.ok) {
       setSelectedIds(new Set());
       setMessage(`批量${action} 完成: ${res.data?.updated ?? 0} 条受影响`);
-      void load();
+      refresh();
     } else {
       setMessage(res.message);
     }
@@ -245,7 +244,7 @@ export function ProvidersManager() {
       )}
 
       <div className="mb-4 flex items-center gap-3">
-        <Button onClick={handleCreate}>新增提供商</Button>
+        <Button data-testid={`${ids.root}-create`} onClick={handleCreate}>新增提供商</Button>
         {selectedIds.size > 0 && (
           <>
             <Button variant="outline" disabled={batchBusy} onClick={() => void executeBatch("activate")}>批量启用</Button>
@@ -253,28 +252,31 @@ export function ProvidersManager() {
             <Button variant="outline" disabled={batchBusy} onClick={() => setPendingDelete(true)}>批量删除</Button>
           </>
         )}
-        <span className="text-sm text-muted-foreground">共 {rows.length} 条</span>
       </div>
 
-      <AdminDataTable
-        rows={rows}
-        columns={columns}
-        rowKey={(r: ProviderRow) => r.id}
-        busy={loading}
-        selectable
-        selectedIds={selectedIds}
-        onToggleRow={(id: string) => {
-          const next = new Set(selectedIds);
-          if (next.has(id)) next.delete(id);
-          else next.add(id);
-          setSelectedIds(next);
-        }}
-        onToggleAll={() => {
-          if (rows.every(r => selectedIds.has(r.id))) setSelectedIds(new Set());
-          else setSelectedIds(new Set(rows.map(r => r.id)));
-        }}
-        expandedRowId={expandedProvider}
-        expandedRowRender={() => (
+      <PanelState testId={ids.root} resource={resource} onRetry={reload} emptyText="暂无模型提供商">
+        {(data) => (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">共 {data.items.length} 条</p>
+            <AdminDataTable
+              rows={data.items}
+              columns={columns}
+              rowKey={(r: ProviderRow) => r.id}
+              rowTestId={(r: ProviderRow) => `${ids.root}-row-${r.id}`}
+              selectable
+              selectedIds={selectedIds}
+              onToggleRow={(id: string) => {
+                const next = new Set(selectedIds);
+                if (next.has(id)) next.delete(id);
+                else next.add(id);
+                setSelectedIds(next);
+              }}
+              onToggleAll={() => {
+                if (data.items.every(r => selectedIds.has(r.id))) setSelectedIds(new Set());
+                else setSelectedIds(new Set(data.items.map(r => r.id)));
+              }}
+              expandedRowId={expandedProvider}
+              expandedRowRender={() => (
             <div className="p-4">
               <h4 className="mb-3 text-sm font-semibold">模型挂载 (Offerings)</h4>
               {offeringsLoading ? (
@@ -321,11 +323,15 @@ export function ProvidersManager() {
               )}
             </div>
         )}
-      />
+            />
+          </div>
+        )}
+      </PanelState>
 
-      {/* Create/Edit Dialog */}
+      {/* Create/Edit Dialog：条件挂载（同 B11-03b 口径，避免 Dialog 内 hooks 在 node 单测触发双 React 副本） */}
+      {creating ? (
       <Dialog
-        open={creating}
+        open
         onClose={() => setCreating(false)}
         title={editing ? "编辑提供商" : "新增模型提供商"}
         className="max-w-lg"
@@ -406,10 +412,12 @@ export function ProvidersManager() {
           </div>
         </div>
       </Dialog>
+      ) : null}
 
-      {/* Delete Confirm */}
+      {/* Delete Confirm：同样条件挂载 */}
+      {deleteTarget || pendingDelete ? (
       <ConfirmDialog
-        open={!!deleteTarget || pendingDelete}
+        open
         title="确认删除"
         message={pendingDelete
           ? `确定批量删除 ${selectedIds.size} 个提供商？此操作为软删，可联系管理员恢复。`
@@ -424,6 +432,7 @@ export function ProvidersManager() {
         }}
         onCancel={() => { setDeleteTarget(null); setPendingDelete(false); }}
       />
+      ) : null}
     </div>
   );
 }

@@ -4,12 +4,14 @@
  * CandidateManager — 发现候选管理。
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { adminFetch } from "./adminFetch";
 import { Badge, Button, Dialog } from "@aidean/ui";
 import { AdminDataTable, type Column } from "./AdminDataTable";
+import { PanelState, usePanelResource } from "./PanelState";
+import { panelTestIds } from "../../lib/admin/panel-resource";
 
-interface CandidateRow {
+export interface CandidateRow {
   id: string;
   candidateType: string;
   name: string;
@@ -37,32 +39,48 @@ const STATUS_LABELS: Record<string, string> = {
   rejected: "已拒绝",
 };
 
+/** 列表数据形状（信封 data） */
+export type CandidatesListData = { rows: CandidateRow[]; total: number };
+
+/** 五态外壳 testid 前缀（B11-05） */
+export const CANDIDATES_PANEL_PREFIX = "admin-discovery-candidates";
+
+export const CANDIDATES_PAGE_SIZE = 20;
+
+export function buildCandidatesUrl(page = 1, status = "", type = ""): string {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(CANDIDATES_PAGE_SIZE) });
+  if (status) params.set("status", status);
+  if (type) params.set("type", type);
+  return `/api/v1/admin/discovery/candidates?${params}`;
+}
+
+/** 首屏地址（单测锁定 loader 无参调用的请求 URL，与改造前完全一致） */
+export const CANDIDATES_LIST_URL = buildCandidatesUrl();
+
+export const loadCandidates = (signal?: AbortSignal, page = 1, status = "", type = "") =>
+  adminFetch<CandidatesListData>(buildCandidatesUrl(page, status, type), { signal });
+
 export function CandidateManager() {
-  const [rows, setRows] = useState<CandidateRow[]>([]);
-  const [total, setTotal] = useState(0);
+  const ids = panelTestIds(CANDIDATES_PANEL_PREFIX);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [selected, setSelected] = useState<CandidateRow | null>(null);
 
-  const fetchCandidates = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ page: String(page), pageSize: "20" });
-      if (statusFilter) params.set("status", statusFilter);
-      if (typeFilter) params.set("type", typeFilter);
-      const res = await adminFetch<{ rows: CandidateRow[]; total: number }>(`/api/v1/admin/discovery/candidates?${params}`);
-      if (res.ok && res.data) {
-        setRows(res.data.rows);
-        setTotal(res.data.total);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [page, statusFilter, typeFilter]);
+  const loader = useCallback(
+    (signal: AbortSignal) => loadCandidates(signal, page, statusFilter, typeFilter),
+    [page, statusFilter, typeFilter],
+  );
+  const { resource, reload, refresh } = usePanelResource(loader, (d) => d.rows.length === 0);
 
-  useEffect(() => { void fetchCandidates(); }, [fetchCandidates]);
+  // 筛选/翻页才重新取数：以查询签名比对（StrictMode 下 effect 双跑也不会重复请求）
+  const signature = `${statusFilter}|${typeFilter}|${page}`;
+  const lastSignature = useRef(signature);
+  useEffect(() => {
+    if (lastSignature.current === signature) return;
+    lastSignature.current = signature;
+    reload();
+  }, [signature, reload]);
 
   const promote = async (id: string, targetType: "ModelProvider" | "APIStation") => {
     await adminFetch(`/api/v1/admin/discovery/candidates/${id}/promote`, {
@@ -70,7 +88,7 @@ export function CandidateManager() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ targetType }),
     });
-    void fetchCandidates();
+    refresh();
   };
 
   const columns: Column<CandidateRow>[] = [
@@ -129,15 +147,19 @@ export function CandidateManager() {
         </select>
       </div>
 
-      <AdminDataTable
-        columns={columns}
-        rows={rows}
-        rowKey={(row) => row.id}
-        busy={loading}
-        page={page}
-        total={total}
-        onPageChange={setPage}
-      />
+      <PanelState testId={ids.root} resource={resource} onRetry={reload} emptyText="暂无发现候选">
+        {(d) => (
+          <AdminDataTable
+            columns={columns}
+            rows={d.rows}
+            rowKey={(row) => row.id}
+            rowTestId={(row) => `${ids.root}-row-${row.id}`}
+            page={page}
+            total={d.total}
+            onPageChange={setPage}
+          />
+        )}
+      </PanelState>
 
       <Dialog
         open={selected !== null}

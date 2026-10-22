@@ -7,13 +7,15 @@
  * 行点击展开 oldData/newData 详情。
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, Input } from "@aidean/ui";
 
 import { adminFetch } from "./adminFetch";
 import { AdminDataTable, type Column } from "./AdminDataTable";
+import { PanelState, usePanelResource } from "./PanelState";
+import { panelTestIds } from "../../lib/admin/panel-resource";
 
-interface AuditLogRow {
+export interface AuditLogRow {
   id: string;
   tableName: string;
   recordId: string;
@@ -35,37 +37,52 @@ const TABLE_OPTIONS = [
   "stations",
 ];
 
+/** 列表数据形状（信封 data）；分页口径沿用 B11-11（page/pageSize=20 + tableName/action 过滤） */
+export type AuditListData = { items: AuditLogRow[]; total: number };
+
+/** 五态外壳 testid 前缀（B11-05） */
+export const AUDIT_PANEL_PREFIX = "admin-audit-logs";
+
+export const AUDIT_PAGE_SIZE = 20;
+
+export function buildAuditUrl(page = 1, tableName = "", action = ""): string {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(AUDIT_PAGE_SIZE) });
+  if (tableName) params.set("tableName", tableName);
+  if (action) params.set("action", action);
+  return `/api/v1/admin/audit-logs?${params}`;
+}
+
+/** 首屏地址（单测锁定 loader 无参调用的请求 URL，与改造前完全一致） */
+export const AUDIT_LIST_URL = buildAuditUrl();
+
+export const loadAuditLogs = (signal?: AbortSignal, page = 1, tableName = "", action = "") =>
+  adminFetch<AuditListData>(buildAuditUrl(page, tableName, action), { signal });
+
 export function AuditLogsTable() {
-  const [rows, setRows] = useState<AuditLogRow[]>([]);
-  // #35③：列表请求在途（参照 UsersTable #68 模式），首载不闪空态
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
+  const ids = panelTestIds(AUDIT_PANEL_PREFIX);
   const [page, setPage] = useState(1);
   const [tableFilter, setTableFilter] = useState("");
   const [actionFilter, setActionFilter] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
-  const pageSize = 20;
+  // 「查询」重复点击也要重取：nonce 计入签名，但不进 URL
+  const [queryNonce, setQueryNonce] = useState(0);
 
-  const load = useCallback(async (p: number) => {
-    const params = new URLSearchParams({ page: String(p), pageSize: String(pageSize) });
-    if (tableFilter) params.set('tableName', tableFilter);
-    if (actionFilter) params.set('action', actionFilter);
-    setLoading(true);
-    const res = await adminFetch<{ items: AuditLogRow[]; total: number }>(
-      `/api/v1/admin/audit-logs?${params}`
-    );
-    setLoading(false);
-    if (res.ok && res.data) {
-      setRows(res.data.items);
-      setTotal(res.data.total);
-    }
-  }, [tableFilter, actionFilter]);
+  const loader = useCallback(
+    (signal: AbortSignal) => loadAuditLogs(signal, page, tableFilter, actionFilter),
+    [page, tableFilter, actionFilter],
+  );
+  const { resource, reload } = usePanelResource(loader, (d) => d.items.length === 0);
 
+  // 筛选/翻页/主动查询才重新取数：以查询签名比对（StrictMode 下 effect 双跑也不会重复请求）
+  const signature = `${tableFilter}|${actionFilter}|${page}|${queryNonce}`;
+  const lastSignature = useRef(signature);
   useEffect(() => {
-    void load(page);
-  }, [load, page]);
+    if (lastSignature.current === signature) return;
+    lastSignature.current = signature;
+    reload();
+  }, [signature, reload]);
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const data = resource.status === "ready" ? resource.data : null;
 
   const columns: Column<AuditLogRow>[] = [
     {
@@ -121,7 +138,7 @@ export function AuditLogsTable() {
         onSubmit={(e) => {
           e.preventDefault();
           setPage(1);
-          void load(1);
+          setQueryNonce((n) => n + 1);
         }}
       >
         <select
@@ -145,38 +162,41 @@ export function AuditLogsTable() {
           <option value="3">DELETE</option>
         </select>
         <Button variant="primary" size="sm" type="submit">查询</Button>
-        <span className="ml-auto text-xs text-slate-500">共 {total} 条日志</span>
+        <span className="ml-auto text-xs text-slate-500">{data ? `共 ${data.total} 条日志` : null}</span>
       </form>
 
-      <AdminDataTable
-        columns={columns}
-        rows={rows}
-        rowKey={log => log.id}
-        emptyText="暂无审计日志"
-        busy={loading}
-        page={page}
-        totalPages={totalPages}
-        total={total}
-        onPageChange={p => setPage(p)}
-        expandedRowId={expanded}
-        onRowClick={id => setExpanded(expanded === id ? null : id)}
-        expandedRowRender={log => (
-          <div className="grid grid-cols-2 gap-4 text-xs">
-            <div>
-              <div className="mb-1 font-medium text-slate-600">变更前 (oldData)</div>
-              <pre className="max-h-48 overflow-auto rounded bg-white p-2 text-slate-500">
-                {log.oldData ? JSON.stringify(log.oldData, null, 2) : 'null'}
-              </pre>
-            </div>
-            <div>
-              <div className="mb-1 font-medium text-slate-600">变更后 (newData)</div>
-              <pre className="max-h-48 overflow-auto rounded bg-white p-2 text-slate-500">
-                {log.newData ? JSON.stringify(log.newData, null, 2) : 'null'}
-              </pre>
-            </div>
-          </div>
+      <PanelState testId={ids.root} resource={resource} onRetry={reload} emptyText="暂无审计日志">
+        {(d) => (
+          <AdminDataTable
+            columns={columns}
+            rows={d.items}
+            rowKey={log => log.id}
+            rowTestId={(log) => `${ids.root}-row-${log.id}`}
+            page={page}
+            totalPages={Math.max(1, Math.ceil(d.total / AUDIT_PAGE_SIZE))}
+            total={d.total}
+            onPageChange={p => setPage(p)}
+            expandedRowId={expanded}
+            onRowClick={id => setExpanded(expanded === id ? null : id)}
+            expandedRowRender={log => (
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div>
+                  <div className="mb-1 font-medium text-slate-600">变更前 (oldData)</div>
+                  <pre className="max-h-48 overflow-auto rounded bg-white p-2 text-slate-500">
+                    {log.oldData ? JSON.stringify(log.oldData, null, 2) : 'null'}
+                  </pre>
+                </div>
+                <div>
+                  <div className="mb-1 font-medium text-slate-600">变更后 (newData)</div>
+                  <pre className="max-h-48 overflow-auto rounded bg-white p-2 text-slate-500">
+                    {log.newData ? JSON.stringify(log.newData, null, 2) : 'null'}
+                  </pre>
+                </div>
+              </div>
+            )}
+          />
         )}
-      />
+      </PanelState>
     </div>
   );
 }

@@ -47,6 +47,8 @@ interface AdminDataTableProps<T> {
   expandedColSpan?: number;
   /** 行点击 */
   onRowClick?: (id: string) => void;
+  /** 行 testid 生成（B11-05 五态外壳：`admin-<模块>-row-<id>`）；不传则不渲染属性 */
+  rowTestId?: (row: T) => string;
 }
 
 export function AdminDataTable<T>({
@@ -67,6 +69,7 @@ export function AdminDataTable<T>({
   expandedRowRender,
   expandedColSpan,
   onRowClick,
+  rowTestId,
 }: AdminDataTableProps<T>) {
   const allSelected = selectable && rows.length > 0 && rows.every(r => selectedIds?.has(rowKey(r)));
   const colCount = columns.length + (selectable ? 1 : 0);
@@ -110,6 +113,7 @@ export function AdminDataTable<T>({
                   row={row}
                   expandedRowRender={expandedRowRender}
                   expandedColSpan={expandedColSpan ?? colCount}
+                  testId={rowTestId?.(row)}
                 />
               );
             })}
@@ -170,6 +174,7 @@ function FragmentRow<T>({
   row,
   expandedRowRender,
   expandedColSpan,
+  testId,
 }: {
   id: string;
   isSelected: boolean | undefined;
@@ -181,10 +186,12 @@ function FragmentRow<T>({
   row: T;
   expandedRowRender?: (row: T) => ReactNode;
   expandedColSpan: number;
+  testId?: string;
 }) {
   return (
     <>
       <TableRow
+        data-testid={testId}
         className={isSelected ? "bg-primary/5" : undefined}
         onClick={onRowClick ? () => onRowClick(id) : undefined}
       >

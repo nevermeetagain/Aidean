@@ -4,9 +4,11 @@
  * IntelligenceDashboard — 智能仪表盘。
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { adminFetch } from "./adminFetch";
 import { Badge, Button } from "@aidean/ui";
+import { PanelState, usePanelResource } from "./PanelState";
+import { panelTestIds } from "../../lib/admin/panel-resource";
 
 interface ReportSummary {
   totalProviders: number;
@@ -28,7 +30,7 @@ interface ReportData {
   trends: { providerGrowth: number; modelGrowth: number; avgPriceChange: number | null };
 }
 
-interface SnapshotRow {
+export interface SnapshotRow {
   id: string;
   snapshotDate: string;
   snapshotType: string;
@@ -38,25 +40,22 @@ interface SnapshotRow {
   summary: Record<string, unknown> | null;
 }
 
+/** 五态外壳 testid 前缀（B11-05） */
+export const INTELLIGENCE_PANEL_PREFIX = "admin-intelligence";
+
+/** 首屏地址（单测锁定 loader 无参调用的请求 URL，与改造前完全一致） */
+export const INTELLIGENCE_SNAPSHOTS_URL = "/api/v1/admin/intelligence/snapshots?limit=10";
+
+export const loadSnapshots = (signal?: AbortSignal) =>
+  adminFetch<SnapshotRow[]>(INTELLIGENCE_SNAPSHOTS_URL, { signal });
+
 export function IntelligenceDashboard() {
+  const ids = panelTestIds(INTELLIGENCE_PANEL_PREFIX);
   const [report, setReport] = useState<ReportData | null>(null);
-  const [snapshots, setSnapshots] = useState<SnapshotRow[]>([]);
-  const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await adminFetch<SnapshotRow[]>("/api/v1/admin/intelligence/snapshots?limit=10");
-      if (res.ok && res.data) {
-        setSnapshots(res.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { void fetchData(); }, [fetchData]);
+  // 面板主体为快照列表：非列表形状（数组本身），空态判定为「一条快照都没有」
+  const { resource, reload, refresh } = usePanelResource(loadSnapshots, (d) => d.length === 0);
 
   const generateReport = async () => {
     setGenerating(true);
@@ -76,7 +75,7 @@ export function IntelligenceDashboard() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: "full" }),
     });
-    void fetchData();
+    refresh();
   };
 
   return (
@@ -139,23 +138,21 @@ export function IntelligenceDashboard() {
 
       <div className="rounded-lg border p-4">
         <h4 className="font-medium mb-2">市场快照</h4>
-        {loading ? (
-          <p className="text-sm text-gray-500">加载中...</p>
-        ) : snapshots.length === 0 ? (
-          <p className="text-sm text-gray-500">暂无快照</p>
-        ) : (
-          <div className="space-y-1">
-            {snapshots.map(s => (
-              <div key={s.id} className="flex items-center gap-3 text-sm border-b py-1">
-                <span className="text-gray-500">{new Date(s.snapshotDate).toLocaleString()}</span>
-                <Badge variant="secondary">{s.snapshotType}</Badge>
-                <span>P:{s.providerCount}</span>
-                <span>M:{s.modelCount}</span>
-                <span>S:{s.stationCount}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        <PanelState testId={ids.root} resource={resource} onRetry={reload} emptyText="暂无快照">
+          {(data) => (
+            <div className="space-y-1">
+              {data.map(s => (
+                <div key={s.id} data-testid={`${ids.root}-row-${s.id}`} className="flex items-center gap-3 text-sm border-b py-1">
+                  <span className="text-gray-500">{new Date(s.snapshotDate).toLocaleString()}</span>
+                  <Badge variant="secondary">{s.snapshotType}</Badge>
+                  <span>P:{s.providerCount}</span>
+                  <span>M:{s.modelCount}</span>
+                  <span>S:{s.stationCount}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </PanelState>
       </div>
     </div>
   );
