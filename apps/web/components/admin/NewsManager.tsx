@@ -323,20 +323,20 @@ export function NewsManager() {
 
           <div>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
+              <Button
+                variant={tab === "write" ? "primary" : "outline"}
+                size="sm"
                 onClick={() => setTab("write")}
-                className={`rounded-md px-2.5 py-1 text-xs ${tab === "write" ? "bg-primary text-[var(--primary-foreground)]" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}
               >
                 编写（Markdown）
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant={tab === "preview" ? "primary" : "outline"}
+                size="sm"
                 onClick={() => setTab("preview")}
-                className={`rounded-md px-2.5 py-1 text-xs ${tab === "preview" ? "bg-primary text-[var(--primary-foreground)]" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}
               >
                 预览
-              </button>
+              </Button>
               <span className="text-[11px] text-slate-400">支持 ()[] 等含括号链接；保存的始终是 Markdown 原文</span>
             </div>
             {tab === "write" ? (

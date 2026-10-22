@@ -101,8 +101,8 @@ export function ApiStationManager() {
     { key: "actions", header: "操作", className: "px-3 py-2", render: s => (
       <div className="flex gap-2">
         {/* 原「详情」链接指向不存在的 /admin/api-stations/[id] 页面（死链），改为行内编辑 */}
-        <button onClick={() => setEditing(s)} className="text-xs text-primary hover:underline">编辑</button>
-        <button onClick={() => handleDelete(s.id)} className="text-xs text-red-500 hover:underline">删除</button>
+        <Button variant="ghost" size="sm" className="text-primary hover:underline" onClick={() => setEditing(s)}>编辑</Button>
+        <Button variant="ghost" size="sm" className="text-[var(--danger)] hover:underline" onClick={() => handleDelete(s.id)}>删除</Button>
       </div>
     ) },
   ];

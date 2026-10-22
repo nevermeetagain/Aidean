@@ -280,7 +280,7 @@ export function PackagesManager() {
           <Button variant="primary" size="sm" disabled={batchBusy} onClick={() => void handleBatch("activate")}>批量启用</Button>
           <Button variant="outline" size="sm" disabled={batchBusy} onClick={() => void handleBatch("deactivate")}>批量停用</Button>
           <Button variant="danger" size="sm" disabled={batchBusy} onClick={() => void handleBatch("delete")}>批量删除</Button>
-          <button onClick={() => setSelectedIds(new Set())} className="ml-auto text-xs text-slate-500">取消选择</button>
+          <Button variant="ghost" size="sm" className="ml-auto text-slate-500" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
         </div>
       ) : null}
 

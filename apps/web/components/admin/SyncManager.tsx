@@ -165,7 +165,7 @@ export function SyncManager() {
     { key: "changeType", header: "类型", className: "px-3 py-2", render: c => <Badge variant={c.changeType === "CREATE" ? "default" : c.changeType === "DELETE" ? "destructive" : "secondary"}>{c.changeType}</Badge> },
     { key: "changedFields", header: "变更字段", className: "px-3 py-2 text-xs text-slate-500", render: c => <span>{c.changedFields.join(", ")}</span> },
     { key: "revertStatus", header: "回滚状态", className: "px-3 py-2", render: c => c.isReverted ? <span className="text-xs text-amber-600">已回滚: {c.revertReason}</span> : <span className="text-xs text-slate-400">未回滚</span> },
-    { key: "actions", header: "操作", className: "px-3 py-2", render: c => !c.isReverted && c.changeType !== "CREATE" ? <button onClick={() => handleRevert(c.id)} className="text-xs text-red-500 hover:underline">回滚</button> : null },
+    { key: "actions", header: "操作", className: "px-3 py-2", render: c => !c.isReverted && c.changeType !== "CREATE" ? <Button variant="ghost" size="sm" className="text-[var(--danger)] hover:underline" onClick={() => handleRevert(c.id)}>回滚</Button> : null },
   ];
 
   return (
@@ -288,9 +288,9 @@ export function SyncManager() {
               </TableBody>
             </Table>
           </div>
-          <button onClick={() => setConflictReport(null)} className="mt-2 text-xs text-amber-600 hover:underline">
+          <Button variant="ghost" size="sm" className="mt-2 text-amber-600 hover:underline" onClick={() => setConflictReport(null)}>
             关闭报告
-          </button>
+          </Button>
         </div>
       )}
 

@@ -429,19 +429,20 @@ export function LogsBoard() {
     <div className="space-y-4">
       <div role="tablist" aria-label="日志中心" className="flex flex-wrap gap-1 border-b border-slate-200">
         {TABS.map((t) => (
-          <button
+          <Button
             key={t.key}
             role="tab"
             aria-selected={tab === t.key}
+            variant="ghost"
             onClick={() => setTab(t.key)}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+            className={`-mb-px rounded-none border-b-2 px-4 py-2 text-sm font-medium transition-colors hover:bg-transparent ${
               tab === t.key
                 ? "border-primary text-primary"
                 : "border-transparent text-slate-500 hover:text-slate-700"
             }`}
           >
             {t.label}
-          </button>
+          </Button>
         ))}
       </div>
       <div role="tabpanel">
