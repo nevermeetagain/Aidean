@@ -115,9 +115,9 @@ export function AuditLogsTable({
       className: "px-3 py-2",
       render: log => (
         <span className={`rounded px-1.5 py-0.5 text-xs ${
-          log.action === 1 ? 'bg-emerald-50 text-emerald-600' :
-          log.action === 2 ? 'bg-amber-50 text-amber-600' :
-          'bg-red-50 text-red-600'
+          log.action === 1 ? 'bg-emerald-50 text-emerald-700' :
+          log.action === 2 ? 'bg-amber-50 text-amber-700' :
+          'bg-red-50 text-red-700'
         }`}>
           {AUDIT_ACTION_LABEL[String(log.action)] ?? log.actionLabel}
         </span>

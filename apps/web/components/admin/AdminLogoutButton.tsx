@@ -17,7 +17,7 @@ export function AdminLogoutButton() {
     <button
       type="button"
       onClick={handleLogout}
-      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-500 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-500 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
     >
       退出登录
     </button>

@@ -314,7 +314,7 @@ export function ModelsTable({
             aria-label={`${m.modelCode} 上架开关`}
             className="h-4 w-4 accent-[var(--primary)]"
           />
-          <span className={`text-xs ${m.isActive ? "text-emerald-600" : "text-slate-500"}`}>
+          <span className={`text-xs ${m.isActive ? "text-emerald-700" : "text-slate-500"}`}>
             {m.isActive ? "上架" : "下架"}
           </span>
         </Label>

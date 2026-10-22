@@ -150,7 +150,7 @@ export function PartnerKeysManager() {
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
           <div className="text-sm font-medium text-amber-800">⚠ 新密钥（仅本次显示，请立即保存）</div>
           <code className="mt-1 block break-all text-xs text-amber-900">{newKey}</code>
-          <Button variant="ghost" size="sm" className="mt-2 text-amber-600" onClick={() => setNewKey(null)}>已保存，关闭</Button>
+          <Button variant="ghost" size="sm" className="mt-2 text-amber-700" onClick={() => setNewKey(null)}>已保存，关闭</Button>
         </div>
       )}
 

@@ -269,9 +269,9 @@ function StationForm({ existing, onDone }: { existing?: StationRow; onDone: () =
         <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} />
       </Label>
       {baseUrlTouched && baseUrl && !/^https?:\/\//.test(baseUrl) && (
-        <p className="text-xs text-red-500">Base URL 须以 http(s):// 开头</p>
+        <p className="text-xs text-red-600">Base URL 须以 http(s):// 开头</p>
       )}
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-red-600">{error}</p>}
       <div className="flex gap-2">
         <Button variant="primary" size="sm" type="submit">{existing ? "保存" : "创建"}</Button>
         <Button variant="outline" size="sm" type="button" onClick={onDone}>取消</Button>

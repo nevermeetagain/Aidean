@@ -163,8 +163,8 @@ export function SyncManager() {
     { key: "source", header: "来源", className: "px-3 py-2 text-xs text-slate-500", render: b => <span>{b.source ?? "—"}</span> },
     { key: "status", header: "状态", className: "px-3 py-2", render: b => <Badge variant={STATUS_VARIANT[b.status] ?? "secondary"}>{b.status}</Badge> },
     { key: "totalRecords", header: "总数", className: "px-3 py-2 text-xs text-slate-600", render: b => <span>{b.totalRecords}</span> },
-    { key: "successRecords", header: "成功", className: "px-3 py-2 text-xs text-emerald-600", render: b => <span>{b.successRecords}</span> },
-    { key: "failedRecords", header: "失败", className: "px-3 py-2 text-xs text-red-500", render: b => <span>{b.failedRecords}</span> },
+    { key: "successRecords", header: "成功", className: "px-3 py-2 text-xs text-emerald-700", render: b => <span>{b.successRecords}</span> },
+    { key: "failedRecords", header: "失败", className: "px-3 py-2 text-xs text-red-600", render: b => <span>{b.failedRecords}</span> },
     { key: "createdAt", header: "时间", className: "px-3 py-2 text-xs text-slate-400", render: b => <span>{new Date(b.createdAt).toLocaleString("zh-CN")}</span> },
   ];
 
@@ -174,7 +174,7 @@ export function SyncManager() {
     { key: "modelCode", header: "模型", className: "px-3 py-2 text-xs font-mono text-slate-600", render: c => <span>{c.modelCode ?? "—"}</span> },
     { key: "changeType", header: "类型", className: "px-3 py-2", render: c => <Badge variant={c.changeType === "CREATE" ? "default" : c.changeType === "DELETE" ? "destructive" : "secondary"}>{c.changeType}</Badge> },
     { key: "changedFields", header: "变更字段", className: "px-3 py-2 text-xs text-slate-500", render: c => <span>{c.changedFields.join(", ")}</span> },
-    { key: "revertStatus", header: "回滚状态", className: "px-3 py-2", render: c => c.isReverted ? <span className="text-xs text-amber-600">已回滚: {c.revertReason}</span> : <span className="text-xs text-slate-400">未回滚</span> },
+    { key: "revertStatus", header: "回滚状态", className: "px-3 py-2", render: c => c.isReverted ? <span className="text-xs text-amber-700">已回滚: {c.revertReason}</span> : <span className="text-xs text-slate-400">未回滚</span> },
     { key: "actions", header: "操作", className: "px-3 py-2", render: c => !c.isReverted && c.changeType !== "CREATE" ? <Button variant="ghost" size="sm" className="text-[var(--danger)] hover:underline" onClick={() => handleRevert(c.id)}>回滚</Button> : null },
   ];
 
@@ -277,7 +277,7 @@ export function SyncManager() {
           <h3 className="text-sm font-semibold text-amber-700">
             交叉验证冲突报告（{conflictReport.length} 项）
           </h3>
-          <p className="mt-1 text-xs text-amber-600">
+          <p className="mt-1 text-xs text-amber-700">
             以下字段在多个数据源之间存在差异，请人工确认后决定采纳哪个源的值。
           </p>
           <div className="mt-3 text-xs">
@@ -307,7 +307,7 @@ export function SyncManager() {
               </TableBody>
             </Table>
           </div>
-          <Button variant="ghost" size="sm" className="mt-2 text-amber-600 hover:underline" onClick={() => setConflictReport(null)}>
+          <Button variant="ghost" size="sm" className="mt-2 text-amber-700 hover:underline" onClick={() => setConflictReport(null)}>
             关闭报告
           </Button>
         </div>

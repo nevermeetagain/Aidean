@@ -689,7 +689,7 @@ export function LadderMatrixBoard({ entries, pageType, granularity, tierThreshol
             <span>
               到底了 · 已展示全部 {entries.length} 个条目
               {LADDER_SHOWCASE_AUTO_SCROLL && entries.length >= MIN_ENTRIES_FOR_AUTOSCROLL ? (
-                <span className="ml-2 text-slate-300">
+                <span className="ml-2 text-slate-400">
                   {autoScrollPaused ? "（悬停已暂停滚动）" : "（自动滚动中）"}
                 </span>
               ) : null}

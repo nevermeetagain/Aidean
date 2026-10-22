@@ -208,7 +208,7 @@ export function VendorsManager() {
       key: "isActive",
       header: "状态",
       className: "px-3 py-2",
-      render: v => <span className={v.isActive ? "font-medium text-emerald-600" : "text-slate-500"}>{v.isActive ? "启用" : "停用"}</span>,
+      render: v => <span className={v.isActive ? "font-medium text-emerald-700" : "text-slate-500"}>{v.isActive ? "启用" : "停用"}</span>,
     },
     {
       key: "actions",

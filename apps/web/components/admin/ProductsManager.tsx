@@ -431,7 +431,7 @@ export function ProductsManager() {
       header: "状态",
       className: "px-3 py-2",
       render: p => (
-        <span className={p.status === "ACTIVE" ? "font-medium text-emerald-600" : "text-slate-500"}>
+        <span className={p.status === "ACTIVE" ? "font-medium text-emerald-700" : "text-slate-500"}>
           {p.status === "ACTIVE" ? "上架" : "下架"}
         </span>
       ),

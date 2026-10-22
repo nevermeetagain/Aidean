@@ -77,7 +77,7 @@ interface PromoForm {
 type PromoStatus = "running" | "upcoming" | "ended" | "invalid";
 
 const STATUS_META: Record<PromoStatus, { label: string; cls: string }> = {
-  running: { label: "进行中", cls: "border-rose-200 bg-rose-50 text-rose-600" },
+  running: { label: "进行中", cls: "border-rose-200 bg-rose-50 text-rose-700" },
   upcoming: { label: "未开始", cls: "border-sky-200 bg-sky-50 text-sky-700" },
   ended: { label: "已结束", cls: "border-slate-200 bg-slate-50 text-slate-500" },
   invalid: { label: "缺结束时间", cls: "border-amber-300 bg-amber-50 text-amber-700" },
@@ -355,7 +355,7 @@ export function PromotionsPanel({ canWrite, models, createFor = null }: Props) {
         const free = isZero(r.priceInput) && isZero(r.priceOutput);
         return (
           <div>
-            <div className={free ? "font-medium text-emerald-700" : "font-medium text-rose-600"}>
+            <div className={free ? "font-medium text-emerald-700" : "font-medium text-rose-700"}>
               {free ? "限时免费" : `${r.priceInput} / ${r.priceOutput}`}
             </div>
             {m?.currentInput != null ? (
@@ -447,7 +447,7 @@ export function PromotionsPanel({ canWrite, models, createFor = null }: Props) {
           ))}
         </div>
       ) : loadError ? (
-        <div data-testid="promo-error" className="flex items-center justify-between rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-600">
+        <div data-testid="promo-error" className="flex items-center justify-between rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
           <span>加载失败：{loadError}</span>
           <Button variant="outline" size="sm" onClick={() => void load()}>重试</Button>
         </div>
@@ -485,7 +485,7 @@ export function PromotionsPanel({ canWrite, models, createFor = null }: Props) {
         {form ? (
           <div className="space-y-3">
             {formError ? (
-              <p data-testid="promo-error" role="alert" className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-600">
+              <p data-testid="promo-error" role="alert" className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
                 {formError}
               </p>
             ) : null}

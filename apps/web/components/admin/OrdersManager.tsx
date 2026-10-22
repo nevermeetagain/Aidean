@@ -156,7 +156,7 @@ export function OrdersManager({ canWrite = false }: { canWrite?: boolean }) {
       const actionable =
         (type === "RECHARGE" && (st === "PENDING" || st === "PAID")) ||
         (type === "PACKAGE_ORDER" && (st === "PENDING" || st === "ACTIVE"));
-      if (!actionable) return <span className="text-xs text-slate-300">—</span>;
+      if (!actionable) return <span className="text-xs text-slate-400">—</span>;
       return (
         <div className="flex flex-wrap gap-1">
           {type === "RECHARGE" && st === "PENDING" && (

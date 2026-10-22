@@ -308,7 +308,7 @@ export function ScriptsManager() {
     },
     { key: "startedAt", header: "开始", className: "py-2 text-slate-400", render: e => <span>{new Date(e.startedAt).toLocaleString("zh-CN")}</span> },
     { key: "duration", header: "耗时", className: "py-2 text-slate-500", render: e => <span>{e.durationMs ? `${e.durationMs}ms` : "—"}</span> },
-    { key: "error", header: "错误", className: "py-2 text-red-500 max-w-[200px] truncate", render: e => <span className="truncate">{e.errorMsg ?? "—"}</span> },
+    { key: "error", header: "错误", className: "py-2 text-red-600 max-w-[200px] truncate", render: e => <span className="truncate">{e.errorMsg ?? "—"}</span> },
   ];
 
   return (

@@ -148,7 +148,7 @@ export function RankingWeightsEditor({ canWrite = false }: { canWrite?: boolean 
             aria-label={`${DIM_LABEL[w.dimension] ?? w.dimension} 启用`}
           />
         ) : (
-          <span className={w.isActive ? "text-emerald-600" : "text-slate-400"}>{w.isActive ? "启用" : "停用"}</span>
+          <span className={w.isActive ? "text-emerald-700" : "text-slate-400"}>{w.isActive ? "启用" : "停用"}</span>
         ),
     },
   ];

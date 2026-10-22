@@ -259,10 +259,10 @@ export function RedemptionManager() {
     { key: "name", header: "名称", className: "px-3 py-2 text-slate-500", render: b => <span>{b.name ?? "—"}</span> },
     { key: "targetType", header: "类型", className: "px-3 py-2 text-slate-500", render: b => <span>{b.targetType === "BALANCE" ? "余额码" : "套餐码"}</span> },
     { key: "total", header: "总量", className: "px-3 py-2 tabular-nums text-slate-800", render: b => <span>{b.total}</span> },
-    { key: "enabled", header: "可用", className: "px-3 py-2 tabular-nums font-medium text-emerald-600", render: b => <span>{b.enabled}</span> },
+    { key: "enabled", header: "可用", className: "px-3 py-2 tabular-nums font-medium text-emerald-700", render: b => <span>{b.enabled}</span> },
     { key: "issued", header: "出库", className: "px-3 py-2 tabular-nums text-sky-600", render: b => <span>{b.issued}</span> },
     { key: "used", header: "已用", className: "px-3 py-2 tabular-nums text-slate-500", render: b => <span>{b.used}</span> },
-    { key: "disabled", header: "禁用", className: "px-3 py-2 tabular-nums text-rose-600", render: b => <span>{b.disabled}</span> },
+    { key: "disabled", header: "禁用", className: "px-3 py-2 tabular-nums text-rose-700", render: b => <span>{b.disabled}</span> },
     { key: "expired", header: "过期", className: "px-3 py-2 tabular-nums text-slate-400", render: b => <span>{b.expired}</span> },
     {
       key: "actions",
@@ -295,7 +295,7 @@ export function RedemptionManager() {
       header: "状态",
       className: "px-3 py-2",
       render: c => (
-        <span className={c.status === "ENABLED" ? "font-medium text-emerald-600" : c.status === "DISABLED" ? "text-rose-600" : "text-slate-500"}>
+        <span className={c.status === "ENABLED" ? "font-medium text-emerald-700" : c.status === "DISABLED" ? "text-rose-700" : "text-slate-500"}>
           {statusText[c.status] ?? c.status}
         </span>
       ),

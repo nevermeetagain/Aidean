@@ -99,8 +99,8 @@ export function IntelligenceDashboard() {
           <div className="rounded-lg border p-4">
             <h4 className="font-medium mb-2">趋势</h4>
             <div className="flex gap-6 text-sm">
-              <span>平台增长: <strong className={report.trends.providerGrowth > 0 ? "text-green-600" : ""}>{report.trends.providerGrowth}</strong></span>
-              <span>模型增长: <strong className={report.trends.modelGrowth > 0 ? "text-green-600" : ""}>{report.trends.modelGrowth}</strong></span>
+              <span>平台增长: <strong className={report.trends.providerGrowth > 0 ? "text-green-700" : ""}>{report.trends.providerGrowth}</strong></span>
+              <span>模型增长: <strong className={report.trends.modelGrowth > 0 ? "text-green-700" : ""}>{report.trends.modelGrowth}</strong></span>
             </div>
           </div>
 

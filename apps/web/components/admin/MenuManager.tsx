@@ -253,7 +253,7 @@ function CreateGroupForm({ onDone }: { onDone: () => void }) {
         </Label>
         <Button variant="primary" size="sm" onClick={() => void submit()}>创建分组</Button>
       </div>
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
 }
@@ -297,7 +297,7 @@ function CreateLeafForm({ groupCode, onDone }: { groupCode: string; onDone: () =
         <Button variant="primary" size="sm" onClick={() => void submit()}>创建子项</Button>
         <Button variant="outline" size="sm" onClick={() => setOpen(false)}>取消</Button>
       </div>
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
 }

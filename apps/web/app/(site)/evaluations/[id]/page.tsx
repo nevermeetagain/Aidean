@@ -144,9 +144,9 @@ export default function EvaluationDetailPage({ params }: { params: Promise<{ id:
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs ${
                       m.status === "completed"
-                        ? "bg-emerald-50 text-emerald-600"
+                        ? "bg-emerald-50 text-emerald-700"
                         : m.status === "error"
-                          ? "bg-red-50 text-red-600"
+                          ? "bg-red-50 text-red-700"
                           : "bg-slate-100 text-slate-500"
                     }`}
                   >
@@ -158,7 +158,7 @@ export default function EvaluationDetailPage({ params }: { params: Promise<{ id:
                   {m.status === "error" ? (
                     <p className="text-red-600">{m.errorMessage ?? "该模型调用失败"}</p>
                   ) : (
-                    m.response || <span className="text-slate-300">（空响应）</span>
+                    m.response || <span className="text-slate-400">（空响应）</span>
                   )}
                 </div>
 

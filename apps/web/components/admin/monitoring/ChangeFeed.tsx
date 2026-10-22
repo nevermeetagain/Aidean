@@ -187,7 +187,7 @@ export function ChangeFeed({
                 <span
                   data-testid="monitoring-change-delta"
                   className={`font-mono text-[11px] font-semibold ${
-                    e.deltaPct > 0 ? "text-red-600" : e.deltaPct < 0 ? "text-emerald-600" : "text-slate-500"
+                    e.deltaPct > 0 ? "text-red-600" : e.deltaPct < 0 ? "text-emerald-700" : "text-slate-500"
                   }`}
                 >
                   {e.deltaPct > 0 ? "+" : ""}

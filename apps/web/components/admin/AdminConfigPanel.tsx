@@ -145,7 +145,7 @@ export function AdminConfigPanel() {
       header: "状态",
       className: "py-1.5 pr-3",
       render: v => (
-        <span className={v.isActive ? "text-emerald-600" : "text-slate-400"}>
+        <span className={v.isActive ? "text-emerald-700" : "text-slate-400"}>
           {v.isActive ? "启用" : "停用"}
         </span>
       ),

@@ -177,7 +177,7 @@ export function SourceTable({
             <span className="text-[11px] text-slate-400">{row.lastCount === null ? "— 条" : `${row.lastCount} 条`}</span>
           </div>
           {row.lastError ? (
-            <p className="max-w-36 truncate text-[11px] text-red-500 lg:max-w-56" title={row.lastError}>
+            <p className="max-w-36 truncate text-[11px] text-red-600 lg:max-w-56" title={row.lastError}>
               {row.lastError}
             </p>
           ) : null}

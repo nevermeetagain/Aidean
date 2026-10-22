@@ -221,7 +221,7 @@ function CreateRoleForm({ onDone }: { onDone: () => void }) {
       <PermissionsGrid value={codes} onChange={setCodes} />
       <div className="flex items-center gap-2">
         <Button variant="primary" size="sm" disabled={busy || !code.trim() || !name.trim()} onClick={() => void submit()}>创建角色</Button>
-        {error && <span className="text-xs text-red-500">{error}</span>}
+        {error && <span className="text-xs text-red-600">{error}</span>}
       </div>
     </div>
   );
@@ -256,7 +256,7 @@ function PermissionsGrid({ value, onChange, note }: {
         <Button variant="ghost" size="sm" className="text-primary hover:underline" onClick={selectAll}>全选</Button>
         <Button variant="ghost" size="sm" className="text-slate-500 hover:underline" onClick={clearAll}>清空</Button>
       </div>
-      {note ? <p className="text-[11px] text-amber-600">{note}</p> : null}
+      {note ? <p className="text-[11px] text-amber-700">{note}</p> : null}
       <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
         {ADMIN_DOMAIN_KEYS.map((d) => {
           const rc = readCode(d); const wc = writeCode(d);

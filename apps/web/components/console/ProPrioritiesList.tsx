@@ -216,7 +216,7 @@ export function ProPrioritiesList({ priorities }: ProPrioritiesListProps) {
             <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-400">
               {row.modelName}
             </span>
-            <span className="rounded-full border border-border px-2 py-0.5 text-xs font-medium text-accent align-middle">
+            <span className="rounded-full border border-border px-2 py-0.5 text-xs font-medium text-primary align-middle">
               自动装载
             </span>
             <input

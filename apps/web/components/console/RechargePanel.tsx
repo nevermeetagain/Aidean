@@ -104,7 +104,7 @@ export function RechargePanel({ tiers, isDev }: RechargePanelProps) {
                 ¥{t.amountYuan}
               </span>
               {t.bonusYuan !== "0.00" ? (
-                <span className="mt-0.5 block text-xs text-emerald-600">赠 ¥{t.bonusYuan}</span>
+                <span className="mt-0.5 block text-xs text-emerald-700">赠 ¥{t.bonusYuan}</span>
               ) : null}
             </Button>
           );
@@ -164,7 +164,7 @@ export function RechargePanel({ tiers, isDev }: RechargePanelProps) {
                   模拟支付成功（dev）
                 </Button>
               ) : (
-                <p className="mt-1 text-emerald-600">支付完成，余额已入账</p>
+                <p className="mt-1 text-emerald-700">支付完成，余额已入账</p>
               )}
             </div>
           ) : null}

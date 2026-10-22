@@ -519,7 +519,7 @@ function ChannelRow({
         <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">{item.groupName}</span>
       )}
       <span className="font-mono text-xs text-slate-400">{item.apiKeyMasked}</span>
-      <span className={`text-xs ${item.isActive ? "text-emerald-600" : "text-slate-400"}`}>
+      <span className={`text-xs ${item.isActive ? "text-emerald-700" : "text-slate-400"}`}>
         {item.isActive ? "启用" : "停用"}
       </span>
       <div className="ml-auto flex items-center gap-1.5">

@@ -229,7 +229,7 @@ export function GeneralForm({ tierMappings }: GeneralFormProps) {
 
       {/* free 只读说明区：仅展示，不可绑定或修改 */}
       <aside className="mt-4 rounded-lg border border-dashed border-border bg-muted p-4">
-        <span className="mr-2 inline-block rounded-full border border-border px-2 py-0.5 text-xs font-medium text-accent align-middle">
+        <span className="mr-2 inline-block rounded-full border border-border px-2 py-0.5 text-xs font-medium text-primary align-middle">
           系统配置
         </span>
         <p className="mt-2 text-sm text-slate-500">{tierMappings.free.freeNote}</p>

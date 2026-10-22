@@ -317,7 +317,7 @@ function AnnouncementForm({ existing, onDone }: { existing?: AnnRow; onDone: () 
           发布
         </Label>
       </div>
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-red-600">{error}</p>}
       <div className="flex gap-2">
         <Button variant="primary" size="sm" type="submit">{existing ? "保存" : "创建"}</Button>
         <Button variant="outline" size="sm" type="button" onClick={onDone}>取消</Button>

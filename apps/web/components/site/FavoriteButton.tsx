@@ -73,7 +73,7 @@ export function FavoriteButton({ refType, refId, name, size = "md" }: Props) {
           className={
             "flex h-5 w-5 items-center justify-center rounded-full border bg-white text-xs transition-colors " +
             (active
-              ? "border-amber-300 text-amber-500 hover:text-amber-600"
+              ? "border-amber-300 text-amber-500 hover:text-amber-700"
               : "border-slate-200 text-slate-400 hover:text-amber-500")
           }
         >
@@ -102,7 +102,7 @@ export function FavoriteButton({ refType, refId, name, size = "md" }: Props) {
         className={
           active
             ? "border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-400 hover:text-amber-800"
-            : "border-slate-200 text-slate-600 hover:border-amber-300 hover:text-amber-600"
+            : "border-slate-200 text-slate-600 hover:border-amber-300 hover:text-amber-700"
         }
       >
         <Star className="mr-1 h-4 w-4" fill={active ? "currentColor" : "none"} strokeWidth={2} />

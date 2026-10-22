@@ -18,7 +18,7 @@ export function ModelSection({ entries = HOME_MODEL_ENTRIES_DEFAULT }: { entries
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/10 transition-colors group-hover:bg-primary/15">
                   <HomeIcon name={icon} className="h-5 w-5 text-primary transition-transform group-hover:scale-[1.03]" />
                 </span>
-                <Badge variant="secondary" className="text-[11px] font-medium tracking-widest text-slate-300">0{index + 1}</Badge>
+                <Badge variant="secondary" className="text-[11px] font-medium tracking-widest text-slate-400">0{index + 1}</Badge>
               </div>
               <h3 className="mt-4 text-[15px] font-semibold tracking-tight text-slate-900">{title}</h3>
               <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-500">{description}</p>

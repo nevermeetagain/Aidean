@@ -219,7 +219,7 @@ export function ProvidersManager() {
     )},
     { key: "offerings", header: "挂载数", render: (r) => String(r._count?.offerings ?? 0) },
     { key: "isActive", header: "状态", render: (r) => (
-      <span className={r.isActive ? "text-green-600" : "text-muted-foreground"}>
+      <span className={r.isActive ? "text-green-700" : "text-muted-foreground"}>
         {r.isActive ? "启用" : "停用"}
       </span>
     )},

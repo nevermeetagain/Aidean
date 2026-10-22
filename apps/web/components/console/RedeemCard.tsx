@@ -87,7 +87,7 @@ export function RedeemCard() {
         <p
           role="status"
           aria-live="polite"
-          className={`text-sm sm:basis-full ${ok ? "text-emerald-600" : "text-rose-600"}`}
+          className={`text-sm sm:basis-full ${ok ? "text-emerald-700" : "text-rose-700"}`}
         >
           {message}
         </p>

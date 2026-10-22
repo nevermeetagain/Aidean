@@ -39,7 +39,7 @@ export function PagePlaceholder({ title, description, children }: PagePlaceholde
               <Link href="/" className="transition-colors hover:text-primary">
                 首页
               </Link>
-              <span aria-hidden="true" className="text-slate-300">
+              <span aria-hidden="true" className="text-slate-400">
                 /
               </span>
               <span aria-current="page" className="font-medium text-slate-700">

@@ -5,8 +5,8 @@
 export const STATUS_META: Record<number, { label: string; cls: string }> = {
   0: { label: "待执行", cls: "bg-slate-100 text-slate-500" },
   1: { label: "执行中", cls: "bg-sky-50 text-sky-600" },
-  2: { label: "已完成", cls: "bg-emerald-50 text-emerald-600" },
-  3: { label: "失败", cls: "bg-red-50 text-red-600" },
+  2: { label: "已完成", cls: "bg-emerald-50 text-emerald-700" },
+  3: { label: "失败", cls: "bg-red-50 text-red-700" },
 };
 
 export interface EvaluationListRow {

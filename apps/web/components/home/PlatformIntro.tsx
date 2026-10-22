@@ -18,7 +18,7 @@ export function PlatformIntro({ cards = HOME_VALUE_POINTS_DEFAULT }: { cards?: H
               <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/10 transition-colors group-hover:bg-primary/15">
                 <HomeIcon name={icon} className="h-[22px] w-[22px] text-primary" />
               </span>
-              <span className="text-[11px] font-semibold tracking-[0.14em] text-slate-300">0{index + 1}</span>
+              <span className="text-[11px] font-semibold tracking-[0.14em] text-slate-400">0{index + 1}</span>
             </div>
             <h3 className="relative text-[15px] font-semibold tracking-tight text-slate-900">{title}</h3>
             <p className="relative mt-2 text-sm leading-relaxed text-slate-500">{description}</p>

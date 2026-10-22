@@ -117,7 +117,7 @@ export function DiscoveryPipeline() {
           {running ? "执行中..." : "触发发现管道"}
         </Button>
 
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
 
       {result && (
@@ -153,7 +153,7 @@ export function DiscoveryPipeline() {
                   <span className="text-gray-400">{(stage.durationMs / 1000).toFixed(1)}s</span>
                 )}
                 {stage.error && (
-                  <span className="text-red-500">{stage.error}</span>
+                  <span className="text-red-600">{stage.error}</span>
                 )}
               </div>
             ))}
@@ -161,8 +161,8 @@ export function DiscoveryPipeline() {
 
           <div className="flex gap-4 text-sm border-t pt-2">
             <span>总候选: <strong>{result.totalCandidates}</strong></span>
-            <span className="text-green-600">升级: <strong>{result.promoted}</strong></span>
-            <span className="text-red-500">拒绝: <strong>{result.rejected}</strong></span>
+            <span className="text-green-700">升级: <strong>{result.promoted}</strong></span>
+            <span className="text-red-600">拒绝: <strong>{result.rejected}</strong></span>
           </div>
         </div>
       )}

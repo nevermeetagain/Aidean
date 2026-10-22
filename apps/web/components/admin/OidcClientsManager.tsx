@@ -137,7 +137,7 @@ export function OidcClientsManager({ canWrite = false }: { canWrite?: boolean })
     },
     { key: "scopes", header: "Scopes", className: "px-3 py-2 text-xs text-slate-600", render: (c) => <span>{c.scopes.join(", ")}</span> },
     { key: "cb", header: "回调数", className: "px-3 py-2 tabular-nums text-slate-600", render: (c) => <span>{c.redirectUris.length}</span> },
-    { key: "status", header: "状态", className: "px-3 py-2", render: (c) => <span className={c.isActive ? "font-medium text-emerald-600" : "text-slate-500"}>{c.isActive ? "启用" : "停用"}</span> },
+    { key: "status", header: "状态", className: "px-3 py-2", render: (c) => <span className={c.isActive ? "font-medium text-emerald-700" : "text-slate-500"}>{c.isActive ? "启用" : "停用"}</span> },
     ...(canWrite
       ? [{
           key: "actions",

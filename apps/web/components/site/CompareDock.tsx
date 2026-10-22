@@ -54,7 +54,7 @@ export function CompareDock() {
               size="sm"
               aria-label={`移除 ${item.nameDisplay}`}
               onClick={() => remove(item.modelId)}
-              className="ml-2 text-xs text-slate-300 hover:text-red-500"
+              className="ml-2 text-xs text-slate-400 hover:text-red-500"
             >
               ✕
             </Button>

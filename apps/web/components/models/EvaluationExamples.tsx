@@ -79,7 +79,7 @@ function Answer({ a, isSelf, isWinner }: { a: ExampleModelAnswer; isSelf: boolea
 export function EvaluationExamples({ examples, currentModelId, error = false }: { examples: EvaluationExample[]; currentModelId: string; error?: boolean }) {
   if (error) {
     return (
-      <p data-testid="samples-error" role="alert" className="mt-4 rounded-md border border-rose-200 bg-rose-50 px-4 py-6 text-center text-sm text-rose-600">
+      <p data-testid="samples-error" role="alert" className="mt-4 rounded-md border border-rose-200 bg-rose-50 px-4 py-6 text-center text-sm text-rose-700">
         测评示例暂时无法加载，请稍后刷新重试
       </p>
     );

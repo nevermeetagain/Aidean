@@ -130,7 +130,7 @@ function UsageTab() {
       key: "statusCode",
       header: "状态",
       render: (r) => (
-        <span className={`rounded px-1.5 py-0.5 text-xs ${r.hasError ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"}`}>
+        <span className={`rounded px-1.5 py-0.5 text-xs ${r.hasError ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"}`}>
           {r.statusCode ?? (r.hasError ? "ERR" : "-")}
         </span>
       ),
@@ -175,7 +175,7 @@ function UsageTab() {
             </div>
             <div>
               <div className="mb-1 font-medium text-slate-600">错误信息</div>
-              <pre className="max-h-40 overflow-auto rounded bg-white p-2 text-red-500">{r.error ?? "无"}</pre>
+              <pre className="max-h-40 overflow-auto rounded bg-white p-2 text-red-600">{r.error ?? "无"}</pre>
             </div>
           </div>
         )}
@@ -217,13 +217,13 @@ function SyncTab() {
       key: "status",
       header: "状态",
       render: (r) => (
-        <span className={`rounded px-1.5 py-0.5 text-xs ${r.status === "completed" ? "bg-emerald-50 text-emerald-600" : r.status === "failed" ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"}`}>
+        <span className={`rounded px-1.5 py-0.5 text-xs ${r.status === "completed" ? "bg-emerald-50 text-emerald-700" : r.status === "failed" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>
           {SYNC_STATUS_LABEL[r.status] ?? r.status}
         </span>
       ),
     },
     { key: "totalRecords", header: "总数", render: (r) => <span className="tabular-nums">{r.totalRecords}</span> },
-    { key: "successRecords", header: "成功", render: (r) => <span className="tabular-nums text-emerald-600">{r.successRecords}</span> },
+    { key: "successRecords", header: "成功", render: (r) => <span className="tabular-nums text-emerald-700">{r.successRecords}</span> },
     { key: "failedRecords", header: "失败", render: (r) => <span className="tabular-nums text-red-600">{r.failedRecords}</span> },
     { key: "changes", header: "变更", render: (r) => <span className="tabular-nums">{r._count?.changeLogs ?? 0}</span> },
   ];
@@ -289,13 +289,13 @@ function ScriptsTab() {
       key: "statusLabel",
       header: "状态",
       render: (r) => (
-        <span className={`rounded px-1.5 py-0.5 text-xs ${r.status === 1 ? "bg-emerald-50 text-emerald-600" : r.status === 2 ? "bg-red-50 text-red-600" : "bg-slate-100 text-slate-500"}`}>
+        <span className={`rounded px-1.5 py-0.5 text-xs ${r.status === 1 ? "bg-emerald-50 text-emerald-700" : r.status === 2 ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-500"}`}>
           {r.statusLabel}
         </span>
       ),
     },
     { key: "durationMs", header: "耗时", render: (r) => <span className="text-xs tabular-nums">{r.durationMs != null ? `${r.durationMs}ms` : "-"}</span> },
-    { key: "errorMsg", header: "错误", render: (r) => <span className="text-xs text-red-500">{r.errorMsg ? r.errorMsg.slice(0, 60) : "-"}</span> },
+    { key: "errorMsg", header: "错误", render: (r) => <span className="text-xs text-red-600">{r.errorMsg ? r.errorMsg.slice(0, 60) : "-"}</span> },
   ];
 
   return (
@@ -372,7 +372,7 @@ function SecurityTab() {
       key: "status",
       header: "状态",
       render: (r) => (
-        <span className={`rounded px-1.5 py-0.5 text-xs ${r.status === "ACTIVE" ? "bg-emerald-50 text-emerald-600" : r.status === "EXPIRED" ? "bg-slate-100 text-slate-500" : "bg-amber-50 text-amber-600"}`}>
+        <span className={`rounded px-1.5 py-0.5 text-xs ${r.status === "ACTIVE" ? "bg-emerald-50 text-emerald-700" : r.status === "EXPIRED" ? "bg-slate-100 text-slate-500" : "bg-amber-50 text-amber-700"}`}>
           {TOKEN_STATUS_LABEL[r.status] ?? r.status}
         </span>
       ),

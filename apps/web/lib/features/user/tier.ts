@@ -31,7 +31,7 @@ export const TIER_FULL_LABEL: Record<AccountTierKey, string> = {
 export const TIER_BADGE_CLS: Record<AccountTierKey, string> = {
   NORMAL: "border-[var(--border)] bg-[var(--muted)] text-[var(--muted-foreground)]",
   PRO: "border-primary/30 bg-primary/10 text-primary",
-  MAX: "border-amber-500/40 bg-amber-500/15 text-amber-600",
+  MAX: "border-amber-500/40 bg-amber-500/15 text-amber-700",
 };
 
 /** 管理端行内徽标配色（UsersTable 专用） */

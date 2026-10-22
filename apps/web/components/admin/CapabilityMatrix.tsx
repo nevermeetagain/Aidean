@@ -228,7 +228,7 @@ export function CapabilityMatrix() {
                 }
                 const rec = g.cells[key];
                 if (!rec) {
-                  return <span className="text-slate-300">—</span>;
+                  return <span className="text-slate-400">—</span>;
                 }
                 return (
                   <div className="flex flex-col items-center gap-1">

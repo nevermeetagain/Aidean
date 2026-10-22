@@ -12,7 +12,7 @@ type Tone = "primary" | "accent";
 
 const TONE_ICON: Record<Tone, string> = {
   primary: "border-primary/20 bg-primary/10 text-primary",
-  accent: "border-accent/20 bg-accent/10 text-accent",
+  accent: "border-accent/20 bg-accent/10 text-primary",
 };
 
 interface CoreInfoCardProps {

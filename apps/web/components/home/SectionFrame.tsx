@@ -1,6 +1,8 @@
-// 区块留白容器：Server Component，统一首页各区块的最大宽度、水平内边距与纵向间距，
+// 区块留白容器：Server Component，统一首页各区块的水平内边距与纵向间距，
 // 并提供可选的标题/副标题锚点结构。视觉收口：标题左侧主色竖线+眼眉标签，区块间用 hairline 分隔，
 // 保持 Server Component 零 JS。
+// UX-FIX-D（M-WIDE，UI设计文档 §2.4）：外框全宽 + px-4 md:px-6，与 SiteHeader/SiteFooter 左右边对齐；
+// 不再 mx-auto max-w-6xl 居中。行可读性由文本块自约束（副标题 max-w-2xl）保证。
 import type { ReactNode } from "react";
 
 interface SectionFrameProps {
@@ -19,7 +21,7 @@ export function SectionFrame({ id, title, subtitle, eyebrow, children, className
       className={`px-4 py-16 md:px-6 md:py-20${className ? ` ${className}` : ""}`}
     >
       {(title || subtitle || eyebrow) && (
-        <header className="mx-auto mb-10 max-w-6xl">
+        <header className="mb-10 w-full">
           {eyebrow ? (
             <p className="mb-3 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
               <span aria-hidden="true" className="h-px w-6 bg-primary/40" />
@@ -39,7 +41,7 @@ export function SectionFrame({ id, title, subtitle, eyebrow, children, className
           )}
         </header>
       )}
-      <div className="mx-auto max-w-6xl">{children}</div>
+      <div className="w-full">{children}</div>
     </section>
   );
 }

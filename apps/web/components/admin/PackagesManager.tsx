@@ -232,7 +232,7 @@ export function PackagesManager() {
       key: "status",
       header: "状态",
       className: "px-3 py-2",
-      render: p => <span className={p.status === "ACTIVE" ? "font-medium text-emerald-600" : "text-slate-500"}>{p.status === "ACTIVE" ? "在售" : "停售"}</span>,
+      render: p => <span className={p.status === "ACTIVE" ? "font-medium text-emerald-700" : "text-slate-500"}>{p.status === "ACTIVE" ? "在售" : "停售"}</span>,
     },
     {
       key: "actions",
@@ -255,7 +255,7 @@ export function PackagesManager() {
       key: "status",
       header: "状态",
       className: "px-3 py-2",
-      render: o => <span className={o.status === "ACTIVE" ? "font-medium text-emerald-600" : "text-slate-500"}>{orderStatusText[o.status] ?? o.status}</span>,
+      render: o => <span className={o.status === "ACTIVE" ? "font-medium text-emerald-700" : "text-slate-500"}>{orderStatusText[o.status] ?? o.status}</span>,
     },
     { key: "redeemedAt", header: "兑换时间", className: "px-3 py-2 text-xs tabular-nums text-slate-500", render: o => <span>{o.redeemedAt.slice(0, 19).replace("T", " ")}</span> },
     { key: "expiresAt", header: "到期时间", className: "px-3 py-2 text-xs tabular-nums text-slate-500", render: o => <span>{o.expiresAt ? o.expiresAt.slice(0, 19).replace("T", " ") : "—"}</span> },

@@ -207,7 +207,7 @@ export function ProtocolMatrix() {
                 const rec = g.cells[key];
                 if (!rec) {
                   return (
-                    <span data-testid={`admin-protocols-absent-${g.key}-${key}`} className="text-slate-300">
+                    <span data-testid={`admin-protocols-absent-${g.key}-${key}`} className="text-slate-400">
                       —
                     </span>
                   );

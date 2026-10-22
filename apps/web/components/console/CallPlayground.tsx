@@ -871,7 +871,7 @@ export function CallPlayground({ balanceYuan, tiers, priorities, freeQuotas }: C
                 <li key={record.requestId} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2 text-xs">
                   <span className="flex items-center gap-1.5 font-medium text-slate-700">
                     {record.ok ? (
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" aria-hidden="true" />
                     ) : (
                       <Ban className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
                     )}

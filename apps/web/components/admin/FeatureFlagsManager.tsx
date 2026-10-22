@@ -104,7 +104,7 @@ export function FeatureFlagsManager({ canWrite = false }: { canWrite?: boolean }
       render: (f) => (
         <span
           data-testid={`flag-status-${f.flagCode}`}
-          className={f.isEnabled ? "font-medium text-emerald-600" : "text-slate-500"}
+          className={f.isEnabled ? "font-medium text-emerald-700" : "text-slate-500"}
         >
           {f.isEnabled ? "启用" : "停用"}
         </span>

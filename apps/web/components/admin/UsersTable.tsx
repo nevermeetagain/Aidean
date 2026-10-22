@@ -240,7 +240,7 @@ export function UsersTable({
       header: "状态",
       className: "px-3 py-2",
       render: u => (
-        <span className={u.status === "ACTIVE" ? "font-medium text-emerald-600" : "font-medium text-rose-600"}>
+        <span className={u.status === "ACTIVE" ? "font-medium text-emerald-700" : "font-medium text-rose-700"}>
           {u.status === "ACTIVE" ? "正常" : "已封禁"}
         </span>
       ),
@@ -380,7 +380,7 @@ export function UsersTable({
               {credLoading ? (
                 <p className="mt-2 text-xs text-slate-400">加载中…</p>
               ) : credError ? (
-                <p className="mt-2 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-600">{credError}</p>
+                <p className="mt-2 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-700">{credError}</p>
               ) : cred ? (
                 <div className="mt-3 space-y-3">
                   <CredList
@@ -469,7 +469,7 @@ export function UsersTable({
             <p className="mt-1 text-xs text-slate-500">
               {roleTarget.email} · 遗留等级角色 <span className="font-mono">{roleTarget.role}</span>（只读）。勾选授予的角色，保存后即时生效。
             </p>
-            {roleMsg ? <p className="mt-2 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-600">{roleMsg}</p> : null}
+            {roleMsg ? <p className="mt-2 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-700">{roleMsg}</p> : null}
             <div className="mt-3 space-y-1.5">
               {roleBusy && allRoles.length === 0 ? (
                 <p className="text-sm text-slate-400">加载中…</p>
@@ -519,7 +519,7 @@ function CredList({
             <span className="truncate font-mono text-slate-700" title={r.masked}>{r.masked}</span>
             <span className="flex shrink-0 items-center gap-2">
               {r.meta ? <span className="text-slate-400">{r.meta}</span> : null}
-              <span className={r.active ? "text-emerald-600" : "text-slate-400"}>{r.active ? "有效" : "已停用"}</span>
+              <span className={r.active ? "text-emerald-700" : "text-slate-400"}>{r.active ? "有效" : "已停用"}</span>
               {canRevoke && r.active ? (
                 <Button variant="ghost" size="sm" className="text-[var(--danger)] hover:underline" disabled={busy} onClick={() => onRevoke(r)}>
                   吊销

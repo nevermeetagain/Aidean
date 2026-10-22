@@ -200,7 +200,7 @@ export function NewsManager() {
       key: "status",
       header: "状态",
       className: "px-3 py-2",
-      render: n => <span className={n.status === "PUBLISHED" ? "font-medium text-emerald-600" : "text-slate-500"}>{n.status === "PUBLISHED" ? "已发布" : "草稿"}</span>,
+      render: n => <span className={n.status === "PUBLISHED" ? "font-medium text-emerald-700" : "text-slate-500"}>{n.status === "PUBLISHED" ? "已发布" : "草稿"}</span>,
     },
     { key: "publishedAt", header: "发布日期", className: "px-3 py-2 text-xs tabular-nums text-slate-500", render: n => <span>{n.publishedAt ? n.publishedAt.slice(0, 10) : "—"}</span> },
     {

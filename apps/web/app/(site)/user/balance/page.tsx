@@ -152,7 +152,7 @@ export default async function BalancePage({
                       </span>
                       <span
                         className={`tabular-nums ${
-                          e.direction === "CREDIT" ? "text-emerald-600" : "text-slate-700"
+                          e.direction === "CREDIT" ? "text-emerald-700" : "text-slate-700"
                         }`}
                         data-testid="ledger-amount"
                       >
@@ -170,7 +170,7 @@ export default async function BalancePage({
                     上一页
                   </Link>
                 ) : (
-                  <span className="text-slate-300">上一页</span>
+                  <span className="text-slate-400">上一页</span>
                 )}
                 <span className="text-slate-500">
                   {page} / {totalPages}
@@ -180,7 +180,7 @@ export default async function BalancePage({
                     下一页
                   </Link>
                 ) : (
-                  <span className="text-slate-300">下一页</span>
+                  <span className="text-slate-400">下一页</span>
                 )}
               </nav>
             ) : null}

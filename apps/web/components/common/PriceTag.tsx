@@ -51,12 +51,12 @@ export function PromoBadge({ free, endsAt, className }: { free: boolean; endsAt?
         "inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-medium leading-none",
         free
           ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-          : "border-rose-200 bg-rose-50 text-rose-600",
+          : "border-rose-200 bg-rose-50 text-rose-700",
         className,
       )}
     >
       {label}
-      {deadline ? <span className="font-normal opacity-80">· 截至 {deadline}</span> : null}
+      {deadline ? <span className="font-normal">· 截至 {deadline}</span> : null}
     </span>
   );
 }
@@ -98,7 +98,7 @@ export function PriceTag({
       data-testid={isPromotion ? "price-tag-promo" : "price-tag"}
       className={cn("inline-flex flex-wrap items-baseline gap-x-1.5 gap-y-1", align === "end" && "justify-end", className)}
     >
-      <span className={cn("tabular-nums", isPromotion ? "font-semibold text-rose-600" : undefined, isPromotion && isFree && "text-emerald-700")}>
+      <span className={cn("tabular-nums", isPromotion ? "font-semibold text-rose-700" : undefined, isPromotion && isFree && "text-emerald-700")}>
         {text}
         {unit && text !== "未公开" && !isFree ? <span className="ml-0.5 text-[0.85em] font-normal text-slate-400">{unit}</span> : null}
       </span>
