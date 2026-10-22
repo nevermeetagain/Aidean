@@ -26,7 +26,7 @@ RAW_LOG=.scratch/mutation-<endpoint>.txt（15 份原始日志，未入库）
 | 15 | intelligence/snapshots | 5 | 1 | 5 | 0 | True |
 
 **结论：15/15 全部 MUT_EXIT=1、RESTORE_EXIT=0、SHA_MATCH=True。**
-所有 mutant 均出现 `AssertionError: expected 200 to be 400`——回退原写法后非法串重新变成「静默回退 + NaN 进 Prisma」，单测立即捕获。
+失败用例以 `AssertionError: expected 200 to be 400` 为主（非法串回退后重新变成「静默回退 + NaN 进 Prisma」被单测捕获）；部分端点失败数大于其非法串 400 用例数（如 audit-logs 6 个失败 vs 5 个 400 用例），多出者为 `?page=&pageSize=` 空串路径的 `skip/take` 断言失败 —— 原写法把空串解析为 NaN 后代入分页参数，同属 `expected … to be` 数值断言而非 400 断言，不影响 15/15 全捕获的结论。
 
 ## 逐端点 SHA256（前 16 位）
 | 端点 | SHA_BEFORE（编辑版） | SHA_MUTANT（6cac347 原版） |

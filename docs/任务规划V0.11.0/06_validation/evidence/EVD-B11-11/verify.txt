@@ -118,7 +118,7 @@ HTTP=200 BYTES=133 CT=application/json
 CURL_EXIT=0
 {"code":0,"message":"ok","data":{"status":"ok","time":"2026-10-22T02:24:07.325Z"},"requestId":"33ef3134-1965-4dc4-9822-0e9d1d084da6"}
 ## E. 分页参考实现（admin 登录后）
->>> curl -sS -X POST '/api/v1/auth/login' -H content-type: application/json -c /tmp/ag-jar --data {"email":"admin@aidean.com","password":"Admin123!@#"}
+>>> curl -sS -X POST '/api/v1/auth/login' -H content-type: application/json -c /tmp/ag-jar --data {"email":"admin@aidean.com","password":"<redacted>"}
 HTTP=200 BYTES=227 CT=application/json
 CURL_EXIT=0
 {"code":0,"message":"ok","data":{"user":{"id":"01a16167-b41c-7f51-8d8c-392413005043","email":"admin@aidean.com","nickname":"超级管理员","tier":"NORMAL","tokenVersion":0}},"requestId":"ecbc29fe-d163-485c-8741-9e8e9daa454b"}
@@ -167,7 +167,7 @@ HTTP=200 BYTES=133 CT=application/json
 CURL_EXIT=0
 {"code":0,"message":"ok","data":{"status":"ok","time":"2026-10-22T02:24:39.186Z"},"requestId":"5dae5bd6-b2c9-480f-96da-f8679a64c9b9"}
 ## E. 分页参考实现（admin 登录后）
->>> curl -sS -X POST '/api/v1/auth/login' -H content-type: application/json -c /tmp/ag-jar --data {"email":"admin@aidean.com","password":"Admin123!@#"}
+>>> curl -sS -X POST '/api/v1/auth/login' -H content-type: application/json -c /tmp/ag-jar --data {"email":"admin@aidean.com","password":"<redacted>"}
 HTTP=200 BYTES=227 CT=application/json
 CURL_EXIT=0
 {"code":0,"message":"ok","data":{"user":{"id":"01a16167-b41c-7f51-8d8c-392413005043","email":"admin@aidean.com","nickname":"超级管理员","tier":"NORMAL","tokenVersion":0}},"requestId":"c1947a8b-7466-4669-b608-cc53466960c0"}
