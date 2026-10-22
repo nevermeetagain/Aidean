@@ -13,6 +13,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:matrix": "tsx prisma/seed-matrix-backfill.ts",
     "db:seed:products": "node scripts/seed-products.mjs",
     "db:check:tables": "node scripts/check-tables.mjs",
     "db:studio": "prisma studio",
