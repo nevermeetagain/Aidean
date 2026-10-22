@@ -22,3 +22,7 @@ export const GET = withApi(async () => {
   //   涉及 Redis 状态存储与 /wechat/callback 回调路由，待独立规格展开。
   return { enabled: true, state: "STATE_INIT" as const };
 });
+
+// B11-10：未实现的方法统一返回 405 信封（含 Allow 头）。由 scripts/guard/api-method-coverage.mjs --fix 生成，勿手改列表。
+import { methodNotAllowed } from "../../_lib/method-not-allowed";
+export const { POST, PUT, PATCH, DELETE, OPTIONS } = methodNotAllowed(["GET"]);

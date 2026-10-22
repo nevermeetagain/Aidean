@@ -42,3 +42,7 @@ export const DELETE = withApi(async (_req: Request, ctx: RouteContext) => {
   await gatewayService.removeChannel(session.userId, id);
   return { deleted: true };
 });
+
+// B11-10：未实现的方法统一返回 405 信封（含 Allow 头）。由 scripts/guard/api-method-coverage.mjs --fix 生成，勿手改列表。
+import { methodNotAllowed } from "../../../_lib/method-not-allowed";
+export const { GET, HEAD, POST, OPTIONS } = methodNotAllowed(["PUT", "PATCH", "DELETE"]);

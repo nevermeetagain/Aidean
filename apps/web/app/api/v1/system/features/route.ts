@@ -20,3 +20,7 @@ export const GET = withApi(async () => {
   // 出口即校验：返回体恒符合冻结契约（只放行 7 码 boolean，防越权字段泄露）
   return PublicFeaturesSchema.parse({ flags });
 });
+
+// B11-10：未实现的方法统一返回 405 信封（含 Allow 头）。由 scripts/guard/api-method-coverage.mjs --fix 生成，勿手改列表。
+import { methodNotAllowed } from "../../_lib/method-not-allowed";
+export const { POST, PUT, PATCH, DELETE, OPTIONS } = methodNotAllowed(["GET"]);
