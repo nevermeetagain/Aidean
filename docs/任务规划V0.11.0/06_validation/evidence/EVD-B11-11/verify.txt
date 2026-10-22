@@ -244,4 +244,16 @@ PG_STOP_EXIT=0
 - 提交：71a2c78（B11-11: 15 个后台列表端点接入 pagination.ts…），26 files changed +860/-102。
 - 推送：git push origin main → 6cac347..71a2c78；ls-remote 复核 remote main = 71a2c78 = 本地 HEAD（双端一致）。
 - 凭据：全程未在任何命令/日志/文档中出现明文 PAT；认证由系统凭据管理器提供，远程 URL 无凭据残留（git remote get-url origin 为纯 HTTPS）。
-- 未切 strict：scripts/guard/run-all.mjs 未修改，等 Hark 裁定（ALLOWLIST_P1 已清空，ratchet 与 strict 等价）。
+- 未切 strict（当时）：scripts/guard/run-all.mjs 未修改，等 Hark 裁定（ALLOWLIST_P1 已清空，ratchet 与 strict 等价）。后续已裁定并切换，见 §11。
+- 追加提交 49e0df2（verify.txt 补记 rebase 与双端同步）。
+
+## 11. 终审修复、Hark 裁定与 strict 切换（2026-10-22 晚）
+
+- 终审 CodeReview（显式目标 6cac347..49e0df2）：0 P0 / 2 P1 / 3 P2，一句话判定「不存在任何能让 NaN 进入 Prisma 的路径」；P1-1/P1-2/P2-3/P2-4/P2-5 全部修复（详见 deviation §六.10、执行过程 §5.2）。
+- P2-5 修复：admin-list-pagination.spec.ts 新增 3 例「合法整数过滤值写入 where」（?<filter>=2 → where.<key>===2），定向 107 → **110 passed**；变异脚本回退基线改为 6cac347（原 git checkout HEAD 在提交后失效），第三轮 **15/15** 全部捕获（MUT_EXIT=1 / RESTORE_EXIT=0 / SHA_MATCH=True）。
+- 终态门禁（rebase 至 6cac347 后）：typecheck exit 0 / lint exit 0 / docs-rule PASS / docs-facts 16-16（spec-count=207）/ guard ratchet exit 0 / guard --strict exit 0 / 定向 110 passed / 全量 Test Files 1 failed | 157 passed | 2 skipped (160)，**Tests 1737 passed | 5 skipped (1742)**（唯一 Failed Suite 仍是远程既有 rk11-prod-scripts.spec.ts）。
+- 提交 3d1437b（B11-11: 终审 P1/P2 全修…，6 files changed +94/-42）。
+- 推送被拒（远端前进）→ fetch 发现 **9fca091**：「docs(V0.11.0): … B11-11 裁定无例外，run-all 切 pagination strict」→ `git pull --rebase` 干净成功（无冲突），HEAD=d03976c（= 3d1437b rebase 版）。
+- **Hark 裁定落地核验**：9fca091 将 scripts/guard/run-all.mjs 的 pagination-guard 条目改为 ["pagination-guard.mjs", "--strict"]（GUARDS 循环支持「名称+附加参数」数组条目），注释引用「Hark 2026-10-22 裁定切 strict」；30_助手分工.md 同步记录。
+- rebase 至 9fca091 后复跑 node scripts/guard/run-all.mjs → **6/6 守卫 PASS（exit 0）**：root-pollution / secret-scan / module-boundary / port-consistency / api-method-coverage / pagination-guard(strict) 全部 exit 0；pagination-guard strict 下 P1 命中 0、failures=0，P2 命中 2 个文件（mock-upstream/[...path]、partner/codes）均在 ALLOWLIST_P2 已复核豁免。
+- 结论：例外清单为空 + strict 已切 + run-all 全绿，B11-11 交付范围内无未决项；EVD 三件套（deviation v1.5 / 执行过程 v1.4 / 本文件）已同步该状态。

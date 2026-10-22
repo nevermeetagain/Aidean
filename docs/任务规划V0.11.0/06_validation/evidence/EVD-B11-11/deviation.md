@@ -1,6 +1,6 @@
 # EVD-B11-11 · 偏差与裁量记录（分页参数有限性守卫统一口径，Q-11-05=A）
 
-> 版本: v1.4 | 更新: 2026-10-22 | 变更: 追加 §六.8（审核后修订）、§六.9（rebase 既有失败）、§六.10（终审修订）；§一「15 端点接入」由「未做」改为已完成，§四仍为交接时快照保留不改。
+> 版本: v1.5 | 更新: 2026-10-22 | 变更: 追加 §六.11（Hark 裁定无例外，`9fca091` 已切 `run-all` pagination strict，run-all 6/6 PASS）；§一 与 §六.5 的「未切 strict」更新为已切。此前 v1.4：追加 §六.8（审核后修订）、§六.9（rebase 既有失败）、§六.10（终审修订）；§一「15 端点接入」由「未做」改为已完成，§四仍为交接时快照保留不改。
 
 ## 一、交付范围（分工调整后）
 
@@ -10,7 +10,7 @@
 |---|---|---|
 | 共享件 `apps/web/lib/http/pagination.ts`（`parsePagination`/`parseLimit`/`parseOptionalInt`/`parseIntParam`/`clampInt`/`toSearchParams`） | ✅ | 32 例单测 `lib/http/pagination.spec.ts`（含 20×20 畸形输入两两组合穷举） |
 | 参考实现 `admin/scripts/[id]/executions` 迁移 | ✅（行为与原 `toInt()` 等价，既有 7 例全绿） | `verify.txt` §3、`mutation.txt` |
-| 棘轮守卫 `scripts/guard/pagination-guard.mjs`（`run-all` 第 6 项） | ✅ 名单外新增裸 `parseInt` / `Number(searchParams…)` → FAIL；`ALLOWLIST_P1` 已清空（15 个全部接入）；`--strict` 已 exit 0，但 `run-all` strict 接线未切（等 Hark 裁定） | 3 例单测 `lib/http/pagination-guard.spec.ts` |
+| 棘轮守卫 `scripts/guard/pagination-guard.mjs`（`run-all` 第 6 项） | ✅ 名单外新增裸 `parseInt` / `Number(searchParams…)` → FAIL；`ALLOWLIST_P1` 已清空（15 个全部接入）；`--strict` 已 exit 0；**Hark 2026-10-22 裁定无例外，`9fca091` 已将 `run-all` 接线切为 `--strict`，run-all 6/6 PASS** | 3 例单测 `lib/http/pagination-guard.spec.ts` |
 | 其余 15 个端点接入 + 逐端点单测 + 逐端点变异检验 | ✅ **已完成**：15 个 `route.ts` 全部接入 `parsePagination`/`parseLimit`/`parseOptionalInt`；`admin-list-pagination.spec.ts` **110 例**（15 个 describe）；变异 15/15 全部捕获 | `runtime.txt`（15/15 运行态 400）、`mutation-15endpoints.txt`、`执行过程-B11-11.md` §3-4 |
 | 文档 | ✅ 《API接口文档》v1.64 §4.2 `pagination-params` ↔ 《API架构设计方案》v1.21 §五 `pagination-params-architecture`；术语表 v1.25 `term-pagination-parse`（**均属白名单外必要同步，请求追认**） | — |
 
@@ -49,7 +49,7 @@
 2. **`intelligence/reports|snapshots` 的 `limit` 新增上限 1000**：原实现 `listReports(limit=30)` 无上限（`limit=999999` 会直达查询）。改用 `parseLimit(url,{defaultLimit:30,max:1000})`，属防御性收紧，非契约变更（合法区间内行为不变）。
 3. **参考实现（`scripts/[id]/executions`）未回改**：仍是「非法串回退默认值」的 200 口径（`runtime.txt` §4 对照）。两类口径并存是本次唯一的不一致点，是否统一由 Hark 裁定；未擅自改动已完成卡（B11-10）的验收基线。
 4. **`evaluations` 改造中修正一处自造缺陷**：首版用 `...(cond ? {status: parseOptionalInt(...)} : {})` + `if (where.status === undefined) throw`，会在「未传 status」时误抛 400；已改为显式 `const where: {deletedAt:null; status?:number}` + 条件赋值，并由单测覆盖（缺省 → 200）。
-5. **守卫名单已清空但未切 strict 接线**：`ALLOWLIST_P1` 由 15 行改为 `[]`（每接入一个删一行，符合 §二.5 棘轮约定），`--strict` 已 exit 0。**`scripts/guard/run-all.mjs` 的 strict 开关未改**——按用户指令需先报例外清单、等 Hark 裁定后再切。
+5. **守卫名单已清空，strict 接线已切（Hark 裁定后）**：`ALLOWLIST_P1` 由 15 行改为 `[]`（每接入一个删一行，符合 §二.5 棘轮约定），`--strict` 已 exit 0。`scripts/guard/run-all.mjs` 的 strict 开关当班未改（按用户指令需先报例外清单、等 Hark 裁定）；**Hark 2026-10-22 裁定「无例外」，由 `9fca091` 完成接线**（`["pagination-guard.mjs", "--strict"]` + 数组条目支持），见 §六.11。
 6. **文档事实同步**：新增 1 个 spec（`admin-list-pagination.spec.ts`）→ `scripts/check-docs-facts.mjs` 的 `spec-count` 205→206（R10-01 惯例；该脚本是 handoff §5 五门禁之一，不同步则门禁必红）。**rebase 到 6cac347 后**该值再合并为 206→207（远程 RK-11-07/09 另新增 `rk11-prod-scripts.spec.ts`），实测 E2E 48 + web 159 = 207。
 7. **§四第 1、2 条已失效**：15 端点接入后，`audit-logs?page=abc` 实测 **400**（`runtime.txt` §1），运行态取证已补齐至 **15/15 端点**（`runtime.txt` §1-2 + §6.1）；「不得表述为全站修复」的告诫仍有效——本次只覆盖后台 15 个列表端点，其他走 Zod 的端点未动。
 8. **审核后修订（v1.2）**：
@@ -69,8 +69,17 @@
 
 10. **终审修订（v1.4，子智能体第二轮独立复核后）**：
     - **P1-1（已修）**：§一 表格原写「其余 15 个端点接入 … ⏸ 未做」，与本卡最终状态直接矛盾 → 改为 ✅ 已完成，并加「本表随交付推进更新」注记。
-    - **P1-2（已修）**：`verify.txt` §9 的全量读数 1707 采自 87 例口径，却与同列表的「107 passed」并列；已改为按时代分列（87 例口径 1707 → 107 例口径 1727 → rebase 及 110 例后 1737 待实测），并与 `runtime.txt` §7 对齐。
+    - **P1-2（已修）**：`verify.txt` §9 的全量读数 1707 采自 87 例口径，却与同列表的「107 passed」并列；已改为按时代分列（87 例口径 1707 → 107 例口径 1727 → rebase 及 110 例后实测 **1737 passed | 5 skipped (1742)**），并与 `runtime.txt` §7 对齐。
     - **P2-3（已修）**：执行过程 §3 的 `spec-count 205→206` 过期 → 统一为 207（205→206 RK + 206→207 本卡）。
-    - **P2-4（已修）**：`pagination-guard.mjs` 头部注释仍写「名单内 15 个 → WARN」，与名单已空不符 → 改为「ALLOWLIST_P1 已清空 → ratchet 与 strict 等价，`run-all` 接线未切」；三份契约文档属白名单外必要同步，已在 §一 与执行过程 §5 标注「请求追认」。
+    - **P2-4（已修）**：`pagination-guard.mjs` 头部注释仍写「名单内 15 个 → WARN」，与名单已空不符 → 改为「ALLOWLIST_P1 已清空 → ratchet 与 strict 等价」；三份契约文档属白名单外必要同步，已在 §一 与执行过程 §5 标注「请求追认」。
     - **P2-5（已修）**：单测缺「合法整数过滤值真正写入 where」的断言（实现若整段删掉 `where[filter]=n`，过滤器静默失效仍 200，107 例全绿）→ 新增 3 例（`audit-logs?action=2` / `benchmarks?verifiedStatus=2` / `evaluations?status=2` 断言 `where.<key>===2`），单测 107 → **110**；变异对基线 6cac347 复跑 **15/15** 仍全部捕获（`mutation-15endpoints.txt` 第三轮）。
+
+11. **Hark 裁定与 strict 收口（v1.5，`9fca091`）**：
+    - 用户在 B11-11 开工指令中要求：切 strict 前先报例外清单、等 Hark 裁定。本卡例外清单为**空**（15/15 全部接入）。
+    - **Hark 2026-10-22 裁定「B11-11 无例外，run-all 切 pagination strict」**，由远端提交 `9fca091`（「docs(V0.11.0): 30_助手分工 v0.4 单助手 + 标准 Git 流程；B11-04a 评审通过；B11-11 裁定无例外，run-all 切 pagination strict」）落地：
+      - `scripts/guard/run-all.mjs`：`pagination-guard.mjs` 条目改为 `["pagination-guard.mjs", "--strict"]`，`GUARDS` 循环支持「名称 + 附加参数」数组条目；
+      - `docs/任务规划V0.11.0/30_助手分工.md` 记录分工与标准 Git 流程。
+    - 本卡 rebase 至 `9fca091` 后复跑 `node scripts/guard/run-all.mjs` → **6/6 守卫 PASS（exit 0）**，其中 pagination-guard 以 strict 模式运行：P1 命中 0、failures=0；P2 命中 2 个文件（`mock-upstream/[...path]`、`partner/codes`）均在 `ALLOWLIST_P2` 已复核豁免，strict 下仍 PASS。
+    - 至此「名单清空 + strict 接线」双落地，棘轮兑现完毕；B11-11 交付范围内无未决项。
+
 
