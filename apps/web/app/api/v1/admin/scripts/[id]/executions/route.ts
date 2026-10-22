@@ -9,7 +9,9 @@
  * 现改用与兄弟路由（[id]、[id]/trigger）一致的 ctx.params，从结构上消除下标偏移这一类错误。
  *
  * B11-11（Q-11-05=A）：原内联 `toInt()` 已提升为共享件 `lib/http/pagination.ts`（parsePagination /
- * parseOptionalInt），本端点为全站接入的参考实现。以下为 M1 加固时的历史记录（语义未变）：
+ * parseOptionalInt），本端点为全站接入的参考实现。P0 收尾（B11-11 待裁定第 1 项）：非法
+ * `page`/`pageSize`/`status` 统一→400/40000（不再静默回退 200），与其余 15 个列表端点同口径。
+ * 以下为 M1 加固时的历史记录（语义未变）：
  * 子智能体审查（M1）加固：status 与 page/pageSize 三处 parseInt 统一走有限性守卫，
  * 避免同类缺陷只修一半（非法分页串同样会把 NaN 送进 Prisma 而 500）。
  * 变异检验（已落盘 `.scratch/u3-mutation.txt`：`PATTERN_HIT p1=True p2=True`、`GUARD_CALLS_LEFT=0`、
@@ -20,7 +22,8 @@
 
 import { prisma } from '../../../../../../../lib/db/prisma';
 import { requireAdminApi } from '../../../../../../../lib/features/auth/session';
-import { parseOptionalInt, parsePagination } from '../../../../../../../lib/http/pagination';
+import { parseIntParam, parseOptionalInt, parsePagination } from '../../../../../../../lib/http/pagination';
+import { ApiError, ERROR_CODES } from '../../../../_lib/errors';
 import { withApi, type RouteContext } from '../../../../_lib/handler';
 
 export const dynamic = 'force-dynamic';
@@ -31,11 +34,21 @@ export const GET = withApi(async (req: Request, ctx: RouteContext<{ id: string }
   const url = new URL(req.url);
   // 路径参数取自 Next 路由段（不再用 pathname 下标切片）；与 prisma.scheduledScript.id 同义
   const scriptId = (await ctx.params).id;
-  // B11-11：分页与 status 过滤统一走共享解析件（lib/http/pagination.ts，Q-11-05=A 参考实现）。
-  // 非数字串回退默认值、越界钳制（pageSize ∈ [1,50]），结构上不可能把 NaN 送进 Prisma skip/take。
+  // B11-11 P0（Q-11-05=A）：与其余 15 个列表端点同口径——非法整数串显式 400（不再静默回退 200），
+  // 空串视同缺省；合法值仍由 parsePagination 钳制到既有区间。
+  for (const key of ["page", "pageSize"] as const) {
+    const raw = url.searchParams.get(key);
+    if (raw !== null && raw !== "" && Number.isNaN(parseIntParam(raw, Number.NaN))) {
+      throw new ApiError(ERROR_CODES.BAD_REQUEST, `参数 ${key} 必须为整数`);
+    }
+  }
   const { page, pageSize, skip, take } = parsePagination(url, { defaultPageSize: 20, maxPageSize: 50 });
   const where: Record<string, unknown> = { scriptId };
-  // 非法 status 串（如 ?status=abc）视为未过滤，绝不送 NaN（parseOptionalInt 恒返回有限整数或 undefined）
+  // 非法 status 串（如 ?status=abc）同样显式 400，绝不把 NaN 送进 where（不得触达 Prisma）
+  const statusRaw = url.searchParams.get("status");
+  if (statusRaw !== null && statusRaw !== "" && Number.isNaN(parseIntParam(statusRaw, Number.NaN))) {
+    throw new ApiError(ERROR_CODES.BAD_REQUEST, "参数 status 必须为整数");
+  }
   const status = parseOptionalInt(url, 'status');
   if (status !== undefined) {
     where.status = status;

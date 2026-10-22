@@ -26,6 +26,7 @@ vi.mock("../../../db/prisma", () => ({
     discoveryCandidate: { findMany: vi.fn().mockResolvedValue([]), count: vi.fn().mockResolvedValue(0) },
     protocolCompatibility: { findMany: vi.fn().mockResolvedValue([]), count: vi.fn().mockResolvedValue(0) },
     marketSnapshot: { findMany: vi.fn().mockResolvedValue([]) },
+    scriptExecution: { findMany: vi.fn().mockResolvedValue([]), count: vi.fn().mockResolvedValue(0) },
     $transaction: vi.fn((ops: unknown[]) => Promise.all(ops)),
   },
 }));
@@ -210,6 +211,32 @@ describePaginated({ path: "tier-mappings", model: "userTierMapping", defaultPage
 describePaginated({ path: "capabilities", model: "capabilityMatrix", defaultPageSize: 50 });
 describePaginated({ path: "discovery/candidates", model: "discoveryCandidate", defaultPageSize: 20 });
 describePaginated({ path: "protocols", model: "protocolCompatibility", defaultPageSize: 50 });
+
+// P0.1.3：executions 是动态路由（scriptId 取自 ctx.params），不进上方静态 ROUTES 表；
+// 单独以真实 Next 语义调用，断言与其余 15 端点同口径（400 + 不触达 Prisma）。
+describe("GET /api/v1/admin/scripts/[id]/executions 分页/status 守卫（P0）", () => {
+  const callExecutions = async (qs: string) => {
+    const { GET } = await import("../../../../app/api/v1/admin/scripts/[id]/executions/route");
+    const req = new Request(`http://localhost/api/v1/admin/scripts/scr-1/executions${qs}`);
+    const res = await GET(req as never, { params: Promise.resolve({ id: "scr-1" }) } as never);
+    return { res, json: (await res.json()) as { code: number; message: string } };
+  };
+
+  it.each(["?page=abc", "?pageSize=xyz"])("%s → 400 且不触达 Prisma", async (qs) => {
+    const { res, json } = await callExecutions(qs);
+    expect(res.status).toBe(400);
+    expect(json.code).toBe(40000);
+    expect(prisma.scriptExecution.findMany).not.toHaveBeenCalled();
+  });
+
+  it("?status=x → 400 且不触达 Prisma", async () => {
+    const { res, json } = await callExecutions("?status=x");
+    expect(res.status).toBe(400);
+    expect(json.code).toBe(40000);
+    expect(prisma.scriptExecution.findMany).not.toHaveBeenCalled();
+    expect(prisma.scriptExecution.count).not.toHaveBeenCalled();
+  });
+});
 
 describe("GET /api/v1/admin/intelligence/reports limit 守卫（B11-11）", () => {
   it.each(["?limit=abc", "?limit=xyz", "?limit=%20"])("%s → 400 且不调用 listReports", async (qs) => {

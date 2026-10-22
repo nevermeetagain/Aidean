@@ -3,8 +3,8 @@
  *
  * 覆盖：
  * 1. scriptId 必须来自路由段 params（原实现用 pathname 下标切片，切出字面量 'scripts' → 历史恒空）；
- * 2. status 过滤：合法数值生效、非法串不得把 NaN 送进 Prisma；
- * 3. 分页 skip/take：正常值、越界钳制、非法串回退默认（M1 回归锁）；
+ * 2. status 过滤：合法数值生效、非法串显式 400（不触达 Prisma）；
+ * 3. 分页 skip/take：正常值、越界钳制、空串缺省；非法串显式 400（P0 与 15 端点同口径）；
  * 4. statusLabel 映射；
  * 5. 反向自检：params 与 pathname 不一致时以 params 为准（证明取值来源）。
  */
@@ -84,16 +84,16 @@ describe("GET /api/v1/admin/scripts/[id]/executions", () => {
     expect(arg.where.status).toBe(1);
   });
 
-  it("status 非法串不得把 NaN 送进 Prisma（视为未过滤）", async () => {
-    await call(
+  it("status 非法串 → 400 且不触达 Prisma（P0：不再静默视为未过滤）", async () => {
+    const { res, json } = await call(
       "http://localhost/api/v1/admin/scripts/scr-9/executions?status=abc",
       "scr-9",
     );
 
-    const arg = vi.mocked(prisma.scriptExecution.findMany).mock.calls[0]![0] as {
-      where: Record<string, unknown>;
-    };
-    expect("status" in arg.where).toBe(false);
+    expect(res.status).toBe(400);
+    expect(json.code).toBe(40000);
+    expect(prisma.scriptExecution.findMany).not.toHaveBeenCalled();
+    expect(prisma.scriptExecution.count).not.toHaveBeenCalled();
   });
 
   it("分页：page=2&pageSize=10 → skip=10 take=10", async () => {
@@ -110,22 +110,22 @@ describe("GET /api/v1/admin/scripts/[id]/executions", () => {
     expect(arg.take).toBe(10);
   });
 
-  it("分页越界钳制：pageSize=1000 → take=50；page=abc → 回退默认 1/20（不得送 NaN）", async () => {
+  it("分页越界钳制：pageSize=1000 → take=50；空串视同缺省", async () => {
     await call(
-      "http://localhost/api/v1/admin/scripts/scr-9/executions?page=abc&pageSize=1000",
+      "http://localhost/api/v1/admin/scripts/scr-9/executions?pageSize=1000",
       "scr-9",
     );
     await call(
-      "http://localhost/api/v1/admin/scripts/scr-9/executions?page=3&pageSize=xyz",
+      "http://localhost/api/v1/admin/scripts/scr-9/executions?page=&pageSize=",
       "scr-9",
     );
 
     const calls = vi.mocked(prisma.scriptExecution.findMany).mock.calls;
     const clamp = calls[0]![0] as { skip: number; take: number };
-    expect(clamp.skip).toBe(0); // page 非法 → 回退 1
+    expect(clamp.skip).toBe(0);
     expect(clamp.take).toBe(50); // 上限钳制
     const fallback = calls[1]![0] as { skip: number; take: number };
-    expect(fallback.skip).toBe(40); // (3-1) * 20，pageSize 非法 → 回退默认 20
+    expect(fallback.skip).toBe(0);
     expect(fallback.take).toBe(20);
     // 任何一处都不允许出现 NaN（旧写法 parseInt('abc') 会直接送到 Prisma）
     for (const c of calls) {
@@ -133,6 +133,23 @@ describe("GET /api/v1/admin/scripts/[id]/executions", () => {
       expect(Number.isFinite(a.skip)).toBe(true);
       expect(Number.isFinite(a.take)).toBe(true);
     }
+  });
+
+  it("非法分页串 → 400 且不触达 Prisma（P0：page=abc / pageSize=xyz）", async () => {
+    const bad = await call(
+      "http://localhost/api/v1/admin/scripts/scr-9/executions?page=abc",
+      "scr-9",
+    );
+    expect(bad.res.status).toBe(400);
+    expect(bad.json.code).toBe(40000);
+
+    const bad2 = await call(
+      "http://localhost/api/v1/admin/scripts/scr-9/executions?pageSize=xyz",
+      "scr-9",
+    );
+    expect(bad2.res.status).toBe(400);
+    expect(prisma.scriptExecution.findMany).not.toHaveBeenCalled();
+    expect(prisma.scriptExecution.count).not.toHaveBeenCalled();
   });
 
   it("statusLabel 映射 0/1/2 → 执行中/成功/失败，时间转 ISO", async () => {
