@@ -1,8 +1,8 @@
 # apps/web 代码读取的 process.env 全集（本机 git tracked 源码实测，非 /workspace 基线）
-# 扫描：739 个文件（.ts/.tsx/.mjs/.js，排除 node_modules/.next/dist/public/coverage）
+# 扫描：742 个文件（.ts/.tsx/.mjs/.js，排除 node_modules/.next/dist/public/coverage）
 # 形态：process.env.X、process.env["X"]、const { X } = process.env
 # 生成：node scripts/guard/env-diff.mjs --json（.scratch/t120-05-env-diff.json）
-# 合计 24 个：
+# 合计 25 个：
 
 ADMIN_API_TOKEN	apps/web/app/api/v1/admin/scripts/run-due/route.ts
 AIDEAN_BYPASS_LOGIN_RATE_LIMIT	apps/web/lib/features/auth/constants.ts
@@ -10,14 +10,15 @@ AIDEAN_DIST_DIR	apps/web/next.config.mjs
 AIDEAN_ENABLE_MOCK_UPSTREAM	apps/web/app/api/v1/mock-upstream/[...path]/route.ts
 AIDEAN_GATEWAY_STREAM_PASSTHROUGH	apps/web/lib/features/gateway/__tests__/gateway-orchestrator.spec.ts | apps/web/lib/features/gateway/__tests__/stream-passthrough.spec.ts | apps/web/lib/features/gateway/service.ts
 BILLING_NOTIFY_SECRET	apps/web/lib/features/billing/service.ts
-DATABASE_URL	apps/web/lib/db/prisma.ts | apps/web/lib/features/pricing/__tests__/effective-price.int.spec.ts | apps/web/lib/sync/writers/__tests__/persist-prices.int.spec.ts
+DATABASE_URL	apps/web/lib/config/__tests__/env.spec.ts | apps/web/lib/db/prisma.ts | apps/web/lib/features/pricing/__tests__/effective-price.int.spec.ts | apps/web/lib/sync/writers/__tests__/persist-prices.int.spec.ts
 HTTPS_PROXY	apps/web/lib/security/__tests__/url-policy-outbound.spec.ts | apps/web/lib/security/url-policy.ts
 HTTP_PROXY	apps/web/lib/security/__tests__/url-policy-outbound.spec.ts
 JWT_PRIVATE_KEY	apps/web/lib/features/auth/keys.ts
-JWT_SECRET	apps/web/lib/env-check.ts | apps/web/lib/features/apikey/crypto.ts | apps/web/lib/features/apikey/service.ts | apps/web/lib/features/auth/__tests__/backchannel-logout.spec.ts | apps/web/lib/features/auth/__tests__/oidc-redlines.spec.ts | apps/web/lib/features/auth/__tests__/routes-auth.spec.ts | apps/web/lib/features/auth/__tests__/session-tokens.spec.ts | apps/web/lib/features/gateway/__tests__/routes-gateway.spec.ts | apps/web/lib/features/user/__tests__/routes-user.spec.ts
+JWT_SECRET	apps/web/lib/config/__tests__/env.spec.ts | apps/web/lib/env-check.ts | apps/web/lib/features/apikey/crypto.ts | apps/web/lib/features/apikey/service.ts | apps/web/lib/features/auth/__tests__/backchannel-logout.spec.ts | apps/web/lib/features/auth/__tests__/oidc-redlines.spec.ts | apps/web/lib/features/auth/__tests__/routes-auth.spec.ts | apps/web/lib/features/auth/__tests__/session-tokens.spec.ts | apps/web/lib/features/gateway/__tests__/routes-gateway.spec.ts | apps/web/lib/features/user/__tests__/routes-user.spec.ts
 NEXT_PUBLIC_SITE_URL	apps/web/app/.well-known/openid-configuration/route.ts | apps/web/app/layout.tsx | apps/web/lib/currency/__tests__/display-currency.spec.ts | apps/web/lib/features/auth/__tests__/middleware-session-hint.spec.ts | apps/web/lib/features/auth/__tests__/middleware.spec.ts | apps/web/lib/features/auth/constants.ts
+NEXT_RUNTIME	apps/web/instrumentation.ts
 NODE_ENV	apps/web/app/(site)/user/balance/page.tsx | apps/web/app/oauth/dev/callback/page.tsx | apps/web/lib/db/prisma.ts | apps/web/lib/features/auth/constants.ts | apps/web/lib/features/auth/email-code.ts | apps/web/lib/features/billing/service.ts
-REDIS_URL	apps/web/lib/db/redis.ts | apps/web/lib/features/ladder/__tests__/ladder.spec.ts | apps/web/lib/features/system/__tests__/readiness.spec.ts | apps/web/lib/features/system/__tests__/ready-route.spec.ts | apps/web/lib/features/system/readiness.ts | apps/web/scripts/clear-rl.mjs
+REDIS_URL	apps/web/lib/config/__tests__/env.spec.ts | apps/web/lib/db/redis.ts | apps/web/lib/features/ladder/__tests__/ladder.spec.ts | apps/web/lib/features/system/__tests__/readiness.spec.ts | apps/web/lib/features/system/__tests__/ready-route.spec.ts | apps/web/lib/features/system/readiness.ts | apps/web/scripts/clear-rl.mjs
 RUN_DB_TESTS	apps/web/lib/features/pricing/__tests__/effective-price.int.spec.ts | apps/web/lib/sync/writers/__tests__/persist-prices.int.spec.ts
 SMTP_FROM	apps/web/lib/features/auth/__tests__/mailer.spec.ts | apps/web/lib/features/auth/mailer.ts
 SMTP_HOST	apps/web/lib/features/auth/__tests__/mailer.spec.ts | apps/web/lib/features/auth/mailer.ts
@@ -30,6 +31,6 @@ http_proxy	apps/web/lib/security/__tests__/url-policy-outbound.spec.ts
 https_proxy	apps/web/lib/security/__tests__/url-policy-outbound.spec.ts
 
 # 差集 referenced − 三份 example 并集 = ∅；missing(primary) = []
-# 反向差集 example − referenced = 29 项
+# 反向差集 example − referenced = 30 项
 #   compose 使用，保留（7）：PGADMIN_EMAIL, PGADMIN_PASSWORD, POSTGRES_DB, POSTGRES_PASSWORD, POSTGRES_USER, REDIS_PASSWORD, REPLICATOR_PASSWORD
-#   代码未读取且 compose 未引用，保留待确认（22）：ALIPAY_APPID, ALIPAY_APP_ID, ALIPAY_PRIVATE_KEY, CACHE_TTL_LADDER_LIST, CACHE_TTL_MODEL_DETAIL, CACHE_TTL_USER_PROFILE, DATABASE_URL_DEV, DATABASE_URL_POOL, DATABASE_URL_PROD, JWT_EXPIRES_IN, JWT_REFRESH_EXPIRES_IN, LOG_LEVEL, RAGFLOW_API_KEY, RAGFLOW_BASE_URL, REDIS_URL_DEV, REDIS_URL_PROD, SNOWFLAKE_DATACENTER_ID, SNOWFLAKE_WORKER_ID, WECHAT_PAY_API_KEY, WECHAT_PAY_APP_ID, WECHAT_PAY_MCH_ID, WECHAT_SECRET
+#   代码未读取且 compose 未引用，保留待确认（23）：ALIPAY_APPID, ALIPAY_APP_ID, ALIPAY_PRIVATE_KEY, CACHE_TTL_LADDER_LIST, CACHE_TTL_MODEL_DETAIL, CACHE_TTL_USER_PROFILE, DATABASE_URL_DEV, DATABASE_URL_POOL, DATABASE_URL_PROD, JWT_EXPIRES_IN, JWT_REFRESH_EXPIRES_IN, LOG_LEVEL, NEXT_PHASE, RAGFLOW_API_KEY, RAGFLOW_BASE_URL, REDIS_URL_DEV, REDIS_URL_PROD, SNOWFLAKE_DATACENTER_ID, SNOWFLAKE_WORKER_ID, WECHAT_PAY_API_KEY, WECHAT_PAY_APP_ID, WECHAT_PAY_MCH_ID, WECHAT_SECRET

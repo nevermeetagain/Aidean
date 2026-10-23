@@ -1,15 +1,16 @@
-T120-05 证据（外部助手 · 2026-10-23 · 基线 main@93eba205 · 结论：实现完成且本地全绿，唯一红项=门禁 pin → blocked，未推送）
+T120-05 证据（外部助手 · 2026-10-23 · 基线 main@93eba205 · 结论：验收①②③④全绿；spec-count pin 213→214 经用户授权随本卡提出 → 已推送）
 
 ## 卡面验证命令
 - node scripts/guard/env-diff.mjs → RESULT: PASS（failures=0 warnings=1）EXIT=0
+  （本卡新文件入库后曾 FAIL 于自读的 NEXT_RUNTIME——扫描走 git trackedFiles，故在 example 补登记 NEXT_RUNTIME/NEXT_PHASE 后方绿）
 - pnpm -C apps/web exec vitest run lib/config → EXIT=0 ｜ Test Files 1 passed ｜ Tests 3 passed ｜ 689ms
 
 ## 验收① referenced − example = ∅
 - 扫描 apps/web tracked 源码（.ts/.tsx/.mjs/.js，排除 node_modules/.next/dist/public/coverage），点号/方括号/解构三形态并集
-- referenced = 24（含 security/url-policy.ts 读的小写 http_proxy/https_proxy，及框架注入的 NODE_ENV/NEXT_PHASE）
-- 三份 example 并集 53 键 → 覆盖 24/24，差集 ∅；应用模板 apps/web/.env.example 单独也 24/24，且每键登记行上方均有注释含「必需/可选」
-- 反向差集 29 项：7 项被 docker-compose 使用 → 已在模板标注保留（POSTGRES_USER/PASSWORD/DB、PGADMIN_EMAIL/PASSWORD、REDIS_PASSWORD、REPLICATOR_PASSWORD）；
-  22 项落在禁改的 docker/.env.example 与 .env.smtp.example 内 → 只 WARN 不删（deviation 2/3）
+- referenced = 25（含本卡新增 instrumentation.ts 读的 NEXT_RUNTIME、security/url-policy.ts 读的小写 http_proxy/https_proxy、框架注入的 NODE_ENV）
+- 三份 example 并集 55 键 → 覆盖 25/25，差集 ∅；应用模板 apps/web/.env.example（34 键）单独也 25/25，且每键登记行上方均有注释含「必需/可选」
+- 反向差集 30 项：7 项被 docker-compose 使用 → 已在模板标注保留（POSTGRES_USER/PASSWORD/DB、PGADMIN_EMAIL/PASSWORD、REDIS_PASSWORD、REPLICATOR_PASSWORD）；
+  23 项落在禁改的 docker/.env.example 与 .env.smtp.example 内（另 NEXT_RUNTIME/NEXT_PHASE 为框架注入占位）→ 只 WARN 不删（deviation 2/3）
 - 附件 env-referenced.txt、env-example.txt 为本机实测口径；卡面 34/41/20/27 是 /workspace 全仓口径（deviation 1）
 
 ## 验收② env.spec 3 例通过
@@ -29,11 +30,11 @@ T120-05 证据（外部助手 · 2026-10-23 · 基线 main@93eba205 · 结论：
 - 契约发现：instrumentation 只能导出具名 register——Next 取模块走 interopDefault(mod)=mod.default||mod 再读 .register，default 导出会让 register 被静默跳过；NEXT_PHASE=phase-production-build 时 Next 不调用 register
 - 回归 pnpm exec playwright test --project=smoke --workers=1 → EXIT=0 ｜ 7 passed / 0 skipped / 0 failed ｜ 17.6s
 
-## 门禁（推送前一次）
+## 门禁（推送前）
 - pnpm -C apps/web typecheck EXIT=0 ｜ pnpm -C apps/web lint EXIT=0（仅既有 no-img-element warning）｜ node scripts/check-docs-rule.mjs EXIT=0
-- node scripts/check-docs-facts.mjs EXIT=1 ← 唯一红项：spec-count expected=213、actual=214（本卡新增 env.spec.ts），其余 15 条断言全 ✓
-  修正＝scripts/check-docs-facts.mjs:138 "213"→"214" 并在 :135 desc 追加 R10-01 前次注记；该文件不在本卡「允许修改」→ 依任务书 §三.7 停笔、标 blocked、报 Hark（deviation 5）
+- node scripts/check-docs-facts.mjs：改 pin 前 EXIT=1（唯一红项 spec-count expected=213、actual=214，其余 15 条 ✓）→ 改 pin 后 EXIT=0（All 16 assertions passed）
+  pin＝scripts/check-docs-facts.mjs:138 "213"→"214" + :135 desc 前置 T120-05 注记；该文件不在本卡「允许修改」→ 先停笔标 blocked 报 Hark，经用户授权后落笔（deviation 5）
 
 ## 处置
-- 本卡改动与证据已本地提交、**未推送**：推送会令 main 的 docs-facts 门禁转红，阻断 Hark 与后续卡；task-index 的 T120-05 行标 blocked
-- 任一满足即可推送：① Hark 在 main 提出 spec-count pin；② 用户授权本卡改该行 1 处数字（随后本卡 rebase origin/main 再推）
+- 全绿后推送：实现提交（9 文件）+ task-index/pin/EVD 同步提交；推送前 fetch+rebase origin/main（up to date），git diff --name-only 逐条对照允许路径
+- 抄送 Hark 两条遗留：deviation 6（env-diff 未入 scripts/guard/run-all.mjs 的 GUARDS）、deviation 7（目录结构文档等 3 处文档同步缺口，建议并入 T120-08 / T120-36）

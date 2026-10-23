@@ -10,7 +10,7 @@
 | T120-02 | 中间件去 Prisma 依赖（Edge 运行时警告根除） | S12-0 | 外部助手 | sonnect | 3.0 | — | L1 | 待开工 |
 | T120-03 | 全量 e2e 在 Next 15.5.28 上跑通 + 3333 端口用例清理 | S12-0 | 外部助手 | sonnect | 4.0 | T120-01 | L2 | 已合并 086032e5（验收①③④绿：--workers=1 全量 230 例 0 failed；验收② blocked：3333 残留 4 处全在「允许修改」外，见 EVD-T120-03/deviation.md 1/2）；真缺陷 D1/D2/D3 已登记 defects.md 抄送 Hark |
 | T120-04 | Docker 镜像真构建 + 容器内 run-due 调度验证（RK-11-07） | S12-0 | 外部助手 | sonnect | 2.0 | — | L1 | 待开工 |
-| T120-05 | 环境变量清单归一（.env.example ↔ process.env）+ 启动期 zod 校验 | S12-0 | 外部助手 | sonnect | 2.0 | — | L1 | 待开工 |
+| T120-05 | 环境变量清单归一（.env.example ↔ process.env）+ 启动期 zod 校验 | S12-0 | 外部助手 | sonnect | 2.0 | — | L1 | 已合并 ef0dec6f（验收①②③④全绿：referenced 24 − example 差集 ∅、env.spec 3 例、tsc/lint/vitest 1857 tests/check-docs-rule 均 EXIT=0；缺必需变量启动即点名并退出）；spec-count pin 213→214 经用户授权越出本卡允许路径随 task-index 提交提出（EVD-T120-05/deviation.md 5）；遗留 deviation 6/7（guard run-all 未接 env-diff、目录结构文档等 3 处待同步）抄送 Hark |
 | T120-06 | 需求追溯矩阵 V0.12 再生成（150 行）+ facts 断言改为动态读取 | S12-1 | 外部助手 | sonnect | 3.0 | — | L1 | 待开工 |
 | T120-07 | V0.11.0 文档收口（README 重写、卡状态回写、裁决同步、CHANGELOG） | S12-1 | 外部助手 | haiku | 1.5 | — | L1 | 待开工 |
 | T120-08 | 文档索引 / 目录结构文档 数字与版本校正 + 超 3000 字文档拆分 | S12-1 | 外部助手 | sonnect | 3.0 | — | L1 | 待开工 |
