@@ -6,6 +6,8 @@
  *   2. data[] 每项（被监控的中转站/网关）映射为候选（sourceType='crawl', candidateType='gateway'）
  *   3. 按 domain 预检去重（discoverFromCrawl 内置，同域已存在候选则跳过 → 幂等）
  *   4. persistCandidates 写 DiscoveryCandidate(status='discovered') + EvidenceChain
+ *   5. T120-13：同一份 composite 数据 → reliability_observations 逐键 upsert（站点×上海日幂等）；
+ *      无站点映射的域名计入 skipped 并逐条打印（进 ScriptExecution.output 可查）。dry-run 不写观测。
  *   后续经后台人工审核「verify → promote」升级为 APIStation（promotedToType 支持 APIStation）。
  *
  * 采集逻辑真源在 apps/web/lib/discovery/{candidate-discovery,llmtest,entity-resolution}.ts，
@@ -15,7 +17,8 @@
  *   npx tsx scripts/crawl/crawl_llmtest.ts [--limit N] [--dry-run] [--help]
  */
 
-import { discoverFromCrawl } from '../../apps/web/lib/discovery/candidate-discovery';
+import { discoverFromCrawl, fetchLlmtestItems } from '../../apps/web/lib/discovery/candidate-discovery';
+import type { LlmtestLeaderboardItem } from '../../apps/web/lib/discovery/llmtest';
 import { persistCandidates } from '../../apps/web/lib/discovery/entity-resolution';
 
 interface Config {
@@ -61,7 +64,26 @@ async function main() {
   console.log('  llmtest.cn 站点采集（discovery 候选）');
   console.log('========================================');
 
-  const discovered = await discoverFromCrawl();
+  let items: LlmtestLeaderboardItem[] = [];
+  try {
+    items = await fetchLlmtestItems();
+  } catch (e) {
+    console.warn(`[warn] 拉取 composite 失败: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  console.log(`composite 项: ${items.length}`);
+
+  // T120-13：可靠性观测落库（与候选发现共用同一份数据）
+  if (items.length > 0 && !config.dryRun) {
+    const { prisma } = await import('../../apps/web/lib/db/prisma');
+    const { persistLlmtestObservations } = await import('../../apps/web/lib/discovery/llmtest-persist');
+    const obs = await persistLlmtestObservations(prisma, items);
+    console.log(`可靠性观测: written=${obs.written} skipped=${obs.skipped.length}`);
+    for (const s of obs.skipped) console.log(`  [skipped] ${s.domain} reason=${s.reason}`);
+  } else if (config.dryRun) {
+    console.log('[dry-run] 跳过可靠性观测写入');
+  }
+
+  const discovered = await discoverFromCrawl(items);
   console.log(`新发现候选（去重后）: ${discovered.length}`);
 
   if (discovered.length === 0) {

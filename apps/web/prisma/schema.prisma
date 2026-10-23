@@ -2142,6 +2142,8 @@ model ReliabilityObservation {
 
   createdAt DateTime @default(now()) @map("created_at")
 
+  /// T120-13：幂等键（同实体同上海日一行；迁移 20261024020000_reliability_obs_unique 先去重再建）
+  @@unique([entityType, entityId, windowStart])
   @@index([entityType, entityId])
   @@index([windowStart])
   @@map("reliability_observations")

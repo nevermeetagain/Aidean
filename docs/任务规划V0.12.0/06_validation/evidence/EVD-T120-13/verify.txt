@@ -1,0 +1,30 @@
+T120-13 验证证据（Hark · 2026-10-23 · 基线 main@c60ee85）
+实现：迁移 20261024020000_reliability_obs_unique —— DO 块按 (entity_type, entity_id, window_start) 计重复；>1000 RAISE 中止（卡面阻塞条件）；
+        否则 ROW_NUMBER 保留最新 created_at 删其余 → CREATE UNIQUE INDEX；schema @@unique 同键
+      lib/discovery/llmtest-persist.ts（新）：APIStation(未软删) website/baseUrl→域名→站点 id；逐键 upsert 批 100 一事务；返回 {written, skipped[{domain,reason}]}
+      candidate-discovery：抽出 fetchLlmtestItems()，discoverFromCrawl(preloaded?) 复用同一份数据（行为不变）
+      crawl_llmtest：拉取一次 → 写观测（dry-run 跳过）→ 打印 written/skipped 与逐条 [skipped] domain reason（进 ScriptExecution.output）→ 候选发现
+
+## 命令与退出码（PG16 嵌入式临时实例 127.0.0.1:5436/aidean_t13）
+prisma migrate deploy（24 迁移，含本卡）                                       exit=0
+RUN_DB_TESTS=1 vitest run lib/discovery/__tests__/llmtest-persist.int.spec.ts exit=0  3 passed
+  ① 拆索引造数（同键 3 行 + 单行）→ 执行迁移 → 剩 2 行且保留最新（uptime 30）；再插同键 → P2002
+  ② 同批 persist 跑两次：written=1/1，行数 1→1，第二次 uptime 90→95 覆盖
+  ③ 同键 1002 行 → 迁移 RAISE，行数仍 1002（零删除）；清理后索引恢复
+vitest run lib/discovery/__tests__/llmtest-persist.spec.ts                     exit=0  4 passed（映射/批 100×3 事务/空批/skipped 原因）
+脚本端到端（真网 llmtest.cn + 真库，造 1 个 packyapi.com 站点）：
+  tsx scripts/crawl/crawl_llmtest.ts ×2                                        exit=0
+  第 1 次：composite 项 50 · 可靠性观测 written=1 skipped=49 · 写入候选 50
+  第 2 次：written=1 skipped=49 · 新发现候选 0；reliability_observations 该站点行数=1（不变）
+apps/web: tsc --noEmit -p .                                                    exit=0
+pnpm lint                                                                      exit=0
+apps/web: vitest run（全量）                                                   exit=0  167 files passed / 1873 tests passed
+node scripts/guard/api-method-coverage.mjs                                     exit=0
+node scripts/check-docs-rule.mjs                                               exit=0
+node scripts/check-docs-facts.mjs                                              exit=0（spec-count 216→218；model 数不变 74）
+
+## 偏差
+D1 跨路径同步：apps/web/lib/discovery/candidate-discovery.ts（在允许的 lib/discovery/** 内）；docs/architecture/数据库文档.md v2.16 登记表与唯一键；
+   scripts/check-docs-facts.mjs spec 计数锚（门禁要求，沿用历史卡）。
+D2 int 测造数需拆唯一索引：经子进程 `prisma db execute` 执行 SQL，不在仓内引入原生 SQL 调用（守 queryraw-biz=0）。
+D3 卡面验证命令 `pnpm -C apps/web test:int` 为全量 int；本卡以本卡 int spec + T120-12 int spec 实跑（同库 6 passed）。

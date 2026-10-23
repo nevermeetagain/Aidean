@@ -14,8 +14,8 @@
  *      （ReliabilityObservation 无 meta 列，域名不入库，只回报以便对账 / 补映射）。
  *   3) 观测窗口按 Asia/Shanghai 自然日（UTC+8，无夏令时）：
  *      windowStart = 上海日 00:00（= UTC 前一日 16:00），windowEnd = 次上海日 00:00。
- *   4) 落库幂等键 (entityType, entityId, windowStart) 在 DB 侧缺唯一索引——本卡「不建迁移」（M-002：仅 Hark 改库），
- *      登记为 Hark 数据库线待补（原 TASK-071 前置；071 已按 U-M3 取消 → 移交 Hark）。
+ *   4) 落库幂等键 (entityType, entityId, windowStart)：T120-13 已建唯一索引（20261024020000），写入见 llmtest-persist.ts；
+ *      （原 TASK-071 前置；071 按 U-M3 取消 → 由 Hark T120-13 补齐）。
  *
  * 字段落位（受限于现有列，M-002 禁在本卡新增迁移）沿用 TASK-073：
  *   pass_count → successCount；max(0, total_checks - pass_count) → failureCount；
@@ -145,7 +145,7 @@ export function mapLlmtestItemToObservation(
  * 批量映射 + 站点 id 解析：域名经 stationIdByDomain 映射为 entityId（站点 id）。
  * 有效域名但无站点 id 映射 → 跳过并计入 `skipped[]`（去重）；无 url/非法域名 → 静默跳过（非映射缺口，不入 skipped）。
  * 同批按 entityId(站点 id) 去重，重复采集保留 windowEnd 更晚（last_alive_at 更新）的一条。
- * 跨批次幂等（DB upsert）由写入方按 (entityType, entityId, windowStart) 负责；唯一索引缺失见文件头 §4（待 Hark 补）。
+ * 跨批次幂等（DB upsert）由写入方按 (entityType, entityId, windowStart) 负责；唯一索引见文件头 §4（T120-13）。
  */
 export function mapLlmtestItemsToObservations(
   items: LlmtestLeaderboardItem[],

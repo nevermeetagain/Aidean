@@ -12,7 +12,12 @@
 import type { Candidate, SourceType, CandidateType } from './types';
 import { prisma } from '../db/prisma';
 import { assertResponseSize, readCappedJson, readCappedText, safeFetch } from '../security/url-policy';
-import { parseLlmtestComposite, mapLlmtestItemsToCandidates, LLMTEST_COMPOSITE_URL } from './llmtest';
+import {
+  parseLlmtestComposite,
+  mapLlmtestItemsToCandidates,
+  LLMTEST_COMPOSITE_URL,
+  type LlmtestLeaderboardItem,
+} from './llmtest';
 
 // ── 搜索关键词集 ──
 const SEARCH_KEYWORDS = [
@@ -236,17 +241,25 @@ export async function discoverFromNews(): Promise<Candidate[]> {
  * 幂等：按 domain 预检（同域候选已存在则跳过），与其余发现源口径一致；
  * 网络失败 / 接口异形 → 返回空数组，不阻断其他源。
  */
-export async function discoverFromCrawl(): Promise<Candidate[]> {
+export async function fetchLlmtestItems(): Promise<LlmtestLeaderboardItem[]> {
+  const res = await safeFetch(LLMTEST_COMPOSITE_URL, {
+    headers: { 'Accept': 'application/json' },
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!res.ok) throw new Error(`llmtest composite HTTP ${res.status}`);
+  assertResponseSize(res);
+  const json = await readCappedJson<unknown>(res);
+  return parseLlmtestComposite(json);
+}
+
+/**
+ * @param preloaded T120-13：调用方已拉取的 composite 项（crawl_llmtest 同一份数据同时写观测，避免二次请求）。
+ */
+export async function discoverFromCrawl(preloaded?: LlmtestLeaderboardItem[]): Promise<Candidate[]> {
   const candidates: Candidate[] = [];
   try {
-    const res = await safeFetch(LLMTEST_COMPOSITE_URL, {
-      headers: { 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(20_000),
-    });
-    if (!res.ok) return candidates;
-    assertResponseSize(res);
-    const json = await readCappedJson<unknown>(res);
-    const mapped = mapLlmtestItemsToCandidates(parseLlmtestComposite(json));
+    const items = preloaded ?? (await fetchLlmtestItems());
+    const mapped = mapLlmtestItemsToCandidates(items);
     for (const c of mapped) {
       if (!c.domain) continue;
       const exists = await prisma.discoveryCandidate.findFirst({
