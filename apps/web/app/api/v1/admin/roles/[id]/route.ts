@@ -7,7 +7,7 @@
  * DELETE ：requireAdminApi("admin.roles.write") → isSystem 禁删；仍有用户绑定禁删（先解绑）
  *          → 硬删（cascade 清 role_permissions）→ audit action=3 → revalidateTag("admin-auth")。
  */
-import { revalidateTag } from "next/cache";
+import { revalidateTagNow } from "../../../../../../lib/cache/revalidate-tag";
 
 import { prisma } from "../../../../../../lib/db/prisma";
 import { requireAdminApi } from "../../../../../../lib/features/auth/session";
@@ -96,7 +96,7 @@ export const PATCH = withApi(async (req: Request, ctx: RouteContext<{ id: string
     requestId: req.headers.get("x-request-id"),
   });
 
-  revalidateTag("admin-auth");
+  revalidateTagNow("admin-auth");
   return {
     item: {
       id: updated.id,
@@ -134,7 +134,7 @@ export const DELETE = withApi(async (req: Request, ctx: RouteContext<{ id: strin
     requestId: req.headers.get("x-request-id"),
   });
 
-  revalidateTag("admin-auth");
+  revalidateTagNow("admin-auth");
   return { deleted: true, id };
 });
 

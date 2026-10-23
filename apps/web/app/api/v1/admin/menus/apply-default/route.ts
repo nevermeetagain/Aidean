@@ -4,7 +4,7 @@
  *       → revalidateTag("admin-nav") → 审计（action=2 UPDATE）→ 返回 {upserted, deactivated}。
  * 与 prisma/seed-admin-nav-default.ts 同一实现（lib/admin/apply-default-nav.ts）。
  */
-import { revalidateTag } from "next/cache";
+import { revalidateTagNow } from "../../../../../../lib/cache/revalidate-tag";
 
 import { prisma } from "../../../../../../lib/db/prisma";
 import { requireAdminApi } from "../../../../../../lib/features/auth/session";
@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 export const POST = withApi(async (req: Request) => {
   const session = await requireAdminApi("admin.menus.write");
   const result = await applyDefaultAdminNav(prisma.navigationMenu);
-  revalidateTag("admin-nav");
+  revalidateTagNow("admin-nav");
   await writeAudit({
     actorId: session.userId,
     tableName: "navigation_menus",

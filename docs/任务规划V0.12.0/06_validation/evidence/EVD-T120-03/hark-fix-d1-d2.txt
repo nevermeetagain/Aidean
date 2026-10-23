@@ -1,0 +1,24 @@
+T120-03 缺陷 D1 / D2 根因修复（Hark · 2026-10-24 · 基线 main@f78fff3）
+根因：next@15.5.28 dist/server/lib/incremental-cache/file-system-cache.js:82-86
+      revalidateTag 只在 tag 首次出现时写进程内 tagsManifest（`if (!tagsManifest.has(tag)) set(tag, Date.now())`）；
+      unstable_cache 判失效 = revalidatedAt >= entry.lastModified → 首次失效后重建的条目永远「新鲜」，
+      同进程第二次起的 revalidateTag 全被吞，直到 TTL（site-home 600s / feature-flags 60s / admin-auth 60s）。
+      与 defects.md 读数完全吻合：首轮 PUT/PATCH 0s 收敛、次轮不收敛。上游 v15.3.0/15.4.0/15.5.4 同码，canary 已改为每次覆盖。
+      同型影响：admin-auth（角色/授权变更后最长 60s 旧权限，安全相关）、admin-nav。
+修复：apps/web/lib/cache/revalidate-tag.ts revalidateTagNow(tag)
+      = next/cache revalidateTag(tag)（保留原语义与单测桩）+ 刷新共享 tagsManifest 时间戳 + 1s 后补刷一次（覆盖在途读回填旧值）；
+      tagsManifest 为 .external 模块（next/dist/build/handle-externals.js:41 外置），路由与页面共享一实例；
+      内部模块不可用时静默退化为原生行为。
+      接入 8 个写端点全部 12 处调用：admin/configs（site-home/site-docs/site-branding）、feature-flags/[id]、
+      menus、menus/[id]×2、menus/apply-default（admin-nav）、roles、roles/[id]×2、users/[id]/roles（admin-auth）。
+## 命令与退出码
+vitest run lib/cache/__tests__/revalidate-tag.spec.ts   exit=0  4 passed
+  · 根因复现：真 FileSystemCache 连续两次 revalidateTag → manifest 时间戳不变，重建条目 isStale=false
+  · revalidateTagNow 连续两次 → 时间戳刷新，重建条目 isStale=true；1s 补刷覆盖在途回填；内部模块缺失不抛
+apps/web: tsc --noEmit -p .                            exit=0
+pnpm lint                                              exit=0
+apps/web: vitest run（全量）                           exit=0  171 files / 1931 passed（既有 admin-configs / admin-feature-flags 等桩断言不变）
+check-docs-rule / check-docs-facts / api-method-coverage exit=0 / 0 / 0（spec 221→222）
+## 未验 / 移交
+e2e cms-content.spec.ts 断言点 2、feature-flags.spec.ts 两处复原自检为「不收敛才 fixme」自愈写法，修复后应自动恢复全断言——
+需外部助手在 dev 全量 e2e 复跑确认（Hark 环境无 dev 服务 + 浏览器链路）。

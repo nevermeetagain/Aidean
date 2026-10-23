@@ -10,7 +10,7 @@
  *       故“仅 SUPER_ADMIN 可分配角色”由权限码天然保证（A2 后端强制，不靠前端）。
  *       User.role 枚举保留为遗留缓存：isStaff 由「枚举或任一角色分配」并集决定（见 permissions.ts）。
  */
-import { revalidateTag } from "next/cache";
+import { revalidateTagNow } from "../../../../../../../lib/cache/revalidate-tag";
 
 import { prisma } from "../../../../../../../lib/db/prisma";
 import { requireAdminApi } from "../../../../../../../lib/features/auth/session";
@@ -113,7 +113,7 @@ export const PATCH = withApi(async (req: Request, ctx: RouteContext<{ id: string
     requestId: req.headers.get("x-request-id"),
   });
 
-  revalidateTag("admin-auth");
+  revalidateTagNow("admin-auth");
   return { userId: id, roleCodes };
 });
 

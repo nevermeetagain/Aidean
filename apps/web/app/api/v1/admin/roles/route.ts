@@ -7,7 +7,7 @@
  *        → code 唯一（强制小写避免与系统大写码冲突）+ 权限码须全属注册表（禁注入 `*` 通配越权）
  *        → 事务建 role + role_permissions → audit_logs action=1 → revalidateTag("admin-auth")。
  */
-import { revalidateTag } from "next/cache";
+import { revalidateTagNow } from "../../../../../lib/cache/revalidate-tag";
 import type { Prisma } from "@prisma/client";
 
 import { prisma } from "../../../../../lib/db/prisma";
@@ -106,7 +106,7 @@ export const POST = withApi(async (req: Request) => {
     requestId: req.headers.get("x-request-id"),
   });
 
-  revalidateTag("admin-auth");
+  revalidateTagNow("admin-auth");
   return { item: created };
 });
 

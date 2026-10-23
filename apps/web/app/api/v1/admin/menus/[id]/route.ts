@@ -8,7 +8,7 @@
  *
  * menuCode/scope/level 不可变（稳定键）。隐藏某入口用 PATCH isVisible=false，而非删除。
  */
-import { revalidateTag } from "next/cache";
+import { revalidateTagNow } from "../../../../../../lib/cache/revalidate-tag";
 import { NavScope, type Prisma } from "@prisma/client";
 
 import { prisma } from "../../../../../../lib/db/prisma";
@@ -100,7 +100,7 @@ export const PATCH = withApi(async (req: Request, ctx: RouteContext<{ id: string
     requestId: req.headers.get("x-request-id"),
   });
 
-  revalidateTag("admin-nav");
+  revalidateTagNow("admin-nav");
   return { item: updated };
 });
 
@@ -131,7 +131,7 @@ export const DELETE = withApi(async (req: Request, ctx: RouteContext<{ id: strin
     requestId: req.headers.get("x-request-id"),
   });
 
-  revalidateTag("admin-nav");
+  revalidateTagNow("admin-nav");
   return { deleted: true, id };
 });
 

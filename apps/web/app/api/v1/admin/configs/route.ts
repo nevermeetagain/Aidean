@@ -17,7 +17,9 @@
  * 白名单扩容四处同步：shared ADMIN_CONFIG_KEYS + shared ADMIN_CONFIG_REGISTRY（含 valueRule）
  * + prisma seed systemConfigsData + 本文件 applyConfig 分派（seed 为值真源，registry 仅兜底）。
  */
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
+
+import { revalidateTagNow } from "../../../../../lib/cache/revalidate-tag";
 
 import { prisma } from "../../../../../lib/db/prisma";
 import { requireAdminApi } from "../../../../../lib/features/auth/session";
@@ -79,14 +81,14 @@ async function applyConfig(
         revalidatePath("/");
       } else if (entry.configGroup === "home") {
         // S4 首页区块：清 brand/home 缓存标签并失效首页 ISR（保存即时可见）
-        revalidateTag("site-home");
+        revalidateTagNow("site-home");
         revalidatePath("/");
       } else if (entry.configGroup === "docs") {
-        revalidateTag("site-docs");
+        revalidateTagNow("site-docs");
         revalidatePath("/docs");
       } else if (entry.configGroup === "general") {
         // S4 站名/SEO：清品牌缓存 + 失效首页（根 generateMetadata 消费 site.*）
-        revalidateTag("site-branding");
+        revalidateTagNow("site-branding");
         revalidatePath("/");
       }
       return value;

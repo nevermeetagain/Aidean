@@ -7,7 +7,7 @@
  * 不被审计可用性牵连）→ writeAudit(action=2, tableName=feature_flags)。
  * 幂等（契约）：同值 PATCH 仍执行 update + 失效 + 写审计，返回当前投影结果。
  */
-import { revalidateTag } from "next/cache";
+import { revalidateTagNow } from "../../../../../../lib/cache/revalidate-tag";
 
 import { prisma } from "../../../../../../lib/db/prisma";
 import { requireAdminApi } from "../../../../../../lib/features/auth/session";
@@ -54,7 +54,7 @@ export const PATCH = withApi(async (req: Request, ctx: RouteContext<{ id: string
   });
 
   // 即时失效开关缓存（tag 见 service.ts unstable_cache / contracts 05-events CACHE_TAGS）；先于审计。
-  revalidateTag("feature-flags");
+  revalidateTagNow("feature-flags");
 
   await writeAudit({
     actorId: session.userId,

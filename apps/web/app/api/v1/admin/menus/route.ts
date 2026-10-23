@@ -7,7 +7,7 @@
  *
  * ⚠️ 只维护 scope=ADMIN；前台 SITE 导航不在本面板范围。侧边栏缓存 tag 见 lib/admin-navigation.ts。
  */
-import { revalidateTag } from "next/cache";
+import { revalidateTagNow } from "../../../../../lib/cache/revalidate-tag";
 import { NavScope, LinkType, type Prisma } from "@prisma/client";
 
 import { prisma } from "../../../../../lib/db/prisma";
@@ -100,7 +100,7 @@ export const POST = withApi(async (req: Request) => {
     requestId: req.headers.get("x-request-id"),
   });
 
-  revalidateTag("admin-nav");
+  revalidateTagNow("admin-nav");
   return { item: created };
 });
 
