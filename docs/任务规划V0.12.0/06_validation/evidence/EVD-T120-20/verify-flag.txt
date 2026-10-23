@@ -18,3 +18,11 @@ check-docs-rule / check-docs-facts / api-method-coverage  exit=0 / 0 / 0
 D1 已有库不会自动补该行（迁移目录对本卡禁改；seed 仅新库 create）。缺行按 repository 口径视为关闭 → 安全侧收敛，
    但后台开关列表看不到该码、运营无法打开：需一条 INSERT … ON CONFLICT DO NOTHING 数据迁移，登记为 Hark 待办。
 D2 用户端「找回密码」入口隐藏属 T120-21（页面卡），本跟进只做 API 侧。
+## 补 D1：已有库补行数据迁移（Hark · 2026-10-24）
+apps/web/prisma/migrations/20261024030000_feature_flag_password_reset/migration.sql
+  INSERT … ('auth.password_reset', is_enabled=false, category auth) ON CONFLICT (flag_code) DO NOTHING；无结构变更
+PG16 嵌入式临时实例 127.0.0.1:5437/t：
+  prisma migrate deploy（全量 0000_init → 本迁移）                exit=0  行 = {auth.password_reset, isEnabled:false, auth}
+  运营打开（UPDATE is_enabled=true）后重放本迁移（prisma db execute） exit=0  行数 1、isEnabled 仍 true（幂等、不覆盖）
+  新库 seed：seed.ts:406 先 featureFlag.deleteMany 再 create → 与本迁移不冲突
+结论：D1 关闭，后台开关列表可见该码，运营可在配置 SMTP 后打开。
