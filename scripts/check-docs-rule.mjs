@@ -227,7 +227,7 @@ if (aideanUiImports < 20) {
 
 // 5. Next.js 版本（package.json 中 "next" 版本）
 const pkgContent = readFileSafe(join(webRoot, "package.json"));
-const nextMatch = pkgContent.match(/"next":\s*"(\d+\.\d+)\./);
+const nextMatch = pkgContent.match(/"next":\s*"[\^~]?(\d+)\./); // 只取大版本（15.5.28 → 15）
 const nextVersion = nextMatch ? nextMatch[1] : "?";
 assertNumber("Next.js 大版本", 15, Number(nextVersion));
 
