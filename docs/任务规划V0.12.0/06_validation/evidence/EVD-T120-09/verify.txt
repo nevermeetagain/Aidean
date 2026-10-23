@@ -1,0 +1,32 @@
+EVD-T120-09 verify.txt | 外部助手 | 2026-10-23 | 开工基线 main@fa9bd346（T120-06 索引提交），Hark 无新推，rebase 后 main==origin/main==fa9bd346
+结论：验收①②③全绿。**纯文档卡，零代码改动**（`git status` 仅 3 个允许路径文件被改）。
+
+[验收① 02_§四 标 T120-09 的 6 条逐条处置]（先逐条复核代码锚点仍成立，未触发「锚点已变→只记录」阻塞条件）
+  D-01 功能设计文档 §3.3 L56 原地改写：原文「Access(24h)」为误载 → **Access 15 分钟 / Refresh 7 天**
+       真源 apps/web/lib/features/auth/constants.ts:17（15*60）/:19（7*24*3600）+ getAccessTtlSeconds/getRefreshTtlSeconds
+       （security.accessTokenTtlMinutes 5–60、refreshTokenTtlDays 1–30，读库 60s 缓存，异常 fail-open）
+  D-02 界面交互文档 §四 L81：目录 4 区块 → **5 区块**（补「在哪里可调用」，page.tsx:37-41 TOC_ITEMS）
+  D-03 界面交互文档 §四 L82-83：删「统一 ￥/M Tokens」→ **按访客地区归一展示币种**（lib/currency/display.ts CN→¥ 其余/未知→$、
+       当日汇率快照、缺汇率「价格待核」）；并新增一条「两套币种口径并存勿混读」（offerings 原币原样，ModelOfferings.tsx:9）
+  D-04 界面交互文档 §四 L85：测评示例「默认最近 10 条」→ **最近 3 条**（page.tsx:138-143 take: 3）
+  D-06 只标注（Q-12-04）：界面交互文档 §七 L111 + 需求文档 §五.6 L207
+  D-07 功能设计文档 文末新增**附录 D.6**：补登 GET /api/v1/models/{id}/offerings（route + shared MONITORING_ENDPOINTS +
+       《API接口文档》三处一致）；历史 V0.10 task-index L52 按铁律 4 只读，仅显式引用不改编
+  另 D-05 属 Q-12-02/T120-35，本卡只在界面交互文档 §一 L23、§六 L96 挂待裁决标注（含 useSiteLang 全仓不存在的代码事实登记）
+[裁决类只标注，共 4 项] Q-12-02 界面 L23/L96｜Q-12-04 界面 L111 + 需求 L207｜Q-12-05 功能 L322（D.2 isActive）+ 需求 L104｜Q-12-06 需求 L63
+[版本头] 功能设计文档 v0.8.11→v0.8.12｜界面交互文档 v2.13→v2.14｜需求文档 v1.20→v1.21（旧版内容压缩为「前次（…）」同段留痕）
+[行号锚保护实测] 功能设计文档 352→372（仅文末追加，被引用行 209/233/279/322 行号零位移）｜需求文档 236→236（全部原行改写）
+  界面交互文档 188→190（他篇对其 0 处行号引用，允许插行）；曾插行致 353，已删版本头下空行复原并复核
+[验收② 卡面验证命令] node scripts/check-docs-rule.mjs → EXIT=0（[铁律1] PASS + [铁律-数字] schema model=74/enum=37/admin 38 域/34 页/@aidean-ui/Next 15.x 全绿）
+[验收③ 全量门禁]（.scratch/t12009-*.log）
+  node scripts/check-docs-facts.mjs  EXIT=0（All 18 assertions passed，spec-count pin 218 未触碰）
+  pnpm run typecheck                 EXIT=0
+  pnpm run lint                      EXIT=0
+  pnpm test（vitest 全量）            EXIT=0（Test Files 167 passed | 4 skipped (171)，Tests 1873 passed | 11 skipped (1884)，18.20s）
+  → 与 T120-06 收口读数逐项相等，佐证本卡未影响任何运行时/测试
+[允许路径核对] git diff --name-only（工作树）= docs/product/design/功能设计文档.md、docs/product/design/界面交互文档.md、
+  docs/product/requirements/需求文档.md → 全部落在允许清单 docs/product/**
+[未触碰（禁改路径确认）] apps/web/**、packages/shared/**、docs/product/design/UI设计文档.md、
+  docs/product/requirements/需求追溯矩阵.md、docs/任务规划V0.*/（除本卡 EVD 与 task-index 本卡一行）、.example/**
+[依赖] Depends T120-06（已合并 ebc2df10）已解除；Blocks T120-35 / T120-36 保持原状（本卡未改其口径）
+[处置] 单卡一组提交推送 origin/main；task-index 仅改 T120-09 行附提交号；7 条登记转 Hark 见 deviation.md（含 RTM REQ-F-023 表述冲突与 apps/web 三处过期注释）
