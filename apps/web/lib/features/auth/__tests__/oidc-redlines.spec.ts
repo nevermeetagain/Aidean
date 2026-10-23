@@ -105,7 +105,7 @@ import { baseCookieOptions, COOKIE_ACCESS, COOKIE_REFRESH } from "../constants";
 // codes 模块经 importOriginal 保留真实实现，故此处 import 到的是真 verifyPkce/s256Challenge
 import { verifyPkce, s256Challenge } from "../../oauth/codes";
 
-const REDIRECT_URI = "http://localhost:3333/auth/aidean/callback";
+const REDIRECT_URI = "http://localhost:3200/auth/aidean/callback";
 
 function authorizeUrl(params: Record<string, string>): string {
   const u = new URL("http://localhost:3000/oauth/authorize");

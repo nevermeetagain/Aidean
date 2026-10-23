@@ -35,7 +35,7 @@ describe("isSafeInternalRedirect 开放重定向防线", () => {
 describe("authorize→login 回跳参数编码往返", () => {
   it("一次编码后经 URLSearchParams 解码可完整还原授权参数（内层 redirect_uri 编码保留）", () => {
     // 模拟 authorize/route.ts 未登录分支：back 构造 + encodeURIComponent 一次编码
-    const originalRedirectUri = "http://localhost:3333/auth/aidean/callback";
+    const originalRedirectUri = "http://localhost:3200/auth/aidean/callback";
     const back = new URL("/oauth/authorize", AUTH_ISSUER);
     back.searchParams.set("client_id", "wechat-rag");
     back.searchParams.set("redirect_uri", originalRedirectUri);

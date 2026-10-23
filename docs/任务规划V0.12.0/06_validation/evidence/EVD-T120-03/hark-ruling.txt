@@ -1,0 +1,7 @@
+T120-03 验收② Hark 裁决（2026-10-23）
+口径：按卡面「目标」判定——不再有以 3333 端口为前提的断言；字面 grep 判据排除 UUID 字面量（33333333-3333-…）。
+执行：apps/web/lib/features/auth/__tests__/redirect.spec.ts:38、oidc-redlines.spec.ts:108 的示例 redirect_uri
+      http://localhost:3333 → http://localhost:3200（与 dev 端口一致；纯 fixture，不改断言语义）。
+读数：grep -rn 3333 e2e apps/web/lib --include=*.ts | grep -v 33333333-3333 → 0；含 UUID 共 2 处（persist.spec.ts、admin-routes.spec.ts，保留）
+      vitest run redirect.spec.ts oidc-redlines.spec.ts → exit=0，27 passed
+结论：验收② 达成，T120-03 四项验收全绿。
