@@ -1,0 +1,39 @@
+T120-07 V0.11.0 文档收口 · 验证读数（纯文档卡，全量门禁作回归）
+执行方：外部助手 | 日期：2026-10-23 | 终提交：8c4b2c62（父 b1789607＝推送时 origin/main 最新）
+
+[验收①] README 行数 ≤150 且最长行 ≤400
+  载体 node .scratch/t12007-verify.mjs（卡面 node -e 探针的等价实现，见 deviation ④）
+  README LINES=95(<=150) MAXLINE=363(<=400) OVER400=0 → PASS
+  前后规模（git diff --numstat 对照）：README 62→95(+74/−41) · 07_ 253→253(+16/−16) · 12_ 78→93(+26/−11) · CHANGELOG 165→224(+59/−0)
+  README 单行 >400 由 12 条归零，最长行 3029→363（基线取 8cd03fed 的 blob 读数）
+
+[验收②] 07_ 中 B11-09/10/11 状态＝已合并且附提交号
+  B11-09 `a02d8c19` · B11-10 `aa7ce564`（docs `f5b93138`／merge `f96cc6e7`）· B11-11 `a92b9584`→`71a2c782`→`d03976c0`→终审 `2b60193e` → PASS
+
+[验收③] node scripts/check-docs-rule.mjs → EXIT=0 → PASS
+
+[验收④] 推送前全量门禁（五条全 EXIT=0）
+  node scripts/check-docs-facts.mjs → EXIT=0 · All 18 assertions passed.（spec 222／route 171／page 58／model 74／RTM 行 150）
+  node scripts/check-docs-rule.mjs → EXIT=0
+  pnpm --filter web exec tsc --noEmit --incremental false → EXIT=0
+    apps/web/tsconfig.tsbuildinfo before=405224B after=405224B SAME=true（RK-11-08 收紧口径：判定只认全量读数）
+  pnpm run lint → EXIT=0（turbo 2.10.10）
+  pnpm test → EXIT=0 · Test Files 171 passed | 4 skipped (175) · Tests 1931 passed | 11 skipped (1942)
+
+[提交号取证] 四文件新增行里的 59 个 7–40 位 hex 逐个校验
+  for h: git cat-file -t ${h}^{commit} + git merge-base --is-ancestor h HEAD
+  .scratch/t12007-hashes.txt → TOTAL_HASHES=59 NON_COMMIT_OR_NOT_ANCESTOR=0
+
+[RK-11-10 复测] node scripts/audit/admin-ui-audit.mjs（与 B11-04b 同一脚本，载体 .scratch/t12007-audit.txt）
+  SUMMARY files=57 rawButton=29 rawSelect=18 rawTextarea=8 rawLabel=61 rawTable=1 mixedFiles=0 → 仍含原生标签的组件文件 25 个
+  B11-04b 时点读数为 55 文件中 37 个 ⇒ 只登记当前读数，历史时点值不追改（风险未关闭）
+
+[改动面对照] git diff --name-only origin/main...HEAD ＝ 4 文件，全部落在卡面「允许修改」内
+  CHANGELOG.md
+  docs/任务规划V0.11.0/07_原子任务卡全集.md
+  docs/任务规划V0.11.0/12_风险与待裁决.md
+  docs/任务规划V0.11.0/README.md
+
+[双机并行] 推送前 fetch 见 Hark 四次前进：097d2762（T120-03 D1/D2）→ b88e8501（D3）→ 8cd03fed（T120-20 开关补登记）→ b1789607（外部助手待执行规划）
+  逐次 git rebase origin/main（未用 --force／未新建分支）并复跑以上全部门禁；D1/D2 使 spec 221→222、单测 1927→1931，D3 与后两次不改变任何计数
+  中间态提交号 f0968de8 / 99657098 / 0e955f33 / dfe1f16f / b150c15e / 2ca57715 已被 rebase+amend 覆盖，唯一有效终提交＝8c4b2c62（见 deviation ⑤）
