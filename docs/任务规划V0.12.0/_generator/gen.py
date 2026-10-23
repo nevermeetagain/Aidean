@@ -91,7 +91,7 @@ for c in C:
 - 阻塞条件：{c['stop']}
 
 ## 建议执行档位
-`{c['tier']}`　理由：{'核心机制/安全/数据迁移或 UI 设计决策，错误不可逆或影响面跨模块' if c['tier']=='opus' else ('机械性文档/格式工作，无领域判断' if c['tier']=='haiku' else '边界清晰的实现/测试，契约已冻结')}
+`{c['tier']}`　理由：{'架构级：错误不可逆或影响面跨模块，需资深判断' if c['tier']=='opus' else ('机械性文档/格式工作，无领域判断' if c['tier']=='haiku' else '边界清晰的实现/测试，契约已冻结')}
 
 ## 升级条件
 同一验收连续 2 次失败，或需要改动「禁止修改」中的路径 → 停止编码，标 blocked，升一档并报 Hark（熔断，见 10_ §8.4）。
@@ -113,7 +113,7 @@ open(f"{D}/05_execution/task-index.md",'w').write(f"""# V0.12.0 任务索引
 |---|---|---|---|---|---|---|---|---|
 {rows}
 
-合计 {len(C)} 张（条件卡 {sum(1 for c in C if c.get('cond'))} 张）；Hark {sum(1 for c in C if c['owner']=='Hark')} 张 / {sum(H(c) for c in C if c['owner']=='Hark')}h；外部助手 {sum(1 for c in C if c['owner']!='Hark')} 张 / {sum(H(c) for c in C if c['owner']!='Hark')}h。
+合计 {len(C)} 张（条件卡 {sum(1 for c in C if c.get('cond'))} 张）；Hark {sum(1 for c in C if c['owner']=='Hark')} 张 / {sum(H(c) for c in C if c['owner']=='Hark')}h；外部助手 A {sum(1 for c in C if c['owner']=='外部助手A')} 张 / {sum(H(c) for c in C if c['owner']=='外部助手A')}h；外部助手 B {sum(1 for c in C if c['owner']=='外部助手B')} 张 / {sum(H(c) for c in C if c['owner']=='外部助手B')}h。
 """)
 # DAG
 levels={}
@@ -124,7 +124,7 @@ open(f"{D}/08_依赖DAG.md",'w').write(f"""# 08 · 依赖 DAG
 
 {V}
 
-## 一、拓扑分层（[Ha]=Hark，[外部]=外部助手）
+## 一、拓扑分层（[Ha]=Hark，[外部]=外部助手 A/B，见 07_ 执行方）
 ```text
 """ + '\n'.join(dag) + f"""
 ```
@@ -133,7 +133,7 @@ open(f"{D}/08_依赖DAG.md",'w').write(f"""# 08 · 依赖 DAG
 ```text
 {' → '.join(cp)}
 ```
-关键路径全部落在 **Hark 的监控/可靠性链（T120-10→14）与设计系统链（T120-27→31）**，外部助手的卡均有浮动时间；因此 Hark 先开 T120-10，外部助手先开 S12-0/S12-1。
+关键路径由 Hark 的契约与机制卡（T120-10、12、13、25、26）开路，外部助手 B 接实现；因此 Hark 第一天先开 T120-10 与 T120-25，外部助手 A 先开 S12-0/S12-1，外部助手 B 先开 T120-02。
 
 ## 三、环检测
 `graphlib.TopologicalSorter` 静态排序成功，{len(C)} 节点无环（生成器：`_generator/gen.py`）。
@@ -141,17 +141,17 @@ open(f"{D}/08_依赖DAG.md",'w').write(f"""# 08 · 依赖 DAG
 ## 四、并行判定（机械规则）
 可并行 ⟺ ①无共享可变状态 ∧ ②依赖契约已冻结（T120-10 合并后） ∧ ③文件所有权不相交 ∧ ④不共用迁移版本号。
 生成器对全部 {len(C)*(len(C)-1)//2} 对卡做路径前缀相交检测，排除「有传递依赖」与「对方禁止清单显式排除」两类后，**剩余重叠 = {len(overl)}**。
-同时最多 2 个写入方（Hark + 1 名外部助手），满足 ≤3。
+同时最多 3 个写入方（Hark + 外部助手 A + 外部助手 B），满足 ≤3；三方所有权两两不相交（上式对全部卡对成立，不区分执行方）。
 
 ### 可并行组（首批可同时下发）
-- **组 P1（第 1 天）**：Hark：T120-10、T120-02、T120-25 | 外部：T120-01 → T120-03、T120-05、T120-06 → T120-09、T120-07、T120-08、T120-04（依据：四条全满足；T120-10 只写 packages/shared 与 docs/ADR，外部卡不触及）
-- **组 P2**：Hark：T120-11→12→13、T120-18→19→20、T120-30、T120-26 | 外部：T120-16、T120-32、T120-33（依据：外部卡只写测试/展示组件，与 Hark 的 lib/monitoring、lib/features/auth 不相交）
-- **组 P3**：Hark：T120-14、T120-15、T120-21、T120-22、T120-23 | 外部：T120-24
-- **组 P4**：Hark：T120-27 → T120-31 | 外部：T120-28、T120-29、T120-34 → T120-36
+- **组 P1（第 1 天）**：Hark：T120-10、T120-25 | A：T120-01 → T120-03、T120-05、T120-04、T120-06 → T120-09、T120-07、T120-08 | B：T120-02（依据：四条全满足；T120-10 只写 packages/shared 与 docs/ADR）
+- **组 P2**：Hark：T120-18、T120-12、T120-13、T120-26 | A：T120-30、T120-16、T120-32 | B：T120-11、T120-19（依据：B 的调度注册与改密 API 按 DAG 先于/后于 Hark 的机制卡，路径不相交）
+- **组 P3**：Hark：T120-20、T120-23 | A：T120-24、T120-33 | B：T120-14、T120-15、T120-21、T120-22
+- **组 P4**：Hark：设计验收与代码审查（不写入） | A：T120-31、T120-34 → T120-36 | B：T120-27 → T120-28 / T120-29
 
 ### 必须串行的链
 - 迁移：`20261024000000`(T120-11) → `20261024010000`(T120-12) → `20261024020000`(T120-13)
-- 认证：T120-02 → T120-18 → T120-19 → T120-20 → T120-21
+- 认证：T120-02(B) → T120-18(Hark) → T120-19(B) → T120-20(Hark) → T120-21(B)
 - 设计系统：T120-25 → T120-30 → T120-26 → T120-27 → T120-28 / T120-29 → T120-31
 
 ## 五、边（Mermaid 源）
@@ -165,7 +165,7 @@ graph LR
 own={}
 for c in C:
   for p in c['allow']: own.setdefault(norm(p),[]).append(c['id'])
-rows='\n'.join(f"| `{p}` | {'Hark' if all(by[i]['owner']=='Hark' for i in ids) else ('外部助手' if all(by[i]['owner']!='Hark' for i in ids) else 'Hark+外部（串行）')} | {', '.join(ids)} |" for p,ids in sorted(own.items()))
+rows='\n'.join(f"| `{p}` | {'、'.join(sorted(set(by[i]['owner'] for i in ids)))} | {', '.join(ids)} |" for p,ids in sorted(own.items()))
 open(f"{D}/09_所有权矩阵.md",'w').write(f"""# 09 · 所有权矩阵（Agent × 路径）
 
 {V}
@@ -174,11 +174,12 @@ open(f"{D}/09_所有权矩阵.md",'w').write(f"""# 09 · 所有权矩阵（Agent
 | 角色 | 本版本由谁担任 | 唯一可写 |
 |---|---|---|
 | Agent-Contract | **Hark**（T120-10） | `packages/shared/src/errors.ts`、`packages/shared/src/schemas/**`、`docs/ADR/ADR-0011-*` |
-| Agent-Core（App/API/Data 的核心部分） | **Hark** | `lib/monitoring/**`、`lib/features/auth/**`（测试文件按卡细分）、`lib/features/gateway/probe.ts`、`prisma/schema.prisma` 与 3 个新迁移、`packages/ui/**`、`app/globals.css`、`middleware.ts`、Dock / 监控后台 / 改密页 UI |
-| Agent-Impl（常规实现与测试） | **外部助手（1 名）** | `e2e/**`（除 3 个 Hark 新 spec）、`docs/**`（除 ADR-0011/12/13 与 UI设计文档）、`components/admin/**`（除 monitoring/ 与 PanelState）、单测目录、`.env.example`、`lib/config/**` |
-| Agent-Guard | 外部助手（新守卫）+ Hark（edge-imports） | `scripts/guard/*`（逐文件见下表） |
+| Agent-Core（核心机制 / 安全 / 设计系统底座） | **Hark**（T120-12、13、18、20、23、25、26） | 运行请求消费、可靠性迁移、会话校验、找回密码、SSRF 探测、语义令牌、`packages/ui` 五态外壳；另负责 B 的 UI 卡设计验收 |
+| Agent-Impl-A（门禁 / 文档 / 测试 / 性能） | **外部助手 A** | `e2e/**`、`docs/**`（除 ADR-0011/12/13）、单测与组件测目录、`.env.example`、`lib/config/**`、性能治理涉及文件（逐卡见下表） |
+| Agent-Impl-B（功能实现 / UI 迁移） | **外部助手 B** | middleware 拆分、调度注册、改密 API、可靠性读侧、监控后台页、改密/找回页、Dock、codemod 与批次迁移（逐卡见下表） |
+| Agent-Guard | 外部助手 A（新守卫）+ 外部助手 B（edge-imports，随 T120-02） | `scripts/guard/*`（逐文件见下表） |
 
-规则：同时写入方 = 2（≤3）；契约（T120-10）合并前，任何依赖新 schema 的卡不得开工；跨所有权修改 = blocked，提 ADR，不得「先写了再说」。
+规则：同时写入方 ≤ 3；契约（T120-10）合并前，任何依赖新 schema 的卡不得开工；跨所有权修改 = blocked，提 ADR，不得「先写了再说」。
 
 ## 二、路径 × 卡（生成器自动汇总；无传递依赖的两卡之间重叠 = {len(overl)}）
 | 路径 | 归属 | 卡 |
@@ -200,8 +201,8 @@ open(f"{D}/10_档位分配与成本预算.md",'w').write(f"""# 10 · 档位分�
 
 ## 一、分配原则
 按「决策不可逆性 × 影响范围」分档，默认 `opus`：
-- `opus`：契约、迁移、认证与安全、调度机制、设计令牌与 UI 设计实现（Hark 的 18 张卡全部在此档）。
-- `sonnect`：契约冻结后的实现、测试、批量迁移（外部助手主力）。
+- `opus`：只给 5 年以上架构师级别、错了会伤全局的卡：契约、数据去重迁移、会话与找回安全、SSRF、并发消费、设计系统底座（Hark 的 8 张卡全部在此档）。
+- `sonnect`：契约与设计冻结后的实现、页面、迁移执行、测试（外部助手 A/B 全部在此档，卡住按熔断升档）。
 - `haiku`：文档状态回写、格式化（T120-07、T120-09、T120-35）。
 - `fable`：本版本 **0 次计划使用**；仅当需要改动既有错误码值 / 已冻结 schema 字段（T120-10 升级条件）时启用。
 
@@ -219,7 +220,7 @@ open(f"{D}/10_档位分配与成本预算.md",'w').write(f"""# 10 · 档位分�
 同一任务连续 2 次验收失败 → 停止改代码 → 重写任务书 / 升档 / 标 blocked。**禁止换提示词硬撞第 3 次。**
 
 ## 五、工期估算（非承诺）
-- Hark：{sum(H(c) for c in C if c['owner']=='Hark')}h；外部助手：{sum(H(c) for c in C if c['owner']!='Hark')}h（含条件卡 {sum(H(c) for c in C if c.get('cond'))}h）。
+- Hark：{sum(H(c) for c in C if c['owner']=='Hark')}h；外部助手 A：{sum(H(c) for c in C if c['owner']=='外部助手A')}h；外部助手 B：{sum(H(c) for c in C if c['owner']=='外部助手B')}h（含条件卡 {sum(H(c) for c in C if c.get('cond'))}h）。
 - 关键路径 {best[end]}h（见 08_）。两方并行时日历工期约由关键路径决定；工时为单人专注估算，未含评审往返。
 """)
 # 07 卡全集
