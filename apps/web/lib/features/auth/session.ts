@@ -4,6 +4,7 @@
  * - getSession()：从 HttpOnly Cookie 解析 access；无 Cookie 或无效一律 null。
  * - requireUser()：RSC 版守卫，null 时 redirect('/login?redirect=…')。
  * - requireUserApi()：route 版守卫，null 时 throw ApiError(10004,'未登录')。
+ * - T120-18：两个 route 守卫在同一次回库中比对 claims.ver 与 users.token_version，不等 → 10004（会话即时吊销）。
  */
 import { cookies } from "next/headers";
 
@@ -20,19 +21,48 @@ export interface SessionContext {
   tier: string;
 }
 
-/** 从 next/headers Cookie 读取并验签 access；不可用/无效返回 null。
- *  显式投影 {userId,tier} 收口 SessionContext（M-SSO：claims 已扩展 ver/jti/clientId，会话面不外泄） */
-export async function getSession(): Promise<SessionContext | null> {
+/** 读取并验签 access，返回含 ver 的内部会话（T120-18：守卫需比对 claims.ver 与 users.token_version；不外泄到 SessionContext） */
+async function readAccessSession(): Promise<(SessionContext & { ver: number }) | null> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get(COOKIE_ACCESS)?.value;
     if (!token) return null;
     const claims = await verifyAccess(token);
     if (!claims) return null;
-    return { userId: claims.userId, tier: claims.tier };
+    return { userId: claims.userId, tier: claims.tier, ver: claims.ver };
   } catch {
     // 非请求上下文（如静态渲染/测试外环境）视为未登录
     return null;
+  }
+}
+
+/** 从 next/headers Cookie 读取并验签 access；不可用/无效返回 null。
+ *  显式投影 {userId,tier} 收口 SessionContext（M-SSO：claims 已扩展 ver/jti/clientId，会话面不外泄） */
+export async function getSession(): Promise<SessionContext | null> {
+  const s = await readAccessSession();
+  return s ? { userId: s.userId, tier: s.tier } : null;
+}
+
+/** 守卫回库投影：status/deletedAt + tokenVersion 合在同一次 findUnique（T120-18：不新增往返） */
+const GUARD_USER_SELECT = { status: true, deletedAt: true, tokenVersion: true } as const;
+
+/**
+ * 守卫回库复核（requireUserApi / requireAdminApi 共用，单次 findUnique）。判定顺序：
+ *   1) token_version 与 claims.ver 不等 → 10004（401）。封禁 / 软删 / 改密 / 重置都会自增版本，旧令牌下一请求即被拒，
+ *      不依赖 15 分钟自然过期；同时因先于 2) 判定，封禁后旧令牌得到的是 401 而非 403。
+ *   2) 查无此人 / 软删 / 非 ACTIVE → 10005（403）——覆盖未自增版本的禁用路径。
+ * tokenVersion 为非空 Int 列，生产查询恒为 number；仅当桩对象未提供该键时跳过 1)（兼容既有单测桩，真实 DB 不会出现）。
+ */
+async function assertSessionFresh(session: SessionContext & { ver: number }): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: GUARD_USER_SELECT,
+  });
+  if (user && typeof user.tokenVersion === "number" && user.tokenVersion !== session.ver) {
+    throw new ApiError(ERROR_CODES.UNAUTHENTICATED, "登录已失效，请重新登录");
+  }
+  if (!user || user.deletedAt || user.status !== "ACTIVE") {
+    throw new ApiError(ERROR_CODES.ACCOUNT_DISABLED, "账号已被禁用或删除");
   }
 }
 
@@ -51,18 +81,12 @@ export async function requireUser(redirectTo = "/user/console"): Promise<Session
  *  回库复核 status=ACTIVE + deletedAt=null——保证封禁(SUSPENDED)用户的令牌即时失效，
  *  不受 JWT 剩余有效期影响（与 requireAdminApi 封禁=全端失效口径一致）。 */
 export async function requireUserApi(): Promise<SessionContext> {
-  const session = await getSession();
+  const session = await readAccessSession();
   if (!session) {
     throw new ApiError(ERROR_CODES.UNAUTHENTICATED, "请先登录");
   }
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: { status: true, deletedAt: true },
-  });
-  if (!user || user.deletedAt || user.status !== "ACTIVE") {
-    throw new ApiError(ERROR_CODES.ACCOUNT_DISABLED, "账号已被禁用或删除");
-  }
-  return session;
+  await assertSessionFresh(session);
+  return { userId: session.userId, tier: session.tier };
 }
 
 /**
@@ -81,17 +105,11 @@ export async function requireUserApi(): Promise<SessionContext> {
  *   status/deletedAt 始终新鲜（不受缓存影响）。
  */
 export async function requireAdminApi(permission?: PermissionCode): Promise<SessionContext> {
-  const session = await getSession();
+  const session = await readAccessSession();
   if (!session) {
     throw new ApiError(ERROR_CODES.UNAUTHENTICATED, "请先登录");
   }
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: { status: true, deletedAt: true },
-  });
-  if (!user || user.deletedAt || user.status !== "ACTIVE") {
-    throw new ApiError(ERROR_CODES.ACCOUNT_DISABLED, "账号已被禁用或删除");
-  }
+  await assertSessionFresh(session);
   const perms = await getAdminPermissions(session.userId);
   if (!perms.isStaff) {
     throw new ApiError(ERROR_CODES.FORBIDDEN, "需要管理员权限");
@@ -99,7 +117,7 @@ export async function requireAdminApi(permission?: PermissionCode): Promise<Sess
   if (permission && !hasPermission(perms, permission)) {
     throw new ApiError(ERROR_CODES.FORBIDDEN, "权限不足");
   }
-  return session;
+  return { userId: session.userId, tier: session.tier };
 }
 
 /**

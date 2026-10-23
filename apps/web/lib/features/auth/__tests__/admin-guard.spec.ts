@@ -121,7 +121,7 @@ describe("requireAdminApi 四态矩阵", () => {
     expect(prismaState.user.findUnique).toHaveBeenCalledTimes(1);
     expect(prismaState.user.findUnique).toHaveBeenCalledWith({
       where: { id: "u-admin" },
-      select: { status: true, deletedAt: true },
+      select: { status: true, deletedAt: true, tokenVersion: true }, // T120-18：同一次回库追加 tokenVersion 投影
     });
   });
 

@@ -1,0 +1,26 @@
+T120-18 验证证据（Hark · 2026-10-23 · 基线 main@3d58817）
+实现：session.ts 新增 readAccessSession（含 claims.ver，SessionContext 对外仍只 {userId,tier}）+ assertSessionFresh；
+      requireUserApi / requireAdminApi 共用同一次 findUnique，投影 {status,deletedAt,tokenVersion}（无新增往返，未启用 Redis 缓存）。
+判定序：tokenVersion≠claims.ver → 10004（401）；再 查无/软删/非 ACTIVE → 10005（403）。
+      封禁/软删路由（admin/users/[id]）已有 tokenVersion++，故封禁后旧令牌下一请求得 401。
+
+## 命令与退出码
+pnpm -C apps/web exec vitest run lib/features/auth                     exit=0  Test Files 52 passed / Tests 450 passed
+apps/web: vitest run lib/features/auth/__tests__/session-ver.spec.ts    exit=0  Tests 9 passed（≥6）
+apps/web: tsc --noEmit -p .                                              exit=0
+pnpm lint                                                                exit=0
+apps/web: vitest run（全量）                                             exit=0  162 passed|2 skipped files；1835 passed|5 skipped tests
+node scripts/check-docs-rule.mjs                                         exit=0
+node scripts/check-docs-facts.mjs                                        exit=0（spec-count 210→211）
+
+## 单测覆盖（session-ver.spec.ts，9 例）
+① ver 相等放行  ② ver 不等 10004  ③ 封禁+ver++ → 10004（401）  ④ 查无/软删未自增 → 10005
+⑤ user 路径恰 1 次 findUnique 且 select 含 tokenVersion  ⑥ admin ver 相等放行  ⑦ admin ver 不等 10004 且不进权限解析
+⑧ admin 路径恰 1 次 findUnique  ⑨ 未登录 10004 不触库
+
+## 偏差
+D1 admin-guard.spec.ts:124 select 断言追加 tokenVersion（卡面 Step 2 必然改变投影；该文件不在允许路径，仅改 1 行断言）。
+D2 scripts/check-docs-facts.mjs spec-count 锚 210→211（新增 spec 的门禁要求，沿用历史卡做法）。
+D3 「封禁后 401」集成测：Hark 环境无 Docker/PG（127.0.0.1:55432 拒连），以单测③ + 既有封禁路由 ver++ 覆盖；
+   真库集成验证待外部助手在 aidean-int-pg 补跑。
+D4 桩兼容：tokenVersion 非 number（仅既有单测桩缺该键）时跳过版本比对；生产列为非空 Int，恒参与比对。
