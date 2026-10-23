@@ -75,6 +75,30 @@ export const authRepository = {
     return prisma.user.findUnique({ where: { id }, select: PROFILE_SELECT });
   },
 
+  /** T120-19 改密前置：按 id 取含哈希的凭据行（仅 service 内比对，不外泄） */
+  async findUserCredentialById(id: string): Promise<AuthUserRow | null> {
+    return prisma.user.findUnique({ where: { id }, select: USER_SELECT });
+  },
+
+  /**
+   * T120-19 改密事务（同一事务三步）：更新哈希 → token_version += 1 → 吊销该用户全部未吊销 refresh。
+   * 返回新代际后的 profile 行（供为当前设备签发新令牌对）。
+   */
+  async changePasswordAndRevokeAll(userId: string, passwordHash: string): Promise<AuthUserProfileRow> {
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: { password: passwordHash, tokenVersion: { increment: 1 } },
+        select: PROFILE_SELECT,
+      });
+      await tx.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      return user;
+    });
+  },
+
   /**
    * 注册事务：users(tier=NORMAL) + wallets(balanceMinor=0n) 同建；
    * email unique 冲突(P2002)由调用方映射为 ApiError(10002)。

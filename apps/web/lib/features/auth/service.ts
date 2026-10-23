@@ -9,8 +9,10 @@
  * - M-SSO P0.5：连续失败达阈值锁定（lockedUntil）+ 成功清零计数；
  *   锁定判定在凭据核验**之后**（user 不存在时无锁定字段可查，防枚举语义不破坏）；
  * - 登录/注册返回 tokenVersion（M-SSO P0.4）：签发令牌写入 ver claim 的比对锚点。
+ * - T120-19 changePassword：旧密核验（错 → 10003）→ 同事务 更新哈希 + ver++ + 吊销全部 refresh；
+ *   返回新代际 profile，由路由为当前设备签发新令牌对。
  */
-import { LoginSchema, RegisterSchema } from "@aidean/shared";
+import { ChangePasswordRequest, LoginSchema, RegisterSchema } from "@aidean/shared";
 
 import { ApiError, ERROR_CODES } from "../../../app/api/v1/_lib/errors";
 import {
@@ -108,5 +110,21 @@ export const authService = {
     }
     await authRepository.registerLoginSuccess(user.id);
     return toProfile(user);
+  },
+  async changePassword(userId: string, rawPayload: unknown): Promise<AuthProfile> {
+    const parsed = ChangePasswordRequest.safeParse(rawPayload);
+    if (!parsed.success) {
+      throw new ApiError(ERROR_CODES.BAD_REQUEST, firstIssueMessage(parsed as unknown as ParseFailure));
+    }
+    const user = await authRepository.findUserCredentialById(userId);
+    if (!user || !(await verifyPassword(parsed.data.currentPassword, user.password))) {
+      throw new ApiError(ERROR_CODES.INVALID_CREDENTIALS, "当前密码错误");
+    }
+    if (user.status !== "ACTIVE") {
+      throw new ApiError(ERROR_CODES.ACCOUNT_DISABLED, "账号已被禁用或锁定");
+    }
+    const passwordHash = await hashPassword(parsed.data.newPassword, SALT_ROUNDS);
+    const updated = await authRepository.changePasswordAndRevokeAll(userId, passwordHash);
+    return toProfile(updated);
   },
 };

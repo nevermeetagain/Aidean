@@ -1,0 +1,28 @@
+T120-19 验证证据（Hark · 2026-10-23 · 基线 main@cfe416d）
+实现：POST /api/v1/auth/password（新）→ requireUserApi → 登录同桶 IP 限流 rl:login:{ip}
+      → authService.changePassword（ChangePasswordRequest；旧密错 10003）
+      → authRepository.changePasswordAndRevokeAll（同一 $transaction：哈希 + tokenVersion++ + 吊销全部 refresh）
+      → 当前设备新令牌对（ver=新值）+ refresh 落库 + 两 Cookie → 审计 users/UPDATE newData.event=password.change（不含哈希）
+
+## 命令与退出码
+pnpm -C apps/web exec vitest run app/api/v1/auth lib/features/auth     exit=0  53 files / 457 tests passed
+apps/web: vitest run lib/features/auth/__tests__/password-change.spec.ts exit=0  7 passed
+apps/web: tsc --noEmit -p .                                              exit=0
+pnpm lint                                                                exit=0
+apps/web: vitest run（全量）                                             exit=0  163 passed|2 skipped files；1842 passed|5 skipped tests
+node scripts/check-docs-rule.mjs                                         exit=0
+node scripts/check-docs-facts.mjs                                        exit=0（spec-count 211→212，route-count 166→167）
+
+## 契约测覆盖（7 例）
+① 成功 200 {changed:true}，ver 0→1，新哈希可验，updateMany 吊销，新 access ver=1，审计无哈希
+② 改密后另一会话旧 access 下一请求 10004（401）；本设备新令牌放行
+③ 旧密错 401/10003，库态不变，命中 rl:login:{ip} 同桶
+④ 新密弱（无数字/过短/同旧密）400/40000
+⑤ 未登录 401/10004，不触限流与库写
+⑥ 限流命中 429/10006，不核验旧密
+⑦ GET 405
+
+## 偏差
+D1 scripts/check-docs-facts.mjs 计数锚（spec 211→212、route 166→167）——门禁要求，沿用历史卡做法。
+D2 「另一会话 401」以内存库态模拟的路由级测②覆盖；Hark 环境无 Docker/PG，真库集成测待外部助手在 aidean-int-pg 补跑（同 T120-18 D3）。
+D3 旧密错仅计入 IP 限流桶，不调用 registerLoginFailure（避免已登录用户被改密接口误锁账号）。
