@@ -20,7 +20,7 @@
  * stations 目录请求改为懒加载——仅在用户打开新增表单（draft !== null）时才 fetch，
  * 进入外部渠道 tab 首屏请求数 2→1。
  */
-import type { ApiChannelView, GatewayFormat } from "@aidean/shared";
+import type { ApiChannelView, ChannelProbeResult, GatewayFormat } from "@aidean/shared";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button, Dialog, Input } from "@aidean/ui";
@@ -50,6 +50,62 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
     throw new Error(body?.message ?? "请求失败");
   }
   return body.data;
+}
+
+/**
+ * T120-23：自定义渠道保存后自动探测（POST /user/custom-channels/{id}/probe），行内徽标展示结果。
+ * 四态 outcome + 目标被拒（30005，SSRF 策略：非 https / 私网 / 重定向）共五种可见状态；probing 为进行中。
+ */
+export type ProbeBadgeState = ChannelProbeResult["outcome"] | "forbidden" | "probing";
+
+export const PROBE_BADGE: Record<ProbeBadgeState, { label: string; className: string }> = {
+  probing: { label: "探测中…", className: "bg-slate-100 text-slate-500" },
+  reachable: { label: "可达", className: "bg-emerald-100 text-emerald-700" },
+  auth_failed: { label: "鉴权失败", className: "bg-amber-100 text-amber-700" },
+  timeout: { label: "超时", className: "bg-orange-100 text-orange-700" },
+  bad_response: { label: "响应异常", className: "bg-red-100 text-red-700" },
+  forbidden: { label: "目标被拒", className: "bg-red-100 text-red-700" },
+};
+
+export interface ProbeView {
+  state: ProbeBadgeState;
+  detail?: string;
+}
+
+export function ProbeBadge({ probe }: { probe: ProbeView }) {
+  const meta = PROBE_BADGE[probe.state];
+  return (
+    <span
+      data-testid="channel-probe-badge"
+      data-probe-state={probe.state}
+      title={probe.detail}
+      className={`rounded px-1.5 py-0.5 text-xs font-medium ${meta.className}`}
+    >
+      连通性：{meta.label}
+    </span>
+  );
+}
+
+/** 探测接口响应 → 徽标视图（30005 → forbidden；其余错误按 bad_response 展示并附原因）。 */
+export async function runChannelProbe(id: string): Promise<ProbeView> {
+  try {
+    const res = await fetch(`/api/v1/user/custom-channels/${id}/probe`, { method: "POST", credentials: "same-origin" });
+    const body = (await res.json().catch(() => null)) as Envelope<ChannelProbeResult> | null;
+    if (body?.code === 0 && body.data) {
+      const d = body.data;
+      const detail =
+        d.outcome === "reachable"
+          ? `HTTP ${d.httpStatus ?? "-"} · ${d.latencyMs ?? "-"}ms · ${d.modelCount ?? 0} 个模型`
+          : d.httpStatus !== null
+            ? `HTTP ${d.httpStatus}`
+            : undefined;
+      return { state: d.outcome, detail };
+    }
+    if (body?.code === 30005) return { state: "forbidden", detail: body.message };
+    return { state: "bad_response", detail: body?.message ?? "探测失败" };
+  } catch (e) {
+    return { state: "bad_response", detail: (e as Error).message };
+  }
 }
 
 const KIND_LABEL: Record<ApiChannelView["kind"], string> = {
@@ -101,6 +157,13 @@ export function ApiChannelsPanel() {
   const [submitting, setSubmitting] = useState(false);
   const [catalog, setCatalog] = useState<CatalogOption[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<ApiChannelView | null>(null);
+  const [probeById, setProbeById] = useState<Record<string, ProbeView>>({});
+
+  const probe = useCallback(async (id: string) => {
+    setProbeById((m) => ({ ...m, [id]: { state: "probing" } }));
+    const view = await runChannelProbe(id);
+    setProbeById((m) => ({ ...m, [id]: view }));
+  }, []);
 
   const isEdit = draft?.editingId != null;
 
@@ -187,19 +250,24 @@ export function ApiChannelsPanel() {
         };
         // apiKey 仅在用户填写时才提交（编辑时留空 = 不换密钥）
         if (draft.apiKey.trim()) body.apiKey = draft.apiKey.trim();
+        let savedId: string | null = null;
         if (draft.editingId) {
           await api(`/api/v1/user/custom-channels/${draft.editingId}`, {
             method: "PATCH",
             body: JSON.stringify(body),
           });
+          savedId = draft.editingId;
           setNotice("渠道已保存");
         } else {
-          await api("/api/v1/user/custom-channels", {
+          const created = await api<{ id?: string }>("/api/v1/user/custom-channels", {
             method: "POST",
             body: JSON.stringify({ ...body, models: [] as string[] }),
           });
+          savedId = created?.id ?? null;
           setNotice("渠道已添加");
         }
+        // T120-23：保存后自动探测（不阻塞关闭表单）
+        if (savedId) void probe(savedId);
       } else {
         const body = { stationId: draft.stationId, apiKey: draft.apiKey, name: draft.name.trim() || undefined };
         await api("/api/v1/user/station-keys", { method: "POST", body: JSON.stringify(body) });
@@ -291,6 +359,8 @@ export function ApiChannelsPanel() {
               busy={busyId === item.id}
               onToggle={() => void toggleActive(item)}
               onEdit={item.kind === "custom" ? () => openEdit(item) : undefined}
+              probe={item.kind === "custom" ? probeById[item.id] : undefined}
+              onProbe={item.kind === "custom" ? () => void probe(item.id) : undefined}
               onRemove={() => setDeleteTarget(item)}
             />
           ))}
@@ -492,12 +562,16 @@ function ChannelRow({
   onToggle,
   onEdit,
   onRemove,
+  probe,
+  onProbe,
 }: {
   item: ApiChannelView;
   busy: boolean;
   onToggle: () => void;
   onEdit?: () => void;
   onRemove: () => void;
+  probe?: ProbeView;
+  onProbe?: () => void;
 }) {
   const badge =
     item.kind === "custom" ? "bg-violet-100 text-violet-700" : "bg-sky-100 text-sky-700";
@@ -522,7 +596,19 @@ function ChannelRow({
       <span className={`text-xs ${item.isActive ? "text-emerald-700" : "text-slate-400"}`}>
         {item.isActive ? "启用" : "停用"}
       </span>
+      {probe && <ProbeBadge probe={probe} />}
       <div className="ml-auto flex items-center gap-1.5">
+        {onProbe && (
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={busy || probe?.state === "probing"}
+            onClick={onProbe}
+            className="h-7 rounded border border-border px-2"
+          >
+            探测
+          </Button>
+        )}
         {onEdit && (
           <Button variant="ghost" size="sm" disabled={busy} onClick={onEdit} className="h-7 rounded border border-border px-2">
             编辑

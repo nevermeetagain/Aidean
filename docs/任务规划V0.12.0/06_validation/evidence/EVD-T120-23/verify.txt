@@ -1,0 +1,27 @@
+T120-23 验证证据（Hark · 2026-10-23 · 基线 main@8a02649）
+实现：lib/features/gateway/probe.ts（新）—— 仅 https；assertSafeUrl + isBlockedIp 复用 url-policy，补 IPv6 盲区（::、::ffff:hex、::a.b.c.d、64:ff9b::/96、2001:db8::/32）；
+        连接走 getOutboundDispatcher（lookup 过滤 → 防 DNS 重绑定）；redirect:'manual'，任何 3xx → 30005；3s 超时；只发 GET {baseUrl}/models
+        结果四态 reachable / auth_failed / timeout / bad_response（ChannelProbeResponse 契约，shared 已由 T120-01 落地，本卡零改 packages）
+      POST /api/v1/user/custom-channels/{id}/probe（新）：requireUserApi → uuid 校验 → 每用户 10/60s 限流(10006) → 本人渠道（否则 40000，与 API 文档 §541 一致）
+        → 解密 key 探测 → 写回既有列 last_test_at / last_test_ok（无新列、无迁移）；目标被拒 → 30005(400) 且 last_test_ok=false
+      components/console/ApiChannelsPanel.tsx：保存（新建/编辑）后自动探测；行内「连通性」徽标 5 态 + 探测中；custom 行新增「探测」按钮
+
+## 命令与退出码
+vitest run lib/features/gateway/__tests__/probe.spec.ts                        exit=0  SSRF 16 例（10.x/127.x/169.254.169.254/::1/fc00::/fe80::/::ffff:127.0.0.1/
+                                                                                         元数据主机名/解析到 192.168/DNS 重绑定混入 127.0.0.1/ULA/NAT64/::/http/ftp/userinfo）
+                                                                                         + 四态 / 请求形状 / 真实 AbortSignal 超时 / 301·302·307·308 → 30005
+vitest run lib/features/gateway/__tests__/probe-route.spec.ts                  exit=0  9 passed（30005→400 契约、429 键 rl:probe:user:<id> 10/60、40000、10004、lastTest 写回）
+vitest run lib/features/gateway/__tests__/probe-badge.spec.ts                  exit=0  8 passed（UI 五态文案可见 + 响应映射）
+真网探测（tsx，sk-invalid）：openrouter.ai/api/v1 → reachable 200 · 468 models；api.openai.com/v1 → auth_failed 401；
+  https://localhost / https://10.255.255.1 → 30005 受限网段；http://openrouter.ai → 30005 仅允许 https
+apps/web: tsc --noEmit -p .                                                    exit=0
+pnpm lint                                                                      exit=0（仅既有 no-img-element 警告）
+apps/web: vitest run（全量）                                                   exit=0  170 files / 1924 tests passed
+node scripts/guard/api-method-coverage.mjs                                     exit=0
+node scripts/check-docs-rule.mjs / check-docs-facts.mjs                        exit=0 / exit=0（route 170→171，spec 218→221）
+
+## 偏差
+D1 卡面 UI 路径 components/user/ApiChannelsPanel.tsx 实际为 components/console/ApiChannelsPanel.tsx（同一组件，仓内唯一）。
+D2 连接错误（ECONNREFUSED / DNS 失败）契约无独立 outcome → 归 bad_response（httpStatus=null）。
+D3 UI 测试放 lib/features/gateway/__tests__/probe-badge.spec.ts（vitest include 仅 lib/**），react-dom/server 静态渲染断言。
+D4 scripts/check-docs-facts.mjs 计数锚同步（门禁要求，沿用历史卡）。
