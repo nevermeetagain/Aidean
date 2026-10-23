@@ -1,0 +1,31 @@
+T120-04 证据（外部助手 · 2026-10-23 · 基线 main@93eba205→96db7cb3 · 结论：blocked:no-docker-egress——本机有 Docker、容器无外网，build 未通过）
+
+## 环境前提（实测）
+- docker version → Server 29.4.3（desktop-linux），守护进程可用；node:20-alpine 等基座镜像本地已有，无需拉取
+- 在跑容器：shared-postgres(5435→5432)、shared-redis(6379)、aidean-int-pg(55432)——与本任务书「测试库 55432」一致，未新建库、未换端口
+- 容器出网反证：curlimages/curl 三探针全 http_code=000 —— registry.npmjs.org/-/ping、registry.npmmirror.com/-/ping、registry-1.docker.io/v2/
+- docker info → HTTPProxy/HTTPSProxy=http.docker.internal:3128（Docker Desktop hub proxy），实测拒绝连接，故容器侧任何 HTTPS 出口皆失败
+
+## 卡面验证命令（以根 Dockerfile 代跑，见 deviation 1）
+- docker build -f Dockerfile --build-arg NEXT_PUBLIC_SITE_URL=https://demo.aidean.local -t aidean:v120 . → BUILD_EXIT=1
+  #1–#12（context 传输 6.98kB + 各 COPY 清单）全绿；失败点 #13 [deps 9/9] RUN pnpm install --frozen-lockfile：
+  「Lockfile is up to date, resolution step is skipped」→「Packages: +573」→ 各 tarball GET (ECONNREFUSED) 重试 →
+  ERROR: failed to solve: process "/bin/sh -c pnpm install --frozen-lockfile" did not complete successfully: exit code: 1
+- docker images aidean → 空（未产出镜像，无 digest 可记）；全量日志 .scratch/t120-04-build.log（197 行）
+- --build-arg 取值理由：apps/web/scripts/check-runtime-contract.mjs 在 --strict 下把 localhost/127.0.0.1 判失败（NODE_ENV=production 时 ERROR），故给非 localhost 绝对地址
+
+## 验收
+- ① docker build exit=0：未达（deps 阶段即因无外网失败）——非 Dockerfile 缺陷：#1–#12 与各 COPY 全部通过
+- ② 容器内 1 条 ScriptExecution status=成功：无法执行（无镜像）
+- ③ 证据含镜像 digest 与执行日志 ≤40 行：本文件即证据；digest 因未产出镜像而缺
+- ④ 全量 tsc/lint/vitest + docs-rule/facts exit=0：本卡零代码改动（允许路径仅 EVD-T120-04/**），沿用推送前末跑读数——
+  guard/tc/lint/vfull/rule/facts 全 EXIT=0（165 files、1857 tests passed | 5 skipped；All 16 assertions passed）
+
+## 未执行项（禁止越界）
+- 卡面 Step 4「失败只登记，不改 Dockerfile」；deploy/** 与 apps/web/** 均在本卡「禁止修改」，根 Dockerfile 亦不在「允许修改」→ 未加 --network、未注入 .npmrc/镜像源、未改 deps 阶段
+- 亦未尝试：离线 pnpm store 预热、BuildKit cache mount、宿主机反代 npm registry——均需改 Dockerfile 或动宿主网络配置（属用户环境）
+
+## 解锁条件（任一，之后即可复跑本卡）
+- A. Docker Desktop → Settings → Resources → Proxies 填入宿主机可用代理（或让 VPN 以系统代理/TUN 对 Docker 生效），使容器能访问 registry.npmjs.org 或 registry.npmmirror.com
+- B. 采信 CI 读数收口 ①：.github/workflows/ci.yml:84 已写明「本机 Docker Desktop engine 不稳，实跑职责移交 CI」，:86 有 docker-build job
+  （build-push-action + NEXT_PUBLIC_SITE_URL build-arg）；但 ②「容器内 run-due 产生 1 条 ScriptExecution」CI 未覆盖，仍需一台有出网的机器补跑
