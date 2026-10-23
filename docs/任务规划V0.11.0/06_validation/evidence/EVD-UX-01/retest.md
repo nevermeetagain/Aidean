@@ -23,7 +23,7 @@
 
 - 性能 TBT 下降（首页移动 1248→271ms）受沙箱负载影响大，只作参考，不作结论。
 - 未尽事项：管理端 500 注入仍只跑完 18 页（脚本 600s 超时，offline 33 页完整）；控制台「免费额度」为 SSR 取数，客户端注入无法模拟其失败（非回归）；剩余对比度主要是 emerald-600/rose 等状态色与 slate-300 编号，未在本轮主题层处理；首页区块容器 `components/home/SectionFrame.tsx` 仍 max-w-6xl。
-- 运营注意：已有数据库侧栏名称需在 /admin/menus 点「应用推荐分组」或重跑 `seed-admin-nav-default.ts` 才会更新。
+- 运营注意（2026-10-23 更新）：已由数据迁移 `20261023000000_admin_nav_ux26_rename` 自动对齐——`prisma migrate deploy` 时把仍为旧出厂名的 3 个侧栏叶改为新名并停用协议矩阵叶，管理员自定义过的名称不覆盖；无需再手动「应用推荐分组」。
 
 ## 收尾复测（2026-10-22 23:50 CST）
 
@@ -37,4 +37,4 @@
 | 报告 §8 文档修订 | 9 条全部落实 + 管理端 IA 收口 / oauth 生产 404 同步（UX-FIX-E 15e6bb3；文档索引 v1.90） |
 | 门禁 | build/tsc/lint 0；Vitest 1826 passed / 5 skipped；check-docs-rule 0；check-docs-facts 16/16 |
 
-剩余非阻塞：TBT 受沙箱负载影响仅作参考；既有库需在 /admin/menus「应用推荐分组」刷新导航名；HeroBanner 居中文本仍内部限宽 max-w-6xl（非 SectionFrame，属可读性限宽）。
+剩余非阻塞：TBT 受沙箱负载影响仅作参考；HeroBanner 居中文本仍内部限宽 max-w-6xl（非 SectionFrame，属可读性限宽）。
