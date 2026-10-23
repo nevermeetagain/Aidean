@@ -1,0 +1,6 @@
+T120-03 缺陷 D3 修复（Hark · 2026-10-24）
+问题：控制台调用测试台「请求格式」四段 inline-flex 不换行，375px 下固有宽 349px > 可用 343px，横向溢出 32px。
+修复：apps/web/components/console/CallPlayground.tsx 分段容器 <sm 改 `grid w-full grid-cols-2`（2×2），sm 起恢复 inline-flex；
+      按钮 whitespace-nowrap、<sm 内边距 px-3（sm:px-3.5 不变）。最长标签「Anthropic Messages」≈ 135+24px < 单格 171px。
+命令：apps/web tsc --noEmit exit=0；pnpm lint exit=0
+未验/移交：Hark 环境无 Playwright 浏览器，375×667 实测由外部助手跑 e2e/tests/fe01-console-call.spec.ts 确认 overflow ≤ 1px（fixme 应不再触发）。

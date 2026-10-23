@@ -187,7 +187,8 @@ test.describe("WP-FE01 视口与死链", () => {
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth
       );
       if (viewport.width === 375 && overflow > 1) {
-        // 真缺陷登记（T120-03，只登记不修）：「请求格式」四段控件为不换行 inline-flex，
+        // D3 已由 Hark 修复（<sm 改 2×2 网格，EVD-T120-03/hark-fix-d3.txt）；保留自愈 fixme 仅作回归兜底。
+        // 原登记（T120-03）：「请求格式」四段控件为不换行 inline-flex，
         // 英文标签固有宽 349px > 375 视口可用 343px → 溢出 32px
         // （CallPlayground.tsx:574-594 + :47-52 FORMAT_OPTIONS）。修复须改
         // apps/web/components/**（本卡禁止修改），证据与复现见

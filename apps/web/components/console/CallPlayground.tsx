@@ -574,7 +574,7 @@ export function CallPlayground({ balanceYuan, tiers, priorities, freeQuotas }: C
             <div
               role="group"
               aria-label="请求格式"
-              className="mt-1 inline-flex overflow-hidden rounded-lg border border-border bg-card"
+              className="mt-1 grid w-full grid-cols-2 overflow-hidden rounded-lg border border-border bg-card sm:inline-flex sm:w-auto"
             >
               {FORMAT_OPTIONS.map((option) => (
                 <button
@@ -584,7 +584,7 @@ export function CallPlayground({ balanceYuan, tiers, priorities, freeQuotas }: C
                   aria-pressed={format === option.value}
                   data-testid={`playground-format-${option.value}`}
                   onClick={() => setFormat(option.value)}
-                  className={`px-3.5 py-1.5 text-sm transition-colors ${
+                  className={`whitespace-nowrap px-3 py-1.5 text-sm transition-colors sm:px-3.5 ${
                     format === option.value
                       ? "bg-primary text-[var(--primary-foreground)]"
                       : "text-slate-600 hover:bg-muted"
