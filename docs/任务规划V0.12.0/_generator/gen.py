@@ -1,5 +1,6 @@
 import re, os, json, graphlib, itertools, fnmatch
 exec(open(''+os.path.dirname(os.path.abspath(__file__))+'/cards.py').read())
+exec(open(os.path.dirname(os.path.abspath(__file__))+'/lineage.py').read())
 D=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 H=lambda c: float(re.search(r'≈([\d.]+)',c['size']).group(1)) if re.search(r'≈([\d.]+)',c['size']) else 1.5
 by={c['id']:c for c in C}
@@ -49,6 +50,7 @@ for c in C:
 - 执行方：**{c['owner']}**
 - 来源需求：{c['reqs']}
 - 来源方案：{c['src']}
+- 承接 V0.11：{LINEAGE[c['id']]}
 
 ## 目标
 {c['goal']}
