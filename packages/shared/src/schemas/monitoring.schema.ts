@@ -221,3 +221,75 @@ export type SourceKind = z.infer<typeof SourceKindSchema>;
 export type TosStatus = z.infer<typeof TosStatusSchema>;
 export type RunStatus = z.infer<typeof RunStatusSchema>;
 export type MonitoringPriceUnit = z.infer<typeof PriceUnitSchema>; // 避开 types/ 既有 PriceUnit 同名
+
+
+// ---------------------------------------------------------------- V0.12.0 增量（T120-10，原样落地自 docs/任务规划V0.12.0/contracts/05b-events.contract.ts + 07b-monitoring-run.contract.ts + 07c-reliability.contract.ts）
+// V0.12.0 · Events：监控「立即运行」请求的状态机（无消息总线，DB 行即事件；ADR-0011）。
+
+export const MonitorRunStatus = z.enum(["pending", "running", "done", "failed"]);
+
+/** 合法迁移：pending→running（调度领取，UPDATE … WHERE status='pending' RETURNING，原子）；running→done|failed。
+ *  幂等键：部分唯一索引 (source_key) WHERE status IN ('pending','running') —— 同源同时至多 1 个未完成请求。
+ *  触发时机：管理员 POST run 时插入 pending；run-due 调度节拍（每 15 分钟）或下一次 monitor_catalogs 执行时领取。
+ *  超时回收：running 超过 30 分钟视为僵死，下一次领取前置为 failed(error='stale')。 */
+export const MonitorRunTransition = z.discriminatedUnion("to", [
+  z.object({ from: z.literal("pending"), to: z.literal("running") }),
+  z.object({ from: z.literal("running"), to: z.literal("done") }),
+  z.object({ from: z.literal("running"), to: z.literal("failed") }),
+]);
+
+export const MonitorRunRequest = z.object({
+  id: z.string().uuid(),
+  sourceKey: z.string().max(40),
+  status: MonitorRunStatus,
+  requestedBy: z.string().uuid(),
+  createdAt: z.string().datetime(),
+  startedAt: z.string().datetime().nullable(),
+  finishedAt: z.string().datetime().nullable(),
+  resultCount: z.number().int().nonnegative().nullable(),
+  error: z.string().max(2000).nullable(),
+});
+
+// V0.12.0 · 监控运行端点（REQ-M-011）。落地：packages/shared/src/schemas/monitoring.schema.ts
+
+/** POST /api/v1/admin/monitoring/sources/{key}/run —— 鉴权 admin.sync.write。
+ *  语义由「只占锁」改为「插入 pending 请求」；返回 202。重复 → 10006(429)；key 未注册 → 20004；authRequired 且缺凭证 → 50012。
+ *  响应形状向后兼容：保留既有 AdminMonitoringRunResponse 字段，新增 requestId。 */
+export const AdminMonitoringRunResponseV2 = z.object({ accepted: z.literal(true), requestId: z.string().uuid() });
+
+/** GET /api/v1/admin/monitoring/sources/{key}/runs?page&pageSize —— 鉴权 admin.sync.read。按 createdAt 倒序。 */
+export const AdminMonitoringRunsResponse = z.object({
+  items: z.array(MonitorRunRequest),
+  total: z.number().int().nonnegative(),
+  page: z.number().int().positive(),
+  pageSize: z.number().int().positive().max(50),
+});
+
+/** 源列表新增只读派生字段 nextRunAt（由 cadenceCron + lastRunAt 计算，Asia/Shanghai），非法 cron → null */
+export const MonitoringSourceDerived = z.object({ nextRunAt: z.string().datetime().nullable() });
+
+// V0.12.0 · 可靠性读取（REQ-M-008）。落地：packages/shared/src/schemas/monitoring.schema.ts
+
+/** GET /api/v1/stations/{id}/reliability?days=7 —— 匿名可读；days ∈ [1,30]，默认 7，非法 → 400。
+ *  缺观测的日子返回 uptimePercent=null（不插值、不当作 0）。缓存 10 分钟，persist 写入后失效。 */
+export const ReliabilityDay = z.object({
+  day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),          // Asia/Shanghai 自然日
+  uptimePercent: z.number().min(0).max(100).nullable(),
+  successCount: z.number().int().nonnegative(),
+  failureCount: z.number().int().nonnegative(),
+});
+export const StationReliabilityResponse = z.object({
+  stationId: z.string().uuid(),
+  days: z.array(ReliabilityDay),
+  lastAliveAt: z.string().datetime().nullable(),
+  source: z.literal("llmtest"),
+});
+export type MonitorRunRequestRow = z.infer<typeof MonitorRunRequest>;
+export type StationReliability = z.infer<typeof StationReliabilityResponse>;
+
+/** V0.12 新增/语义变更端点登记（既有 MONITORING_ENDPOINTS 不改，供 V0.11 兼容断言；run 端点语义以本表为准，见 ADR-0011） */
+export const MONITORING_V120_ENDPOINTS = [
+  { method: "POST", path: "/api/v1/admin/monitoring/sources/{key}/run", auth: "ADMIN:admin:sync:write", res: "AdminMonitoringRunResponseV2(202)", idempotent: "部分唯一索引 monitor_run_requests(source_key) WHERE status IN ('pending','running')；重复→10006", task: "T120-12" },
+  { method: "GET", path: "/api/v1/admin/monitoring/sources/{key}/runs", auth: "ADMIN:admin:sync:read", res: "AdminMonitoringRunsResponse", idempotent: true, task: "T120-12" },
+  { method: "GET", path: "/api/v1/stations/{id}/reliability", auth: "PUBLIC", res: "StationReliabilityResponse", idempotent: true, cache: "600s，persist 写入后失效", task: "T120-14" },
+] as const;

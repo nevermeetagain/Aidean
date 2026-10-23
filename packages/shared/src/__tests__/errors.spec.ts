@@ -52,11 +52,11 @@ const WEB_STATUS_SNAPSHOT: Readonly<Record<number, number>> = {
 };
 
 describe("errors.ts 唯一错误码源（TASK-001 / ADR-P001）", () => {
-  it("码值全表唯一（无重复），共 27 码 = 既有 22 + 新增 3（TASK-001）+ 监控 2（TASK-056）", () => {
+  it("码值全表唯一（无重复），共 28 码 = 既有 22 + 新增 3（TASK-001）+ 监控 2（TASK-056）+ V0.12 1（T120-10）", () => {
     const vals = Object.values(ERROR_CODES) as number[];
     const dup = vals.filter((v, i) => vals.indexOf(v) !== i);
     expect(dup).toEqual([]);
-    expect(vals.length).toBe(27);
+    expect(vals.length).toBe(28);
   });
 
   it("新增 3 码值精确（20003/50010/50011）", () => {
@@ -70,10 +70,10 @@ describe("errors.ts 唯一错误码源（TASK-001 / ADR-P001）", () => {
       expect(ERROR_CODES, `迁移前 web 码 ${k} 应与 shared 一致`).toHaveProperty(k);
       expect((ERROR_CODES as Record<string, number>)[k]).toBe(v);
     }
-    // 快照 22 码；shared 硬锁 27（= 22 既有 + 3 新增 + 2 监控 TASK-056），不随 TASK-002 web 重导出而波动
+    // 快照 22 码；shared 硬锁 28（= 22 既有 + 3 新增 + 2 监控 TASK-056 + 1 渠道探测 T120-10），不随 TASK-002 web 重导出而波动
     const snapKeys = Object.keys(WEB_ERROR_CODES_SNAPSHOT);
     expect(snapKeys.length).toBe(22);
-    expect(Object.keys(ERROR_CODES).length).toBe(27);
+    expect(Object.keys(ERROR_CODES).length).toBe(28);
   });
 
   it("HTTP 映射：迁移前 web 快照 8 条逐值一致（shared 仅额外新增 2 条）", () => {

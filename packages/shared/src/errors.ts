@@ -42,6 +42,9 @@ export const ERROR_CODES = {
   MONITOR_SOURCE_NOT_FOUND: 20004,
   /** 源需要 API Key 但未配置（run 或 keyed collector） */
   MONITOR_SOURCE_CREDENTIAL_MISSING: 50012,
+  // —— V0.12.0 增量 1 码（contracts/02b-errors-v120.contract.ts，T120-10 落地；合计 28 码）——
+  /** 自定义渠道探测目标被安全策略拒绝（SSRF 防护：非 https / 私网 / 回环 / 链路本地 / 云元数据 / 重定向）。HTTP 400 走默认映射 */
+  CHANNEL_PROBE_TARGET_FORBIDDEN: 30005,
 } as const;
 
 export type ErrorCodeKey = keyof typeof ERROR_CODES;
@@ -112,6 +115,7 @@ export const ERROR_PRESENTATION: Readonly<Record<ErrorCodeKey, ErrorPresentation
   FEATURE_DISABLED: "page",
   MONITOR_SOURCE_NOT_FOUND: "toast",
   MONITOR_SOURCE_CREDENTIAL_MISSING: "inline",
+  CHANNEL_PROBE_TARGET_FORBIDDEN: "inline",
 };
 
 /** 失败路径 → 错误码覆盖表（契约自检 §4.4「错误码覆盖所有已知失败路径」的机器口径） */
@@ -132,4 +136,15 @@ export const FAILURE_PATHS: ReadonlyArray<{ path: string; code: ErrorCodeKey }> 
   { path: "监控源 PATCH/run 的 {key} 未注册", code: "MONITOR_SOURCE_NOT_FOUND" },
   { path: "监控源 run：authRequired 源但 env MONITOR_KEY_<SOURCE> 缺失", code: "MONITOR_SOURCE_CREDENTIAL_MISSING" },
   { path: "未知异常", code: "INTERNAL_ERROR" },
+  // —— V0.12.0 增量（contracts/02b V120_FAILURE_PATHS，T120-10）——
+  { path: "改密：旧密码错误", code: "INVALID_CREDENTIALS" },          // 10003/401，计入登录限流桶
+  { path: "改密 / 重置：新密码不满足强度（zod）", code: "BAD_REQUEST" },
+  { path: "重置：验证码错误 / 过期 / 已用 / 错满 5 次作废", code: "INVALID_CREDENTIALS" }, // 与「邮箱不存在」同响应，防枚举
+  { path: "重置发码：同邮箱 60s 内 / 当日 >10 封 / IP 10/分钟", code: "TOO_MANY_REQUESTS" },
+  { path: "access token 的 ver 与库内 tokenVersion 不等", code: "UNAUTHENTICATED" },
+  { path: "监控立即运行：该源已有 pending/running 请求", code: "TOO_MANY_REQUESTS" },   // 10006/429，沿用现锁语义
+  { path: "可靠性读取：station id 不存在或已软删", code: "SITE_UNAVAILABLE" },
+  { path: "渠道探测：渠道不属于当前用户或不存在", code: "BAD_REQUEST" },             // 不暴露存在性
+  { path: "渠道探测：目标被 SSRF 策略拒绝", code: "CHANNEL_PROBE_TARGET_FORBIDDEN" },
+  { path: "功能开关 auth.password_reset 关闭时访问重置端点", code: "FEATURE_DISABLED" },
 ];

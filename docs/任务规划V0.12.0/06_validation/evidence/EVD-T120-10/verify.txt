@@ -1,0 +1,16 @@
+T120-10 验证记录（2026-10-23，基线 main@6a927e1）
+$ node scripts/contract/gen-contract-tests.mjs        → exit 0：码表 28 码 / HTTP 映射 12 条 / §4 登记 28 行
+$ pnpm -C packages/shared exec vitest run              → exit 0：24 files / 262 tests passed（新增 v120.contract.spec.ts 19 例）
+$ (packages/shared) tsc --noEmit                       → exit 0
+$ (apps/web) tsc --noEmit                              → exit 0
+$ pnpm lint                                            → exit 0
+$ (apps/web) vitest run                                → exit 0：161 passed | 2 skipped files；1826 passed | 5 skipped tests
+$ node scripts/check-docs-rule.mjs                     → exit 0
+$ node scripts/check-docs-facts.mjs                    → exit 0（16/16）
+$ git diff --check                                     → exit 0
+验收读数：
+- ERROR_CODES 新增恰 1 个：CHANNEL_PROBE_TARGET_FORBIDDEN=30005（400 默认映射 / inline）；既有 27 码值零改动（errors.generated.spec.ts 交叉断言通过）
+- 契约 schema 原样落地：auth(03b) 8 个、user(01b) 3 个、monitoring(05b/07b/07c) 8 个 + MONITORING_V120_ENDPOINTS
+- 每个 schema 正/反例各 ≥1；FAILURE_PATHS 追加 V120 10 条，码键全部存在
+- ADR-0011 状态=已接受
+- API 接口文档 v1.66 §4 +30005、§5.10（anchor v120-api）↔ API架构设计方案 v1.22 §7.16（anchor v120-architecture）双向锚

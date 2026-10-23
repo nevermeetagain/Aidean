@@ -43,11 +43,11 @@ describe("monitoring 枚举（TASK-056）", () => {
 });
 
 describe("monitoring 错误码（TASK-056）", () => {
-  it("20004/50012 已并入 ERROR_CODES；去重后共 27 码、无碰撞", () => {
+  it("20004/50012 已并入 ERROR_CODES；去重后共 28 码（含 V0.12 30005）、无碰撞", () => {
     expect(MONITORING_ERROR_CODES).toEqual({ MONITOR_SOURCE_NOT_FOUND: 20004, MONITOR_SOURCE_CREDENTIAL_MISSING: 50012 });
     const vals = Object.values(ERROR_CODES) as number[];
-    expect(new Set(vals).size).toBe(27);
-    expect(vals.length).toBe(27);
+    expect(new Set(vals).size).toBe(28);
+    expect(vals.length).toBe(28);
   });
   it("HTTP 映射 20004→404、50012→503；展示策略 toast/inline", () => {
     expect(DEFAULT_STATUS_BY_CODE[20004]).toBe(404);

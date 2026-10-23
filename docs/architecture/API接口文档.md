@@ -1,6 +1,7 @@
 # API 接口文档
 
-> 版本: v1.65 | 更新: 2026-10-22 | 变更: **UX-FIX-E（UX-21 / 用户裁定 2）**——`GET /oauth/dev/callback` 行补「仅非生产环境挂载，`NODE_ENV=production` 时 404」，端点语义不变。前次（v1.64 | 更新: 2026-10-22）变更: **B11-11 15 个后台列表端点接入分页共享件**——§4.2 口径由「非法串回退默认 200」改为「非法整数串 → HTTP 400 + `code=40000`，且先于任何 Prisma 调用」；空串视同缺省、纯空白视为非法、越界合法值仍钳制；`intelligence` 的 `limit` 新增上限 1000；守卫名单已清空（strict 接线待裁定）。前次（v1.63 | 更新: 2026-10-22）变更: **B11-03a 协议兼容/能力矩阵投入运营（Q-11-01=A）**——新建 §5.8.11（anchor `matrix-admin-api`）登记 `/api/v1/admin/protocols{,/[id]}` 与 `/api/v1/admin/capabilities{,/[id]}` 列表 GET/POST + 单资源 GET/PATCH/DELETE（新增 4 端点、2 route 文件），zod strict 校验、错误码复用既有 40000/20001/10008，协议维度唯一真源 `ModelProtocol`；与《API架构设计方案》§7.15 双向互引（铁律 2）。
+> 版本: v1.66 | 更新: 2026-10-23 | 变更: **T120-10（V0.12.0 契约落地）**——§4 新增 30005 `CHANNEL_PROBE_TARGET_FORBIDDEN`（400/inline，28 码），重生成契约 spec；新建 §5.10（anchor `v120-api`）登记改密 / 找回密码 / 监控运行请求 / 运行历史 / 站点可靠性 / 渠道探测 6 个端点（契约 `@aidean/shared` V0.12 增量），架构约束互引《API架构设计方案》§7.16。
+> 前次（v1.65 | 更新: 2026-10-22）变更: **UX-FIX-E（UX-21 / 用户裁定 2）**——`GET /oauth/dev/callback` 行补「仅非生产环境挂载，`NODE_ENV=production` 时 404」，端点语义不变。前次（v1.64 | 更新: 2026-10-22）变更: **B11-11 15 个后台列表端点接入分页共享件**——§4.2 口径由「非法串回退默认 200」改为「非法整数串 → HTTP 400 + `code=40000`，且先于任何 Prisma 调用」；空串视同缺省、纯空白视为非法、越界合法值仍钳制；`intelligence` 的 `limit` 新增上限 1000；守卫名单已清空（strict 接线待裁定）。前次（v1.63 | 更新: 2026-10-22）变更: **B11-03a 协议兼容/能力矩阵投入运营（Q-11-01=A）**——新建 §5.8.11（anchor `matrix-admin-api`）登记 `/api/v1/admin/protocols{,/[id]}` 与 `/api/v1/admin/capabilities{,/[id]}` 列表 GET/POST + 单资源 GET/PATCH/DELETE（新增 4 端点、2 route 文件），zod strict 校验、错误码复用既有 40000/20001/10008，协议维度唯一真源 `ModelProtocol`；与《API架构设计方案》§7.15 双向互引（铁律 2）。
 > 前次（v1.62 | 更新: 2026-10-22）变更: **B11-10 / B11-11（Q-11-03=B · Q-11-05=A）**——§4 新增 §4.1 非 2xx 出口信封（anchor `api-envelope-exits`：未实现方法 → HTTP 405 + `Allow` + 信封 `code=40000`；未匹配 `/api/*` → HTTP 404 + 信封 `code=40000`，替代 0 字节空体与 27KB HTML）与 §4.2 分页参数解析口径（anchor `pagination-params`：共享件 `lib/http/pagination.ts`，非法串回退默认、越界钳制、绝不送 NaN）；与《API架构设计方案》§7.14 / §五 建立铁律 2 双向互引锚；不新增错误码（复用已登记 40000），不新增单资源 GET。
 > 前次（v1.61） | 更新: 2026-10-20 | 变更: **同步 26_用户裁决记录**——§5.2.1 补用户裁决口径注（U-15 / U-23=B / U-24=A）。
 > 前次（v1.60） | 更新: 2026-10-20 | 变更: **TASK-054 EffectivePrice 字段表（计价口径归一）**——§5.2.1 新建（anchor `effective-price-fields`）登记 `EffectivePriceSchema` v0.2 全字段，含归一字段 currency/unit/sourceCurrency/sourceUnit/sourcePrice*/fxRate/fxDate；回链《网关计费时序契约》§12 与术语表「计价口径归一」（铁律 2 双向锚）。
@@ -44,7 +45,7 @@ Route（Zod 校验 / 鉴权 / 响应归一化）→ Service（业务）→ Repos
 
 错误时 `code` 为模块编码 + 序号（如 `10001` 用户不存在、`30001` 模型站不可用），`message` 为人类可读。错误码段位：1xxxx 用户/认证，2xxxx 模型/天梯，3xxxx 模型站/统一API，4xxxx 财务，5xxxx 系统。
 
-**错误码登记表（全量 · 27 码）**——唯一源 [`packages/shared/src/errors.ts`](../../packages/shared/src/errors.ts) 的 `ERROR_CODES`；`HTTP` 列取 `DEFAULT_STATUS_BY_CODE` 覆盖值、缺省按 `httpStatusOf`（`50000`→500、其余→400）；`前端展示` 列取 `ERROR_PRESENTATION` 枚举（`inline`=就近字段/表单、`toast`=非阻断提示、`redirect`=跳转登录/后台、`page`=整页状态）。先登记后实现；本节由 `scripts/contract/gen-contract-tests.mjs` 解析生成 `packages/shared/src/__tests__/contract/errors.generated.spec.ts` 交叉断言，CI 以「重生成 + `git diff --exit-code`」漂移门守文档↔代码一致（改本节须同步重生成）。
+**错误码登记表（全量 · 28 码）**——唯一源 [`packages/shared/src/errors.ts`](../../packages/shared/src/errors.ts) 的 `ERROR_CODES`；`HTTP` 列取 `DEFAULT_STATUS_BY_CODE` 覆盖值、缺省按 `httpStatusOf`（`50000`→500、其余→400）；`前端展示` 列取 `ERROR_PRESENTATION` 枚举（`inline`=就近字段/表单、`toast`=非阻断提示、`redirect`=跳转登录/后台、`page`=整页状态）。先登记后实现；本节由 `scripts/contract/gen-contract-tests.mjs` 解析生成 `packages/shared/src/__tests__/contract/errors.generated.spec.ts` 交叉断言，CI 以「重生成 + `git diff --exit-code`」漂移门守文档↔代码一致（改本节须同步重生成）。
 
 | 码位 | 标识 | HTTP | 语义 | 前端展示 |
 |---|---|---|---|---|
@@ -65,6 +66,7 @@ Route（Zod 校验 / 鉴权 / 响应归一化）→ Service（业务）→ Repos
 | 30002 | GATEWAY_NO_ROUTE | 400 | 网关无可用路由（候选链为空：无配置且无可用 free 兜底） | inline |
 | 30003 | GATEWAY_ALL_FAILED | 400 | 网关全部候选失败（沿降级链尝试耗尽仍无成功） | inline |
 | 30004 | UPSTREAM_ERROR | 400 | 上游返回错误（上游非 2xx 或响应不可解析） | inline |
+| 30005 | CHANNEL_PROBE_TARGET_FORBIDDEN | 400 | 自定义渠道探测目标被 SSRF 策略拒绝（非 https / 私网 / 回环 / 链路本地 / 云元数据 / 重定向） | inline |
 | 40000 | BAD_REQUEST | 400 | 请求体/查询参数 Zod 校验失败 | inline |
 | 40001 | INSUFFICIENT_BALANCE | 400 | 余额不足（可用额 = 余额 − 预扣冻结） | inline |
 | 40002 | RECHARGE_ORDER_NOT_FOUND | 400 | 充值订单不存在或不属于当前用户 | toast |
@@ -522,6 +524,23 @@ CSV 列头（与 schema 一一对照）：
 
 > 通用异常：未登录 `10004`→401；缺权限码 `10008`→403；未知异常 `50000`→500（不泄露内部细节）。写成功后 `revalidatePath("/admin/protocols"|"/admin/capabilities")`。
 > 数据写入路径：`pnpm --filter web db:seed:matrix`（`prisma/seed-matrix-backfill.ts`，亦由 `seed.ts` 主流程调用）由 `ai_models.protocol`/`is_reasoning`/`is_multi_modal`/`context_length` 派生回填，`createMany skipDuplicates` 幂等且不覆盖人工行。架构约束互引：[§7.14](API架构设计方案.md#matrix-architecture)（铁律 2）。
+
+<a id="v120-api"></a>
+
+### 5.10 V0.12.0 增量端点（T120-10 契约登记 · 实现见各卡）
+> 契约唯一源 `packages/shared/src/schemas/{auth,monitoring,user}.schema.ts`（自 `docs/任务规划V0.12.0/contracts/` 原样落地）；执行模型见 [ADR-0011](../ADR/ADR-0011-监控执行模型与调度统一.md)；架构约束见《API架构设计方案》[§7.16 V0.12 会话版本 / 运行请求 / 探测边界](API架构设计方案.md#v120-architecture)。
+
+| 方法 | 路径 | 鉴权 | 请求 / 响应 | 说明（实现卡） |
+|---|---|---|---|---|
+| POST | /api/v1/auth/password | 已登录用户 | `ChangePasswordRequest` → `ChangePasswordResponse` | 同一事务：更新哈希 → `token_version += 1` → 吊销全部 refresh → 当前设备签发新令牌对；旧密错 `10003`（计入登录限流桶）；审计 `password.change`（T120-19） |
+| POST | /api/v1/auth/password/reset/code | 匿名 | `ResetCodeRequest` → `ResetCodeResponse` | 恒返回 `{sent:true}` 防枚举；同邮箱 60s / 当日 >10 封 / IP 10 次/分钟 → `10006`；开关 `auth.password_reset` 关 → `50011`（T120-20） |
+| POST | /api/v1/auth/password/reset | 匿名 | `ResetPasswordRequest` → `ResetPasswordResponse` | 验证码错 / 过期 / 已用 / 错满 5 次作废 → `10003`（与邮箱不存在同响应）；成功 `token_version += 1` 并吊销全部 refresh，不自动登录（T120-20） |
+| POST | /api/v1/admin/monitoring/sources/{key}/run | `admin.sync.write` | — → `AdminMonitoringRunResponseV2`（202） | 语义由「只占锁」改为「插入 pending 请求」；同源未完成请求 → `10006`；key 未注册 → `20004`；缺凭证 → `50012`（T120-12） |
+| GET | /api/v1/admin/monitoring/sources/{key}/runs | `admin.sync.read` | `page`/`pageSize≤50` → `AdminMonitoringRunsResponse` | 按 `createdAt` 倒序（T120-12） |
+| GET | /api/v1/stations/{id}/reliability | PUBLIC | `days∈[1,30]`（默认 7） → `StationReliabilityResponse` | 缺观测日 `uptimePercent=null`；缓存 600s，persist 写入后失效；station 不存在 → `30001`（T120-14） |
+| POST | /api/v1/user/custom-channels/{id}/probe | 已登录用户（仅本人渠道） | `ChannelProbeParams` → `ChannelProbeResponse` | 他人或不存在 → `40000`（不暴露存在性）；目标被拒 → `30005`；每用户 10 次/分钟 → `10006`（T120-23） |
+
+> 会话校验口径变更（T120-18）：`requireUserApi` / `requireAdminApi` 在既有回库查询中追加 `tokenVersion` 投影，`claims.ver !== users.token_version` → `10004`（401）。监控源列表新增只读派生字段 `nextRunAt`（`MonitoringSourceDerived`，T120-11）。
 
 ### 5.9 财务 billing（implement-billing-module，MVP）
 | 方法 | 路径 | 说明 |
