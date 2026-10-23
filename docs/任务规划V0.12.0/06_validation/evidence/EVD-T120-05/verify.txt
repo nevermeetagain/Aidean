@@ -1,0 +1,39 @@
+T120-05 证据（外部助手 · 2026-10-23 · 基线 main@93eba205 · 结论：实现完成且本地全绿，唯一红项=门禁 pin → blocked，未推送）
+
+## 卡面验证命令
+- node scripts/guard/env-diff.mjs → RESULT: PASS（failures=0 warnings=1）EXIT=0
+- pnpm -C apps/web exec vitest run lib/config → EXIT=0 ｜ Test Files 1 passed ｜ Tests 3 passed ｜ 689ms
+
+## 验收① referenced − example = ∅
+- 扫描 apps/web tracked 源码（.ts/.tsx/.mjs/.js，排除 node_modules/.next/dist/public/coverage），点号/方括号/解构三形态并集
+- referenced = 24（含 security/url-policy.ts 读的小写 http_proxy/https_proxy，及框架注入的 NODE_ENV/NEXT_PHASE）
+- 三份 example 并集 53 键 → 覆盖 24/24，差集 ∅；应用模板 apps/web/.env.example 单独也 24/24，且每键登记行上方均有注释含「必需/可选」
+- 反向差集 29 项：7 项被 docker-compose 使用 → 已在模板标注保留（POSTGRES_USER/PASSWORD/DB、PGADMIN_EMAIL/PASSWORD、REDIS_PASSWORD、REPLICATOR_PASSWORD）；
+  22 项落在禁改的 docker/.env.example 与 .env.smtp.example 内 → 只 WARN 不删（deviation 2/3）
+- 附件 env-referenced.txt、env-example.txt 为本机实测口径；卡面 34/41/20/27 是 /workspace 全仓口径（deviation 1）
+
+## 验收② env.spec 3 例通过
+- [1] 缺必需 → getEnv 抛错且消息逐条含变量名；半缺只报缺的那条；纯空白等同未配置
+- [2] 必需齐、可选全缺 → 不抛错；values 对应键 undefined（不注入默认值）；process.env 未被回写
+- [3] 严格模式四态口径 + 生产缺 5 项建议逐条 WARN + 形态不符（SMTP_PORT=4o5、RUN_DB_TESTS=yes）点名 + 危险开关提示
+- 全量 pnpm -C apps/web test → EXIT=0 ｜ 165 files passed | 2 skipped ｜ 1857 tests passed | 5 skipped ｜ 16.76s
+
+## 验收③ 不改既有默认值语义
+- 未触碰任何 process.env 读取点；env.ts 只校验与报告、不回写（单测 [2] 显式断言）；既有 lib/env-check.ts 未改
+- 必需分级「以代码读取为准」：硬必需 DATABASE_URL、JWT_SECRET；有降级分支的 JWT_PRIVATE_KEY、BILLING_NOTIFY_SECRET 归生产强建议 WARN（deviation 4）
+
+## 启动期实证（本机 :3000，未换端口）
+- 负例：$env:JWT_SECRET=" "（dotenv 不覆盖已存在的 process.env 键）启 next dev → Error: An error occurred while loading instrumentation hook: 环境变量校验失败…缺失必需环境变量：JWT_SECRET
+  栈 getEnv (lib/config/env.ts:196) ← Module.register (instrumentation.ts:22)；进程退出、:3000 无监听（.scratch/t120-05-dev-nojwt.log）
+- 正例：正常 env 重启 dev（PID 26392）→ 首页 200，日志无 [env] 告警
+- 契约发现：instrumentation 只能导出具名 register——Next 取模块走 interopDefault(mod)=mod.default||mod 再读 .register，default 导出会让 register 被静默跳过；NEXT_PHASE=phase-production-build 时 Next 不调用 register
+- 回归 pnpm exec playwright test --project=smoke --workers=1 → EXIT=0 ｜ 7 passed / 0 skipped / 0 failed ｜ 17.6s
+
+## 门禁（推送前一次）
+- pnpm -C apps/web typecheck EXIT=0 ｜ pnpm -C apps/web lint EXIT=0（仅既有 no-img-element warning）｜ node scripts/check-docs-rule.mjs EXIT=0
+- node scripts/check-docs-facts.mjs EXIT=1 ← 唯一红项：spec-count expected=213、actual=214（本卡新增 env.spec.ts），其余 15 条断言全 ✓
+  修正＝scripts/check-docs-facts.mjs:138 "213"→"214" 并在 :135 desc 追加 R10-01 前次注记；该文件不在本卡「允许修改」→ 依任务书 §三.7 停笔、标 blocked、报 Hark（deviation 5）
+
+## 处置
+- 本卡改动与证据已本地提交、**未推送**：推送会令 main 的 docs-facts 门禁转红，阻断 Hark 与后续卡；task-index 的 T120-05 行标 blocked
+- 任一满足即可推送：① Hark 在 main 提出 spec-count pin；② 用户授权本卡改该行 1 处数字（随后本卡 rebase origin/main 再推）
