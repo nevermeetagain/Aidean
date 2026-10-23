@@ -37,6 +37,11 @@ test.describe("smoke-3000", () => {
   test("[2] /models SSR → 200", async ({ page }) => {
     const resp = await page.goto("/models");
     expect(resp?.status()).toBe(200);
+    // /models 是流式页：骨架文件自身也是 <main aria-busy="true" aria-label="模型天梯图加载中">
+    // （apps/web/app/(site)/models/loading.tsx:7），故骨架换下前的瞬间文档里有 2 个 main；
+    // 而 toBeVisible() 遇 strict mode violation 不重试 → 原写法在高负载下随机失败。
+    // 实测（浏览器探针，见 EVD-T120-03 D 项）：+0ms main=2 → +1000ms main=1，故先等收敛再断可见。
+    await expect(page.locator("main"), "骨架应换下，仅剩正文 main").toHaveCount(1, { timeout: 15_000 });
     await expect(page.locator("main")).toBeVisible();
   });
 

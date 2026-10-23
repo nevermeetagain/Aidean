@@ -3,7 +3,7 @@
  *   R1 页头三卡等高（P2 护栏：sm 三列横排态 clientHeight 相等，Link h-full 链路）
  *   R2 admin 等级 select option 与 TIER_SHORT_LABEL 一致（P4 护栏，tier.ts 单源）
  *   R3 统计面板 range 切换渲染 + 错误重试恢复（P5 护栏，swr 三态）
- *   R4 自定义渠道 创建→编辑→删除 全路径（P7 护栏，含 keyMasked 脱敏断言）
+ *   R4 外部渠道（custom）创建→编辑→删除 全路径（P7 护栏，含 keyMasked 脱敏断言）
  * 运行：npx playwright test e2e/tests/console-regression.spec.ts --project=web --workers=1
  * （需嵌入式 PG + next start :3000 + seed；账号口径同 zcode-audit.spec.ts）
  */
@@ -44,9 +44,13 @@ test.afterAll(async () => {
   const lr = await ctx.post("/api/v1/auth/login", { data: USER });
   if (!lr.ok()) return;
   const list = await ctx.get("/api/v1/user/custom-channels");
-  const body = (await list.json().catch(() => null)) as { data?: unknown } | null;
-  const rows = (body?.data ?? []) as Array<{ id?: string; name?: string }>;
-  for (const c of Array.isArray(rows) ? rows : []) {
+  // withApi 信封为 { code, message, data }，而 data 是 { items: [...] }（route.ts:17-20）；
+  // 旧实现把 data 当数组读 → 恒不命中，遗留渠道清不掉（T120-03 修正）。
+  const body = (await list.json().catch(() => null)) as {
+    data?: { items?: Array<{ id?: string; name?: string }> };
+  } | null;
+  const rows = body?.data?.items ?? [];
+  for (const c of rows) {
     if (c?.id && typeof c.name === "string" && c.name.startsWith(CH_PREFIX)) {
       await ctx.delete(`/api/v1/user/custom-channels/${c.id}`);
     }
@@ -83,19 +87,36 @@ test("R2 admin 等级 select option 与 TIER_SHORT_LABEL 一致（P4 护栏）",
 });
 
 test("R3 统计面板 range 切换渲染 + 错误重试恢复（P5 护栏）", async ({ page }) => {
+  // URL 契约（T120-03 对齐真源）：问题 4 引入自定义区间后，preset 切换同样回填 dateFrom/dateTo，
+  // 统计请求 URL 不再出现 `range=7d`（UsageStatsPanel.tsx:139-145 windowQuery 单一取数源）。
+  // 断言语义不变：换区间 = swr 换 key = 必发一次「窗口不同」的新请求并重新渲染；错误注入仍是「统计」这一个域。
+  const isStats = (u: string) => new URL(u).pathname === "/api/v1/user/usage/stats";
+  const windowOf = (u: string) => {
+    const q = new URL(u).searchParams;
+    return `${q.get("dateFrom") ?? q.get("range") ?? ""}~${q.get("dateTo") ?? ""}`;
+  };
+  const statsSeen: string[] = [];
+  page.on("response", (r) => {
+    if (isStats(r.url())) statsSeen.push(r.url());
+  });
+
   await login(page, USER);
   await page.goto(`${BASE}/user/console?tab=stats`);
   const panel = page.locator('[data-testid="usage-stats-panel"]');
   await expect(panel).toBeVisible();
   // 默认 30d 首渲（echarts 懒加载，弱机首访放宽超时）
   await expect(panel.locator("canvas").first()).toBeVisible({ timeout: 15000 });
-  // 切 7d → swr 换 key 取新数并渲染
+  await expect.poll(() => statsSeen.length, { timeout: 15000 }).toBeGreaterThan(0);
+  const firstWindow = windowOf(statsSeen[statsSeen.length - 1]);
+
+  // 切 7d → swr 换 key 取新数并渲染（须真的换窗口，否则「点了按钮但没重取数」漏网）
   await page.getByRole("button", { name: "近 7 日" }).click();
-  await page.waitForResponse((r) => r.url().includes("usage/stats?range=7d"));
+  await page.waitForResponse((r) => isStats(r.url()) && windowOf(r.url()) !== firstWindow, { timeout: 15000 });
   await expect(panel.locator("canvas").first()).toBeVisible({ timeout: 15000 });
-  // 错误重试：拦截 90d 请求一次 → 错误态 → 放行重试 → 恢复渲染
+
+  // 错误重试：拦截统计请求一次 → 错误态 → 放行重试 → 恢复渲染
   let failOnce = true;
-  await page.route("**/usage/stats?range=90d*", async (route) => {
+  await page.route("**/api/v1/user/usage/stats*", async (route) => {
     if (failOnce) {
       failOnce = false;
       return route.abort();
@@ -106,36 +127,58 @@ test("R3 统计面板 range 切换渲染 + 错误重试恢复（P5 护栏）", a
   await expect(panel.getByText(/统计加载失败/)).toBeVisible({ timeout: 15000 });
   await page.getByRole("button", { name: "重试" }).click();
   await expect(panel.locator("canvas").first()).toBeVisible({ timeout: 15000 });
-  await page.unroute("**/usage/stats?range=90d*");
+  await page.unroute("**/api/v1/user/usage/stats*");
 });
 
-test("R4 自定义渠道 创建→编辑→删除 全路径（P7 护栏）", async ({ page }) => {
+test("R4 外部渠道（custom）创建→编辑→删除 全路径（P7 护栏）", async ({ page }) => {
+  // 契约对齐真源（T120-03）：板块 id 是 `apiChannels`（ConsoleWorkspace.tsx:29-38，旧 `?tab=channels`
+  // 属非法值 → 回落「模型配置」）；面板 testid `console-api-channels`（ApiChannelsPanel.tsx:255，旧
+  // `custom-channels-panel` 已随「乙·后端统一」重构移除）。表单改由 `@aidean/ui` Dialog 承载，
+  // footer 按钮「添加/保存」经 form="channel-form" 关联 `<form id="channel-form">`（非 testid）。
   const chName = `${CH_PREFIX}${Date.now()}`;
+  // 掩码口径锚 packages/shared/src/schemas/gateway.schema.ts:457-460 maskApiKey（e2e 独立进程故显式落期望值）
+  const maskOf = (key: string) => (key.length <= 7 ? "****" : `${key.slice(0, 3)}****${key.slice(-4)}`);
+  const KEY_V1 = "e2e-test-key-123456";
+  const KEY_V2 = "e2e-test-key-654321";
+
   await login(page, USER);
-  await page.goto(`${BASE}/user/console?tab=channels`);
-  const panel = page.locator('[data-testid="custom-channels-panel"]');
+  await page.goto(`${BASE}/user/console?tab=apiChannels`);
+  const panel = page.locator('[data-testid="console-api-channels"]');
   await expect(panel).toBeVisible();
-  // 创建（表单由「新建渠道」按钮开关；apiKey 明文只在提交请求出现，列表仅 mask）
-  await panel.getByRole("button", { name: "新建渠道" }).click();
-  const form = panel.locator('[data-testid="channel-form"]');
-  await expect(form).toBeVisible();
-  await form.getByPlaceholder("如：我的上游").fill(chName);
-  await form.getByPlaceholder("https://api.example.com/v1").fill("https://api.example.com/v1");
-  await form.getByPlaceholder(/至少 8 位字符/).fill("e2e-test-key-123456");
-  await form.getByRole("button", { name: "创建", exact: true }).click();
-  const item = panel.locator("li", { hasText: chName });
-  await expect(item).toBeVisible({ timeout: 10000 });
-  await expect(item).toContainText(/Key \S{3}\*+\S{4}/);
-  await expect(item).not.toContainText("e2e-test-key-123456");
-  // 编辑（重命名 → 保存修改；编辑态 apiKey 需重输以确认持有——组件设计内校验）
-  await item.getByRole("button", { name: "编辑" }).click();
-  await form.getByPlaceholder("如：我的上游").fill(`${chName}-改`);
-  await form.getByPlaceholder(/至少 8 位字符/).fill("e2e-test-key-654321");
-  await form.getByRole("button", { name: "保存修改" }).click();
-  const renamed = panel.locator("li", { hasText: `${chName}-改` });
+
+  // 创建：apiKey 明文只在提交请求出现，列表仅回显掩码
+  await panel.getByRole("button", { name: "添加渠道" }).click();
+  const addDialog = page.getByRole("dialog", { name: "添加渠道" });
+  await expect(addDialog).toBeVisible();
+  await addDialog.getByPlaceholder("例如 我的中转").fill(chName);
+  await addDialog.getByPlaceholder("https://relay.example.com/v1").fill("https://relay.example.com/v1");
+  await addDialog.getByPlaceholder("仅提交一次，列表仅回显掩码").fill(KEY_V1);
+  await addDialog.getByRole("button", { name: "添加", exact: true }).click();
+  await expect(addDialog).toHaveCount(0);
+  const row = panel.locator('[data-testid^="channel-row-custom-"]', { hasText: chName });
+  await expect(row).toBeVisible({ timeout: 10000 });
+  await expect(row).toContainText(maskOf(KEY_V1));
+  await expect(row).not.toContainText(KEY_V1);
+
+  // 编辑（重命名 + 换 Key；组件契约「留空=不换」故此处显式换一次以验掩码随之更新）
+  await row.getByRole("button", { name: "编辑" }).click();
+  const editDialog = page.getByRole("dialog", { name: "编辑渠道" });
+  await expect(editDialog).toBeVisible();
+  await editDialog.getByPlaceholder("例如 我的中转").fill(`${chName}-改`);
+  await editDialog.getByPlaceholder("不修改请留空").fill(KEY_V2);
+  await editDialog.getByRole("button", { name: "保存", exact: true }).click();
+  await expect(editDialog).toHaveCount(0);
+  const renamed = panel.locator('[data-testid^="channel-row-custom-"]', { hasText: `${chName}-改` });
   await expect(renamed).toBeVisible({ timeout: 10000 });
-  // 删除（二次确认）
+  await expect(renamed).toContainText(maskOf(KEY_V2));
+  await expect(renamed).not.toContainText(KEY_V2);
+
+  // 删除：站点版 Dialog 二次确认（取代原生 window.confirm）
   await renamed.getByRole("button", { name: "删除", exact: true }).click();
-  await renamed.getByRole("button", { name: "确认删除" }).click();
-  await expect(panel.locator("li", { hasText: chName })).toHaveCount(0, { timeout: 10000 });
+  const confirm = page.getByRole("dialog", { name: "确认删除渠道" });
+  await expect(confirm).toBeVisible();
+  await confirm.getByRole("button", { name: "确认删除" }).click();
+  await expect(panel.locator('[data-testid^="channel-row-custom-"]', { hasText: CH_PREFIX })).toHaveCount(0, {
+    timeout: 10000,
+  });
 });

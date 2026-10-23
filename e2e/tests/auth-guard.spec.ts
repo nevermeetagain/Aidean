@@ -37,9 +37,9 @@ test.describe("auth-guard", () => {
     await expect(loginLink).toBeVisible();
     await expect(loginLink).toHaveText("登录");
 
-    // 轻量防回归：导航项数不因认证区改造而变化（八项一级 + 产品下拉七子项 = 15 个链接，
-    // §7.13 产品下拉扩容后口径；完整顺序契约见 header-links.spec.ts）
+    // 轻量防回归：导航项数不因认证区改造而变化（八项一级 + 产品下拉八子项 = 16 个链接，
+    // #71/UX-17 下拉扩容后口径（增「云服务天梯图」）；完整顺序契约见 header-links.spec.ts:19-38）
     const navLinks = page.locator('header nav[aria-label="主导航"] a');
-    await expect(navLinks).toHaveCount(15);
+    await expect(navLinks).toHaveCount(16);
   });
 });

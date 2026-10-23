@@ -1,0 +1,40 @@
+T120-03 验证证据（外部助手 · 2026-10-23 · 基线 main@8dc73928 → HEAD c4160b9d）
+
+## 环境（卡面 Step 1）
+- dev：next dev --turbo @3000（复用外部进程，未换端口）；env＝CI 配方 7 项（DATABASE_URL→5435/aidean、REDIS_URL、JWT_SECRET、NEXT_PUBLIC_SITE_URL=:3000、AIDEAN_ENABLE_MOCK_UPSTREAM=1、AIDEAN_BYPASS_LOGIN_RATE_LIMIT=1、CHECKPOINT_DISABLE=1）
+- 库前置：prisma migrate deploy + db:seed + seed-navigation-menu（补跑后 ADMIN 菜单 34 行，admin 簇由 17 红转绿）+ seed-rbac；Hark 已推的 6 个提交（T120-10/25/26/18/19/20）不含 e2e 文件、不含 prisma 迁移
+- rebase 后安装：pnpm install 须先停 dev（Windows 下 dev 进程锁 query_engine-windows.dll.node → EPERM）；EXIT=0（prisma generate 成功），重启 dev 后 16 条路由预热 200 + mock 上游 200
+- 配置：根 playwright.config.ts（唯一生效，7 projects；timeout 60s / expect 10s / navigationTimeout 15s）
+
+## 全量 e2e（230 用例，Step 2 分类 + Step 5 两次全量执行）
+- RUN-A 卡面字面命令（默认 workers）exit=1 ｜ 426.2s ｜ 94 passed / 60 skipped / 76 failed：失败逐条为 page.goto 15s、apiRequestContext 10s 的 TimeoutError（无一条断言值不符）；更早一轮同命令 20 failed + 7 did not run → 并行口径两次不可复现，判定 dev 过载噪声（deviation.md 3）
+- RUN-B --workers=1（rebase 前基线 main@80c392bc）exit=0 ｜ 584.1s ｜ 179 passed / 51 skipped / 0 failed
+- RUN-C --workers=1（rebased HEAD c4160b9d＝权威读数）exit=0 ｜ 582.6s ｜ 182 passed / 48 skipped / 0 failed  ← 验收①
+- 定向复核（smoke + cms-content + feature-flags，--workers=1）exit=0 ｜ 52.2s ｜ 10 passed / 2 skipped
+- RUN-C 的 48 条 skip：本卡登记的真缺陷 fixme 1 条（D3 fe01 375px 溢出）；其余 47 条为既有 test.describe.skip 占位（C-3：/admin/scripts、/admin/evaluations、资源页等路由已删除），非本卡引入
+- D1×1 / D2×2 在 RUN-B 触发（触发条件＝同一 TTL 窗口内的第二次连续写入），逐条标题与原因见本目录 e2e-skips.md
+- 真缺陷只登记不修（验收③）：D1 首页 SSR 不反映后台新值、D2 功能开关 PUBLIC 快照复原不收敛（均为服务端缓存失效丢失，源码在禁改路径 apps/web/app|lib/**）、D3 CallPlayground 375px 溢出 → 抄送 Hark，取证见 defects.md
+- sso-subplatform 3 例真实通过（本机 :3200 子平台在线：1861/7421/9678ms），非 skip
+
+## 用例过期修正（Step 3「改断言」，全部落在 e2e/** 与 oauth-redirect-origin.spec.ts）
+- R4 外部渠道全路径重写：?tab=channels→apiChannels、custom-channels-panel→console-api-channels、表单改由 @aidean/ui Dialog 承载（form#channel-form + 按钮 添加/保存/确认删除），掩码断言按 maskApiKey 口径（gateway.schema.ts:457-460）
+- T7 标签名「自定义渠道」→「外部渠道」并补面板可见断言；T9 深链同 id（原用例 goto 后无任何断言）
+- e2e/web/sso-3333.spec.ts → sso-subplatform.spec.ts（git mv，3333 前提移除）；auth-guard 导航计数 15→16（#71 增云服务天梯图）
+- R3 统计域 URL 契约：range=7d/90d → dateFrom/dateTo（UsageStatsPanel.tsx:129-151）
+- console-regression afterAll 兜底清理信封修正：data 实为 {items:[]}，旧实现当数组读 → 恒不命中、脏渠道清不掉
+- smoke [2] /models：先 toHaveCount(1) 再断可见（骨架 loading.tsx:7 与正文并存 2 个 main，探针实测 +0ms 2 → +1000ms 1）
+
+## 3333 清理（验收② → blocked）
+- rg -n 3333 e2e --glob *.ts → 0 命中（exit=1）
+- rg -n 3333 e2e apps/web/lib --glob *.ts → 4 命中：admin-routes.spec.ts:49、persist.spec.ts:148（同一 UUID 字面量噪声）、redirect.spec.ts:38、oidc-redlines.spec.ts:108（localhost:3333 redirect_uri fixture）——四文件均在「允许修改」外 → 未落笔，标 blocked（deviation.md 1/2）
+
+## 门禁（rebase 后、推送前一次）
+- pnpm -C apps/web typecheck EXIT=0 ｜ pnpm -C apps/web lint EXIT=0（仅既有 no-img-element warning，非本次引入）
+- pnpm -C apps/web test EXIT=0 ｜ Test Files 164 passed | 2 skipped (166) ｜ Tests 1854 passed | 5 skipped (1859) ｜ 15.4s
+- node scripts/check-docs-rule.mjs EXIT=0 ｜ node scripts/check-docs-facts.mjs EXIT=0（All 16 assertions passed）
+- e2e 无 tsconfig 亦不在门禁内；临时 strict 配置（.scratch/tsconfig.e2e.t12003.json）下本次改动文件 0 错误，既有 3 处见 defects.md O3
+
+## 环境回清（共用 dev 库，不留脏）
+- home.hero 已 PUT 回 seed 真源 HOME_HERO_JSON（home-content.schema.ts:40）：库内逐字节相等，且首页 SSR 已反映默认主标
+- ladder.station 库内=true；PUBLIC 快照曾滞后 false（D2 现场留存 .scratch/t120-03-d2-live.txt），收尾核对已回正
+- git diff --name-only origin/main...HEAD 共 15 个文件，逐个对照「允许修改」：仅 e2e/** + oauth-redirect-origin.spec.ts + 本 EVD 目录
