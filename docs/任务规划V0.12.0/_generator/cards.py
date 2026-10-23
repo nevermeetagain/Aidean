@@ -7,7 +7,7 @@ C = []
 def card(**k): C.append(k)
 
 # ── S12-0 步行骨架：HEAD 全门禁真绿 ──
-card(id="T120-01", name="DB 集成测试复绿并接入门禁（effective-price.int.spec 过期断言）", slice="S12-0", owner="外部助手A", tier="sonnect",
+card(id="T120-01", name="DB 集成测试复绿并接入门禁（effective-price.int.spec 过期断言）", slice="S12-0", owner="外部助手", tier="sonnect",
  reqs="REQ-NF-005 / REQ-L-009", src="10_/§9.2 完成定义（门禁口径）",
  goal="`RUN_DB_TESTS=1` 下 5 个 DB 集成用例全部通过，并提供一条可复跑的 `pnpm test:int` 入口。",
  inputs=["baseline.md §门禁：`effective-price.int.spec.ts:76` 期望 3 字段，实返 +isFree/+priceCache（自 491481c 起过期）", "前置：无"],
@@ -18,7 +18,7 @@ card(id="T120-01", name="DB 集成测试复绿并接入门禁（effective-price.
  allow=[f"{W}/lib/features/pricing/__tests__/effective-price.int.spec.ts", f"{W}/package.json"], deny=DENY_COMMON,
  dep=[], blocks=["T120-03", "T120-36"], stop="若失败原因不是断言过期而是计价逻辑回归 → 停，报 Hark", size="小（≈1.5h，与 T120-03 同批下发）")
 
-card(id="T120-02", name="中间件去 Prisma 依赖（Edge 运行时警告根除）", slice="S12-0", owner="外部助手B", tier="sonnect",
+card(id="T120-02", name="中间件去 Prisma 依赖（Edge 运行时警告根除）", slice="S12-0", owner="外部助手", tier="sonnect",
  reqs="REQ-NF-011 / REQ-C-001", src="ADR-0012",
  goal="`middleware.ts` 的依赖闭包不再含 `@prisma/client`，`next build` 无 Edge `setImmediate` 警告，middleware 体积从 163 kB 下降。",
  inputs=["baseline.md：middleware 163 kB；链路 auth/constants.ts → lib/db/prisma.ts", "契约：Identity（会话 Cookie 名、JWT claims）不变"],
@@ -29,7 +29,7 @@ card(id="T120-02", name="中间件去 Prisma 依赖（Edge 运行时警告根除
  allow=[f"{W}/middleware.ts", f"{W}/lib/features/auth/constants.ts", f"{W}/lib/features/auth/edge-constants.ts", "scripts/guard/edge-imports.mjs", "docs/ADR/ADR-0012-*.md"], deny=DENY_COMMON,
  dep=[], blocks=["T120-21"], stop="若需改 Cookie 名或 JWT claim 形状 → 停（属契约变更）", size="中（≈3h）")
 
-card(id="T120-03", name="全量 e2e 在 Next 15.5.28 上跑通 + 3333 端口用例清理", slice="S12-0", owner="外部助手A", tier="sonnect",
+card(id="T120-03", name="全量 e2e 在 Next 15.5.28 上跑通 + 3333 端口用例清理", slice="S12-0", owner="外部助手", tier="sonnect",
  reqs="REQ-NF-005 / REQ-C-006", src="P-1/P-2=A（3333 不保留，子平台 3200）",
  goal="根 `playwright.config.ts` 全量 e2e 在 HEAD 上 0 failed；仓内不再有以 3333 为前提的断言。",
  inputs=["v011_status：Next 升级后无全量 e2e 读数", "rtm：`e2e/web/sso-3333.spec.ts`、`lib/features/auth/__tests__/oauth-redirect-origin.spec.ts:45-65` 仍假设 3333", "前置：T120-01"],
@@ -40,7 +40,7 @@ card(id="T120-03", name="全量 e2e 在 Next 15.5.28 上跑通 + 3333 端口用�
  allow=["e2e/**", f"{W}/lib/features/auth/__tests__/oauth-redirect-origin.spec.ts"], deny=DENY_COMMON + [f"{W}/app/**", f"{W}/components/**", "e2e/admin/monitoring.spec.ts", "e2e/web/password.spec.ts", "e2e/web/dock.spec.ts"],
  dep=["T120-01"], blocks=["T120-35", "T120-36"], stop="同一用例两次修改仍失败 → 停，标 blocked", size="中（≈4h）")
 
-card(id="T120-04", name="Docker 镜像真构建 + 容器内 run-due 调度验证（RK-11-07）", slice="S12-0", owner="外部助手A", tier="sonnect",
+card(id="T120-04", name="Docker 镜像真构建 + 容器内 run-due 调度验证（RK-11-07）", slice="S12-0", owner="外部助手", tier="sonnect",
  reqs="REQ-N-022", src="U-3 局部解冻（仅 RK-11-07）",
  goal="在有 Docker 的 Windows/Linux 机上 `docker build` 成功，容器内以 nextjs 用户执行 run-due 产生 1 条 ScriptExecution。",
  inputs=["EVD-RK-11-07/（沙箱无 docker，3 项待确认）", "deploy/web/Dockerfile、scripts/build/bundle-scripts.mjs"],
@@ -51,7 +51,7 @@ card(id="T120-04", name="Docker 镜像真构建 + 容器内 run-due 调度验证
  allow=["docs/任务规划V0.12.0/06_validation/evidence/EVD-T120-04/**"], deny=DENY_COMMON + ["deploy/**", f"{W}/**"],
  dep=[], blocks=["T120-36"], stop="无 Docker 环境 → 标 blocked:no-docker，不得以沙箱结果代替", size="小（≈2h）")
 
-card(id="T120-05", name="环境变量清单归一（.env.example ↔ process.env）+ 启动期 zod 校验", slice="S12-0", owner="外部助手A", tier="sonnect",
+card(id="T120-05", name="环境变量清单归一（.env.example ↔ process.env）+ 启动期 zod 校验", slice="S12-0", owner="外部助手", tier="sonnect",
  reqs="REQ-NF-003 / REQ-C-001", src="baseline.md §env：引用 34 / 示例 41 / 缺 20 / 冗余 27",
  goal="所有被代码读取的变量都出现在 `apps/web/.env.example` 且带注释；缺必需变量时服务启动即报出变量名。",
  inputs=["/workspace 基线 env-referenced.txt / env-example.txt（随 EVD 附）", "必需变量：JWT_PRIVATE_KEY、BILLING_NOTIFY_SECRET、DATABASE_URL 等（以代码读取为准）"],
@@ -63,7 +63,7 @@ card(id="T120-05", name="环境变量清单归一（.env.example ↔ process.env
  dep=[], blocks=["T120-36"], stop="若某变量用途无法从代码判断 → 在 example 中标 `# TODO(用途待确认)` 并报 Hark，不猜默认值", size="小（≈2h）")
 
 # ── S12-1 真相归一（文档/追溯） ──
-card(id="T120-06", name="需求追溯矩阵 V0.12 再生成（150 行）+ facts 断言改为动态读取", slice="S12-1", owner="外部助手A", tier="sonnect",
+card(id="T120-06", name="需求追溯矩阵 V0.12 再生成（150 行）+ facts 断言改为动态读取", slice="S12-1", owner="外部助手", tier="sonnect",
  reqs="REQ-L-009 / REQ-N-030", src="ADR-0011 §3",
  goal="`docs/product/requirements/需求追溯矩阵.md` 升 v2.0，行集与 `03a_统一需求追溯矩阵.md` 一致；`check-docs-facts` 的行数断言改读矩阵本身而非写死 158。",
  inputs=["docs/任务规划V0.12.0/03a_统一需求追溯矩阵.md（本规划产物，150 行）", "scripts/check-docs-facts.mjs rtm-row-count"],
@@ -74,7 +74,7 @@ card(id="T120-06", name="需求追溯矩阵 V0.12 再生成（150 行）+ facts 
  allow=["docs/product/requirements/**", "scripts/check-docs-facts.mjs"], deny=DENY_COMMON + [f"{W}/**"],
  dep=[], blocks=["T120-36"], stop="03a 与代码现状出现新不一致 → 只登记到 EVD，不改 03a", size="中（≈3h）")
 
-card(id="T120-07", name="V0.11.0 文档收口（README 重写、卡状态回写、裁决同步、CHANGELOG）", slice="S12-1", owner="外部助手A", tier="haiku",
+card(id="T120-07", name="V0.11.0 文档收口（README 重写、卡状态回写、裁决同步、CHANGELOG）", slice="S12-1", owner="外部助手", tier="haiku",
  reqs="REQ-C-008 / REQ-L-008", src="v011_status §3",
  goal="V0.11.0 README ≤150 行且无单行 >400 字符；07_/12_ 中已合并卡与已裁决项状态与 git 一致；CHANGELOG 增 V0.11.0 段。",
  inputs=["v011_status.md（卡→提交号映射；Q-11-01…05、U-24 已裁决；B11-09/10/11 已合并）"],
@@ -85,7 +85,7 @@ card(id="T120-07", name="V0.11.0 文档收口（README 重写、卡状态回写�
  allow=["docs/任务规划V0.11.0/README.md", "docs/任务规划V0.11.0/07_原子任务卡全集.md", "docs/任务规划V0.11.0/12_风险与待裁决.md", "CHANGELOG.md"], deny=DENY_COMMON[:4],
  dep=[], blocks=["T120-36"], stop="无", size="小（≈1.5h，与 T120-09 同批）")
 
-card(id="T120-08", name="文档索引 / 目录结构文档 数字与版本校正 + 超 3000 字文档拆分", slice="S12-1", owner="外部助手A", tier="sonnect",
+card(id="T120-08", name="文档索引 / 目录结构文档 数字与版本校正 + 超 3000 字文档拆分", slice="S12-1", owner="外部助手", tier="sonnect",
  reqs="REQ-C-008（铁律 6）", src="v011_status §3：文档索引 9/30 版本号错、数字过期",
  goal="《文档索引》《目录结构文档》中的计数与版本与 `check-docs-rule` 真源一致；`docs/plans/未完成事项目录.md` 等超限文档按模块拆分。",
  inputs=["baseline.md（58 页 / 166 route / 73 model / 210 spec 文件口径）", "铁律 6"],
@@ -96,7 +96,7 @@ card(id="T120-08", name="文档索引 / 目录结构文档 数字与版本校正
  allow=["docs/文档索引.md", "docs/governance/目录结构文档.md", "docs/plans/**"], deny=DENY_COMMON,
  dep=[], blocks=["T120-36"], stop="无", size="中（≈3h）")
 
-card(id="T120-09", name="产品文档与代码不一致修订（02_ §四 中归属本卡的 6 条）", slice="S12-1", owner="外部助手A", tier="haiku",
+card(id="T120-09", name="产品文档与代码不一致修订（02_ §四 中归属本卡的 6 条）", slice="S12-1", owner="外部助手", tier="haiku",
  reqs="REQ-C-008", src="03_需求基线复核 §3.3 冲突清单 + 02_ §四 不一致清单",
  goal="02_事实基线 §四 中标注「T120-09」的 6 条『文档≠代码』逐条以代码为真改文档；属于待裁决的只加标注（不改代码）。",
  inputs=["02_事实基线.md §四（逐条带代码锚点）", "12_风险与待裁决.md（需裁决的条目不得自行改）"],
@@ -119,27 +119,27 @@ card(id="T120-10", name="ADR-0011 监控执行模型 + V0.12 契约落地到 @ai
  allow=["packages/shared/src/**", "docs/ADR/ADR-0011-*.md", "docs/specs/API接口文档.md", "docs/architecture/API架构设计方案.md"], deny=[".example/**", f"{W}/**"],
  dep=[], blocks=["T120-11", "T120-12", "T120-15", "T120-19", "T120-20", "T120-21", "T120-25"], stop="若需改动既有码值或既有 schema 字段 → 升 fable 裁决", size="中（≈4h）")
 
-card(id="T120-11", name="monitor_catalogs 纳入 ScheduledScript + 按源 cadenceCron 判定 due", slice="S12-2", owner="外部助手B", tier="sonnect",
+card(id="T120-11", name="monitor_catalogs 纳入 ScheduledScript + 按源 cadenceCron 判定 due", slice="S12-2", owner="外部助手", tier="sonnect",
  reqs="REQ-M-002 / REQ-M-009", src="ADR-0011",
  goal="空库 migrate+seed 后，run-due 在源 cron 到期时自动执行 monitor_catalogs，各源 lastRunAt/lastStatus 被更新。",
  inputs=["seed.ts:307-324（未登记 monitor_catalogs）", "scripts/crawl/monitor_catalogs.ts", f"{W}/lib/features/admin/script-executor.ts", "前置：T120-10"],
- outputs=[f"{W}/prisma/migrations/20261024000000_monitor_catalogs_script/", f"{W}/prisma/seed.ts", "scripts/crawl/monitor_catalogs.ts", f"{W}/lib/monitoring/schedule.ts（新）"],
+ outputs=[f"{W}/prisma/migrations/20261024010000_monitor_catalogs_script/", f"{W}/prisma/seed.ts", "scripts/crawl/monitor_catalogs.ts", f"{W}/lib/monitoring/schedule.ts（新）"],
  steps=["数据迁移：幂等插入 ScheduledScript(monitor_catalogs, cron='*/15 * * * *' 作为扫描节拍)", "schedule.ts：纯函数 `dueSources(sources, now)` 用 cadenceCron 判定，单测覆盖 DST 无关的上海时区边界", "monitor_catalogs 只采集 due 的源；单源异常不影响其他源", "集成测：注入时钟 → 仅 due 源被调用"],
  acc=["`dueSources` 单测 ≥8 例（含非法 cron → 跳过并记 lastError）", "DB 集成：run-due 一次后 due 源 lastRunAt 更新、非 due 源不变", "迁移在空库与已有库均幂等（跑两次无报错）"],
  cmd="pnpm -C apps/web exec vitest run lib/monitoring && RUN_DB_TESTS=1 pnpm -C apps/web test:int",
- allow=[f"{W}/prisma/migrations/20261024000000_monitor_catalogs_script/**", f"{W}/prisma/seed.ts", "scripts/crawl/monitor_catalogs.ts", f"{W}/lib/monitoring/**"], deny=DENY_COMMON[:2] + [".example/**"],
- dep=["T120-10", "T120-01"], blocks=["T120-12", "T120-15"], stop="cron 解析库需新增依赖 → 先评估体积，>30 kB 停下改用最小解析器", size="中（≈5h）")
+ allow=[f"{W}/prisma/migrations/20261024010000_monitor_catalogs_script/**", f"{W}/prisma/seed.ts", "scripts/crawl/monitor_catalogs.ts", f"{W}/lib/monitoring/**"], deny=DENY_COMMON[:2] + [".example/**"],
+ dep=['T120-10', 'T120-01', 'T120-12'], blocks=["T120-12", "T120-15"], stop="cron 解析库需新增依赖 → 先评估体积，>30 kB 停下改用最小解析器", size="中（≈5h）")
 
 card(id="T120-12", name="后台『立即运行』真执行（意图表 + sidecar 消费 + 防重入 + 审计）", slice="S12-2", owner="Hark", tier="opus",
  reqs="REQ-M-011", src="ADR-0011",
  goal="POST /admin/monitoring/sources/{key}/run 返回 202 后 ≤1 个调度节拍内真实采集一次；并发重复请求只执行一次。",
  inputs=["run/route.ts（现只占 Redis 锁，无消费者）", "contracts/07b-monitoring-run.contract.ts", "前置：T120-11"],
- outputs=[f"{W}/prisma/migrations/20261024010000_monitor_run_requests/", f"{W}/app/api/v1/admin/monitoring/sources/[key]/run/route.ts", f"{W}/lib/monitoring/run-requests.ts（新）", "scripts/crawl/monitor_catalogs.ts"],
+ outputs=[f"{W}/prisma/migrations/20261024000000_monitor_run_requests/", f"{W}/app/api/v1/admin/monitoring/sources/[key]/run/route.ts", f"{W}/lib/monitoring/run-requests.ts（新）", "scripts/crawl/monitor_catalogs.ts"],
  steps=["新表 monitor_run_requests(id, source_key, requested_by, status pending|running|done|failed, result_count, error, created_at, started_at, finished_at；字段与索引以 05_ §2.1 为准) + 部分唯一索引 (source_key) WHERE status IN ('pending','running')", "route：插入意图行（唯一冲突 → 10006 429），写审计", "monitor_catalogs：先领取 pending（UPDATE…RETURNING 原子领取），执行后回写", "GET /runs 端点：分页返回运行历史（默认 pageSize=10，上限 50，契约 07b）", "Redis 锁保留为可失降级，不再是唯一防线"],
  acc=["并发 10 次 POST 只产生 1 行 pending（集成测）", "领取→执行→done 全链路集成测通过", "失败路径写 error 且源 lastStatus=failed", "非管理员 403（契约测）"],
  cmd="RUN_DB_TESTS=1 pnpm -C apps/web test:int && pnpm -C apps/web exec vitest run app/api/v1/admin/monitoring",
- allow=[f"{W}/prisma/migrations/20261024010000_monitor_run_requests/**", f"{W}/prisma/schema.prisma", f"{W}/app/api/v1/admin/monitoring/**", f"{W}/lib/monitoring/**", "scripts/crawl/monitor_catalogs.ts"], deny=DENY_COMMON[:2] + [".example/**"],
- dep=["T120-11"], blocks=["T120-15"], stop="无", size="中（≈5h）")
+ allow=[f"{W}/prisma/migrations/20261024000000_monitor_run_requests/**", f"{W}/prisma/schema.prisma", f"{W}/app/api/v1/admin/monitoring/**", f"{W}/lib/monitoring/**", "scripts/crawl/monitor_catalogs.ts"], deny=DENY_COMMON[:2] + [".example/**"],
+ dep=['T120-10'], blocks=["T120-15"], stop="无", size="中（≈5h）")
 
 card(id="T120-13", name="可靠性观测落库（幂等唯一键迁移 + llmtest 写入）", slice="S12-3", owner="Hark", tier="opus",
  reqs="REQ-M-008", src="TASK-073/099 遗留：幂等键缺唯一索引",
@@ -152,7 +152,7 @@ card(id="T120-13", name="可靠性观测落库（幂等唯一键迁移 + llmtest
  allow=[f"{W}/prisma/migrations/20261024020000_reliability_obs_unique/**", f"{W}/prisma/schema.prisma", "scripts/crawl/crawl_llmtest.ts", f"{W}/lib/discovery/**"], deny=DENY_COMMON[:2] + [".example/**"],
  dep=["T120-01", "T120-12"], blocks=["T120-14"], stop="去重需删除 >1000 行 → 停，先报用户（破坏性）", size="中（≈4h）")
 
-card(id="T120-14", name="可靠性读侧 API + 服务平台/模型详情可靠性展示", slice="S12-3", owner="外部助手B", tier="sonnect",
+card(id="T120-14", name="可靠性读侧 API + 服务平台/模型详情可靠性展示", slice="S12-3", owner="外部助手", tier="sonnect",
  reqs="REQ-M-008 / REQ-M-006", src="contracts/07c-reliability.contract.ts",
  goal="服务平台详情与模型详情的『在哪调用』区块显示近 7 日可用率迷你图与最后存活时间；无数据显示空态而非 0%。",
  inputs=["T120-13 产出的观测数据", "components/models/*offerings*（现有区块）"],
@@ -161,9 +161,9 @@ card(id="T120-14", name="可靠性读侧 API + 服务平台/模型详情可靠�
  acc=["API 契约测（含 404、空数组）", "无观测数据时 UI 显示『暂无观测』而非 0%（组件测）", "axe serious/critical=0"],
  cmd="pnpm -C apps/web exec vitest run lib/monitoring components/models",
  allow=[f"{W}/app/api/v1/stations/**", f"{W}/lib/monitoring/**", f"{W}/components/models/**"], deny=DENY_COMMON,
- dep=["T120-13", "T120-10", "T120-26", "T120-16"], blocks=["T120-36"], stop="无", size="中（≈4h）")
+ dep=['T120-13', 'T120-10', 'T120-26', 'T120-16', 'T120-11'], blocks=["T120-36"], stop="无", size="中（≈4h）")
 
-card(id="T120-15", name="后台监控页运营化（运行队列、历史、立即运行反馈、频率生效提示）", slice="S12-2", owner="外部助手B", tier="sonnect",
+card(id="T120-15", name="后台监控页运营化（运行队列、历史、立即运行反馈、频率生效提示）", slice="S12-2", owner="外部助手", tier="sonnect",
  reqs="REQ-M-011 / REQ-M-013", src="UI设计文档 §五态 + 界面交互文档 管理台",
  goal="管理员在 /admin/monitoring 点『立即运行』后可看到 pending→running→done 状态变化与结果条数，改频率后显示下一次运行时间。",
  inputs=["components/admin/monitoring/{MonitoringPanel,SourceTable}.tsx", "T120-12 状态端点"],
@@ -175,7 +175,7 @@ card(id="T120-15", name="后台监控页运营化（运行队列、历史、立�
  dep=["T120-12", "T120-26"], blocks=["T120-36"], stop="无", size="中（≈4h）")
 
 # ── S12-4 合规展示 ──
-card(id="T120-16", name="Artificial Analysis 署名展示（M-015 MUST）", slice="S12-4", owner="外部助手A", tier="sonnect",
+card(id="T120-16", name="Artificial Analysis 署名展示（M-015 MUST）", slice="S12-4", owner="外部助手", tier="sonnect",
  reqs="REQ-M-015", src="U-M2",
  goal="凡展示 AA 指数的位置（天梯、模型详情、对比）均出现『数据来源：Artificial Analysis』并链接其官网。",
  inputs=["lib/sync/adapters/artificial-analysis.ts（sourceName='artificial-analysis'）", "grep 'Artificial Analysis' components/app = 0"],
@@ -186,7 +186,7 @@ card(id="T120-16", name="Artificial Analysis 署名展示（M-015 MUST）", slic
  allow=[f"{W}/components/site/SourceAttribution.tsx", f"{W}/components/ladder/**", f"{W}/components/models/**"], deny=DENY_COMMON + [f"{W}/components/models/ReliabilitySpark.tsx"],
  dep=[], blocks=["T120-36"], stop="署名文案需要法务确认 → 用 U-M2 原文，不自拟", size="小（≈2h）")
 
-card(id="T120-17", name="〔条件卡·Q-12-01〕多源可调用对外放行", slice="S12-4", owner="外部助手A", tier="sonnect",
+card(id="T120-17", name="〔条件卡·Q-12-01〕多源可调用对外放行", slice="S12-4", owner="外部助手", tier="sonnect",
  reqs="REQ-M-006 / REQ-N-032", src="Q-12-01（BLOCKING）",
  goal="按 Q-12-01 裁决结果，公开 offerings 在默认部署下不再恒为空（A/C）或显式显示『条款核验中』（B）。",
  inputs=["lib/monitoring/offerings.ts:25（放行口径）", "seed.ts:1237（tosStatus='pending'）"],
@@ -207,9 +207,9 @@ card(id="T120-18", name="会话校验比对 tokenVersion（改密/封禁全端�
  acc=["单测 ≥6 例", "封禁用户后旧 token 下一请求 401（集成测）", "无新增 DB 往返（对 prisma 调用次数断言）"],
  cmd="pnpm -C apps/web exec vitest run lib/features/auth",
  allow=[f"{W}/lib/features/auth/session.ts", f"{W}/lib/features/auth/session-store.ts", f"{W}/lib/features/auth/__tests__/session-ver.spec.ts", f"{W}/app/api/v1/admin/users/**"], deny=DENY_COMMON,
- dep=["T120-02"], blocks=["T120-19", "T120-20"], stop="无", size="中（≈3h）")
+ dep=[], blocks=["T120-19", "T120-20"], stop="无", size="中（≈3h）")
 
-card(id="T120-19", name="已登录改密 API（旧密校验 + tokenVersion++ + 刷新令牌吊销）", slice="S12-5", owner="外部助手B", tier="sonnect",
+card(id="T120-19", name="已登录改密 API（旧密校验 + tokenVersion++ + 刷新令牌吊销）", slice="S12-5", owner="Hark", tier="opus",
  reqs="REQ-N-012", src="contracts/03b-identity-password.contract.ts",
  goal="POST /api/v1/auth/password 成功后：其他设备全部登出，本设备获得新令牌对。",
  inputs=["lib/features/auth/password.ts（哈希）", "contracts/03b", "前置：T120-10、T120-18"],
@@ -231,7 +231,7 @@ card(id="T120-20", name="找回密码（邮件验证码 purpose=reset，防枚�
  allow=[f"{W}/app/api/v1/auth/password/**", f"{W}/lib/features/auth/**"], deny=DENY_COMMON + [f"{W}/lib/features/auth/__tests__/oauth-redirect-origin.spec.ts", f"{W}/lib/features/auth/constants.ts", f"{W}/lib/features/auth/edge-constants.ts"],
  dep=["T120-10", "T120-18", "T120-19"], blocks=["T120-21"], stop="若生产无 SMTP 配置 → 功能按开关 auth.password_reset 默认关，不阻塞合并", size="中（≈4h）")
 
-card(id="T120-21", name="改密 / 找回密码页面（用户端）", slice="S12-5", owner="外部助手B", tier="sonnect",
+card(id="T120-21", name="改密 / 找回密码页面（用户端）", slice="S12-5", owner="外部助手", tier="sonnect",
  reqs="REQ-N-012", src="UI设计文档 §表单；界面交互文档 登录",
  goal="/user/console 安全分区可改密；/login 有『忘记密码』入口进入两步重置流程；全程键盘可完成。",
  inputs=["T120-19、T120-20 API", "@aidean/ui Input/Button/Label"],
@@ -243,7 +243,7 @@ card(id="T120-21", name="改密 / 找回密码页面（用户端）", slice="S12
  dep=["T120-19", "T120-20", "T120-02"], blocks=["T120-36"], stop="无", size="中（≈4h）")
 
 # ── S12-6 用户端体验 ──
-card(id="T120-22", name="Dock 常驻折叠：收藏 / 对比 两 Tab（客服 Tab 依 Q-12-03）", slice="S12-6", owner="外部助手B", tier="sonnect",
+card(id="T120-22", name="Dock 常驻折叠：收藏 / 对比 两 Tab（客服 Tab 依 Q-12-03）", slice="S12-6", owner="外部助手", tier="sonnect",
  reqs="REQ-N-009 / REQ-F-043", src="界面交互文档 Dock；Q-12-03",
  goal="右下角 Dock 在桌面与移动端均常驻（可折叠不可关闭），收藏 Tab 读写 /api/v1/user/favorites，受功能开关控制。",
  inputs=[f"{W}/components/site/CompareDock.tsx（items=0 不渲染、sm 以下隐藏）", "/api/v1/user/favorites（既有）"],
@@ -265,7 +265,7 @@ card(id="T120-23", name="自定义渠道保存时连通性探测（SSRF 防护�
  allow=[f"{W}/lib/features/gateway/probe.ts", f"{W}/lib/features/gateway/__tests__/**", f"{W}/app/api/v1/user/custom-channels/**", f"{W}/components/user/ApiChannelsPanel.tsx"], deny=DENY_COMMON,
  dep=["T120-10"], blocks=["T120-36"], stop="需要新增 DB 列 → 停，另开迁移卡", size="中（≈4h）")
 
-card(id="T120-24", name="余额不足切换免费额度的响应内轻提示", slice="S12-6", owner="外部助手A", tier="sonnect",
+card(id="T120-24", name="余额不足切换免费额度的响应内轻提示", slice="S12-6", owner="外部助手", tier="sonnect",
  reqs="REQ-N-011", src="service.ts:1000 x-aidean-billing-path",
  goal="控制台调用记录与用量页对 billing-path=FREE_QUOTA 的请求显示『已使用免费额度』徽标与一次性提示条。",
  inputs=["x-aidean-billing-path 响应头（既有）", "/user/console 用量组件"],
@@ -297,9 +297,9 @@ card(id="T120-26", name="五态外壳上移 @aidean/ui（PanelState 通用化，
  acc=["ui 包组件测 ≥6 例", "admin-ui-audit 五态计数不降", "web build 通过"],
  cmd="pnpm -C packages/ui exec vitest run && node scripts/audit/admin-ui-audit.mjs",
  allow=["packages/ui/src/**", f"{W}/components/admin/PanelState.tsx"], deny=[".example/**"],
- dep=["T120-25", "T120-30"], blocks=["T120-14", "T120-15", "T120-22", "T120-24", "T120-27", "T120-31"], stop="无", size="中（≈3h）")
+ dep=['T120-25'], blocks=["T120-14", "T120-15", "T120-22", "T120-24", "T120-27", "T120-31"], stop="无", size="中（≈3h）")
 
-card(id="T120-27", name="色值/字号 codemod 工具 + 用户端（site/home/ladder/models）批次迁移", slice="S12-7", owner="外部助手B", tier="sonnect",
+card(id="T120-27", name="色值/字号 codemod 工具 + 用户端（site/home/ladder/models）批次迁移", slice="S12-7", owner="外部助手", tier="sonnect",
  reqs="UI设计文档 §2.1/§2.3 / REQ-N-005", src="ADR-0013",
  goal="提供可复跑 codemod（映射表驱动），并完成用户端组件迁移：用户端硬编码色板类 → 语义类，text-[9|10|11px] → 刻度 13 起（表格密集区允许 12 并登记）。",
  inputs=["v011_status：硬编码色 2011 处/160 文件（admin 1114）；text-[9-11px] 73", "T120-25 映射表"],
@@ -311,7 +311,7 @@ card(id="T120-27", name="色值/字号 codemod 工具 + 用户端（site/home/la
  deny=DENY_COMMON + [f"{W}/components/admin/**"],
  dep=["T120-25", "T120-26", "T120-14", "T120-16", "T120-21", "T120-22", "T120-23", "T120-24"], blocks=["T120-29", "T120-36"], stop="动态拼接类 >50 处 → 停，补 codemod 规则", size="大（≈7h）")
 
-card(id="T120-28", name="管理端批次迁移：语义色 + 原生标签归零（RK-11-10 余量）", slice="S12-7", owner="外部助手B", tier="sonnect",
+card(id="T120-28", name="管理端批次迁移：语义色 + 原生标签归零（RK-11-10 余量）", slice="S12-7", owner="外部助手", tier="sonnect",
  reqs="REQ-N-015", src="ADR-0013；admin-ui-audit",
  goal="components/admin/** 硬编码色板=0；rawButton 29/rawSelect 18/rawTextarea 8/rawLabel 61/rawTable 1 → 0（monitoring 目录除外，由 T120-15 负责）。",
  inputs=["scripts/codemod/tokens.mjs（T120-27 产出；若未到，先做原生标签部分）", "admin-ui-audit SUMMARY"],
@@ -322,7 +322,7 @@ card(id="T120-28", name="管理端批次迁移：语义色 + 原生标签归零�
  allow=[f"{W}/components/admin/**"], deny=DENY_COMMON + [f"{W}/components/admin/monitoring/**", f"{W}/components/admin/PanelState.tsx"],
  dep=["T120-25", "T120-27", "T120-15"], blocks=["T120-36"], stop="某组件迁移改变交互语义 → 跳过并登记", size="大（≈6h）")
 
-card(id="T120-29", name="非 admin 组件接入 @aidean/ui（38 个余量）", slice="S12-7", owner="外部助手B", tier="sonnect",
+card(id="T120-29", name="非 admin 组件接入 @aidean/ui（38 个余量）", slice="S12-7", owner="外部助手", tier="sonnect",
  reqs="REQ-L-012 / REQ-N-005", src="rtm：非 admin 22/60 引用 @aidean/ui",
  goal="用户端原生 button/table/select（43/6/6）替换为 @aidean/ui 原语，引用率 ≥55/60。",
  inputs=["T120-27 完成后的用户端目录"],
@@ -333,7 +333,7 @@ card(id="T120-29", name="非 admin 组件接入 @aidean/ui（38 个余量）", s
  allow=[f"{W}/components/site/**", f"{W}/components/home/**", f"{W}/components/ladder/**", f"{W}/components/models/**", f"{W}/components/news/**", f"{W}/components/user/**", "scripts/audit/site-ui-audit.mjs"], deny=DENY_COMMON + [f"{W}/components/admin/**"],
  dep=["T120-27"], blocks=["T120-36"], stop="无", size="中（≈4h）")
 
-card(id="T120-30", name="组件测试基建（jsdom + Testing Library）+ 样例", slice="S12-7", owner="外部助手A", tier="sonnect",
+card(id="T120-30", name="组件测试基建（jsdom + Testing Library）+ 样例", slice="S12-7", owner="外部助手", tier="sonnect",
  reqs="REQ-NF-005", src="v011_status：组件测试为 0",
  goal="apps/web 与 packages/ui 可写 `*.spec.tsx` 组件测（jsdom 环境按文件启用），附 3 个样例与写法约定。",
  inputs=["vitest 2.1.9 配置"],
@@ -344,7 +344,7 @@ card(id="T120-30", name="组件测试基建（jsdom + Testing Library）+ 样例
  allow=[f"{W}/vitest.config.ts", "packages/ui/vitest.config.ts", f"{W}/test/**", f"{W}/package.json", "packages/ui/package.json", "pnpm-lock.yaml", "docs/engineering/组件测试约定.md"], deny=[".example/**"],
  dep=["T120-25", "T120-01"], blocks=["T120-26", "T120-34"], stop="jsdom 与 Next 运行时冲突无法隔离 → 改 happy-dom 并在 ADR-0013 附注", size="中（≈3h）")
 
-card(id="T120-31", name="性能基线复测（15.5.28）+ CLS/TBT 定向治理", slice="S12-7", owner="外部助手A", tier="sonnect",
+card(id="T120-31", name="性能基线复测（15.5.28）+ CLS/TBT 定向治理", slice="S12-7", owner="外部助手", tier="sonnect",
  reqs="REQ-NF-002", src="11_基线指标.md",
  goal="先在 15.5.28 上复测 6 页基线；对 /pricing、/news 的 CLS 与 /、/models 移动端 TBT 做定向治理，达到 11_ 中目标值。",
  inputs=["EVD-UX-01/perf.txt（15.0.0 时测得：/pricing CLS 0.346、/news 移动 CLS 0.414、/ 移动 TBT 1248ms、/models 移动 TBT 1145ms）"],
@@ -356,7 +356,7 @@ card(id="T120-31", name="性能基线复测（15.5.28）+ CLS/TBT 定向治理",
  dep=["T120-27", "T120-29"], blocks=["T120-36"], stop="15.5.28 首测值已达标的页 → 不做治理，只记录", size="大（≈6h）")
 
 # ── S12-8 测试补齐与收口 ──
-card(id="T120-32", name="wallet / oauth 模块单测补齐", slice="S12-8", owner="外部助手A", tier="sonnect",
+card(id="T120-32", name="wallet / oauth 模块单测补齐", slice="S12-8", owner="外部助手", tier="sonnect",
  reqs="REQ-NF-005", src="v011_status：wallet、oauth 无单测",
  goal="lib/features/wallet 与 lib/features/oauth 的公开函数分支覆盖率 ≥80%。",
  inputs=["vitest --coverage 现读数"],
@@ -367,7 +367,7 @@ card(id="T120-32", name="wallet / oauth 模块单测补齐", slice="S12-8", owne
  allow=[f"{W}/lib/features/wallet/__tests__/**", f"{W}/lib/features/oauth/__tests__/**"], deny=DENY_COMMON + [f"{W}/lib/features/wallet/*.ts", f"{W}/lib/features/oauth/*.ts"],
  dep=[], blocks=["T120-36"], stop="发现金额计算缺陷 → 立即停并报 Hark", size="中（≈4h）")
 
-card(id="T120-33", name="V0.11 功能 e2e 补测（矩阵 CRUD、五态、分页 400、非管理员 403）", slice="S12-8", owner="外部助手A", tier="sonnect",
+card(id="T120-33", name="V0.11 功能 e2e 补测（矩阵 CRUD、五态、分页 400、非管理员 403）", slice="S12-8", owner="外部助手", tier="sonnect",
  reqs="REQ-NF-005 / REQ-N-*", src="v011_status：无 e2e 覆盖 V0.11 功能",
  goal="新增 e2e 覆盖兼容矩阵增删改、后台五态 500 注入、分页非法参数 400、普通用户访问 admin 矩阵端点 403。",
  inputs=["T120-03 全绿基线", "EVD-B11-03b/05/11"],
@@ -378,7 +378,7 @@ card(id="T120-33", name="V0.11 功能 e2e 补测（矩阵 CRUD、五态、分页
  allow=["e2e/**"], deny=DENY_COMMON + [f"{W}/**", "e2e/admin/monitoring.spec.ts", "e2e/web/password.spec.ts", "e2e/web/dock.spec.ts"],
  dep=["T120-03"], blocks=["T120-36"], stop="发现真缺陷 → 登记转 Hark，不改源码", size="中（≈4h）")
 
-card(id="T120-34", name="关键交互组件测（Combobox、Dock、PasswordForm、ApiChannelsPanel）", slice="S12-8", owner="外部助手A", tier="sonnect",
+card(id="T120-34", name="关键交互组件测（Combobox、Dock、PasswordForm、ApiChannelsPanel）", slice="S12-8", owner="外部助手", tier="sonnect",
  reqs="REQ-NF-005", src="docs/engineering/组件测试约定.md",
  goal="4 个组件各 ≥4 例组件测（键盘、错误、空态、提交）。",
  inputs=["T120-30 基建", "T120-21/22/23 产物"],
@@ -389,7 +389,7 @@ card(id="T120-34", name="关键交互组件测（Combobox、Dock、PasswordForm�
  allow=[f"{W}/components/**/__tests__/**"], deny=DENY_COMMON + [f"{W}/components/**/*.tsx（非测试）"],
  dep=["T120-30", "T120-21", "T120-22", "T120-23", "T120-14", "T120-15", "T120-16", "T120-24", "T120-27", "T120-28", "T120-29", "T120-31"], blocks=["T120-36"], stop="无", size="中（≈3h）")
 
-card(id="T120-35", name="〔条件卡·Q-12-02〕语言切换：撤除未用 lang 状态或启动 i18n", slice="S12-6", owner="外部助手A", tier="haiku",
+card(id="T120-35", name="〔条件卡·Q-12-02〕语言切换：撤除未用 lang 状态或启动 i18n", slice="S12-6", owner="外部助手", tier="haiku",
  reqs="REQ-N-008", src="ADR-0006（i18n 收敛为默认中文）vs 界面交互文档『中/英切换』",
  goal="A（建议）：删除 uiStore 中未被使用的 lang/setLang 并把界面交互文档改为『默认中文，不提供切换』；B：另立 i18n 版本，不在本版本实施。",
  inputs=[f"{W}/stores/uiStore.ts:4-46", "ADR-0006"],
@@ -400,7 +400,7 @@ card(id="T120-35", name="〔条件卡·Q-12-02〕语言切换：撤除未用 lan
  allow=[f"{W}/stores/uiStore.ts", f"{W}/stores/__tests__/**", "docs/product/design/界面交互文档.md"], deny=DENY_COMMON,
  dep=["T120-09"], blocks=[], stop="未裁决不得开工", size="小（≈1h，与 T120-09 同批）", cond="Q-12-02")
 
-card(id="T120-36", name="V0.12 收口：RTM 回写 + 全量门禁 + 证据 + CHANGELOG", slice="S12-8", owner="外部助手A", tier="sonnect",
+card(id="T120-36", name="V0.12 收口：RTM 回写 + 全量门禁 + 证据 + CHANGELOG", slice="S12-8", owner="外部助手", tier="sonnect",
  reqs="REQ-L-009", src="§9.2 完成定义",
  goal="V0.12 全部非条件卡合并后，同一 HEAD 上一次性取得全部门禁读数并回写规划与追溯矩阵。",
  inputs=["全部非条件卡 merged"],
