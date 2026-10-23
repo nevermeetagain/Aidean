@@ -1,4 +1,4 @@
-EVD-T120-09 verify.txt | 外部助手 | 2026-10-23 | 开工基线 main@fa9bd346（T120-06 索引提交），Hark 无新推，rebase 后 main==origin/main==fa9bd346
+EVD-T120-09 verify.txt | 外部助手 | 2026-10-23 | 开工基线 main@fa9bd346（T120-06 索引提交）；推送前 fetch 见 Hark 新推 f9a23800/b29ecdc9/f78fff36，rebase 后 HEAD=b99cd82b 已推 origin/main
 结论：验收①②③全绿。**纯文档卡，零代码改动**（`git status` 仅 3 个允许路径文件被改）。
 
 [验收① 02_§四 标 T120-09 的 6 条逐条处置]（先逐条复核代码锚点仍成立，未触发「锚点已变→只记录」阻塞条件）
@@ -24,6 +24,9 @@ EVD-T120-09 verify.txt | 外部助手 | 2026-10-23 | 开工基线 main@fa9bd346�
   pnpm run lint                      EXIT=0
   pnpm test（vitest 全量）            EXIT=0（Test Files 167 passed | 4 skipped (171)，Tests 1873 passed | 11 skipped (1884)，18.20s）
   → 与 T120-06 收口读数逐项相等，佐证本卡未影响任何运行时/测试
+[rebase 到 Hark 新推之后复跑]（.scratch/t12009-post.txt，HEAD=b99cd82b）
+  rule EXIT=0 · facts EXIT=0（18/18，Hark T120-20/23 已自行把 spec-count pin 提到 221）· typecheck EXIT=0 · lint EXIT=0
+  vitest EXIT=0（Test Files 170 passed | 4 skipped (174)，Tests 1927 passed | 11 skipped (1938)）→ 增量全部来自 Hark 新卡，本卡仍零代码改动
 [允许路径核对] git diff --name-only（工作树）= docs/product/design/功能设计文档.md、docs/product/design/界面交互文档.md、
   docs/product/requirements/需求文档.md → 全部落在允许清单 docs/product/**
 [未触碰（禁改路径确认）] apps/web/**、packages/shared/**、docs/product/design/UI设计文档.md、
