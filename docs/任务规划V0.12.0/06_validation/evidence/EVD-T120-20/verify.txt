@@ -1,0 +1,25 @@
+T120-20 验证证据（Hark · 2026-10-23 · 基线 main@630c558）
+实现：email-code.ts 增 purpose 维度（login|reset）：login 键名不变；reset 用 ec:reset:{email} 等独立键，TTL 600s，一次性 GETDEL，错满 5 次删码作废
+      POST /api/v1/auth/password/reset/code（新）：IP 10/分钟 + 同邮箱 60s/每日 10 封；恒 {sent:true}，仅 ACTIVE 用户存在才发信，投递失败不抛
+      POST /api/v1/auth/password/reset（新）：校验码 → 同事务 哈希 + tokenVersion++ + 吊销全部 refresh（复用 changePasswordAndRevokeAll）
+      → 审计 users/UPDATE newData.event=password.reset（无哈希/验证码）；不签发 Cookie
+
+## 命令与退出码
+apps/web: vitest run password-reset.spec.ts email-code.spec.ts           exit=0  22 passed（新 12 + 既有 10 不变）
+apps/web: tsc --noEmit -p .                                              exit=0
+pnpm lint                                                                exit=0
+apps/web: vitest run（全量）                                             exit=0  164 passed|2 skipped files；1854 passed|5 skipped tests
+node scripts/check-docs-rule.mjs                                         exit=0
+node scripts/check-docs-facts.mjs                                        exit=0（spec-count 212→213，route-count 167→169）
+
+## 契约测覆盖（password-reset.spec.ts，12 例）
+① 存在/不存在邮箱 reset/code 状态码与信封一致  ② SMTP 投递失败仍 200  ③ 60s 重发 429
+④ 成功 {reset:true}、ver++/吊销、无 Set-Cookie、审计无敏感  ⑤ 码复用 10003  ⑥ 过期(>600s) 10003
+⑦ 错 5 次作废（正确码亦失败）  ⑧ 不存在邮箱重置与错码同响应  ⑨ 新密弱 400 不消费码
+⑩ 登录码不能重置  ⑪ 重置码不能登录  ⑫ 键名隔离
+
+## 偏差
+D1 功能开关 auth.password_reset（contracts/03b 缺省 off）未接入：需改 FEATURE_FLAG_CODES + seed（seed 不在允许路径，
+   且 flags fail-open=全开与「缺省 off」口径冲突）。建议单列小卡：新增码 + seed + 该码 fail-closed。当前端点默认可用。
+D2 scripts/check-docs-facts.mjs 计数锚递增（门禁要求，沿用历史卡做法）。
+D3 Redis 不可用时 reset 一律 10003（fail-closed；登录码通道原 fail-open 行为不变）。
