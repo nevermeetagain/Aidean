@@ -1,0 +1,15 @@
+import {ChangePasswordRequest,ResetPasswordRequest,PasswordStrength} from './03b-identity-password.contract';
+import {ChannelProbeResponse} from './01b-channel-probe.contract';
+import {MonitorRunRequest,MonitorRunTransition} from './05b-events.contract';
+import {StationReliabilityResponse} from './07c-reliability.contract';
+import {AdminMonitoringRunsResponse} from './07b-monitoring-run.contract';
+const ok=(b:boolean,m:string)=>{if(!b){console.error('FAIL',m);process.exit(1)}};
+ok(ChangePasswordRequest.safeParse({currentPassword:'a',newPassword:'abc12345'}).success,'cp ok');
+ok(!ChangePasswordRequest.safeParse({currentPassword:'abc12345',newPassword:'abc12345'}).success,'cp same');
+ok(!PasswordStrength.safeParse('abcdefgh').success,'weak');
+ok(!ResetPasswordRequest.safeParse({email:'a@b.co',code:'12345',newPassword:'abc12345'}).success,'code5');
+ok(ChannelProbeResponse.safeParse({outcome:'timeout',httpStatus:null,latencyMs:null,modelCount:null,probedAt:new Date().toISOString()}).success,'probe');
+ok(!MonitorRunTransition.safeParse({from:'done',to:'running'}).success,'trans');
+ok(StationReliabilityResponse.safeParse({stationId:'018f0000-0000-7000-8000-000000000000',days:[{day:'2026-10-23',uptimePercent:null,successCount:0,failureCount:0}],lastAliveAt:null,source:'llmtest'}).success,'rel');
+ok(!AdminMonitoringRunsResponse.safeParse({items:[],total:0,page:1,pageSize:51}).success,'ps');
+console.log('CONTRACT_SELFCHECK 8/8 PASS');
