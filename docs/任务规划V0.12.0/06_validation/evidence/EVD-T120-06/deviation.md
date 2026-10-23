@@ -25,7 +25,8 @@
 
 6. **铁律 6 的文档同步缺口在允许路径外**：`docs/文档索引.md` L18 仍登记
    「需求追溯矩阵 … v1.0 …（115 条主矩阵 + 43 条缺口表，取自 V0.10.0 03a）」。
-   本卡允许修改仅 `docs/product/requirements/**` + `scripts/check-docs-facts.mjs`，故未改该行，报 Hark（或一行授权）。
+   本卡允许修改仅 `docs/product/requirements/**` + `scripts/check-docs-facts.mjs`，故未改该行；
+   该文件正是 **T120-08（文档索引 / 目录结构文档 数字与版本校正）** 的职责范围，已在 task-index 行内注明移交。
 
 7. **再生成脚本未入库**：一次性生成器为 `.scratch/gen-rtm-t12006.mjs`（含自校：行数/ID 唯一/与 03a 集合一致/
    差距行去向），允许路径不含 `scripts/**`。若要「下一版可复现再生成」，需 Hark 决定是否收编为 `scripts/rtm/gen.mjs`
