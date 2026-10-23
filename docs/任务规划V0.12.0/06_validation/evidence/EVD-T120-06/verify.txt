@@ -1,0 +1,40 @@
+EVD-T120-06 verify.txt | 外部助手 | 2026-10-23 | 开工基线 main@c60ee850（Hark T120-12），推送时 rebase 至 8a026493（T120-13）
+结论：验收①②③④全绿。改动仅 3 个允许路径文件（需求追溯矩阵.md / 需求文档.md / scripts/check-docs-facts.mjs）。
+
+[卡面验证命令] node scripts/check-docs-facts.mjs && node scripts/check-docs-rule.mjs
+  facts EXIT=0 → All 18 assertions passed.（原 16 条 + 本卡新增 rtm-id-unique / rtm-id-set-equal）
+  rule  EXIT=0 → [铁律1] PASS + [铁律-数字] PASS（schema model=74, enum=37, admin API 域=38, admin 页面=34, Next.js=15.x）
+
+[验收② 矩阵 150 行、REQ-id 无重复]
+  需求追溯矩阵.md v2.0：`^| REQ-` 行 = 150；唯一 ID = 150；重复 = 0；与 03a V0.12 ID 集合对称差 = 0
+  150 行全部 8 列（split 后列数分布 {"8":150}，无破表）；列 = ID|分级|来源|可验证表述|实现状态|证据|缺口|V0.12 卡
+  来源列：115 条沿用 v1.0 同 ID 标注，35 条 REQ-N 标 03a 文档级来源（deviation 3）
+  机械汇总与 03a §汇总逐项对上：已实现 101·部分 22·未实现 9·待澄清 10·冻结 7·已取消 1（合计 150）
+  差距行 31 = 挂 V0.12 卡 22 + 本版不排 9；不排清单 9 条与 03a 所列一字不差
+  （REQ-F-015, REQ-F-021, REQ-NF-010, REQ-L-001..004, REQ-N-006, REQ-N-013）
+  引用卡 36 张（T120-01…36）→ 05_execution/tasks/ 卡面文件缺失 0 张
+
+[验收① facts 改动态读取 + 变异检验]（.scratch/mutation-t12006.txt）
+  rtm-row-count 现值：expected=150（取 03a 当次实测，非写死 158）, actual=150
+  M1 删首行 REQ-F-001 → FACTS_EXIT=1，❌rtm-row-count(149≠150) ❌rtm-id-set-equal(actual=1)
+  M2 复制首行      → FACTS_EXIT=1，❌rtm-row-count(151≠150) ❌rtm-id-unique(actual=1)
+  M3 表头「实现状态」改名 → FACTS_EXIT=1，❌rtm-gap-has-task(actual=NO-COLUMN，不再空转)
+  三次变异后均自快照复原：git hash-object 475f5c38… = 复原后 475f5c38…（true），复原后 18/18 绿
+  rtm-gap-has-task 改造动因：03a 差距状态取值写作「部分」，原断言只认「部分实现」→ 新表下 0 行命中 = 假绿
+
+[验收③ 版本头] 需求追溯矩阵.md L3 = `> 版本: v2.0 | 更新: 2026-10-23 | 变更: T120-06 再生成——…`；L5 锚点 <a id="v20"></a>
+  需求文档.md 同步 v1.20（文末链接 ./需求追溯矩阵.md#v20、口径 115→150）
+
+[验收④ 推送前全量门禁]（.scratch/t120-06-final.txt，HEAD=d1454429 rebase 到 Hark 8a026493 之后同态复跑）
+  tc EXIT=0 · lint EXIT=0 · vitest EXIT=0（Test Files 167 passed | 4 skipped (171)，Tests 1873 passed | 11 skipped (1884)，15.25s）
+  rule EXIT=0 · facts EXIT=0（All 18 assertions passed，spec-count pin 218 为 Hark T120-13 自提） · guard env-diff EXIT=0（failures=0 warnings=1）
+  环境注（非本卡改动）：两轮 rebase 后 tc EXIT=2，均因本地 Prisma Client 落后于 Hark 新模型/新唯一索引
+  （MonitorRunRequest、entityType_entityId_windowStart）；`pnpm -C apps/web run db:generate` 重生成类型后即绿
+  （引擎 dll 因 dev server 占用报 EPERM，不影响 .d.ts 产出）；pnpm-lock.yaml 与 apps/web/** 未被改写
+
+[允许路径核对] git status/`git diff --name-only origin/main...HEAD` = 需求文档.md、需求追溯矩阵.md、
+  scripts/check-docs-facts.mjs + EVD-T120-06/{verify.txt,deviation.md} + task-index.md 本卡一行 → 全部在允许路径内
+
+[处置] 单卡一组提交并推送 origin/main；task-index T120-06 行标已合并附提交号；Blocks T120-09/T120-36 解除
+  抄送 Hark（deviation 1-8）：03a 生成器在 `\|` 处截断 REQ-F-001（④）；REQ-L-009/REQ-N-030 现状待下一版 03a 改判（⑤）；
+  docs/文档索引.md L18 仍写 v1.0/115+43 在允许路径外未改（⑥）；再生成脚本 .scratch/gen-rtm-t12006.mjs 未入库（⑦）

@@ -56,6 +56,22 @@ function readFile(rel) {
 /** 文件内命中正则的行数（对应 grep -c） */
 const countPatternLines = (rel, re) => readFile(rel).split("\n").filter((l) => re.test(l)).length;
 
+// T120-06：需求追溯矩阵断言改「动态读取」。原 rtm-row-count 把期望值写死 158 且拿
+// docs/任务规划V0.10.0/03a 作对照源，V0.12 行集扩到 150 后必然假红；现以本规划 03a V0.12
+// 为唯一真源，期望值 = 该文件当次实测 REQ 行数，入库矩阵与它逐行绑定（删/增一行即 FAIL）。
+const RTM_DOC = "docs/product/requirements/需求追溯矩阵.md";
+const RTM_SRC = "docs/任务规划V0.12.0/03a_统一需求追溯矩阵.md";
+const RTM_REQ_ROW = /^\| REQ-/;
+/** 表首列 REQ-id（id 不含竖线，故取首个未转义竖线前的单元格） */
+const rtmReqIds = (rel) =>
+  readFile(rel)
+    .split("\n")
+    .filter((l) => RTM_REQ_ROW.test(l))
+    .map((l) => /^\|\s*([^|\s]+)\s*\|/.exec(l)?.[1])
+    .filter(Boolean);
+const rtmDocIds = rtmReqIds(RTM_DOC);
+const rtmSrcIds = rtmReqIds(RTM_SRC);
+
 const assertions = [
   {
     id: "schema-models",
@@ -204,39 +220,63 @@ const assertions = [
   },
   {
     id: "rtm-row-count",
-    desc: "《需求追溯矩阵》REQ 行数 = V0.10.0 03a RTM 行数（TASK-051 入库，grep -c \"^| REQ-\"）",
+    desc: `《需求追溯矩阵》REQ 行数 = 《03a V0.12》当次实测行数 ${rtmSrcIds.length}（T120-06 改动态读取：期望值取 03a 计数，弃用写死 158 与 V0.10.0 快照对照源；删/增一行即 FAIL）`,
+    check: () => String(rtmDocIds.length),
+    expect: String(rtmSrcIds.length),
+    exact: true,
+  },
+  {
+    id: "rtm-id-unique",
+    desc: "《需求追溯矩阵》REQ-id 无重复（T120-06 v2.0：v1.0 因「主矩阵 115 行 + 缺口表 43 行」复用同 ID 有 43 个重复，v2.0 把缺口并入主表「缺口」列后全篇仅一张表）",
+    check: () => String(rtmDocIds.filter((v, i) => rtmDocIds.indexOf(v) !== i).length),
+    expect: "0",
+    exact: true,
+  },
+  {
+    id: "rtm-id-set-equal",
+    desc: "《需求追溯矩阵》与《03a V0.12》REQ-id 集合对称差 = 0（T120-06 目标「行集与 03a 一致」：漏收或多收任一条目即 FAIL）",
     check: () => {
-      const re = /^\| REQ-/;
-      const rtm = countPatternLines("docs/product/requirements/需求追溯矩阵.md", re);
-      const src = countPatternLines("docs/任务规划V0.10.0/03a_统一需求追溯矩阵.md", re);
-      return rtm === src ? `${rtm}` : `${rtm}≠${src}`;
+      const d = new Set(rtmDocIds);
+      const s = new Set(rtmSrcIds);
+      return String([...d].filter((x) => !s.has(x)).length + [...s].filter((x) => !d.has(x)).length);
     },
-    expect: "158",
+    expect: "0",
+    exact: true,
   },
   {
     id: "rtm-gap-has-task",
-    desc: "《需求追溯矩阵》中「未实现/部分实现」行均有任务号或「暂不执行」理由（TASK-051）",
+    desc: "《需求追溯矩阵》「部分/未实现」行均有 V0.12 卡号或本版不排理由（T120-06：03a 口径差距状态取值为「部分」「未实现」，原断言只认「部分实现」在新表下会空转；列位由表头动态定位，表头缺列即显式 FAIL）",
     check: () => {
-      const rows = readFile("docs/product/requirements/需求追溯矩阵.md").split("\n").filter((l) => /^\| REQ-/.test(l));
-      const bad = rows.filter((l) => {
-        const cols = l.split(/(?<!\\)\|/).map((c) => c.trim());
-        const status = cols.find((c) => /未实现|部分实现/.test(c));
-        if (!status) return false;
-        return !/TASK-\d{3}|\b\d{3}\b/.test(cols.slice(-3).join(" ")) && !l.includes("暂不执行");
+      const lines = readFile(RTM_DOC).split("\n");
+      const head = lines.find((l) => /^\|\s*ID\s*\|/.test(l));
+      if (!head) return "NO-HEADER";
+      const cols = head.split(/(?<!\\)\|/).map((c) => c.trim());
+      const si = cols.indexOf("实现状态");
+      const ci = cols.indexOf("V0.12 卡");
+      if (si < 0 || ci < 0) return "NO-COLUMN";
+      const bad = lines.filter((l) => RTM_REQ_ROW.test(l)).filter((l) => {
+        const c = l.split(/(?<!\\)\|/).map((x) => x.trim());
+        if (!/^(部分|未实现)/.test(c[si] ?? "")) return false;
+        return !/T120-\d{2}|TASK-\d{3}|不排|暂不|待运营/.test(c.slice(ci).join(" "));
       });
       return String(bad.length);
     },
     expect: "0",
+    exact: true,
   },
 ];
 
 let failed = 0;
 for (const a of assertions) {
   const actual = a.check();
-  // ">=N" 前缀 = 数值下限断言（R-83 T1）：模型数不限、仅防误删，其余仍为精确相等
+  // ">=N" 前缀 = 数值下限断言（R-83 T1）：模型数不限、仅防误删，其余仍为精确相等。
+  // exact（T120-06）：跳过后者「actual.includes(expect)」兜底——expect="0" 时 actual="10"
+  // 会因子串命中而假绿，计数型断言必须严格相等。
   const pass = a.expect.startsWith(">=")
     ? Number(actual) >= Number(a.expect.slice(2))
-    : actual === a.expect || actual.includes(a.expect);
+    : a.exact
+      ? actual === a.expect
+      : actual === a.expect || actual.includes(a.expect);
   const status = pass ? "✅" : "❌";
   console.log(`${status} ${a.id}: ${a.desc} → expected=${a.expect}, actual=${actual}`);
   if (!pass) failed++;
