@@ -13,6 +13,9 @@
  *   · 未设 fixture 时读 DB 源列表并真实抓取，仅预览计数。
  * - --limit N：仅 dry-run 生效（预览条数）；写库模式拒绝，避免截断观测触发「其余模型被下架」。
  * - 公开定价页（public-pricing）运行前守 robots.txt（best-effort：robots 404/不可达不阻断，命中 Disallow 则停该源）。
+ * - T120-12 立即运行：写库模式开跑前原子领取 monitor_run_requests 的 pending（→running，逐行 CAS），
+ *   被领取源本轮必跑；逐源结束回写 done(resultCount)/failed(error)；顺手清理 90 天前已结束请求。
+ *   dry-run 不领取。被领取但已停用/软删/authRequired 的源直接回写 failed。
  *
  * 用法：
  *   npx tsx scripts/crawl/monitor_catalogs.ts --help
@@ -240,6 +243,12 @@ type Deps = {
   persistCatalogChangeEvents: typeof import("../../apps/web/lib/monitoring/diff/persist").persistCatalogChangeEvents;
   /** TASK-068：观测 → ProviderModelOffering（源未映射 ModelProvider 时返回 unmapped，不写库） */
   syncOfferingsForSource: typeof import("../../apps/web/lib/sync/writers/offering-sync").syncOfferingsForSource;
+  /** T120-12：立即运行意图行（领取 / 回写 / 清理） */
+  runRequests: {
+    claim: typeof import("../../apps/web/lib/monitoring/run-requests").claimPendingRunRequests;
+    complete: typeof import("../../apps/web/lib/monitoring/run-requests").completeRunRequest;
+    purge: typeof import("../../apps/web/lib/monitoring/run-requests").purgeFinishedRunRequests;
+  };
 };
 
 /**
@@ -264,12 +273,13 @@ async function loadDeps(): Promise<Deps> {
   if (!process.env.DATABASE_URL) {
     throw new Error("缺少 DATABASE_URL（写库/无 fixture 的 dry-run 需要数据库；离线请设 MONITOR_FIXTURE_DIR）");
   }
-  const [db, writer, diff, persist, offering] = await Promise.all([
+  const [db, writer, diff, persist, offering, runRequests] = await Promise.all([
     import("../../apps/web/lib/db/prisma"),
     import("../../apps/web/lib/sync/writers/catalog-snapshot"),
     import("../../apps/web/lib/monitoring/diff/detect"),
     import("../../apps/web/lib/monitoring/diff/persist"),
     import("../../apps/web/lib/sync/writers/offering-sync"),
+    import("../../apps/web/lib/monitoring/run-requests"),
   ]);
   return {
     prisma: db.prisma,
@@ -277,6 +287,11 @@ async function loadDeps(): Promise<Deps> {
     detect: diff.detect,
     persistCatalogChangeEvents: persist.persistCatalogChangeEvents,
     syncOfferingsForSource: offering.syncOfferingsForSource,
+    runRequests: {
+      claim: runRequests.claimPendingRunRequests,
+      complete: runRequests.completeRunRequest,
+      purge: runRequests.purgeFinishedRunRequests,
+    },
   };
 }
 
@@ -438,6 +453,37 @@ async function runReal(config: Config): Promise<number> {
       select: { key: true, endpoint: true, authRequired: true },
     });
     const selected = config.source === "all" ? sources : sources.filter((s) => s.key === config.source);
+
+    // T120-12：领取立即运行请求（仅写库模式）；领取即 running，本轮结束必回写
+    const claimed = new Map<string, string[]>();
+    if (!config.dryRun) {
+      await deps.runRequests.purge(deps.prisma).catch((e: unknown) => {
+        console.warn(`[warn] 清理过期运行请求失败: ${e instanceof Error ? e.message : String(e)}`);
+      });
+      const rows = await deps.runRequests.claim(deps.prisma, {
+        sourceKey: config.source === "all" ? undefined : config.source,
+      });
+      for (const row of rows) claimed.set(row.sourceKey, [...(claimed.get(row.sourceKey) ?? []), row.id]);
+    }
+    const finishClaimed = async (
+      key: string,
+      outcome: { status: "done"; resultCount: number } | { status: "failed"; error: string },
+    ): Promise<void> => {
+      for (const id of claimed.get(key) ?? []) {
+        try {
+          await deps.runRequests.complete(deps.prisma, id, outcome);
+        } catch (e) {
+          console.error(`[failed] ${key}: 回写运行请求 ${id} 失败: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
+      claimed.delete(key);
+    };
+    for (const key of [...claimed.keys()]) {
+      if (!selected.some((s) => s.key === key)) {
+        await finishClaimed(key, { status: "failed", error: "源未启用或已删除" });
+      }
+    }
+
     if (selected.length === 0) {
       throw new Error(config.source === "all" ? "没有 enabled 的监控源" : `源未注册或未启用: ${config.source}`);
     }
@@ -449,6 +495,7 @@ async function runReal(config: Config): Promise<number> {
       if (source.authRequired) {
         // 当前无凭证体系（U-M1：不引入 API Key）；authRequired 源不跑，避免空转。
         console.warn(`[skip] ${source.key}: authRequired=true（无凭证配置，跳过）`);
+        await finishClaimed(source.key, { status: "failed", error: "该源需要 API Key，未配置凭证" });
         continue;
       }
       try {
@@ -461,6 +508,7 @@ async function runReal(config: Config): Promise<number> {
         }
         const result = await writeSource(deps, source.key, now, collected);
         await markSource(deps, source.key, now, "ok", result.count, null);
+        await finishClaimed(source.key, { status: "done", resultCount: result.count });
         console.log(
           `[ok] ${source.key}: ${result.count} 条 | 新快照=${result.created ? "yes" : "no"} | 幂等=${result.idempotent ? "yes" : "no"} | 事件=${result.events}`,
         );
@@ -475,6 +523,7 @@ async function runReal(config: Config): Promise<number> {
           } catch (markError) {
             console.error(`[failed] ${source.key}: 记录 lastError 失败: ${markError instanceof Error ? markError.message : String(markError)}`);
           }
+          await finishClaimed(source.key, { status: "failed", error: message });
         }
       }
     }

@@ -1,0 +1,30 @@
+T120-12 验证证据（Hark · 2026-10-23 · 基线 main@8dc7392）
+实现：新表 monitor_run_requests（迁移 20261024000000，仅 CREATE）+ 部分唯一 (source_key) WHERE status IN (pending,running)
+      POST .../sources/{key}/run：插入 pending 意图行（P2002→10006/429）→ 审计 monitor_run_requests/INSERT → 202 {accepted, requestId}
+        （保留旧字段 sourceKey/lockTtlSeconds 向后兼容；Redis 锁降为可失降级：故障不阻断，DB 唯一索引为权威防线）
+      GET  .../sources/{key}/runs（新）：admin.sync.read，page/pageSize(默认10, ≤50)，createdAt 倒序
+      monitor_catalogs（写库模式）：开跑前清理 90 天前已结束请求 → 逐行 CAS 领取 pending→running →
+        逐源回写 done(resultCount)/failed(error)；authRequired / 未启用源的请求直接 failed；源 lastStatus=failed 沿用既有 markSource
+
+## 命令与退出码
+apps/web: vitest run admin-routes.spec.ts run-requests.spec.ts               exit=0  30 passed（新增 9 + 既有 21）
+RUN_DB_TESTS=1 DATABASE_URL=<PG16 嵌入式临时库 aidean_t120>
+  prisma migrate deploy（23 迁移，含本卡）                                     exit=0
+  vitest run run-requests.int.spec.ts                                          exit=0  3 passed
+apps/web: tsc --noEmit -p .                                                    exit=0
+pnpm lint                                                                      exit=0
+apps/web: vitest run（全量）                                                   1 失败→已修（api-method-coverage：runs 路由多导出 HEAD），复跑相关 10 文件 exit=0 141 passed
+node scripts/guard/api-method-coverage.mjs                                     exit=0
+node scripts/check-docs-rule.mjs                                               exit=0（数据库文档 §二 73→74 model）
+node scripts/check-docs-facts.mjs                                              exit=0（schema-models 73→74，route-count 169→170，spec-count 214→216（rebase 至 5d72a6e 后））
+
+## 覆盖
+真库：① 并发 10 次入队恰 1 行 pending  ②④ 双消费者并发领取仅 1 条、running 期间再入队被拒、done 回写后可再入队  ③ failed 写 error + 历史倒序
+契约：202+requestId+审计 / P2002→429 不写审计 / Redis 故障降级仍 202 / 非管理员 403 不入队 / GET 403·200·分页越界 400·未知源 404
+
+## 偏差
+D1 卡面「UPDATE…RETURNING 原子领取」改为 Prisma 逐行条件 updateMany CAS（WHERE id AND status='pending'，count=1 才算领到）：
+   原因 check-docs-facts 铁律 queryraw-biz=0 禁业务 $queryRaw；并发不重复已由真库测④验证。
+D2 「失败路径源 lastStatus=failed」由脚本既有 markSource 负责，本卡仅加回写；脚本端到端（真抓取）未在本环境跑（嵌入式 PG 中途被其他会话停止），
+   以 lib 级真库测 + 单测覆盖，建议外部助手在 aidean-int-pg 补一次 monitor_catalogs --source <key> 真跑。
+D3 跨路径同步：docs/architecture/数据库文档.md（§二登记新表，v2.15）、scripts/check-docs-facts.mjs 计数锚（门禁要求，沿用历史卡）。

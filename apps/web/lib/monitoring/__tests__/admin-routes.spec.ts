@@ -13,6 +13,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AdminMonitoringChangeListResponse,
   AdminMonitoringRunResponse,
+  AdminMonitoringRunResponseV2,
+  AdminMonitoringRunsResponse,
   AdminMonitoringSourceListResponse,
   MonitoringSourceSchema,
 } from "@aidean/shared";
@@ -28,6 +30,7 @@ const prismaState = vi.hoisted(() => ({
   monitoringSource: { findMany: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
   catalogChangeEvent: { findMany: vi.fn(), count: vi.fn() },
   auditLog: { create: vi.fn() },
+  monitorRunRequest: { create: vi.fn(), findMany: vi.fn(), count: vi.fn() },
 }));
 
 vi.mock("../../features/auth/session", () => guardStub);
@@ -40,6 +43,24 @@ const sourcesRoute = await import("../../../app/api/v1/admin/monitoring/sources/
 const sourceKeyRoute = await import("../../../app/api/v1/admin/monitoring/sources/[key]/route");
 const runRoute = await import("../../../app/api/v1/admin/monitoring/sources/[key]/run/route");
 const changesRoute = await import("../../../app/api/v1/admin/monitoring/changes/route");
+const runsRoute = await import("../../../app/api/v1/admin/monitoring/sources/[key]/runs/route");
+
+const RUN_ID = "44444444-4444-4444-8444-444444444444";
+const ADMIN_ID = "55555555-5555-4555-8555-555555555555";
+function runRow(over: Record<string, unknown> = {}) {
+  return {
+    id: RUN_ID,
+    sourceKey: "deepseek-pricing",
+    status: "pending",
+    requestedBy: ADMIN_ID,
+    resultCount: null,
+    error: null,
+    createdAt: new Date("2026-10-23T14:00:00.000Z"),
+    startedAt: null,
+    finishedAt: null,
+    ...over,
+  };
+}
 
 const SESSION_OK = { userId: "u-admin", tier: "ADMIN" };
 const forbidden = (code: number = ERROR_CODES.FORBIDDEN) => new ApiError(code, "需要管理员权限");
@@ -108,6 +129,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   guardStub.requireAdminApi.mockResolvedValue(SESSION_OK);
   prismaState.auditLog.create.mockResolvedValue({});
+  prismaState.monitorRunRequest.create.mockResolvedValue(runRow());
   redisState.client = null;
 });
 
@@ -281,8 +303,39 @@ describe("POST /api/v1/admin/monitoring/sources/{key}/run", () => {
 
     const body = await res.json();
     expect(body.requestId).toBe("trace-run");
-    const data = AdminMonitoringRunResponse.parse(body.data);
-    expect(data).toEqual({ accepted: true, sourceKey: "deepseek-pricing", lockTtlSeconds: 300 });
+    // 向后兼容：旧字段保留 + V2 requestId（意图行 id）
+    expect(AdminMonitoringRunResponse.parse(body.data)).toEqual({ accepted: true, sourceKey: "deepseek-pricing", lockTtlSeconds: 300 });
+    expect(AdminMonitoringRunResponseV2.parse(body.data)).toEqual({ accepted: true, requestId: RUN_ID });
+    // T120-12：插入 pending 意图行 + 审计 INSERT
+    expect(prismaState.monitorRunRequest.create).toHaveBeenCalledWith({
+      data: { sourceKey: "deepseek-pricing", requestedBy: "u-admin", status: "pending" },
+    });
+    const audit = prismaState.auditLog.create.mock.calls[0][0].data;
+    expect(audit).toMatchObject({ tableName: "monitor_run_requests", recordId: RUN_ID, action: 1, actorId: "u-admin" });
+  });
+
+  it("T120-12：DB 部分唯一索引冲突（P2002，Redis 缺失时的权威防线）→ 429 + 10006，不写审计", async () => {
+    prismaState.monitoringSource.findFirst.mockResolvedValue({ key: "deepseek-pricing", authRequired: false });
+    prismaState.monitorRunRequest.create.mockRejectedValue(Object.assign(new Error("dup"), { code: "P2002" }));
+    const res = await runRoute.POST(req("POST", `${BASE}/sources/deepseek-pricing/run`), ctx("deepseek-pricing"));
+    expect(res.status).toBe(429);
+    expect((await res.json()).code).toBe(ERROR_CODES.TOO_MANY_REQUESTS);
+    expect(prismaState.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it("T120-12：Redis 故障（setNxEx 抛错）→ 可失降级，仍由 DB 受理 202", async () => {
+    prismaState.monitoringSource.findFirst.mockResolvedValue({ key: "deepseek-pricing", authRequired: false });
+    redisState.client = { setNxEx: vi.fn().mockRejectedValue(new Error("ECONNRESET")), compareDelete: vi.fn() };
+    const res = await runRoute.POST(req("POST", `${BASE}/sources/deepseek-pricing/run`), ctx("deepseek-pricing"));
+    expect(res.status).toBe(202);
+    expect(prismaState.monitorRunRequest.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("T120-12：非管理员 → 403，不入队", async () => {
+    guardStub.requireAdminApi.mockRejectedValue(forbidden());
+    const res = await runRoute.POST(req("POST", `${BASE}/sources/deepseek-pricing/run`), ctx("deepseek-pricing"));
+    expect(res.status).toBe(403);
+    expect(prismaState.monitorRunRequest.create).not.toHaveBeenCalled();
   });
 
   it("锁内重复触发 → 429 + 10006", async () => {
@@ -295,6 +348,7 @@ describe("POST /api/v1/admin/monitoring/sources/{key}/run", () => {
     const res = await runRoute.POST(req("POST", `${BASE}/sources/deepseek-pricing/run`), ctx("deepseek-pricing"));
     expect(res.status).toBe(429);
     expect((await res.json()).code).toBe(ERROR_CODES.TOO_MANY_REQUESTS);
+    expect(prismaState.monitorRunRequest.create).not.toHaveBeenCalled();
   });
 
   it("无 REDIS_URL（getRedis=null）→ fail-open 直受理 202", async () => {
@@ -395,5 +449,49 @@ describe("GET /api/v1/admin/monitoring/changes", () => {
     const res = await changesRoute.GET(req("GET", `${BASE}/changes?since=2026-10-01`));
     expect(res.status).toBe(400);
     expect(prismaState.catalogChangeEvent.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("GET /api/v1/admin/monitoring/sources/{key}/runs（T120-12）", () => {
+  it("非管理员 → 403，不触库", async () => {
+    guardStub.requireAdminApi.mockRejectedValue(forbidden());
+    const res = await runsRoute.GET(req("GET", `${BASE}/sources/deepseek-pricing/runs`), ctx("deepseek-pricing"));
+    expect(res.status).toBe(403);
+    expect(prismaState.monitorRunRequest.findMany).not.toHaveBeenCalled();
+    expect(guardStub.requireAdminApi).toHaveBeenCalledWith("admin.sync.read");
+  });
+
+  it("200：默认 page=1/pageSize=10，createdAt 倒序，日期转 ISO，响应可被契约 parse", async () => {
+    prismaState.monitoringSource.findFirst.mockResolvedValue({ key: "deepseek-pricing" });
+    prismaState.monitorRunRequest.findMany.mockResolvedValue([
+      runRow({ status: "done", resultCount: 12, startedAt: new Date("2026-10-23T14:01:00.000Z"), finishedAt: new Date("2026-10-23T14:02:00.000Z") }),
+    ]);
+    prismaState.monitorRunRequest.count.mockResolvedValue(1);
+    const res = await runsRoute.GET(req("GET", `${BASE}/sources/deepseek-pricing/runs`), ctx("deepseek-pricing"));
+    expect(res.status).toBe(200);
+    const data = AdminMonitoringRunsResponse.parse((await res.json()).data);
+    expect(data).toMatchObject({ total: 1, page: 1, pageSize: 10 });
+    expect(data.items[0]).toMatchObject({ status: "done", resultCount: 12, finishedAt: "2026-10-23T14:02:00.000Z" });
+    expect(prismaState.monitorRunRequest.findMany).toHaveBeenCalledWith({
+      where: { sourceKey: "deepseek-pricing" }, orderBy: { createdAt: "desc" }, skip: 0, take: 10,
+    });
+  });
+
+  it("pageSize=51 越界 → 400；page=3&pageSize=50 → skip 100", async () => {
+    const bad = await runsRoute.GET(req("GET", `${BASE}/sources/deepseek-pricing/runs?pageSize=51`), ctx("deepseek-pricing"));
+    expect(bad.status).toBe(400);
+    prismaState.monitoringSource.findFirst.mockResolvedValue({ key: "deepseek-pricing" });
+    prismaState.monitorRunRequest.findMany.mockResolvedValue([]);
+    prismaState.monitorRunRequest.count.mockResolvedValue(0);
+    const ok = await runsRoute.GET(req("GET", `${BASE}/sources/deepseek-pricing/runs?page=3&pageSize=50`), ctx("deepseek-pricing"));
+    expect(ok.status).toBe(200);
+    expect(prismaState.monitorRunRequest.findMany.mock.calls[0][0]).toMatchObject({ skip: 100, take: 50 });
+  });
+
+  it("未知源 → 404 + 20004", async () => {
+    prismaState.monitoringSource.findFirst.mockResolvedValue(null);
+    const res = await runsRoute.GET(req("GET", `${BASE}/sources/nope/runs`), ctx("nope"));
+    expect(res.status).toBe(404);
+    expect((await res.json()).code).toBe(ERROR_CODES.MONITOR_SOURCE_NOT_FOUND);
   });
 });

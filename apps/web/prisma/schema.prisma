@@ -2270,9 +2270,29 @@ model MonitoringSource {
   snapshots    CatalogSnapshot[]
   observations ProviderModelObservation[]
   changeEvents CatalogChangeEvent[]
+  runRequests  MonitorRunRequest[]
 
   // monitoring_sources_enabled_idx ON (enabled) WHERE deleted_at IS NULL —— 部分索引，仅迁移 SQL 维护
   @@map("monitoring_sources")
+}
+
+/// T120-12 · 「立即运行」意图行（POST /admin/monitoring/sources/{key}/run 插入 pending，monitor_catalogs 原子领取后回写）。
+/// 幂等键：部分唯一索引 monitor_run_requests_active_key ON (source_key) WHERE status IN ('pending','running') —— 仅迁移 SQL 维护。
+/// 生命周期：finished_at < now()-90d 由 monitor_catalogs 每次执行顺手清理；无软删。
+model MonitorRunRequest {
+  id          String           @id @default(uuid(7)) @db.Uuid
+  sourceKey   String           @map("source_key") @db.VarChar(40)
+  source      MonitoringSource @relation(fields: [sourceKey], references: [key], onDelete: Cascade)
+  status      String           @default("pending") @db.VarChar(16) // CHECK IN ('pending','running','done','failed')
+  requestedBy String           @map("requested_by") @db.Uuid // 管理员 user id（不建 FK，与审计口径一致）
+  resultCount Int?             @map("result_count") // CHECK >= 0
+  error       String?          @db.VarChar(2000)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamp(3)
+  startedAt   DateTime?        @map("started_at") @db.Timestamp(3)
+  finishedAt  DateTime?        @map("finished_at") @db.Timestamp(3)
+
+  @@index([sourceKey, createdAt(sort: Desc)], map: "monitor_run_requests_source_created_idx")
+  @@map("monitor_run_requests")
 }
 
 /// 目录快照（原始响应不落盘：仅 sha256 + 字节数 + ≤2KB 采样；同源同哈希不重复入库）
