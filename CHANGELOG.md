@@ -136,6 +136,65 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), dates in YYYY-M
 - ESLint: pass
 - Vitest (shared): 104/104 pass
 
+## [0.11.0] — 2026-10-23
+
+> 版本: v1.0 | 更新: 2026-10-23 | 变更: 新增 V0.11.0 段（由 V0.12.0 卡 T120-07 按 `docs/任务规划V0.11.0/` 10 执行卡 + 3 候选卡的 git 实况回填；只记**已合并**内容，未实施面逐条写在「未做面」）。注：0.8/0.9/0.10 未单独成段，其内容仍在上文 `[Unreleased]` 块内。
+
+本轮主题：**运行态闭环与后台模块完成度**（消解 DEF-011-01…15）。规划·取证·核验全文见 `docs/任务规划V0.11.0/`，逐卡提交号总表见其 `README.md` §卡状态。
+
+### Added — fx 日快照采集入口与价格分层（B11-01 `7f1fa229` · B11-02 `6edaa940`）
+- **采集入口（DEF-011-01）**：`scripts/crawl/fx_daily.ts` 此前已交付却无执行入口 → 新增 `pnpm crawl:fx`（根 `package.json`），`fx_daily_rates` 由 0 行起可写入。
+- **离线兜底不编造汇率**：实测外网源 Frankfurter 可达，且「源失败自动写估算值」= 编造汇率并让它参与计费，违反 fail-closed → 不内置自动兜底，改为显式 `--rate` 人工发布（`source=manual`）。改判过程见 `docs/任务规划V0.11.0/06_validation/evidence/EVD-B11-01/deviation.md` §一（RK-11-01）。
+- **价格分层 seed（DEF-011-02）**：原币维度价格 **0→922**，付费/促销样本进入 `/pricing` 120 窗口；采用**分层**而非替换，先只读核对 `promotion-billing.spec.ts` 以保 U-23 免费路径。
+
+### Added — 协议/能力矩阵运营化（B11-03a `2440fc90`+`033be62b`/merge `dcf28e03` · B11-03b `f2b7c6a5`→`d41f3eae`→`61861826`→验收 `be6d7dcf`，Q-11-01=A）
+- 后端：service 层 + `[id]` GET/PATCH/DELETE + zod strict 校验 + `ai_models` 回填写入路径；`40000` 文案点名未知字段/非法 id。
+- 前端：新增 `MatrixPanel` 共用外壳（`Table*` 渲染 + 分页条 + 筛选 slot）与 `matrix-panel.spec.ts`；`ProtocolMatrix`／`CapabilityMatrix` 接外壳，原生 `<table>` 归零，补 entityType / source / modelId 筛选、分页与增删改。
+- 验收：audit `tbl` 归零、12 态截图齐、CRUD 6×200、门禁全绿；facts 锚 spec 209 · `@aidean/ui` refs 72。
+
+### Added — `@aidean/ui` 底座扩容与 admin 表单热区迁移（B11-04a `66ce864e`（评审通过 `9fca091b`）· B11-04b `e5abdd22`→`220d5d80`→`ad8a190b`→`719b6b7b`→验收 `8aa32fd9`）
+- 底座新增 `Select` / `Textarea` / `Label`，延续「占位简化版、零业务逻辑、不引入 cva/radix」约束；`packages/ui/src/index.ts` 现导出 **11** 个组件族。
+- admin 侧以 codemod + 人工清理迁移**锁定的 18 个高密度文件**：select/textarea/label 一批（`e5abdd22`），按钮 C1–C18 分三批（`220d5d80`/`ad8a190b`/`719b6b7b`）；验收 = audit 归零 + 34 页截图 + 冒烟 5/5 + 门禁。
+- **未做面（RK-11-10）**：归零仅对 18 文件成立；2026-10-23 同脚本复测为 57 个 admin 组件中 **25** 个仍含原生标签（rawButton 29 / rawSelect 18 / rawTextarea 8 / rawLabel 61 / rawTable 1）。
+
+### Added — 后台五态外壳与 testid 基线（B11-05 `e92b126a`→`303bc06e`/`bc4aa30c`→`a7fa5aad`→验收 `976bfe1a`）
+- 三批共 14 个面板接入 `PanelState`（`packages/ui` 的 `PanelStatus` = loading/empty/error/forbidden/ready），外壳只包状态不包业务列。
+- 失败注入单测 12 条 + 三面板 500 截图与运行态重试；五态契约文档升至 v2.12，度量/偏差/验收 EVD 齐（门禁 8 条全绿）。
+- **未做面（RK-11-06）**：33 个无运行态实证的「错误态缺失」页须逐页复测才可打勾，静态结论不得当运行态结论。
+
+### Fixed — 游客 401 噪声治理（B11-06 `534c722d`／docs `b75166e4`／取证 `e5b5e470`／merge `16e3261f`，Q-11-02=B）
+- 客户端单一会话 store + middleware 会话提示 Cookie ⇒ 游客**零探测** `auth/me`；已知匿名即跳过 favorites 探针（此前每页 2 条红字）。
+- **未做面**：未新建 `/auth/session`（2026-10-23 实测该目录不存在），`auth/me` 保持 401 语义；升格 A 的前置条件（残余红字无法归零）未触发。
+
+### Added — 目录快照与供给闭环（B11-07 `7d70eb63`+`07ab330a`／merge `fe59e4a7`）
+- 采集器首跑落地（DEF-011-09/10）：`catalog_snapshot` **0→4**、变更流 **1729** 条、**25** 个模型有 offerings 行。
+- 不可达源记录 `credential_missing`，禁止伪造 provenance（`seed-no-official` 断言守护）。
+
+### Fixed — 调度链与执行历史闭环（B11-08 并入 `7f1fa229`；镜像与守卫加固 `6cac3471`）
+- 修「容器内调度链必失败」与「执行历史恒空」（DEF-011-11/12），dev 与 `next start` 双口径核验。
+- `6cac3471`：builder 阶段 `scripts/build/bundle-scripts.mjs` 把 10 个白名单脚本预编译为 `apps/web/scripts-dist/*.mjs` 并 COPY 进 runner；`script-executor.planScriptRun` 优先级「源+tsx > 预编译产物 > POSIX npx > 报错」；修 `fx_daily` 入口判定只认 `.ts` 会造成打包后静默 exit 0 的假成功，并在打包器构建期拦截同类写法；新增 `scripts/guard/node-modules-integrity.mjs`（web build 前后深扫，异常即 exit 1）。
+- **未做面（RK-11-07）**：真 `docker build`、alpine musl 引擎、`nextjs` 用户下运行仍**待确认**——V0.12.0 T120-04 因沙箱容器无镜像仓库出网判 `blocked:no-docker-egress`（证据 `5d72a6e5`）。
+
+### Changed — 契约一致性与守卫统一（候选卡 B11-09 `a02d8c19` · B11-10 `aa7ce564`/docs `f5b93138`/merge `f96cc6e7` · B11-11 `a92b9584`→`71a2c782`→`d03976c0`→`2b60193e`）
+- **barrel 回红线（Q-11-04=A，DEF-011-14）**：拆 `lib/currency`、`lib/monitoring/public-pricing`、`lib/sync/mappers`、`lib/sync/writers` 四处业务 barrel，消费点改具体文件（`middleware.ts`、`scripts/crawl/monitor_catalogs.ts` 等）；`barrel-check` 由 4>3 归零且**未调容忍值** ⇒ `pnpm gates` 七项 PASS。
+- **非 2xx 出口统一信封（Q-11-03=B，DEF-011-13）**：未实现方法 → 405 + `Allow`；未匹配 `/api/*` → 404 JSON（此前为 405 + 0 字节空体、404 + 27 KB HTML）。**未做面**：26 条单资源路由的 GET 未补，不得读成 REST 完备性已补齐。
+- **分页有限性守卫统一口径（Q-11-05=A，DEF-011-15）**：共享件 `lib/http/pagination.ts`（`Number.parseInt` + `Number.isFinite` 双步）+ **15** 个后台列表端点全量接入，非法串由 500 改 400；≥10 例单测 + 第三轮变异检验 15/15。intelligence `limit≤1000` 按 Hark 裁定②保持原样。
+- **P0 三项（Hark 裁定）**：`2be54b49` executions 非法 page/pageSize/status 统一 400（与 15 端点同口径）；`a8284d52` free-quotas / tier-mappings 非法枚举 400（白名单取自 Prisma 枚举，GET 与 POST 同源）；`c84efff2` PricesManager 模型下拉 `pageSize=200`→**50** + `q` 搜索（原值被 Zod ≤50 拒绝导致下拉为空）。
+
+### Added — 全站体验修复（UX-01 调研 `2aed5f9c`；UX-FIX A `5dc454bb` / B `a39200d3` / C `f3c30c51` / D `67c1a275` / E `f23d8b69`；复测修正 `12e2ec61`/`f87804c3`/`99f943f8`/`71a9aeea`；导航自动对齐 `b8b21ebc`）
+- 用户端外壳与版式（UX-01/13/14/15/17/19 + 用户裁定 6）、用户端状态与数据页（UX-02/03/05–12/14–16/18/20/21/29 + 用户裁定 2/9/10/11/12）、管理端（UX-04/22–28）、对比度收尾 + 首页区块容器全宽对齐，逐条对应 `EVD-UX-01` 调研项。
+- 收尾：`/user/console` 与余额页 a11y 两处、对比度余量 0、500 注入覆盖 33 页；管理端导航改名改为**数据迁移自动对齐**（只改旧出厂名、保留自定义），免手动「应用推荐分组」。
+- 文档修订落实 `EVD-UX-01` §8 九条建议 + UX-26 管理端 IA / oauth dev 回调在生产 404 的同步（以 main 代码为真）。
+
+### Changed — 依赖安全升级（`3b9f88c8`，2026-10-23）
+- Next.js 15.0.0 → **15.5.28** + `sharp ^0.35.5`（GHSA-2464-fhr4-w9xw / CVE-2026-96889 / GHSA-p3m5-59mp-jv5r）；`check-docs-rule` 大版本正则改为只取 major ⇒ 技术栈仍锁 Next.js 15（铁律 5 无冲击）。
+
+### Verification — V0.11.0 收口读数与口径
+- 门禁口径定版（RK-11-08）：报告必写「**六项命令 exit=0 + `pnpm gates` 7 项全 PASS**」（自 B11-09 起）；载体 `docs/任务规划V0.11.0/06_validation/evidence/EVD-B11-09/verify.txt`（`.scratch/b1109-gates.log`，`GATES_EXIT=0`）。T120-07 本卡**未复跑 gates**，当期结论以复跑为准。
+- 类型检查判定只认 `pnpm --filter web exec tsc --noEmit --incremental false` 的全量读数（须同帧附 `apps/web/tsconfig.tsbuildinfo` bytes+mtime 不变）；`pnpm typecheck` 与 gates 的 `tsc-check` 共用同一份增量态，其 exit=0 不满足本口径。
+- 五项待裁决（Q-11-01…05）已于 2026-10-22 全部裁决为 **A/B/B/A/A** 并实施；承接 V0.10.0 的 U-24 经复核属**早已落地**（裁决 2026-10-20 11:09 CST，实施 `c42890f9`/TASK-068），详见 `docs/任务规划V0.11.0/12_风险与待裁决.md` §四 更正与 §五 收口汇总。
+- 自我证伪台账：审计期 5 类假阳性 + 执行/收口期逐次证伪见 `docs/任务规划V0.11.0/00_深度分析.md` §五；收口门禁流水见同目录 `25_执行记录.md` §九。
+
 ## [0.7.1] — 2026-09-23
 
 ### Changed — 项目结构治理（huaweicloud 分支交付优化）
