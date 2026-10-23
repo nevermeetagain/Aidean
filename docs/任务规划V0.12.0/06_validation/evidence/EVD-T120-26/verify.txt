@@ -1,0 +1,13 @@
+T120-26 验证记录（2026-10-23）
+$ pnpm -C packages/ui exec vitest run                → exit 0：6 files / 40 tests（新增 panel-state.spec.tsx 9 例：五态各 1 + retry 回调 + 无重试分支 + 令牌 + testid 规范）
+$ node scripts/audit/admin-ui-audit.mjs              → exit 0：filesWithPanelState=20 / filesWithoutErrorState=9 / filesWithoutRetry=22（与改前完全一致，不降）
+$ (packages/ui) tsc --noEmit                         → exit 0
+$ (apps/web) tsc --noEmit                            → exit 0
+$ pnpm lint                                          → exit 0
+$ (apps/web) vitest run                              → exit 0：161 passed | 2 skipped files；1826 passed | 5 skipped（含 lib/admin/__tests__/panel-state.spec.ts 经重导出路径照常通过）
+$ pnpm -C apps/web build                             → exit 0
+$ node scripts/check-docs-rule.mjs / check-docs-facts → exit 0（16/16）
+读数：
+- @aidean/ui 导出 PanelState / panelTestIds / PanelStateProps / PanelResource / PanelStatus；文案 props：emptyText / loadingText / forbiddenText / errorPrefix / retryText，中文默认
+- apps/web/components/admin/PanelState.tsx 改为重导出 PanelState，usePanelResource 保留（依赖 web lib 判定口径）；20 个调用点 0 改动
+- 颜色改用 ADR-0013 语义令牌：border-line / text-fg-muted / bg-warning-soft text-warning / bg-danger-soft text-danger

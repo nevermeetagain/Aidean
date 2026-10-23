@@ -11,6 +11,8 @@ export { cn, type ClassValue } from "./lib/cn";
 export { SEMANTIC_TOKENS, DEPRECATED_TOKEN_ALIASES, THEMES, tokenVar, type SemanticFamily, type SemanticToken, type ThemeName } from "./tokens";
 
 export { Button, type ButtonProps } from "./components/ui/button";
+// T120-26：面板五态外壳（自 apps/web/components/admin 抽取，admin 原文件改为重导出）
+export { PanelState, panelTestIds, type PanelStateProps, type PanelResource, type PanelStatus } from "./components/PanelState";
 export { Input, type InputProps } from "./components/ui/input";
 // B11-04a（2026-10-22）：补齐 admin 表单原语（Select / Textarea / Label），消解 DEF-011-07。
 // 三件同 Button/Input 基线：forwardRef + rounded-md + focus-visible:ring-2 ring-[var(--ring)]
