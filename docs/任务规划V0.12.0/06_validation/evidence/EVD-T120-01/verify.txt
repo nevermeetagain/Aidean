@@ -1,0 +1,40 @@
+T120-01 验证证据（外部助手 · 2026-10-23 · 基线 main@6a927e10）
+
+## 环境（卡面 Step 1）
+- 测试库：新建容器 aidean-int-pg（镜像 postgres:16-alpine，PG 16.15，127.0.0.1:55432/aidean_int，trust 认证无口令）
+  docker run -d --name aidean-int-pg -p 127.0.0.1:55432:5432 -e POSTGRES_USER=postgres -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_DB=aidean_int postgres:16-alpine
+- 空库建表：DATABASE_URL=postgresql://postgres@127.0.0.1:55432/aidean_int pnpm exec prisma migrate deploy
+  MIGRATE_EXIT=0 → "All migrations have been successfully applied"；aidean_int._prisma_migrations = 21
+- 共享开发库（5435/aidean）未被写入：迁移 DSN 仅指向 55432 容器；aidean-int-pg 为独立容器，端口映射仅 127.0.0.1
+
+## 先红（改动前，卡面 Step 2）
+命令：RUN_DB_TESTS=1 DATABASE_URL=…55432/aidean_int pnpm exec vitest run int.spec.ts（apps/web 下）
+RED_EXIT=1 用时 3s
+读数：lib/features/pricing/__tests__/effective-price.int.spec.ts (3 tests | 1 failed)
+      → expected [ 'billingCurrency', 'isFree', …3) ] to deeply equal [ 'billingCurrency', …2) ]
+      失败点 effective-price.int.spec.ts:76；persist-prices.int.spec.ts 2 tests 通过
+      Tests 1 failed | 9 passed (10)（过滤串多纳一个非 int 文件，见 deviation.md）
+判定：根因＝断言过期，非计价逻辑回归。GatewayEffectivePrice（gateway/repository.ts:30-38）自 491481c 起
+      由 3 键变 5 键（+isFree +priceCache）；而「窗口内限免/窗口外回落」「prices 收敛为 1 条」「采集后生效价更新」
+      三条用例全绿 → 不触发本卡「阻塞条件：计价逻辑回归 → 停，报 Hark」。
+
+## 改动（卡面 Step 3、4）
+- effective-price.int.spec.ts:76 → ① toMatchObject 原 3 字段值（priceInput/priceOutput/billingCurrency）未删未放宽
+  ② 键集改为钉住契约 5 键 [billingCurrency, isFree, priceCache, priceInput, priceOutput]
+  ③ 显式断言 typeof isFree === "boolean" 且 isFree === true（effective-price.ts:131：归一后 0/0 判免费）
+  ④ 显式断言 priceCache === null（effective-price.ts:118,122：行无缓存价 → null，结构为 string|null）
+- apps/web/package.json：新增 "test:int": "vitest run .int.spec"（只命中 *.int.spec.ts，未动其他脚本与依赖）
+
+## 复跑两次（卡面验证命令，改动后）
+RUN_DB_TESTS=1 DATABASE_URL=postgresql://postgres@127.0.0.1:55432/aidean_int pnpm -C apps/web test:int
+- RUN1 exit=0 用时 3s ｜ Test Files 2 passed (2) ｜ Tests 5 passed (5) ｜ Duration 1.17s
+- RUN2 exit=0 用时 3s ｜ Test Files 2 passed (2) ｜ Tests 5 passed (5) ｜ Duration 1.44s
+
+## 推送前全量门禁（本机，一次）
+- pnpm -C apps/web typecheck  EXIT=0 5s
+- pnpm -C apps/web lint       EXIT=0 3s（仅既有 no-img-element warning，非本次引入）
+- vitest run（全量，无 RUN_DB_TESTS）EXIT=0 16s ｜ Test Files 161 passed | 2 skipped (163) ｜ Tests 1826 passed | 5 skipped (1831)
+  注：int 套件在默认/CI 口径下仍按门控 skip（RUN_DB_TESTS=1 ∧ DATABASE_URL 才执行），故 5 skipped 含本卡 5 例
+- node scripts/check-docs-rule.mjs EXIT=0
+- node scripts/check-docs-facts.mjs EXIT=0
+- git diff --stat -- apps/web → 2 files changed（= 卡面「允许修改」两条路径，无越界）

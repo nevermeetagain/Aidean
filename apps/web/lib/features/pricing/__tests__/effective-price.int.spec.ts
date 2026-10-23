@@ -73,7 +73,20 @@ suite("生效价真库解析（TASK-027）", () => {
     expect(String(out?.prices[0].priceInput)).toBe("2.5");
     const map = await gatewayRepository.findModelsByIds(prisma, [modelId], inWindow);
     expect(String(map.get(modelId)?.prices[0].priceOutput)).toBe("0");
-    expect(Object.keys(map.get(modelId)!.prices[0]).sort()).toEqual(["billingCurrency", "priceInput", "priceOutput"]);
+    // 契约 GatewayEffectivePrice（gateway/repository.ts:30-38，491481c 起 3 键 → 5 键）：
+    // 原 3 字段值校验不删除、不放宽，另显式钉住新增两字段的口径与键集恰好 5 个。
+    const gatewayPrice = map.get(modelId)!.prices[0];
+    expect(gatewayPrice).toMatchObject({ priceInput: "0", priceOutput: "0", billingCurrency: "CNY" });
+    expect(Object.keys(gatewayPrice).sort()).toEqual([
+      "billingCurrency",
+      "isFree",
+      "priceCache",
+      "priceInput",
+      "priceOutput",
+    ]);
+    expect(typeof gatewayPrice.isFree).toBe("boolean");
+    expect(gatewayPrice.isFree).toBe(true); // 归一后 0/0 → 免费（effective-price.ts:131）
+    expect(gatewayPrice.priceCache).toBeNull(); // 价格行无缓存价 → null（effective-price.ts:118,122）
   });
 
   it("采集写入新当前价后，窗口外生效价随之更新；窗口内仍为优惠（REQ-F-063）", async () => {

@@ -23,6 +23,7 @@
     "contract:runtime": "node scripts/check-runtime-contract.mjs --mode runtime",
     "contract:runtime:strict": "node scripts/check-runtime-contract.mjs --mode runtime --strict",
     "test": "vitest run",
+    "test:int": "vitest run .int.spec",
     "crawl:models": "tsx ../../scripts/crawl/crawl_models.ts",
     "crawl:agents": "tsx ../../scripts/crawl/crawl_agents.ts",
     "crawl:mcp": "tsx ../../scripts/crawl/crawl_mcp.ts",
