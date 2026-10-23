@@ -4,12 +4,14 @@
  * 响应恒为 {sent:true}：存在与不存在邮箱状态码与响应体一致（防枚举）。
  */
 import { emailCodeService } from "../../../../../../../lib/features/auth/email-code";
+import { requireFeature } from "../../../../../../../lib/features/flags/service";
 import { checkFixedWindow, clientIpFrom } from "../../../../../../../lib/rate-limit";
 import { ApiError, ERROR_CODES } from "../../../../_lib/errors";
 import { withApi } from "../../../../_lib/handler";
 import { successResponse } from "../../../../_lib/response";
 
 export const POST = withApi(async (req: Request) => {
+  await requireFeature("auth.password_reset"); // 首行守卫：关闭 → 50011/403（缺省关，fail-closed）
   const ip = clientIpFrom(req);
   const rl = await checkFixedWindow(`rl:ec:reset:ip:${ip}`, 10, 60);
   if (!rl.allowed) {

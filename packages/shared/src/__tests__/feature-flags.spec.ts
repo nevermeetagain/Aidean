@@ -1,4 +1,4 @@
-// TASK-014 功能开关契约单测：7 码集合 / seed 一致性 / 公开·后台 DTO / PATCH strict / 受控面映射
+// TASK-014 功能开关契约单测：8 码集合 / seed 一致性 / 公开·后台 DTO / PATCH strict / 受控面映射
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -12,8 +12,8 @@ import {
 } from "../index";
 
 describe("feature-flags 契约码（TASK-014）", () => {
-  it("FEATURE_FLAG_CODES 恰为 7 码且枚举逐一放行", () => {
-    expect(FEATURE_FLAG_CODES).toHaveLength(7);
+  it("FEATURE_FLAG_CODES 恰为 8 码且枚举逐一放行", () => {
+    expect(FEATURE_FLAG_CODES).toHaveLength(8);
     for (const code of FEATURE_FLAG_CODES) {
       expect(FeatureFlagCodeSchema.safeParse(code).success).toBe(true);
     }
@@ -25,7 +25,7 @@ describe("feature-flags 契约码（TASK-014）", () => {
     const text = readFileSync(seedPath, "utf8");
     const seedCodes = [...text.matchAll(/flagCode:\s*'([^']+)'/g)].map((m) => m[1]);
     expect(new Set(seedCodes)).toEqual(new Set(FEATURE_FLAG_CODES));
-    expect(seedCodes).toHaveLength(7);
+    expect(seedCodes).toHaveLength(8);
   });
 });
 

@@ -71,7 +71,7 @@
 - **用户态**：`Authorization: Bearer <JWT>`；`withAuth` 解析并注入 `userId`。
 - **管理员**：`withAdmin` 校验角色，失败返回 403。
 - **公开接口**：榜单/模型/模型站等无需登录；登录态接口（余额/交易/收藏）未登录返回 403 且不泄漏他人数据。
-- **功能开关**：关闭的受控模块 API 返回 `50011 FEATURE_DISABLED`（HTTP 403），路由守卫先于鉴权；运行时边界（7 码真源 / public·admin 双读面 / 缓存即时性 / 幂等）见 [§7.10 功能开关运行时边界](#feature-flag-runtime-architecture)。
+- **功能开关**：关闭的受控模块 API 返回 `50011 FEATURE_DISABLED`（HTTP 403），路由守卫先于鉴权；运行时边界（8 码真源 / public·admin 双读面 / 缓存即时性 / 幂等）见 [§7.10 功能开关运行时边界](#feature-flag-runtime-architecture)。
 
 <a id="pagination-params-architecture"></a>
 
@@ -248,7 +248,7 @@
 
 > 性质：本节登记功能开关运行时的架构强制约束，对应《API接口文档》§5.7（API-002 公开快照）与 §5.8.9（API-003/004 后台读写）。运行时由 TASK-015（public 读侧）+ TASK-016（admin 列表/编辑）交付；本轮 TASK-020 补登受控面与边界口径（TASK-090 §5.8.9 预留本锚）。契约唯一源 `packages/shared/src/schemas/feature-flags.schema.ts`。
 
-- **7 码唯一真源**：`flagCode` 恒属 `FEATURE_FLAG_CODES` 七码枚举（`ladder.model`/`ladder.station`/`gateway.chat`/`favorites.enabled`/`comparison.enabled`/`evaluation.enabled`/`chat.support`），由 seed 落库 + `feature-flags.spec` 漂移守卫锁定，**禁止**散落字符串新增开关码绕过枚举。
+- **8 码唯一真源**：`flagCode` 恒属 `FEATURE_FLAG_CODES` 八码枚举（`ladder.model`/`ladder.station`/`gateway.chat`/`favorites.enabled`/`comparison.enabled`/`evaluation.enabled`/`chat.support`/`auth.password_reset`；末者为 T120-20 跟进新增的**安全类开关**，缺省关、读取失败 **fail-closed**（`FAIL_CLOSED_FEATURE_FLAGS`，Q-12-08 裁决 B），其余维持 fail-open），由 seed 落库 + `feature-flags.spec` 漂移守卫锁定，**禁止**散落字符串新增开关码绕过枚举。
 - **public / admin 双读面分工（隐私边界 DESIGN-001）**：`GET /api/v1/system/features`（API-002，PUBLIC 无鉴权）经 `PublicFeaturesSchema` 出口校验，**仅暴露 7 码开/关布尔**，绝不泄露 rollout/config/时间窗/描述等运营字段；`GET /api/v1/admin/feature-flags`（API-003，`admin.configs.read`）才返回含优先级/类目/描述/时间戳的**管理全投影**。同一数据面按受众分级——公开面窄、管理面全。
 - **关闭态三重生效**：开关关闭 → ① 前台入口隐藏 + ② 受控页面 403 态 + ③ 受控 API 返回 `50011 FEATURE_DISABLED`（HTTP 403）。API 侧守卫（如收藏三端点首行 `requireFeature("favorites.enabled")`）**先于**鉴权执行，关闭即 50011→403（未登录则 10004→401）。
 - **缓存与即时性**：读经 `getFeatureFlags()`（`unstable_cache` tag `feature-flags`），public/admin 端点均 `force-dynamic` 禁构建期固化快照；后台 PATCH 成功后**先** `revalidateTag("feature-flags")` 失效缓存（使新态即时对 public 端点与受控路由守卫可见）、**再** `writeAudit`（action=2, tableName=feature_flags），失效不被审计写入牵连。

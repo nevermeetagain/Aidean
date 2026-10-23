@@ -4,7 +4,7 @@
  * requireAdminApi("admin.configs.read") → 全部 FeatureFlag 的**管理投影**（含优先级/类目/描述/时间戳等运营字段），
  * 与 PUBLIC GET /system/features（仅 7 布尔开/关）分工：本端点供后台开关页读全量元数据。
  * 稳定排序：priority desc（高优先级在前）→ flagCode asc（同优先级字典序），避免展示抖动。
- * flagCode 真源受 seed + feature-flags.spec 漂移守卫约束，恒属 7 码枚举。
+ * flagCode 真源受 seed + feature-flags.spec 漂移守卫约束，恒属 8 码枚举。
  */
 import { prisma } from "../../../../../lib/db/prisma";
 import { requireAdminApi } from "../../../../../lib/features/auth/session";

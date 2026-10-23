@@ -42,9 +42,9 @@ function fakeClient(rows: ReturnType<typeof row>[]) {
 const HOUR = 3_600_000;
 
 describe("flags.repository · loadFeatureFlags 时间窗与缺行折算", () => {
-  it("全部 isEnabled 且无时间窗 → 7 码全开", async () => {
+  it("全部 isEnabled 且无时间窗 → 8 码全开", async () => {
     const flags = await loadFeatureFlags(fakeClient(FEATURE_FLAG_CODES.map((c) => row(c))));
-    expect(Object.values(flags)).toHaveLength(7);
+    expect(Object.values(flags)).toHaveLength(8);
     expect(Object.values(flags).every(Boolean)).toBe(true);
   });
 
@@ -105,12 +105,29 @@ describe("flags.service · requireFeature 与 fail-open", () => {
     expect((err as ApiError).code).toBe(50011);
   });
 
-  it("DB 异常：getFeatureFlags fail-open → 全开，requireFeature 放行", async () => {
+  it("DB 异常：getFeatureFlags fail-open → 普通开关全开，requireFeature 放行", async () => {
     prismaState.featureFlag.findMany.mockRejectedValue(new Error("db down"));
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     const flags = await getFeatureFlags();
     expect(flags).toEqual(allEnabled());
     await expect(requireFeature("ladder.station")).resolves.toBeUndefined();
     spy.mockRestore();
+  });
+
+  it("DB 异常：安全类开关 auth.password_reset fail-closed → 50011（Q-12-08 B）", async () => {
+    prismaState.featureFlag.findMany.mockRejectedValue(new Error("db down"));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(allEnabled()["auth.password_reset"]).toBe(false);
+    const err = await requireFeature("auth.password_reset").catch((e) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).code).toBe(50011);
+    spy.mockRestore();
+  });
+
+  it("表缺 auth.password_reset 行（旧库未 seed）→ 关闭", async () => {
+    prismaState.featureFlag.findMany.mockResolvedValue(
+      FEATURE_FLAG_CODES.filter((c) => c !== "auth.password_reset").map((c) => row(c, { isEnabled: true })),
+    );
+    await expect(isFeatureEnabled("auth.password_reset")).resolves.toBe(false);
   });
 });

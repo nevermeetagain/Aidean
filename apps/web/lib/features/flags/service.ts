@@ -3,7 +3,8 @@
  *
  * - getFeatureFlags()：unstable_cache tag `feature-flags`（05-events.contract.ts CACHE_TAGS），
  *   后台 PATCH 开关后由 TASK-016 `revalidateTag("feature-flags")` 即时失效；60s revalidate 兜底。
- * - fail-open（DESIGN-001，待 U-7 最终裁决）：DB 读取异常时**一律视为开启**并 console.error 留痕，
+ * - fail-open（DESIGN-001，待 U-7 最终裁决）：DB 读取异常时**普通开关视为开启**并 console.error 留痕；
+ *   安全类开关（FAIL_CLOSED_FEATURE_FLAGS：auth.password_reset）此时视为**关闭**（Q-12-08 裁决 B，T120-20 跟进），
  *   避免探活/开关基础设施抖动导致整站在 403 下不可用；吞异常在缓存 loader 内完成，
  *   使缓存值恒为成功快照（异常不落缓存）。
  * - requireFeature(code)：受控 API/页面首行守卫（于鉴权/下游逻辑之前短路，阻断未鉴权流量进入计费/tier；

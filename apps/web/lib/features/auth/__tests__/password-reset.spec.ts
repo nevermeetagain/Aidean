@@ -61,6 +61,16 @@ vi.mock("../../../db/redis", () => ({ getRedis: () => fakeRedis }));
 vi.mock("../mailer", () => ({ sendCodeMail: mailer.sendCodeMail }));
 vi.mock("../repository", () => ({ authRepository: repo }));
 vi.mock("../../../db/prisma", () => ({ prisma: { auditLog: audit } }));
+// T120-20 跟进：功能开关 auth.password_reset（真实折算/fail-closed 见 flags.spec.ts）；此处按状态桩控制开/关
+const flag = vi.hoisted(() => ({ enabled: true }));
+vi.mock("../../flags/service", async () => {
+  const { ApiError, ERROR_CODES } = await import("../../../../app/api/v1/_lib/errors");
+  return {
+    requireFeature: vi.fn(async (code: string) => {
+      if (code === "auth.password_reset" && !flag.enabled) throw new ApiError(ERROR_CODES.FEATURE_DISABLED, "该功能暂未开放");
+    }),
+  };
+});
 
 import { EMAIL_CODE_MAX_FAILS, emailCodeKeys, emailCodeService } from "../email-code";
 
@@ -83,6 +93,7 @@ const wrongOf = (c: string) => (c === "000000" ? "999999" : "000000");
 
 beforeEach(() => {
   vi.clearAllMocks();
+  flag.enabled = true;
   entries.clear();
   mailer.sendCodeMail.mockResolvedValue(true);
   repo.findUserByEmail.mockImplementation(async (email: string) =>
@@ -202,5 +213,19 @@ describe("purpose 隔离", () => {
   it("⑫ 键名：login 沿用历史 ec:{email}，reset 为 ec:reset:{email}", () => {
     expect(emailCodeKeys("login", EXIST).code).toBe(`ec:${EXIST}`);
     expect(emailCodeKeys("reset", EXIST).code).toBe(`ec:reset:${EXIST}`);
+  });
+});
+
+describe("功能开关 auth.password_reset（缺省关 / fail-closed）", () => {
+  it("⑬ 关闭时 reset/code 与 reset 均 403/50011，且不发信、不改密", async () => {
+    flag.enabled = false;
+    const a = await post(codeRoute, "reset/code", { email: EXIST });
+    const b = await post(resetRoute, "reset", { email: EXIST, code: "123456", newPassword: "N3wPassw0rd!x" });
+    for (const r of [a, b]) {
+      expect(r.status).toBe(403);
+      expect((await r.json()).code).toBe(50011);
+    }
+    expect(mailer.sendCodeMail).not.toHaveBeenCalled();
+    expect(repo.changePasswordAndRevokeAll).not.toHaveBeenCalled();
   });
 });

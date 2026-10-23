@@ -248,6 +248,8 @@ const featureFlagsData = [
   { flagCode: 'comparison.enabled', name: '模型对比功能', nameCn: '模型对比功能', isEnabled: true, category: 'feature', priority: 2, description: '模型对比功能开关' },
   { flagCode: 'evaluation.enabled', name: '付费测评功能', nameCn: '付费测评功能', isEnabled: true, category: 'feature', priority: 3, description: '付费测评功能开关' },
   { flagCode: 'chat.support', name: '客服功能', nameCn: '客服功能', isEnabled: true, category: 'feature', priority: 4, description: '客服功能开关' },
+  // T120-20 跟进：安全类开关，缺省关闭（生产配置 SMTP 后由运营打开）；读取失败 fail-closed
+  { flagCode: 'auth.password_reset', name: '找回密码', nameCn: '找回密码', isEnabled: false, category: 'auth', priority: 1, description: '邮箱验证码找回密码（需 SMTP）' },
 ]
 
 const systemConfigsData = [

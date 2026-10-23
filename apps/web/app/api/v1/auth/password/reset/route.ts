@@ -5,6 +5,7 @@
  * 不自动登录：响应 {reset:true}，不签发 Cookie；全端旧令牌下一请求 401（T120-18）。
  */
 import { emailCodeService } from "../../../../../../lib/features/auth/email-code";
+import { requireFeature } from "../../../../../../lib/features/flags/service";
 import { checkFixedWindow, clientIpFrom } from "../../../../../../lib/rate-limit";
 import { writeAudit } from "../../../_lib/audit";
 import { ApiError, ERROR_CODES } from "../../../_lib/errors";
@@ -12,6 +13,7 @@ import { withApi } from "../../../_lib/handler";
 import { successResponse } from "../../../_lib/response";
 
 export const POST = withApi(async (req: Request) => {
+  await requireFeature("auth.password_reset"); // 首行守卫：关闭 → 50011/403（缺省关，fail-closed）
   const ip = clientIpFrom(req);
   const rl = await checkFixedWindow(`rl:pwreset:ip:${ip}`, 10, 60);
   if (!rl.allowed) {

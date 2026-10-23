@@ -1,0 +1,20 @@
+T120-20 跟进 D1：功能开关 auth.password_reset 接入（Hark · 2026-10-23 · 基线 main@f9a2380）
+裁决依据：12_风险与待裁决 Q-12-08 选 B（仅新增安全类开关 fail-closed）；04_契约冻结包 L16 / contracts/03b（缺省 off）/ 02b（关闭 → FEATURE_DISABLED）
+改动：
+  packages/shared/src/schemas/feature-flags.schema.ts  FEATURE_FLAG_CODES 7→8（+auth.password_reset）；新增 FAIL_CLOSED_FEATURE_FLAGS；FEATURE_GATES 登记两条重置端点
+  apps/web/lib/features/flags/repository.ts            allEnabled()（读失败兜底）对 FAIL_CLOSED 码返回 false，其余仍 fail-open
+  apps/web/app/api/v1/auth/password/reset{,/code}/route.ts  首行 requireFeature("auth.password_reset") → 关 50011/403
+  apps/web/prisma/seed.ts                               新增行 isEnabled:false（category auth）
+  文档 8 码同步：API架构设计方案 §7、API接口文档 L249/L491、功能设计文档 L226
+## 命令与退出码
+packages/shared: vitest run                       exit=0  262 passed（feature-flags.spec 8 码 = seed 8 码，防漂移）
+apps/web: vitest run lib/features/flags           exit=0  +2 例：DB 异常时 password_reset fail-closed → 50011；表缺行 → 关闭
+apps/web: vitest run password-reset.spec          exit=0  +1 例 ⑬：关闭时 reset/code 与 reset 均 403/50011，不发信、不改密；原 12 例开态全绿
+apps/web: tsc --noEmit -p .                       exit=0
+pnpm lint                                         exit=0
+apps/web: vitest run（全量）                      exit=0  170 files / 1927 passed
+check-docs-rule / check-docs-facts / api-method-coverage  exit=0 / 0 / 0
+## 偏差
+D1 已有库不会自动补该行（迁移目录对本卡禁改；seed 仅新库 create）。缺行按 repository 口径视为关闭 → 安全侧收敛，
+   但后台开关列表看不到该码、运营无法打开：需一条 INSERT … ON CONFLICT DO NOTHING 数据迁移，登记为 Hark 待办。
+D2 用户端「找回密码」入口隐藏属 T120-21（页面卡），本跟进只做 API 侧。

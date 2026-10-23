@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 export const GET = withApi(async () => {
   const flags = await getFeatureFlags();
-  // 出口即校验：返回体恒符合冻结契约（只放行 7 码 boolean，防越权字段泄露）
+  // 出口即校验：返回体恒符合冻结契约（只放行 8 码 boolean，防越权字段泄露）
   return PublicFeaturesSchema.parse({ flags });
 });
 
