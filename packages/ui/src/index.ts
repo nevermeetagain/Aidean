@@ -7,6 +7,8 @@
 // 现在只有显式 import { EChartWrapper } from "@aidean/ui/charts" 才会引入 echarts。
 // 配合 next.config.mjs optimizePackageImports: ["@aidean/ui"]，按 import 路径做 per-module tree-shaking。
 export { cn, type ClassValue } from "./lib/cn";
+// T120-25（ADR-0013）：语义色令牌名单与弃用别名映射
+export { SEMANTIC_TOKENS, DEPRECATED_TOKEN_ALIASES, THEMES, tokenVar, type SemanticFamily, type SemanticToken, type ThemeName } from "./tokens";
 
 export { Button, type ButtonProps } from "./components/ui/button";
 export { Input, type InputProps } from "./components/ui/input";

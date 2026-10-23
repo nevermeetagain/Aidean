@@ -1,0 +1,16 @@
+T120-25 验证记录（2026-10-23）
+$ pnpm install --prefer-offline                      → exit 0；lockfile 仅移除 vitest 3.2.7 依赖树，ui/shared 解析到 vitest 2.1.9、tailwindcss 4.0.0
+$ (packages/ui) vitest run                           → exit 0：5 files / 31 tests（新增 tokens.spec.ts 4 例）；vitest/2.1.9
+$ (packages/shared) vitest run                       → exit 0：24 files / 262 tests；vitest/2.1.9
+$ (apps/web) vitest run                              → 首轮 2 例失败（navigation-sync.spec UX-13 按 hex 断言 slate-400/500）→ 别名改回字面值后该文件 18/18 通过；其余 160 files / 1824 tests 通过
+$ (packages/ui) tsc --noEmit                         → exit 0
+$ (apps/web) tsc --noEmit                            → exit 0
+$ pnpm lint                                          → exit 0
+$ pnpm -C apps/web build                             → exit 0（postbuild nm-integrity OK）
+$ node scripts/check-docs-rule.mjs                   → exit 0
+$ node scripts/check-docs-facts.mjs                  → exit 0（16/16）
+验收读数：
+- 对比度 18 组（3 主题 × 6 族）全部达标，最低：line-strong 3.19（图形门槛 3）、danger 4.83、on-accent/orange 5.18（正文门槛 4.5）；表见 ADR-0013 §三
+- 焦点环 ring on surface：teal 2.38→5.23、orange 2.68→4.95（原不达 1.4.11）
+- 弃用别名 9 个，@deprecated 注释在 globals.css @theme；TS 唯一源 @aidean/ui DEPRECATED_TOKEN_ALIASES，单测锁定 9
+- 三包 vitest 统一 2.1.9；ui tailwind peer ^4.0.0

@@ -1,7 +1,8 @@
 
 # UI 设计文档
 
-> 版本: v1.7 | 更新: 2026-10-22 | 变更: **UX-FIX-E 文档对齐（EVD-UX-01 §8 第 1–3 条，以 main 代码为真）**——§2.2 默认主题定稿为青绿 teal；§2.3 字号刻度补 12px「辅助」档；§2.4 写明 `rounded-lg`=16px，M-WIDE 补「页头/页脚同宽」验收读数。前次（v1.6 | 2026-09-29）：**文档树重组轮**——双横幅合一（L1 占位线 v0.7.1 并入本线）+ 迁移至 docs/product/design/。前次（v1.5 | 2026-09-07）：§1 标签栏图标定稿——favicon.ico/icon.png 替换为"A"字标黑底白墨版（用户手绘 A 提取），accent-icon 留用口径更新
+> 版本: v1.8 | 更新: 2026-10-23 | 变更: **T120-25（ADR-0013）**——§2.1 改为六族语义令牌表（surface / fg / muted / line / accent / status）并登记 9 个弃用别名；§2.2 随主题切换的范围改为 accent 族 + ring + info。
+> 前次（v1.7 | 更新: 2026-10-22）变更: **UX-FIX-E 文档对齐（EVD-UX-01 §8 第 1–3 条，以 main 代码为真）**——§2.2 默认主题定稿为青绿 teal；§2.3 字号刻度补 12px「辅助」档；§2.4 写明 `rounded-lg`=16px，M-WIDE 补「页头/页脚同宽」验收读数。前次（v1.6 | 2026-09-29）：**文档树重组轮**——双横幅合一（L1 占位线 v0.7.1 并入本线）+ 迁移至 docs/product/design/。前次（v1.5 | 2026-09-07）：§1 标签栏图标定稿——favicon.ico/icon.png 替换为"A"字标黑底白墨版（用户手绘 A 提取），accent-icon 留用口径更新
 
 > 视觉语言与设计令牌。交互规则见《界面交互文档》，分工：本文档管"看起来怎样"，交互文档管"用起来怎样"。
 
@@ -15,22 +16,26 @@
 
 ## 2. 设计令牌（Tailwind）
 
-### 2.1 色彩
+### 2.1 色彩（语义令牌，ADR-0013 · V0.12）
 
-| 令牌 | 用途 |
-|---|---|
-| `primary` | 品牌主色：链接、主按钮、榜单高亮、当前排名 |
-| `background` / `foreground` | 页面底 / 主文字（**仅浅色**） |
-| `muted` / `muted-foreground` | 次要面 / 次要文字 |
-| `card` / `border` | 卡片（模型站卡片、详情面板）/ 分隔线 |
-| `accent` | 价格、评分等数据强调 |
-| `success` / `warning` / `destructive` | 可用率/好评率的三档状态色、操作反馈 |
-| 排名色阶 | 天梯图名次区段色（如 1-3 / 4-10 / 11+ 渐进），用 `accent` 的透明度阶梯，不引入额外色板 |
+唯一命名 `--color-*`，六族语义类；新代码只用本表。对比度表见 [ADR-0013 §三](../../ADR/ADR-0013-语义色令牌与主题.md)。
+
+| 族 | 令牌（Tailwind 类后缀） | 用途 |
+|---|---|---|
+| surface | `surface` / `surface-raised` / `surface-sunken` | 页面底 / 卡片与浮层 / 凹陷区（**仅浅色**） |
+| fg | `fg` / `fg-muted` / `fg-subtle` | 主文字 / 次要文字 / 占位与弱提示 |
+| muted | `muted` / `muted-fg` | 次要面及其上的文字 |
+| line | `line` / `line-strong` | 装饰分隔线 / 输入框等交互边界（≥3:1） |
+| accent | `accent` / `accent-strong` / `accent-soft` / `on-accent` / `ring` | 装饰亮色（渐变、描边，不承载文字）/ 实底按钮、链接、榜单高亮、当前排名 / 浅底 / 实底上的文字 / 焦点环 |
+| status | `success` `warning` `danger` `info` 及各自 `-soft` | 可用率/好评率三档、操作反馈；`-soft` 为浅底 |
+| 排名色阶 | — | 天梯图名次区段色（1-3 / 4-10 / 11+ 渐进），用 `accent-strong` 的透明度阶梯，不引入额外色板 |
+
+**弃用别名（9 个，保留至 V0.13，由 T120-27 codemod 迁走）**：`background→surface`、`foreground→fg`、`primary→accent-strong`、`primary-foreground→on-accent`、`muted-foreground→fg-muted`、`card→surface-raised`、`border→line`、`slate-400→fg-subtle`、`slate-500→fg-muted`。名单唯一源：`@aidean/ui` `DEPRECATED_TOKEN_ALIASES`。
 
 ### 2.2 多套浅色主题
 
 - 主题切换 = **多套浅色主题（不同主色色相）**间切换，如 青绿 teal（**默认**）/ 靛蓝 indigo / 暖橙 orange；背景/表面永远浅色。**默认主题定稿（2026-10-22，UX-FIX-E，以代码为真）**：默认 = teal——`app/globals.css` `:root` `--primary: #0f766e`（teal-700）/ `--accent: #14b8a6`，`stores/uiStore.ts` `theme` 初值 `"teal"`；原「靛蓝（默认）」口径作废。
-- 实现：CSS 变量按主题命名空间分组（`[data-theme="indigo"|"teal"|"orange"]`），`primary`/`accent` 及其透明度阶梯随主题切换；状态色（success/warning/destructive）跨主题不变。
+- 实现：CSS 变量按主题命名空间分组（`[data-theme="indigo"|"teal"|"orange"]`），`accent` 族（accent / accent-strong / accent-soft / on-accent）、`ring` 与 `info` 随主题切换；success / warning / danger 跨主题不变。
 - 主题状态存 `uiStore`，切换即时生效、持久化到 localStorage；`next-themes` 类方案的 `dark` 分支移除。
 
 ### 2.3 字体与排版

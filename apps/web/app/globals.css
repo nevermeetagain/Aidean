@@ -7,45 +7,87 @@
 @source "../../../packages/ui/src";
 
 @theme {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
+  /* ===== 语义令牌（ADR-0013，V0.12 唯一命名 --color-*；六族 surface / fg / muted / line / accent / status）=====
+   * 类名示例：bg-surface、bg-surface-raised、text-fg、text-fg-muted、bg-muted、border-line、bg-accent-strong、text-on-accent、text-danger、bg-danger-soft。
+   * 新代码只用本段；值来自 :root 与 [data-theme] 的原始变量，三主题切换时 accent 族、ring 与 info 跟随。 */
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
   --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-card: var(--card);
-  --color-border: var(--border);
-  --color-accent: var(--accent);
+  --color-muted-fg: var(--fg-muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent); /* 装饰亮色（渐变、高亮描边；不承载文字） */
+  --color-accent-strong: var(--accent-strong); /* 实底按钮、链接、选中态（白字 / 白底均 ≥4.5） */
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
   --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
 
-  /* UX-13（EVD-UX-01，WCAG 1.4.3 ≥4.5:1）：次要文字色在主题层统一重映射，不逐文件改类名。
-   * 默认 slate-400 #90a1b9 白底仅 2.63:1、slate-500 #62748e 在 slate-100 底 4.35:1 均不达标。
-   * 全仓 slate-400/500 仅用作文字/占位符/图标描边（无 bg/border 用法，亦无深色底承载），
-   * 重映射不影响边框与背景；保持 400 浅于 500 浅于 600 的层级：
-   *   slate-400 → #5f6f86：白 5.12 / slate-50 4.89 / slate-100 4.67
-   *   slate-500 → #526277：白 6.23 / slate-50 5.95 / slate-100 5.68
-   * 本仓无暗色令牌集（data-theme 仅覆盖品牌色相）；将来引入暗色主题时须在其选择器内回写这两个变量。 */
-  --color-slate-400: #5f6f86;
-  --color-slate-500: #526277;
+  /* ===== 弃用别名（保留一个版本，V0.13 删除；T120-27 codemod 迁走用法）共 9 个 =====
+   * @deprecated background→surface · foreground→fg · primary→accent-strong · primary-foreground→on-accent
+   * @deprecated muted-foreground→fg-muted · card→surface-raised · border→line · slate-400→fg-subtle · slate-500→fg-muted */
+  --color-background: var(--surface);
+  --color-foreground: var(--fg);
+  --color-primary: var(--accent-strong);
+  --color-primary-foreground: var(--on-accent);
+  --color-muted-foreground: var(--fg-muted);
+  --color-card: var(--surface-raised);
+  --color-border: var(--line);
+  /* UX-13 历史（EVD-UX-01，WCAG 1.4.3）：slate-400/500 曾在主题层重映射以修文字对比度；
+   * 其值现等于 fg-subtle / fg-muted，保留为弃用别名直到 codemod 完成，新代码禁止再用 slate-400/500 表达文字。 */
+  --color-slate-400: #5f6f86; /* = --fg-subtle（字面值保留：UX-13 源码护栏 navigation-sync.spec 按 hex 断言对比度） */
+  --color-slate-500: #526277; /* = --fg-muted */
 }
 
 /*
- * 浅色冷色令牌体系（默认亮色，多品牌色相变体）
- * 变体通过 html[data-theme] 覆盖 --primary / --primary-foreground / --accent，
- * 其余中性令牌共享 :root 默认值。管理端与前台同源，同属浅色冷色系。
+ * 原始变量层：:root 为默认（teal）+ 中性 / 状态值；[data-theme] 只覆盖品牌色相（accent 族、ring、info）。
+ * 旧原始名（--background / --primary / --border …）仍被 packages/ui 与 apps/web/components 的 [var(--x)] 用法引用，
+ * 作为别名指向新原始名，随 T120-27 codemod 退场。对比度表见 ADR-0013 §三。
  */
 :root {
-  --background: #f8fafc; /* slate-50 冷底 */
-  --foreground: #0f172a; /* slate-900 */
-  --primary: #0f766e; /* teal-700 默认品牌主色（青碧深，切换器第一位；AA 小字≥4.5:1） */
-  --primary-foreground: #ffffff;
-  --muted: #f1f5f9; /* slate-100 */
-  --muted-foreground: #526277; /* UX-13：与重映射后 slate-500 同值（slate-100 底 5.68:1；原 #64748b 仅 4.34） */
-  --card: #ffffff;
-  --border: #e2e8f0; /* slate-200 */
-  --accent: #14b8a6; /* teal-400 */
-  --ring: #14b8a6;
-  --danger: #dc2626; /* red-600 危险语义（Button danger / Input invalid，AT-18.1.2） */
+  --surface: #f8fafc; /* slate-50 冷底 */
+  --surface-raised: #ffffff;
+  --surface-sunken: #f1f5f9; /* slate-100 */
+  --fg: #0f172a; /* slate-900 */
+  --fg-muted: #526277; /* 白 6.23 / slate-100 5.68 */
+  --fg-subtle: #5f6f86; /* 白 5.12 / slate-50 4.89 */
+  --muted: #f1f5f9;
+  --line: #e2e8f0; /* 装饰分隔线（WCAG 1.4.11 豁免） */
+  --line-strong: #8391a7; /* 输入框等交互边界，白底 3.19 */
+  --accent: #14b8a6; /* teal-400 装饰亮色 */
+  --accent-strong: #0f766e; /* teal-700，白字 5.47 */
+  --accent-soft: #ccfbf1;
+  --on-accent: #ffffff;
+  --ring: #0f766e; /* 焦点环 = accent-strong（旧值 teal-400 仅 2.38:1，不达 1.4.11） */
+  --success: #15803d;
+  --success-soft: #dcfce7;
+  --warning: #b45309;
+  --warning-soft: #fef3c7;
+  --danger: #dc2626; /* red-600（Button danger / Input invalid，AT-18.1.2） */
+  --danger-soft: #fee2e2;
+  --info: var(--accent-strong);
+  --info-soft: var(--accent-soft);
+
+  /* 旧原始名 → 新原始名（@deprecated，见上） */
+  --background: var(--surface);
+  --foreground: var(--fg);
+  --primary: var(--accent-strong);
+  --primary-foreground: var(--on-accent);
+  --muted-foreground: #526277; /* = --fg-muted（字面值同上） */
+  --card: var(--surface-raised);
+  --border: var(--line);
+
   --radius: 12px;
   --radius-lg: 16px;
   --radius-xl: 20px;
@@ -58,24 +100,27 @@
 }
 
 [data-theme="indigo"] {
-  --primary: #4f46e5;
-  --primary-foreground: #ffffff;
   --accent: #6366f1;
-  --ring: #6366f1;
+  --accent-strong: #4f46e5; /* 白字 6.29 */
+  --accent-soft: #e0e7ff;
+  --on-accent: #ffffff;
+  --ring: #4f46e5;
 }
 
 [data-theme="teal"] {
-  --primary: #0f766e;
-  --primary-foreground: #ffffff;
   --accent: #14b8a6;
-  --ring: #14b8a6;
+  --accent-strong: #0f766e; /* 白字 5.47 */
+  --accent-soft: #ccfbf1;
+  --on-accent: #ffffff;
+  --ring: #0f766e;
 }
 
 [data-theme="orange"] {
-  --primary: #c2410c;
-  --primary-foreground: #ffffff;
   --accent: #f97316;
-  --ring: #f97316;
+  --accent-strong: #c2410c; /* 白字 5.18 */
+  --accent-soft: #ffedd5;
+  --on-accent: #ffffff;
+  --ring: #c2410c;
 }
 
 * {
