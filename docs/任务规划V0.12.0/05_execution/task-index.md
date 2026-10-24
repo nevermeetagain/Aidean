@@ -21,7 +21,7 @@
 | T120-13 | 可靠性观测落库（幂等唯一键迁移 + llmtest 写入） | S12-3 | Hark | opus | 4.0 | T120-01, T120-12 | L3 | 已完成 |
 | T120-14 | 可靠性读侧 API + 服务平台/模型详情可靠性展示 | S12-3 | 外部助手 | sonnect | 4.0 | T120-13, T120-10, T120-26, T120-16, T120-11 | L4 | 待开工 |
 | T120-15 | 后台监控页运营化（运行队列、历史、立即运行反馈、频率生效提示） | S12-2 | 外部助手 | sonnect | 4.0 | T120-12, T120-26 | L3 | 待开工 |
-| T120-16 | Artificial Analysis 署名展示（M-015 MUST） | S12-4 | 外部助手 | sonnect | 2.0 | — | L1 | 待开工 |
+| T120-16 | Artificial Analysis 署名展示（M-015 MUST） | S12-4 | 外部助手 | sonnect | 2.0 | — | L1 | 已合并 49db0241（验收①e2e 详情页三态全绿：有AA→可见「数据来源：Artificial Analysis」+href+rel=noopener / 非AA→不出现 / 无基准→不出现，3 passed；②无 AA 不渲染；③署名 slate-600/sky-700 于白底 ≈7.5/7.0:1 达 WCAG AA；④tsc/lint/vitest 1931 passed·11 skipped/check-docs-rule/check-docs-facts 18·18(spec-count expected=223=actual)/api-method-coverage 162·162 全 EXIT=0；prisma 夹具 afterAll 清理零残留。**范围经用户裁决收敛到模型详情页**：天梯/对比因数据层无 AA 标志（repository.getModelsForMatrix 取 model_scores、LadderRankEntry 无 sourceName）须另开卡或扩 ladder API，见 EVD-T120-16/deviation.md 1。越界两处经用户 2026-10-24 授权（参照 T120-05 spec-count 越界先例，非通用先例）：新增 e2e/web/aa-source-attribution.spec.ts + check-docs-facts spec-count 222→223（仅改此 1 数字，desc 历史串未动，deviation.md 4）。卡面验证命令 `vitest run components/site` 因 apps/web 无 jsdom/@testing-library、vitest.config include 仅 lib/**/*.spec.ts 无法运行，组件级 vitest 断言顺延 T120-30/34（deviation.md 3，请两张卡验收补此条）。Blocks T120-14/27/34/36 的本卡前置解除 |
 | T120-17 | 〔条件卡·Q-12-01〕多源可调用对外放行 | S12-4 | 外部助手 | sonnect | 1.0 | T120-10, T120-11, T120-14, T120-29 | 条件:Q-12-01 | 待开工 |
 | T120-18 | 会话校验比对 tokenVersion（改密/封禁全端即时失效） | S12-5 | Hark | opus | 3.0 | — | L1 | 已完成（Hark，2026-10-23） |
 | T120-19 | 已登录改密 API（旧密校验 + tokenVersion++ + 刷新令牌吊销） | S12-5 | Hark | opus | 3.0 | T120-10, T120-18 | L2 | 已完成（Hark，2026-10-23） |
