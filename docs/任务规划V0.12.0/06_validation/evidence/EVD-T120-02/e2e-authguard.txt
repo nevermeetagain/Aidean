@@ -1,0 +1,23 @@
+T120-02 追加证据：改中间件后 e2e auth-guard 回归
+触发依据：外部助手待执行规划 §三 W1序1「改中间件后必跑 e2e auth-guard 全组」+ §五.3「涉及页面再跑相关 e2e」
+
+运行时前提：dev --turbo @:3000（三件套 env）
+  启动日志 ✓ Compiled middleware in 145ms → turbopack 编译 Edge middleware 无 setImmediate/Edge 警告（运行时二次佐证拆分生效）
+  GET /api/v1/system/ready → 200（db:ok redis:ok）
+
+[A] cmd: pnpm exec playwright test e2e/tests/auth-guard.spec.ts --project=flows
+  ✓ 未登录 /user/console → 307 /login?redirect=%2Fuser%2Fconsole（用户路径守卫）
+  ✓ /login 渲染 h1/h2「登录」、微信扫码块隐藏(D4)、email+password 输入框存在
+  ✓ 头部未登录 /login 入口 + 主导航 16 链接
+  3 passed (6.1s)  E2E_EXIT=0
+
+[B] cmd: pnpm exec playwright test e2e/tests/smoke.spec.ts --project=smoke
+  ✓ [3] /admin 匿名 → 307 /admin/login?redirect=%2Fadmin（管理路径守卫）
+  ✓ [4] /api/v1/auth/me 匿名 → 401
+  ✓ [5] 非管理员 /admin → denied=1
+  ✓ [6] SUPER_ADMIN /admin → 200（登录态放行）
+  ✓ [7] 登录→退出→/auth/me 恢复 401（会话生命周期）
+  （[1] health、[2] /models SSR 亦绿）7 passed (5.5s)  SMOKE_EXIT=0
+
+结论：middleware 验签/重定向逻辑逐字节未改（仅 import 源 constants→edge-constants），
+      /user 与 /admin 双守卫路径 + 会话生命周期回归全绿，无功能漂移。
