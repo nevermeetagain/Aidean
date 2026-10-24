@@ -12,6 +12,7 @@
 import { useState } from "react";
 
 import { Dialog } from "@aidean/ui";
+import { SourceAttribution, type AttributionSource } from "../site/SourceAttribution";
 
 export interface BenchmarkView {
   id: string;
@@ -36,6 +37,12 @@ const VERIFIED = {
 
 const BADGE = "inline-flex items-center rounded-full border px-2 py-0.5 text-xs";
 const isHttp = (u: string | null): u is string => !!u && /^https?:\/\//.test(u);
+
+/** T120-16 / U-M2：Artificial Analysis 署名来源（文案用原文口径，链接官网） */
+const AA_SOURCE: AttributionSource = { name: "Artificial Analysis", url: "https://artificialanalysis.ai" };
+/** AA 基准判据：同步适配器写入 sourceName='artificial-analysis'（benchmarkType='artificial_analysis'） */
+const isArtificialAnalysis = (b: BenchmarkView): boolean =>
+  b.sourceName === "artificial-analysis" || b.name === "artificial_analysis";
 
 const SH_DAY = new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" });
 const fmtDay = (iso: string | null) => (iso && !Number.isNaN(new Date(iso).getTime()) ? SH_DAY.format(new Date(iso)) : "—");
@@ -77,6 +84,9 @@ export function BenchmarkList({ items }: { items: BenchmarkView[] }) {
           );
         })}
       </ul>
+
+      {/* T120-16：列表含 AA 基准时署名「数据来源：Artificial Analysis」并链官网；无 AA 数据不渲染 */}
+      {items.some(isArtificialAnalysis) ? <SourceAttribution sources={[AA_SOURCE]} /> : null}
 
       <Dialog
         open={open !== null}

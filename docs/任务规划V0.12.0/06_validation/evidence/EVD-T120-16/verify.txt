@@ -1,0 +1,29 @@
+T120-16 AA 署名展示 · 验证记录（收敛到模型详情页；天梯/对比见 deviation.md）
+基线 main@752c68dd（开工前干净；同窗无他卡改 e2e/** 或 check-docs-facts.mjs）
+
+[功能·允许路径内]
+  新增 apps/web/components/site/SourceAttribution.tsx；
+  apps/web/components/models/BenchmarkDialog.tsx 的 BenchmarkList 按
+    items.some(sourceName==='artificial-analysis' || name==='artificial_analysis') 门控渲染，无 AA 不渲染。
+  文案「数据来源：Artificial Analysis」链 https://artificialanalysis.ai，rel="noopener noreferrer"。
+
+[e2e 上一提交失败] npx playwright test aa-source-attribution --project=web（加组件前）
+  → 1 failed：含 AA 详情页 getByTestId('source-attribution') toBeVisible 未找到，exit=1。见 e2e-before-feature.txt
+[e2e 本提交通过] 同上（加组件后）
+  → 3 passed：可见署名+href+rel / 非AA不出现 / 无基准不出现，exit=0。见 e2e-after-feature.txt
+  夹具：prisma 建 e2e-aa-{yes,no,none}-<run> 模型+基准，afterAll 级联清理；
+  跑后核验 leftover_e2e_aa_models=0、aa_benchmarks_in_db=0（无共享库污染）。
+
+[对比度] 署名 slate-600(#475569)、链接 sky-700(#0369a1) 于白底 ≈7.5:1 / 7.0:1，均 ≥ WCAG AA 4.5:1。
+[截图] aa-attribution-visible.png（基准区含署名）；aa-attribution-absent.png（非 AA 无署名）。
+
+[门禁]
+  apps/web  npx tsc --noEmit -p .            exit=0
+  apps/web  npx next lint                     exit=0（仅既有 SafeImage <img> warning，非本卡文件）
+  apps/web  npx vitest run                     exit=0（1931 passed | 11 skipped；未新增 vitest spec）
+            node scripts/check-docs-rule.mjs   exit=0
+            node scripts/check-docs-facts.mjs  exit=0（18/18；spec-count expected=223 actual=223）见 docs-facts.txt
+            node scripts/guard/api-method-coverage.mjs  exit=0（route 162/162、兜底 7/7）
+
+[越界] 见 deviation.md：新增 1 个 e2e spec + check-docs-facts spec-count 222→223（用户 2026-10-24 授权，非通用先例）。
+[卡面验证命令] pnpm -C apps/web exec vitest run components/site → 因缺 jsdom 基建无法运行，见 deviation.md（顺延 T120-30/34）。
