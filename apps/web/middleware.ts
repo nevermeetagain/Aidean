@@ -24,7 +24,7 @@ import { createRemoteJWKSet } from "jose/jwks/remote";
 import { jwtVerify } from "jose/jwt/verify";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { AUTH_AUDIENCE_SELF, AUTH_ISSUER, AUTH_ISSUERS_ACCEPTED, COOKIE_ACCESS } from "./lib/features/auth/constants";
+import { AUTH_AUDIENCE_SELF, AUTH_ISSUER, AUTH_ISSUERS_ACCEPTED, COOKIE_ACCESS } from "./lib/features/auth/edge-constants";
 import { COOKIE_SESSION_HINT, SESSION_HINT_ATTRS, decideSessionHint } from "./lib/features/auth/session-hint";
 import { withDisplayCurrencyHeader } from "./lib/currency/display";
 

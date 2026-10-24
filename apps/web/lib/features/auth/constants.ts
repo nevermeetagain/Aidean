@@ -6,17 +6,17 @@
  * - claims 补全 iss/aud/jti（access 亦加）/ver（= User.tokenVersion）；
  * - refresh 持久化（RefreshToken 表）+ 轮换检测（旧值复用 = 整链撤销）；
  * - 原「无状态 JWT 刷新对」的已知权衡（重放窗口/不可撤销）随之关闭。
+ *
+ * T120-02 / ADR-0012 拆分：纯常量与纯函数（Cookie 名、iss/aud、TTL 兜底、限流阈值、生产判定、
+ * Cookie 属性基座）零 node 依赖，已下沉到 ./edge-constants 供 Edge middleware 直接引用；
+ * 本文件保留只在 Node 侧运行、从 DB 读 security.* 的 TTL/阈值函数（经运行时动态 import prisma），
+ * 并整体重导出 ./edge-constants 的纯常量，使既有指向本模块的导入点（route handler / 服务层 / 单测）保持不变。
  */
 
-/** 访问令牌 Cookie（HttpOnly；maxAge=15m 与令牌 TTL 对齐） */
-export const COOKIE_ACCESS = "aidean_token";
-/** 刷新令牌 Cookie（HttpOnly；仅经同源 /auth/refresh 换发新对） */
-export const COOKIE_REFRESH = "aidean_refresh";
+export * from "./edge-constants";
 
-/** access 有效期（秒）：15 分钟（兜底常量；运行时读库见 getAccessTtlSeconds） */
-export const ACCESS_TTL_SECONDS = 15 * 60;
-/** refresh 有效期（秒）：7 天（兜底常量；运行时读库见 getRefreshTtlSeconds） */
-export const REFRESH_TTL_SECONDS = 7 * 24 * 60 * 60;
+// 上面 `export *` 只对外再导出、不注入本文件局部作用域；下方 DB 函数需引用这几个纯常量作兜底默认值。
+import { ACCESS_TTL_SECONDS, REFRESH_TTL_SECONDS, LOGIN_MAX_FAILED_ATTEMPTS } from "./edge-constants";
 
 /** security.* 数值键运行时读库的 60s 进程内缓存（键 → 值/时间戳） */
 const SECURITY_NUMBER_CACHE_MS = 60 * 1000;
@@ -78,24 +78,6 @@ export async function getRefreshTtlSeconds(): Promise<number> {
   return days * 24 * 60 * 60;
 }
 
-/** JWT iss：主站对外 origin（NEXT_PUBLIC_SITE_URL 可覆盖，部署对齐 docker env） */
-export const AUTH_ISSUER = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-/** 容器侧可达 iss（AideanBot 等容器消费方经 host.docker.internal 访问主平台；A-T20 双值对齐）。
- *  Edge bundle 对非 NEXT_PUBLIC_ env 引用不做构建时内联、sandbox 运行时读取不可靠（实测 host
- *  令牌被拒）——故采用编译期字面量，随构建固化为版本锚；变更容器网段须重新构建。 */
-export const AUTH_ISSUER_CONTAINER = "http://host.docker.internal:3000";
-/** 验签接受的 iss 集合：浏览器值 + 容器值（去重；middleware 兼容迁移期双口径令牌，A-T20） */
-export const AUTH_ISSUERS_ACCEPTED = Array.from(
-  new Set([AUTH_ISSUER, AUTH_ISSUER_CONTAINER]),
-);
-/** 主站自身令牌的默认 aud；SSO 签发产品令牌时 aud = clientId */
-export const AUTH_AUDIENCE_SELF = "aidean-web";
-
-/** 登录连续失败阈值：达到即锁定（兜底常量；运行时读库见 getLoginMaxFailedAttempts） */
-export const LOGIN_MAX_FAILED_ATTEMPTS = 5;
-/** 登录锁定时长（分钟） */
-export const LOGIN_LOCK_MINUTES = 15;
-
 /**
  * security.maxLoginAttempts 运行时读库（60s 进程内缓存，异常/缺行/越界回退 LOGIN_MAX_FAILED_ATTEMPTS=5）。
  * 键名与 shared ADMIN_CONFIG_KEYS / ADMIN_CONFIG_REGISTRY / seed systemConfigsData 四处同步；
@@ -124,30 +106,4 @@ export async function getLoginMaxFailedAttempts(): Promise<number> {
     // 读库任何异常（无 DB/表缺失等）静默回退默认值，绝不阻断登录失败路径
   }
   return LOGIN_MAX_FAILED_ATTEMPTS;
-}
-/** 登录 IP 限流：固定窗口内最大尝试次数 */
-export const LOGIN_IP_RATE_LIMIT = 20;
-/** 登录 IP 限流窗口（秒） */
-export const LOGIN_IP_RATE_WINDOW_SECONDS = 10 * 60;
-
-/** 生产环境判定：secure cookie 仅在 https 下强制 */
-export function isProduction(): boolean {
-  return process.env.NODE_ENV === "production";
-}
-
-/** Login IP rate-limit bypass - test harness ONLY. Double guard: explicit env flag AND non-production,
- *  so isProduction() forces false in prod (the login limiter stays byte-identical there). A single full
- *  e2e pass performs >20 real logins and trips the fixed-window 429; that is test-env contention, not a defect. */
-export function loginRateLimitBypassed(): boolean {
-  return process.env.AIDEAN_BYPASS_LOGIN_RATE_LIMIT === "1" && !isProduction();
-}
-
-/** access/refresh 共用的 Cookie 属性基座 */
-export function baseCookieOptions() {
-  return {
-    httpOnly: true,
-    sameSite: "lax" as const,
-    secure: isProduction(),
-    path: "/",
-  };
 }

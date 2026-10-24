@@ -1,0 +1,32 @@
+T120-02 验证记录（命令 · 退出码 · 关键读数）  基线 main@58b75551（改前）
+
+[A] 基线 next build（webpack）  log: .scratch/t120-02-baseline-build.log
+  pnpm -C apps/web build  → ✓ Compiled successfully in 14.6s ；ƒ Middleware 179 kB（卡面记 163，见 deviation 1）
+  产物 .next/server/middleware.js raw=600.7 kB；grep: setImmediate=1 @prisma=5 PrismaClient=12 query_engine=2 wbindgen>0
+  → 证实 Prisma 客户端确被打进 Edge middleware 闭包（经 constants.ts 动态 import ../../db/prisma）；见 deviation 2
+
+[B] 拆分（仅在允许路径内）
+  新建 apps/web/lib/features/auth/edge-constants.ts（纯常量/纯函数，零 node 依赖）
+  constants.ts → export * from ./edge-constants + 保留 DB 读值函数（getAccessTtlSeconds/getRefreshTtlSeconds/getLoginMaxFailedAttempts）
+  middleware.ts 仅改 import 源 → ./lib/features/auth/edge-constants；10 个 route.ts 与 service/tokens 零改（经重导出兼容）
+
+[C] 守卫 scripts/guard/edge-imports.mjs（解析 middleware 相对导入图，命中 prisma/ioredis/node: 即 FAIL）
+  干净树: node scripts/guard/edge-imports.mjs → RESULT: PASS，扫描 4 文件，exit 0
+  变异检验: 临时注入 import {prisma} from "../../db/prisma" 至 edge-constants → RESULT: FAIL exit 1
+            链路 apps/web/middleware.ts → edge-constants.ts → lib/db/prisma.ts；撤销后复跑 PASS（见 .scratch/t120-02-mutation-probe.txt）
+
+[D] 改后 next build（webpack）  log: .scratch/t120-02-after-build.log
+  pnpm -C apps/web build  → ✓ Compiled successfully in 10.6s ；ƒ Middleware 85.5 kB（179→85.5，降 93.5 kB；< 163 kB 达标）
+  产物 .next/server/middleware.js raw=229.9 kB；grep: setImmediate=0 @prisma=0 PrismaClient=0 query_engine=0 wbindgen=0 ioredis=0
+  卡面验收 cmd: build 2>&1|tee b.log; ! grep -n setImmediate b.log  → b.log 无 setImmediate，通过
+
+[E] 独立门禁
+  pnpm --filter web exec tsc --noEmit      → EXIT=0
+  pnpm --filter web lint                    → EXIT=0（仅既有 SafeImage <img> warning，非本卡）
+  pnpm --filter web test（vitest）          → 171 files / 1931 passed 11 skipped，EXIT=0（含 middleware-session-hint、login-rate-limit-bypass）
+
+[F] 文档门禁（推送前）
+  node scripts/check-docs-rule.mjs   → RULE_EXIT=0（铁律1 + 数字真源 PASS）
+  node scripts/check-docs-facts.mjs  → FACTS_EXIT=0（18/18，spec-count=222 未动）
+
+契约冻结核验：Cookie 名（aidean_token/aidean_refresh）与 JWT claims 形状未改（edge-constants 复用同值），未触发停止条件。
