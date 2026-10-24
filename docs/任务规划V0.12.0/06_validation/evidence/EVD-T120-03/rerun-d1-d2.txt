@@ -1,0 +1,27 @@
+T120-03 移交复跑 R1｜D1/D2 修复后 e2e 复跑（外部助手 · 2026-10-24 · 基线 main@147b93a8）
+运行态：next dev --turbo @3000，env=AIDEAN_ENABLE_MOCK_UPSTREAM=1 / AIDEAN_BYPASS_LOGIN_RATE_LIMIT=1 / CHECKPOINT_DISABLE=1；库 5435/aidean。
+
+## 命令与读数
+- pnpm exec playwright test --workers=1（全量）exit=0 ｜ 6.5m ｜ 182 passed / 48 skipped / 0 failed
+- pnpm exec playwright test cms-content.spec.ts feature-flags.spec.ts --project=admin --workers=1 exit=0 ｜ 24.4s ｜ 4 passed / 1 skipped / 0 failed
+
+## D2（feature-flags 复原自检）——判据达成
+- feature-flags.spec.ts:83 桌面「开→恢复」✓ 4.4s / :134 移动端「开→恢复」✓ 2.5s；全量内亦为 158/159 ✓。
+- 两处自愈 fixme 均不触发 → D2（PUBLIC 快照复原不收敛）经 revalidateTagNow 修复已在 dev e2e 复现收敛。
+
+## D1（cms-content 断言点2 首页 Hero）——根因已修复；e2e 仍 skip 属测试等待竞态（非产品缺陷）
+- cms-content.spec.ts:67 在全量(test153)与单跑(test3)均为 skip：waitHomeReflects 10s 内未观察到收敛 → 触发 test.fixme。
+- 独立探针（写 home.hero→读，逐字节还原，库内恒等）证明缓存失效层已修好：
+  ① 裸 HTTP GET "/"：首写 SSR 命中 marker @+895ms；同窗第二次连续写入亦 @+562ms 收敛（恰为原 D1「次写>20s 不收敛」的反面）。
+  ② 真 Chromium page.content()：含 marker @+0ms；SSR 里 marker 落在唯一 <h1> 内（<h1 class=…>{marker}</h1>）。
+  ③ 单次 goto + networkidle+3s settle：getByRole(h1,name=marker) count=1、isVisible=true、boundingBox 768×59、computed opacity=1/visibility=visible。
+  ④ 单次 goto 后不重导航、原地每 200ms 轮询：domcontentloaded @+374ms=false → @+624ms=true。
+- 竞态定位：waitHomeReflects 仅在 waitForLoadState("domcontentloaded")（≈374ms）后即刻取样，随后每 500ms 重新 page.goto；
+  hero <h1> 在导航后约 624ms 才可见，且每次重导航重置入场可见态，settled 帧从不被复检 → 真值虽已反映仍恒判不可见 → fixme 必现。
+- 结论与抄送 Hark：D1 缓存失效根因已由 revalidateTagNow 修复并经 4 路探针验证；cms-content 自愈用例的观测判据在 dev 浏览器下受该竞态影响仍标 fixme。
+  建议（本卡不改，属 T120-03 已合并用例）：waitHomeReflects 改为 waitForLoadState("load"/"networkidle") 或「单页内轮询整窗、不逐 500ms 重导航」。
+
+## 环境根因（本会话致「全量 monitoring 1 红 / 网关 9 红」的成因，均已复原，非代码缺陷）
+- Prisma 客户端陈旧：dev 进程持锁时 prisma generate EPERM → monitorRunRequest delegate 缺失 → monitoring 500（Cannot read 'create'）。处置=停 dev→generate(EXIT0)→重启 dev→monitoring 全绿(test196-201)。
+- 缺 AIDEAN_ENABLE_MOCK_UPSTREAM=1：mock-upstream 路由 route.ts:27 运行时守卫返 404 → 网关降级链空 → 30003「无可用路由」。补 env 后 fe01/g6/gateway-flow/promotion-billing 全绿。
+- monitoring.spec 受理后不认领其产生的 openrouter pending（E2E 无调度器）：受部分唯一索引约束会阻塞下次全量。本次以 monitor_catalogs --source openrouter 现场领取回写 done（见 EVD-T120-12/script-e2e.txt），跑前清场 pending=0。

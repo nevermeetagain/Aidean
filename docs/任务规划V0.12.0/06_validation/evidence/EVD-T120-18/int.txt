@@ -1,0 +1,12 @@
+T120-18 移交复跑 R3｜封禁后旧令牌吊销（真库集成）（外部助手 · 2026-10-24 · 基线 main@147b93a8）
+方法：无 auth/session 专项 *.int.spec.ts，故以真库(dev 5435/aidean)+真 Redis(6379)+运行态 :3000 走完整 HTTP 栈（.scratch/step0-r3-r5.cjs，逐字节取证脚本已随 EVD 留存）。被测=中间件 requireUserApi 的 tokenVersion 比对，非桩。
+
+## T120-18 读数（status=SUSPENDED → 同事务 tokenVersion++ → 旧 access 令牌 401）
+- admin PATCH /api/v1/admin/users/{id} {status:"SUSPENDED"} → HTTP 200
+- DB users：tokenVersion 1→2、status=SUSPENDED（封禁即 ++）
+- 封禁后旧令牌（本会话既有 cookie）GET /api/v1/auth/me → 401 / code=10004
+  · 关键：ver 比对先于 status 判定（tokenVersion≠claims.ver 即吊销，先于账号可用性），故封禁立刻使全部旧令牌失效
+- 复原：PATCH status:"ACTIVE" → 200；以新密重登 → 200（账号可用，旧令牌仍失效）
+
+## 结论
+封禁→旧令牌 401/10004 成立，吊销语义与 T120-19（改密）/T120-20（重置）同源复用 tokenVersion 递增。判据达成。

@@ -1,0 +1,20 @@
+T120-12 移交复跑 R4｜monitor_catalogs 写库模式端到端真抓取（外部助手 · 2026-10-24 · 基线 main@147b93a8）
+补 Hark EVD-T120-12/verify.txt D2 遗留：脚本真抓取（联网写库）当时未在嵌入式 PG 跑通，本次在 dev 库(5435)+真外部源补跑。
+
+## 命令与读数
+- pnpm --filter web exec tsx ../../scripts/crawl/monitor_catalogs.ts --source openrouter（无 --dry-run，写库）exit=0
+  stdout：[ok] openrouter: 693 条 | 新快照=yes | 幂等=no | 事件=602 ／ === total: 1 source(s) ok / 0 failed ===
+
+## pending→running→done（CAS 领取，逐行条件 updateMany）实证
+- 被领取行 = 本次全量 e2e 中 monitoring.spec:125 点 openrouter「手动运行」POST 202 所建的 pending（created=2026-10-24T02:18:39Z）；
+- 该 pending 被本轮 claim→running→真抓 openrouter.ai→complete 回写 done(resultCount=693)；
+- DB 终态读回：openrouter done result=693 err=null created=02:18:39（dur=813s = 建 pending 到本次领取完成的墙钟）；by status → done=4 / failed=1 / pending=0（遗留 pending 归零）。
+- 前序同法真实运行留档：quanzil done result=333；aihubmix failed err="fetch failed"（外部网络失败→正常回写 failed 路径，authRequired=false 但远端不可达）。
+
+## 副作用核对（真写库、非幂等）
+- catalogSnapshot 17→18（新快照 yes）；catalog_change_events：listed 1543→2144(+601)、delisted 1→2；model_first_seen=799 不变；
+- monitoring_sources.openrouter lastStatus=ok / lastCount=693 / lastRunAt=2026-10-24T02:32:11Z（markSource 回写）。
+
+## 脚本契约复核（与卡面一致）
+- dry-run 不领取 pending（runReal 仅 !dryRun 分支 claim）；--limit 写库模式拒绝（parseArgs 抛错），防截断观测误下架；
+- 90 天前已结束请求开跑前 purge；领取到但源停用/authRequired 者直接回写 failed。

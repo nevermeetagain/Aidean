@@ -1,0 +1,10 @@
+T120-03 移交复跑 R2｜D3 375px 视口实测（外部助手 · 2026-10-24 · 基线 main@147b93a8）
+
+## 命令与读数
+- pnpm exec playwright test --workers=1（全量，含 flows project）exit=0 ｜ 182 passed / 48 skipped / 0 failed
+- 命中用例：e2e/tests/fe01-console-call.spec.ts:171「WP-FE01 视口与死链 › 375px：控制台无横向溢出且关键控件可聚焦」= ✓ passed (2.7s)（全量序号 102）
+- 同组 1440px 亦 ✓ passed (2.8s)（序号 103）
+
+## 判据达成
+- 375×667 视口用例为真实通过、非 fixme/skip：自愈 fixme 不触发 → 原缺陷 D3（CallPlayground 375px 横向溢出）在复跑中不再复现，横向溢出判据满足（≤1px）。
+- 无需改源码；缺陷已随相关布局修复关闭。

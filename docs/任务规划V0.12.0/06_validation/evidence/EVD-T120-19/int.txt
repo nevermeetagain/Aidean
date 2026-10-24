@@ -1,0 +1,12 @@
+T120-19 移交复跑 R3｜改密后他端令牌吊销（真库集成）（外部助手 · 2026-10-24 · 基线 main@147b93a8）
+方法：同 EVD-T120-18/int.txt（真库 5435 + 真 Redis 6379 + 运行态 :3000 全 HTTP 栈；脚本 .scratch/step0-r3-r5.cjs）。
+前置：设备 A POST /auth/register（种 cookie）→ 200；设备 B POST /auth/login → 200；两端 GET /auth/me 均 200/code=0；DB tokenVersion=0 status=ACTIVE。
+
+## T120-19 读数（改密 → tokenVersion++ 且同事务吊销全部 refresh → 他端 401、本端保活）
+- 本端 A POST /api/v1/auth/password {currentPassword,newPassword} → HTTP 200 / code=0 / data={changed:true}
+- DB users.tokenVersion 0→1；改密同事务吊销 refresh（脚本读 revokedAt:null 计数，验证吊销动作发生）
+- 他端 B（改密前登录态）GET /api/v1/auth/me → 401 / code=10004（判据：他端 access 令牌即刻失效）
+- 本端 A（执行改密的当前会话）GET /api/v1/auth/me → 200 / code=0（当前设备保活，符合「改密不踢自己」口径）
+
+## 结论
+改密→他端 401/10004 成立、本端保活，tokenVersion 递增驱动吊销。与 T120-18/20 同一 requireUserApi ver 比对路径。判据达成。

@@ -1,0 +1,24 @@
+T120-20 移交复跑 R3+R5｜找回密码：开关门控 + 重置后他端吊销（真库集成）（外部助手 · 2026-10-24 · 基线 main@147b93a8）
+方法：同 EVD-T120-18/int.txt（真库 5435 + 真 Redis 6379 + 运行态 :3000；脚本 .scratch/step0-r3-r5.cjs）。迁移 20261024030000 已在库，flag 行存在。
+
+## R5｜auth.password_reset 开关（默认关）门控两端点
+- DB feature_flags：auth.password_reset isEnabled=false（id=b993d130）
+- 关闭时 POST /api/v1/auth/password/reset/code → HTTP 403 / code=50011
+- 关闭时 POST /api/v1/auth/password/reset → HTTP 403 / code=50011（端点整体门控，与 code 端点同闸）
+- GET /api/v1/admin/feature-flags → 200，条目=8，含 auth.password_reset（后台列表可见，enabled=false）
+- GET /api/v1/system/features（PUBLIC）→ 200，flags 快照返回（供 T120-21「忘记密码」入口显隐消费）
+
+## R3/T120-20｜开启后找回密码全流程 → 他端 401
+- admin PATCH /admin/feature-flags/{id} {isEnabled:true} → DB isEnabled=true
+- 设备 C 登录 → 200；开启后 POST /auth/password/reset/code → HTTP 200 / data={sent:true}
+- Redis ec:reset:{email}：存在=true、TTL=599s；值=sha256(code).digest(hex)（无盐），脚本 1e6 空间反查得码=746827
+- 匿名 POST /auth/password/reset {email,code:746827,newPassword} → HTTP 200 / data={reset:true}；DB tokenVersion 2→3
+- 他端 C（重置前登录态）GET /auth/me → 401 / code=10004；reset 响应无 Set-Cookie（不给会话）
+- 新密登录 → 200；旧密登录 → 401（密码确被替换）
+- 码复用（一次性）：再次以同码 POST /auth/password/reset → HTTP 401 / code=10003；Redis key 已删（GETDEL）
+
+## 收尾（不留脏）
+- 开关复原 isEnabled=false（PATCH 200）；测试用户 admin DELETE → 200（软删，status=SUSPENDED/deletedAt 置值/tokenVersion=4）
+
+## 结论
+R5「关闭时两端点 403/50011、后台可见」达成；R3/T120-20「重置后他端 401/10004、码一次性、无盐可反查、无 Set-Cookie」达成。判据通过。
